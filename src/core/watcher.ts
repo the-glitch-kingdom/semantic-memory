@@ -6,6 +6,9 @@ export interface WatcherEvents {
   error: (error: Error) => void;
 }
 
+const IGNORED_DIRS = /(^|[\\/])(node_modules|\.semantic-sidekick-index|\.git)([\\/]|$)/;
+const isMarkdown = (path: string) => path.endsWith(".md");
+
 export class Watcher extends EventEmitter {
   private notesPath: string;
   private fsWatcher: FSWatcher | null = null;
@@ -25,15 +28,12 @@ export class Watcher extends EventEmitter {
   start(): void {
     if (this.fsWatcher) return;
 
-    this.fsWatcher = watch("**/*.md", {
+    // chokidar ≥4 has no glob support: watch the folder and filter (a "**/*.md" target never fires)
+    this.fsWatcher = watch(".", {
       cwd: this.notesPath,
       ignoreInitial: true,
       followSymlinks: true,
-      ignored: [
-        "**/node_modules/**",
-        "**/.semantic-sidekick-index/**",
-        "**/.git/**",
-      ],
+      ignored: (path, stats) => IGNORED_DIRS.test(path) || (stats?.isFile() === true && !isMarkdown(path)),
       ...(this.usePolling ? { usePolling: true, interval: 100 } : {}),
     });
 
@@ -59,6 +59,8 @@ export class Watcher extends EventEmitter {
   }
 
   private enqueue(path: string): void {
+    // `ignored` gets no stats for some events (e.g. unlink), so non-markdown can reach here
+    if (!isMarkdown(path)) return;
     this.pendingChanges.add(path);
 
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
