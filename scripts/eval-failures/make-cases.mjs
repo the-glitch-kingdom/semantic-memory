@@ -33,7 +33,7 @@ for (const name of files.filter((n) => /^a-batch-\d+\.json$/.test(n))) {
     for (const c of item.candidates) judgments.push({ case: item.failure, path: c.fact, relevant: matches.has(c.fact) });
   }
 }
-for (const name of files.filter((n) => /^b-.*\.out\.jsonl$/.test(n))) {
+for (const name of files.filter((n) => /^b\d*-.*\.out\.jsonl$/.test(n))) {
   for (const j of readJsonl(join(JUDGE, name))) judgments.push({ case: j.case, path: j.path, relevant: j.relevant === true });
 }
 

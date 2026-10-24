@@ -430,6 +430,7 @@ program
   .option("--target <p>", "Target precision for the recommended threshold", (v) => parseFloat(v), 0.95)
   .option("--min-judged <n>", "Judged injections needed before a threshold can be recommended", (v) => parseInt(v, 10), 20)
   .option("--unjudged-out <file>", "Write unlabelled top hits here (JSONL) for labelling")
+  .option("--hits-out <file>", "Write every case's hits here (JSONL) for analysis")
   .option("--json", "Print the report as JSON")
   .action(async (opts) => {
     const { openSearch } = await import("./search.js");
@@ -451,6 +452,9 @@ program
       results.push({ case: c.id, hits: hits.map((h) => ({ path: h.path, score: h.score })) });
     }
     const report = evaluateFailures(results, judgments, { targetPrecision: opts.target, minJudged: opts.minJudged });
+    if (opts.hitsOut) {
+      writeFileSync(resolve(opts.hitsOut), results.map((r) => JSON.stringify(r)).join("\n") + "\n");
+    }
     if (opts.unjudgedOut) {
       writeFileSync(resolve(opts.unjudgedOut), report.unjudged.map((u) => JSON.stringify(u)).join("\n") + "\n");
     }
