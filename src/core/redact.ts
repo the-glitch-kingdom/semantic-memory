@@ -58,6 +58,7 @@ const VENDOR = new RegExp(
 );
 
 interface Rule {
+  name: string; // reported by lint_vault's secrets check
   re: RegExp;
   replace: (match: string, ...groups: string[]) => string | null; // null = leave as is
 }
@@ -67,44 +68,50 @@ function rules(mode: RedactMode): Rule[] {
   const precise: Rule[] = [
     // PEM private keys, even when the END line was cut off
     {
+      name: "private key",
       re: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)/g,
       replace: () => REDACTED,
     },
     // credentials inside URLs: scheme://user:pass@host
     {
+      name: "URL credentials",
       re: /(:\/\/)([^/\s:@]+):([^/\s@]+)@/g,
       replace: (_m, scheme, _user, pass) => (isPlaceholder(pass) ? null : `${scheme}${REDACTED}@`),
     },
     // Authorization headers
     {
+      name: "authorization header",
       re: /\b(bearer|basic)(\s+)(?=[A-Za-z0-9._~+/=-]*\d)([A-Za-z0-9._~+/=-]{16,})/gi,
       replace: (_m, scheme, space) => `${scheme}${space}${REDACTED}`,
     },
     // name=value, name: value, "name": "value" where the name is a secret word
     {
+      name: "secret-named value",
       re: new RegExp(String.raw`(${SECRET_NAME}["']?\s*[:=]\s*["']?)(${VALUE}{${minValue},})`, "gi"),
       replace: (_m, prefix, value) => (isPlaceholder(value) ? null : `${prefix}${REDACTED}`),
     },
     // command-line flags: --token VALUE, --api-key=VALUE
     {
+      name: "secret flag",
       // a flag starts after whitespace/start, and its name is bounded: keeps long dash/hyphen runs linear
       re: new RegExp(String.raw`((?<![\w-])--?[\w-]{0,64}?${SECRET_WORD}[ =])(${VALUE}{${minValue},})`, "gi"),
       replace: (_m, flag, value) => (isPlaceholder(value) ? null : `${flag}${REDACTED}`),
     },
-    { re: VENDOR, replace: () => REDACTED },
+    { name: "vendor API key", re: VENDOR, replace: () => REDACTED },
     // JWTs
-    { re: /\beyJ[\w-]{8,}\.[\w-]{8,}\.[\w-]{8,}/g, replace: () => REDACTED },
+    { name: "JWT", re: /\beyJ[\w-]{8,}\.[\w-]{8,}\.[\w-]{8,}/g, replace: () => REDACTED },
   ];
   if (mode === "precise") return precise;
   return [
     ...precise,
     // base64 blobs with mixed case and digits (the lookbehind starts a try only at a run's start: linear on huge blobs)
     {
+      name: "base64 blob",
       re: /(?<![A-Za-z0-9+/])(?=[A-Za-z0-9+/]*\d)(?=[A-Za-z0-9+/]*[A-Z])(?=[A-Za-z0-9+/]*[a-z])[A-Za-z0-9+/]{40,}={0,2}/g,
       replace: () => REDACTED,
     },
     // any other long token mixing letters and digits (hashes, ids: over-redaction is fine in logs)
-    { re: /(?<![\w-])(?=[\w-]*\d)(?=[\w-]*[A-Za-z])[\w-]{32,}(?![\w-])/g, replace: () => REDACTED },
+    { name: "long token", re: /(?<![\w-])(?=[\w-]*\d)(?=[\w-]*[A-Za-z])[\w-]{32,}(?![\w-])/g, replace: () => REDACTED },
   ];
 }
 
@@ -153,6 +160,39 @@ export function redact(text: string, mode: RedactMode = "precise"): RedactResult
     });
   }
   return { text: out, count };
+}
+
+export interface SecretLocation {
+  line: number;
+  kind: string;
+}
+
+/** Where precise-set secrets sit in a text (for lint_vault): 1-based line and kind, never the value. */
+export function findSecrets(text: string): SecretLocation[] {
+  knownSecrets ??= loadKnownSecrets();
+  const hits: { index: number; kind: string }[] = [];
+  for (const value of knownSecrets) {
+    for (let i = text.indexOf(value); i !== -1; i = text.indexOf(value, i + value.length)) {
+      hits.push({ index: i, kind: "secret env value" });
+    }
+  }
+  for (const rule of rules("precise")) {
+    for (const m of text.matchAll(rule.re)) {
+      const replaced = rule.replace(m[0], ...m.slice(1).map((g) => g ?? ""));
+      if (replaced !== null && replaced !== m[0]) hits.push({ index: m.index ?? 0, kind: rule.name });
+    }
+  }
+  const seen = new Set<string>();
+  const out: SecretLocation[] = [];
+  for (const h of hits.sort((a, b) => a.index - b.index)) {
+    const line = text.slice(0, h.index).split("\n").length;
+    const key = `${line}:${h.kind}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push({ line, kind: h.kind });
+    }
+  }
+  return out;
 }
 
 /** Redact every string inside a JSON-like value (for log payloads and state files). */

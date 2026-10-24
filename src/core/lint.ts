@@ -8,6 +8,7 @@ import { deriveProjectRoot } from "./session.js";
 import { computeDecay, loadDecayConfig, normalizeVerifiedDate } from "./decay.js";
 import { readSelectionLog } from "./telemetry.js";
 import { compileLexicon, findAliasConflicts } from "./lexicon.js";
+import { findSecrets } from "./redact.js";
 
 export interface LintReport {
   schemaPath: string;
@@ -21,6 +22,8 @@ export interface LintReport {
     decay_candidates: LintFinding[];
     alias_conflicts: LintFinding[];
     decoys: LintFinding[];
+    /** only present when the opt-in secrets check ran */
+    secrets?: LintFinding[];
   };
   counts: {
     errors: number;
@@ -66,6 +69,14 @@ export async function lintVault(
      * signal (decision Q5). Opt-in; a no-op with no selection log.
      */
     checkDecoys?: boolean;
+    /**
+     * When true, run the secrets check (v1.5.3): flag notes that contain a secret
+     * (API key, token, password, private key — the redactor's precise set). Reports
+     * path, line and kind, never the value; nothing is rewritten. Opt-in, so the
+     * default report stays byte-stable. A real secret must be rotated: it is in
+     * git history if the note was ever committed.
+     */
+    checkSecrets?: boolean;
   } = {}
 ): Promise<LintReport> {
   const schema = opts.schemaOverride ?? (await loadSchema(notesPath));
@@ -98,6 +109,16 @@ export async function lintVault(
     findings.push(...validateNote(rel, raw, schema, { todayIso: opts.todayIso }));
     findings.push(...findBrokenLinks(rel, raw, knownNames));
     if (codeRoot) findings.push(...findCodeSymbolDrift(rel, raw, codeRoot));
+    if (opts.checkSecrets) {
+      for (const s of findSecrets(raw)) {
+        findings.push({
+          path: rel,
+          rule: "secrets",
+          severity: "error",
+          message: `line ${s.line}: ${s.kind} — rotate it if it is real, then remove it from the note (redaction does not rewrite git history)`,
+        });
+      }
+    }
   }
 
   if (opts.checkDecayCandidates) {
@@ -128,6 +149,7 @@ export async function lintVault(
     decay_candidates: findings.filter((f) => f.rule === "decay_candidates"),
     alias_conflicts: findings.filter((f) => f.rule === "alias_conflicts"),
     decoys: findings.filter((f) => f.rule === "decoys"),
+    ...(opts.checkSecrets ? { secrets: findings.filter((f) => f.rule === "secrets") } : {}),
   };
   const errors = findings.filter((f) => f.severity === "error").length;
   const warnings = findings.filter((f) => f.severity === "warn").length;
@@ -342,7 +364,7 @@ async function findDecoys(notesPath: string, rawByPath: Map<string, string>): Pr
 }
 
 export function formatLintReport(report: LintReport, opts: { rule?: keyof LintReport["byRule"] } = {}): string {
-  const target = opts.rule ? report.byRule[opts.rule] : report.findings;
+  const target = (opts.rule ? report.byRule[opts.rule] : report.findings) ?? [];
   if (target.length === 0) {
     return `clean: 0 findings across ${report.counts.filesLinted} files`;
   }

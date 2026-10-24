@@ -487,13 +487,13 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "install_schema",
   },
   {
-    "description": "Run lint rules across the vault. Default returns the full LintReport with all findings grouped by rule. Pass \`checks\` to filter to specific rules (schema, provenance, stale, broken_links, code_symbols, decay_candidates) — when filtered, byRule contains only the requested rules. Two checks are opt-in only (never in the default report): \`code_symbols\` flags inline-code file-path references that no longer exist under the project root (no-op outside a code repo); \`decay_candidates\` cross-references the selection log against current decay to surface frequently-retrieved-but-decayed notes (no-op with no selection log). \`decoys\` flags notes retrieved 3+ times but never cited - surfaced for review, never auto-down-ranked (v1.5 Q5).",
+    "description": "Run lint rules across the vault. Default returns the full LintReport with all findings grouped by rule. Pass \`checks\` to filter to specific rules (schema, provenance, stale, broken_links, code_symbols, decay_candidates) — when filtered, byRule contains only the requested rules. Two checks are opt-in only (never in the default report): \`code_symbols\` flags inline-code file-path references that no longer exist under the project root (no-op outside a code repo); \`decay_candidates\` cross-references the selection log against current decay to surface frequently-retrieved-but-decayed notes (no-op with no selection log). \`decoys\` flags notes retrieved 3+ times but never cited - surfaced for review, never auto-down-ranked (v1.5 Q5). \`secrets\` flags notes containing an API key, token, password or private key (path, line, kind — never the value; nothing is rewritten): rotate the secret, then remove it.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
       "properties": {
         "checks": {
-          "description": "Filter to specific lint rules. Omit for full report (excludes the opt-in code_symbols / decay_candidates / alias_conflicts / decoys).",
+          "description": "Filter to specific lint rules. Omit for full report (excludes the opt-in code_symbols / decay_candidates / alias_conflicts / decoys / secrets).",
           "items": {
             "enum": [
               "schema",
@@ -504,6 +504,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
               "decay_candidates",
               "alias_conflicts",
               "decoys",
+              "secrets",
             ],
             "type": "string",
           },
