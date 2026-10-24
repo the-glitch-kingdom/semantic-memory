@@ -1,29 +1,51 @@
 ---
-title: Legacy Index
-tier: guide
+title: Legacy Documentation Index
+tier: reference
 domains: [legacy]
-audience: [developers]
-tags: [index, legacy]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
-purpose: Navigation hub for legacy domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of legacy documentation
 ---
 
-# Legacy Index
+# Legacy Documentation
 
-> Substrate docs inherited from semantic-pages (still accurate).
+> Pre-rebrand substrate docs, kept for history
 
-## Documents in this domain
+## Overview
 
-- **[Legacy Changelog (semantic-pages)](./changelog.md)** — semantic-pages version history prior to the fork
-- **[Embedder Guide (substrate)](./embedder-guide.md)** — ONNX embedder options, model choices, quality/speed tradeoffs
-- **[Frontmatter Guide (substrate)](./frontmatter-guide.md)** — Indexer-consumed frontmatter fields (title, tags, load_priority, etc.)
-- **[How Semantic Pages Works (substrate)](./how-it-works.md)** — Substrate-level: MCP server startup, indexer, embedder internals
-- **[Performance Tuning (substrate)](./performance-tuning.md)** — ONNX workers, batch size, quantization tradeoffs
+- **Total Documents:** 5
+- **Domain:** `legacy/`
+- **Category:** advanced
+- **Load Priority:** 2/10
 
-## See also
+## Documents
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+### Guides
+
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Performance Tuning (substrate)](performance-tuning.md) | active | 2026-04-23 | 952 |
+
+### References
+
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Legacy Changelog (semantic-pages)](changelog.md) | active | 2026-04-23 | 2,306 |
+| [Embedder Guide (substrate)](embedder-guide.md) | active | 2026-04-23 | 984 |
+| [Frontmatter Guide (substrate)](frontmatter-guide.md) | active | 2026-04-23 | 676 |
+| [How Semantic Pages Works (substrate)](how-it-works.md) | active | 2026-04-23 | 952 |
+
+## Keywords
+
+This domain covers: legacy, substrate, semantic-pages
+
+## Related Domains
+
+- [Agents](../agents/) - Expert agent documentation, specialty matrix
+- [Backups](../backups/) - Backup/restore guides, disaster recovery
+- [Plans](../plans/) - Planning documents, roadmaps, proposals
+
+---
+
+*Last updated: 2026-10-24*

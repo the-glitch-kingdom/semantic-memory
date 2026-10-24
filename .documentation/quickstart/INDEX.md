@@ -1,26 +1,43 @@
 ---
-title: Quickstart Index
-tier: guide
+title: Quickstart Documentation Index
+tier: reference
 domains: [quickstart]
-audience: [developers]
-tags: [index, quickstart]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
-purpose: Navigation hub for quickstart domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of quickstart documentation
 ---
 
-# Quickstart Index
+# Quickstart Documentation
 
-> Install + overview docs. Read these first on a fresh machine or fresh clone.
+> Setup guides, dev workflow, onboarding
 
-## Documents in this domain
+## Overview
 
-- **[Installation Guide](./installation-guide.md)** — Three install routes (plugin / npm / dev), post-install housekeeping, uninstall
-- **[semantic-sidekick — Overview](./sidekick-overview.md)** — Value proposition, five-layer summary, firing timeline, design principles
+- **Total Documents:** 2
+- **Domain:** `quickstart/`
+- **Category:** features
+- **Load Priority:** 9/10
 
-## See also
+## Documents
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+### Guides
+
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Installation Guide](installation-guide.md) | active | 2026-04-23 | 823 |
+| [semantic-sidekick — Overview](sidekick-overview.md) | active | 2026-04-23 | 766 |
+
+## Keywords
+
+This domain covers: quickstart, quick-start, getting-started, setup, install, installation, onboarding, developer, dev, workflow
+
+## Related Domains
+
+- [Workflows](../workflows/) - Process documentation, multi-step operations
+- [Features](../features/) - Feature implementation guides, admin docs
+- [Procedures](../procedures/) - Step-by-step operational procedures (SOP)
+
+---
+
+*Last updated: 2026-10-24*

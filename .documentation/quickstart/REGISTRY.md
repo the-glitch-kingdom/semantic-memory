@@ -2,34 +2,52 @@
 title: Quickstart Registry
 tier: reference
 domains: [quickstart]
-audience: [developers]
-tags: [registry, quickstart]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.0.0'
 purpose: Quick reference for quickstart documentation
-load_priority: 5
 ---
 
 # Quickstart Registry
 
-> Install + overview docs. Read these first on a fresh machine or fresh clone.
+> Quick reference for setup guides, dev workflow, onboarding.
 
 ## At a Glance
 
 | Metric | Value |
 |--------|-------|
 | Documents | 2 |
-| Domain | quickstart |
+| Category | features |
+| Load Priority | 9/10 |
 
-## Documents
+## Active Documents
 
-| File | Tier | Purpose |
-|------|------|---------|
-| [`installation-guide.md`](./installation-guide.md) | guide | Three install routes (plugin / npm / dev), post-install housekeeping, uninstall |
-| [`sidekick-overview.md`](./sidekick-overview.md) | guide | Value proposition, five-layer summary, firing timeline, design principles |
+- [Installation Guide](installation-guide.md)
+- [semantic-sidekick — Overview](sidekick-overview.md)
 
+## Recently Updated
+
+- [Installation Guide](installation-guide.md) - 2026-04-23
+- [semantic-sidekick — Overview](sidekick-overview.md) - 2026-04-23
+
+## By Status
+
+| Status | Count |
+|--------|-------|
+| active | 2 |
+| draft | 0 |
+| deprecated | 0 |
+| archived | 0 |
 
 ## Keywords
 
-`install` `setup` `overview` `getting-started` `quickstart`
+`quickstart` `quick-start` `getting-started` `setup` `install` `installation` `onboarding` `developer` `dev` `workflow` `start` `begin` `intro` `introduction` `new-developer`
+
+## See Also
+
+- [Full Index](INDEX.md) - Complete document listing
+- [Root Index](../INDEX.md) - All domains
+
+---
+
+*Last updated: 2026-10-24*

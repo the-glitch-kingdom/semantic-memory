@@ -1,36 +1,48 @@
 ---
-title: Architecture Index
-tier: guide
+title: Architecture Documentation Index
+tier: reference
 domains: [architecture]
-audience: [developers]
-tags: [index, architecture]
 status: active
-last_updated: '2026-05-09'
-version: '1.2.0'
-purpose: Navigation hub for architecture domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of architecture documentation
 ---
 
-# Architecture Index
+# Architecture Documentation
 
-> How semantic-memory is built: the original five-layer substrate, what v1.0/1.1/1.2 added on top, MCP server internals, and the complete index/storage map.
+> System design, AI coach, project registry, patterns
 
-## Documents in this domain
+## Overview
 
-### Foundational
+- **Total Documents:** 7
+- **Domain:** `architecture/`
+- **Category:** development
+- **Load Priority:** 7/10
 
-- **[Architecture — the Five Layers](./architecture-layers.md)** — The original v0.x substrate. Each of the 5 layers (substrate / structure / workflows / activation / routing) with responsibilities, key files, contracts, gotchas.
-- **[Injection Points](./injection-points.md)** — Every place semantic-memory touches Claude's context — symptom→check table.
-- **[Schema and Provenance](./schema-and-provenance.md)** — vault.schema.yml, 4 default types, lint rules, provenance frontmatter.
+## Documents
 
-### v1.x additions
+### References
 
-- **[v1 Stack Overview](./v1-stack-overview.md)** — The architectural narrative for what v1.0/1.1/1.2 added on top of the substrate. Read this first if you came in at v1.x.
-- **[MCP Server Internals](./mcp-internals.md)** — How `src/mcp/server.ts` (now ~100 lines) composes per-domain tool modules under `src/mcp/tools/`. Read this if you're adding a new MCP tool.
-- **[Indices and Storage](./indices-and-storage.md)** — Storage-perspective: every file the plugin writes to disk. Vault index, model cache, runtime state. Use for backup planning, gitignore decisions, disk-usage forensics.
-- **[What Gets Indexed Where and Why](./what-gets-indexed.md)** — Content-perspective companion: for each kind of content semantic-memory sees, where it ends up and which tools surface the result.
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Architecture — the Five Layers](architecture-layers.md) | active | 2026-04-23 | 1,180 |
+| [Indices and storage — every file semantic-memory writes](indices-and-storage.md) | active | 2026-05-09 | 1,695 |
+| [Injection Points](injection-points.md) | active | 2026-04-23 | 1,193 |
+| [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) | active | 2026-07-10 | 1,486 |
+| [Schema and Provenance](schema-and-provenance.md) | active | 2026-04-23 | 878 |
+| [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) | active | 2026-07-10 | 1,315 |
+| [What gets indexed where and why](what-gets-indexed.md) | active | 2026-05-09 | 1,899 |
 
-## See also
+## Keywords
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+This domain covers: architecture, design, system, system-design, pattern, patterns, microservices, monolith, serverless, event-driven
+
+## Related Domains
+
+- [Standards](../standards/) - Coding standards (backend, frontend, database, devops, security)
+- [Testing](../testing/) - Test strategies, fixtures, patterns, integration/e2e
+- [Changelog](../changelog/) - Release notes per version and phase
+
+---
+
+*Last updated: 2026-10-24*

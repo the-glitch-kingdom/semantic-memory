@@ -2,33 +2,50 @@
 title: Testing Registry
 tier: reference
 domains: [testing]
-audience: [developers]
-tags: [registry, testing]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.0.0'
 purpose: Quick reference for testing documentation
-load_priority: 5
 ---
 
 # Testing Registry
 
-> How to run + extend the test suite; fresh-install validation.
+> Quick reference for test strategies, fixtures, patterns, integration/e2e.
 
 ## At a Glance
 
 | Metric | Value |
 |--------|-------|
 | Documents | 1 |
-| Domain | testing |
+| Category | development |
+| Load Priority | 7/10 |
 
-## Documents
+## Active Documents
 
-| File | Tier | Purpose |
-|------|------|---------|
-| [`tests-and-validation.md`](./tests-and-validation.md) | guide | Test layout, per-file coverage, Phase 1 activation suite, fresh-install validation |
+- [Tests and Validation](tests-and-validation.md)
 
+## Recently Updated
+
+- [Tests and Validation](tests-and-validation.md) - 2026-04-23
+
+## By Status
+
+| Status | Count |
+|--------|-------|
+| active | 1 |
+| draft | 0 |
+| deprecated | 0 |
+| archived | 0 |
 
 ## Keywords
 
-`testing` `ci` `validation` `vitest`
+`test` `testing` `tests` `unit` `unit-test` `integration` `integration-test` `e2e` `end-to-end` `fixture` `fixtures` `mock` `mocking` `stub` `pytest` `jest` `vitest` `playwright` `cypress` `coverage` `tdd` `bdd`
+
+## See Also
+
+- [Full Index](INDEX.md) - Complete document listing
+- [Root Index](../INDEX.md) - All domains
+
+---
+
+*Last updated: 2026-10-24*

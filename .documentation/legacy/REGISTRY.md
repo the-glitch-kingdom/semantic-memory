@@ -2,37 +2,58 @@
 title: Legacy Registry
 tier: reference
 domains: [legacy]
-audience: [developers]
-tags: [registry, legacy]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.0.0'
 purpose: Quick reference for legacy documentation
-load_priority: 5
 ---
 
 # Legacy Registry
 
-> Substrate docs inherited from semantic-pages (still accurate).
+> Quick reference for pre-rebrand substrate docs, kept for history.
 
 ## At a Glance
 
 | Metric | Value |
 |--------|-------|
 | Documents | 5 |
-| Domain | legacy |
+| Category | advanced |
+| Load Priority | 2/10 |
 
-## Documents
+## Active Documents
 
-| File | Tier | Purpose |
-|------|------|---------|
-| [`changelog.md`](./changelog.md) | reference | semantic-pages version history prior to the fork |
-| [`embedder-guide.md`](./embedder-guide.md) | reference | ONNX embedder options, model choices, quality/speed tradeoffs |
-| [`frontmatter-guide.md`](./frontmatter-guide.md) | reference | Indexer-consumed frontmatter fields (title, tags, load_priority, etc.) |
-| [`how-it-works.md`](./how-it-works.md) | reference | Substrate-level: MCP server startup, indexer, embedder internals |
-| [`performance-tuning.md`](./performance-tuning.md) | guide | ONNX workers, batch size, quantization tradeoffs |
+- [Legacy Changelog (semantic-pages)](changelog.md)
+- [Embedder Guide (substrate)](embedder-guide.md)
+- [Frontmatter Guide (substrate)](frontmatter-guide.md)
+- [How Semantic Pages Works (substrate)](how-it-works.md)
+- [Performance Tuning (substrate)](performance-tuning.md)
 
+## Recently Updated
+
+- [Legacy Changelog (semantic-pages)](changelog.md) - 2026-04-23
+- [Embedder Guide (substrate)](embedder-guide.md) - 2026-04-23
+- [Frontmatter Guide (substrate)](frontmatter-guide.md) - 2026-04-23
+- [How Semantic Pages Works (substrate)](how-it-works.md) - 2026-04-23
+- [Performance Tuning (substrate)](performance-tuning.md) - 2026-04-23
+
+## By Status
+
+| Status | Count |
+|--------|-------|
+| active | 5 |
+| draft | 0 |
+| deprecated | 0 |
+| archived | 0 |
 
 ## Keywords
 
-`legacy` `substrate` `semantic-pages` `embedder` `indexer`
+`legacy` `substrate` `semantic-pages`
+
+## See Also
+
+- [Full Index](INDEX.md) - Complete document listing
+- [Root Index](../INDEX.md) - All domains
+
+---
+
+*Last updated: 2026-10-24*

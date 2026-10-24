@@ -37,6 +37,17 @@ That single line is the source of truth for "what gets indexed." Everything foll
 
 If your file isn't `*.md` inside `<vault>`, it does not exist as far as `search_*` tools are concerned.
 
+### Files that fail to parse (v1.5.2+)
+
+One bad file no longer takes the whole corpus down. Before 1.5.2, `indexAll()` ran every file through one `Promise.all`, so a single doc with invalid YAML frontmatter made the whole build fail and left the corpus unindexed.
+
+- **Invalid frontmatter** (most often an unquoted colon in a value, e.g. `purpose: Substrate-level: …`) — the body is indexed with empty frontmatter, so the note is still searchable but its `status` / `tier` / `load_priority` etc. are ignored. stderr: `Invalid frontmatter in <file>, indexing body only: …`. Fix: quote the value.
+- **Any other per-file error** (e.g. a dangling symlink) — the file is skipped. stderr: `Skipping <file>: …`.
+
+### What the file watcher reacts to
+
+The same scope: `.md` files anywhere under `<vault>`, except inside `node_modules/`, `.semantic-sidekick-index/` and `.git/`.
+
 ## What semantic-memory does with each `.md` file
 
 For every markdown file the indexer finds, it extracts and indexes multiple distinct kinds of content:

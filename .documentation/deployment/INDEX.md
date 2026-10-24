@@ -1,25 +1,42 @@
 ---
-title: Deployment Index
-tier: guide
+title: Deployment Documentation Index
+tier: reference
 domains: [deployment]
-audience: [developers]
-tags: [index, deployment]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
-purpose: Navigation hub for deployment domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of deployment documentation
 ---
 
-# Deployment Index
+# Deployment Documentation
 
-> Release + marketplace registration.
+> Publishing and offline packaging
 
-## Documents in this domain
+## Overview
 
-- **[Marketplace Registration](./marketplace-registration.md)** — Post-merge steps to register the plugin in glitch-kingdom-of-plugins + npm publish
+- **Total Documents:** 1
+- **Domain:** `deployment/`
+- **Category:** core
+- **Load Priority:** 6/10
 
-## See also
+## Documents
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+### Guides
+
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Marketplace Registration](marketplace-registration.md) | active | 2026-04-23 | 479 |
+
+## Keywords
+
+This domain covers: deployment, publish, release, tarball, offline
+
+## Related Domains
+
+- [DevOps](../devops/) - Deployment, CI/CD, Docker, environments, infrastructure
+- [API](../api/) - API endpoints, routes, specifications, contracts
+- [Database](../database/) - Schema, migrations, RLS, queries, procedures
+
+---
+
+*Last updated: 2026-10-24*

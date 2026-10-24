@@ -70,6 +70,14 @@ Lives inside the vault: `<vault>/.semantic-sidekick-index/`. Created on first `r
 
 `embeddings.json` dominates. If you're tight on disk, this is the file to watch. The model dimension (384 for `all-MiniLM-L6-v2`) and total chunk count are the levers.
 
+### Freshness: startup rebuild and the watcher (v1.5.2+)
+
+On startup the server loads the cached index and compares `meta.json` `totalChunks` with the chunks of the notes now on disk. A mismatch marks the index `stale`, and since v1.5.2 a stale cache is rebuilt in the background while the stale copy keeps serving (`src/mcp/server.ts`). Before 1.5.2 a stale cache was served indefinitely — the issue #29 symptom: `meta.json` stuck at an old `totalChunks` / `indexedAt` while the folder kept growing.
+
+While the server runs, the file watcher (`src/core/watcher.ts`) reindexes on every `.md` add / change / delete. It watches the notes folder and filters out `node_modules/`, `.semantic-sidekick-index/` and `.git/`; chokidar 4+ has no glob support, so the pre-1.5.2 `watch("**/*.md")` never fired.
+
+Known gap: staleness at startup is detected by chunk count only. A note edited while no server was running that keeps its chunk count is not caught until the next edit or a manual `--reindex`.
+
 ### Resume-on-crash semantics
 
 `embeddings.json` is saved every 100 chunks during `fullIndex()` (`src/mcp/context.ts:181`). If a reindex is interrupted, the next `fullIndex()` reads `embeddings.json`, picks up where it left off, and only embeds chunks that don't yet have entries. This means:

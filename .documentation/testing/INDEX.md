@@ -1,25 +1,42 @@
 ---
-title: Testing Index
-tier: guide
+title: Testing Documentation Index
+tier: reference
 domains: [testing]
-audience: [developers]
-tags: [index, testing]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
-purpose: Navigation hub for testing domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of testing documentation
 ---
 
-# Testing Index
+# Testing Documentation
 
-> How to run + extend the test suite; fresh-install validation.
+> Test strategies, fixtures, patterns, integration/e2e
 
-## Documents in this domain
+## Overview
 
-- **[Tests and Validation](./tests-and-validation.md)** — Test layout, per-file coverage, Phase 1 activation suite, fresh-install validation
+- **Total Documents:** 1
+- **Domain:** `testing/`
+- **Category:** development
+- **Load Priority:** 7/10
 
-## See also
+## Documents
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+### Guides
+
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Tests and Validation](tests-and-validation.md) | active | 2026-04-23 | 1,065 |
+
+## Keywords
+
+This domain covers: test, testing, tests, unit, unit-test, integration, integration-test, e2e, end-to-end, fixture
+
+## Related Domains
+
+- [Architecture](../architecture/) - System design, AI coach, project registry, patterns
+- [Standards](../standards/) - Coding standards (backend, frontend, database, devops, security)
+- [Changelog](../changelog/) - Release notes per version and phase
+
+---
+
+*Last updated: 2026-10-24*
