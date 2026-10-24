@@ -555,33 +555,13 @@ function detectCaptureCue(prompt) {
   return null;
 }
 
-function addCapturePending(projectRoot, prompt, cueSource) {
-  try {
-    const { resolvedRead, writePath } = statePath(projectRoot, "capture-pending");
-    ensureStateDir(writePath);
-    let state = { items: [] };
-    try { state = JSON.parse(readFileSync(resolvedRead, "utf8")); } catch {}
-    if (!Array.isArray(state.items)) state.items = [];
-    state.items.push({
-      ts: new Date().toISOString(),
-      cue: cueSource,
-      excerpt: prompt.slice(0, 200),
-    });
-    writeFileSync(writePath, JSON.stringify(state));
-  } catch (e) {
-    debug(`capture pending write failed: ${e.message}`);
-  }
-}
+// The pending file is per project, but items are keyed by session_id so concurrent sessions
+// never see (or clear) each other's cues. An item without one (pre-1.5.2 file) belongs to
+// whichever session reads it first; a hook input without session_id sees everything, as before.
+const PENDING_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const ownsPendingItem = (item, sessionId) => !sessionId || !item.session_id || item.session_id === sessionId;
 
-function resetCapturePending(projectRoot) {
-  try {
-    const { writePath } = statePath(projectRoot, "capture-pending");
-    ensureStateDir(writePath);
-    writeFileSync(writePath, JSON.stringify({ items: [] }));
-  } catch {}
-}
-
-function readCapturePending(projectRoot) {
+function readAllCapturePending(projectRoot) {
   try {
     const path = statePath(projectRoot, "capture-pending").resolvedRead;
     const state = JSON.parse(readFileSync(path, "utf8"));
@@ -589,6 +569,41 @@ function readCapturePending(projectRoot) {
   } catch {
     return [];
   }
+}
+
+function addCapturePending(projectRoot, prompt, cueSource, sessionId) {
+  try {
+    const { writePath } = statePath(projectRoot, "capture-pending");
+    ensureStateDir(writePath);
+    const items = readAllCapturePending(projectRoot);
+    items.push({
+      ts: new Date().toISOString(),
+      cue: cueSource,
+      excerpt: prompt.slice(0, 200),
+      ...(sessionId ? { session_id: sessionId } : {}),
+    });
+    writeFileSync(writePath, JSON.stringify({ items }));
+  } catch (e) {
+    debug(`capture pending write failed: ${e.message}`);
+  }
+}
+
+// Clears this session's items; other sessions' items stay unless older than a week (a session
+// that died without a Stop never clears its own).
+function resetCapturePending(projectRoot, sessionId) {
+  try {
+    const { writePath } = statePath(projectRoot, "capture-pending");
+    ensureStateDir(writePath);
+    const now = Date.now();
+    const items = readAllCapturePending(projectRoot).filter(
+      (i) => !ownsPendingItem(i, sessionId) && now - Date.parse(i.ts) < PENDING_MAX_AGE_MS
+    );
+    writeFileSync(writePath, JSON.stringify({ items }));
+  } catch {}
+}
+
+function readCapturePending(projectRoot, sessionId) {
+  return readAllCapturePending(projectRoot).filter((i) => ownsPendingItem(i, sessionId));
 }
 
 function normalizeFingerprint(prompt) {
@@ -617,12 +632,12 @@ function saveFingerprints(projectRoot, state) {
   }
 }
 
-async function handleSessionStart(projectRoot, vaultPath, cliBin, sources) {
+async function handleSessionStart(projectRoot, vaultPath, cliBin, sources, sessionId) {
   // Capture the previous mode (if any) before we reset — so future-Claude
   // can tell, from log.md, that we rolled back from research/outage without
   // being shown the postmortem prompt (which is the lossy case).
   const priorMode = readMode(projectRoot);
-  resetCapturePending(projectRoot);
+  resetCapturePending(projectRoot, sessionId);
   writeMode(projectRoot, "vault-first");
   if (priorMode !== "vault-first") {
     logMaybeModeChange(cliBin, vaultPath, priorMode, "vault-first");
@@ -813,11 +828,11 @@ function readActiveSession(projectRoot) {
   }
 }
 
-async function handleStop(projectRoot) {
+async function handleStop(projectRoot, sessionId) {
   const stopHookActive = process.env.CLAUDE_STOP_HOOK_ACTIVE === "1";
   if (stopHookActive) {
     // Already blocking — Claude is mid-response to our nudge. Clear and yield.
-    resetCapturePending(projectRoot);
+    resetCapturePending(projectRoot, sessionId);
     emitStop("", false);
     return;
   }
@@ -846,12 +861,12 @@ async function handleStop(projectRoot) {
     }
     lines.push(formatSessionDigestPrompt(session));
     lines.push(`</vault-session-close>`);
-    resetCapturePending(projectRoot);
+    resetCapturePending(projectRoot, sessionId);
     emitStop(lines.join("\n"), true);
     return;
   }
 
-  const pending = readCapturePending(projectRoot);
+  const pending = readCapturePending(projectRoot, sessionId);
   const mode = readMode(projectRoot);
 
   // Mode-specific transition-capture. research-mode and outage-silence each
@@ -869,7 +884,7 @@ async function handleStop(projectRoot) {
     lines.push("");
     lines.push(`Mandatory before Stop: call \`mcp__semantic-vault__synthesize_note\` with dry_run=true to preview a research-synthesis note (derived_from the session's filed sources). Review with the user, then apply. A research session that ends without synthesis is lost work.`);
     lines.push(`</vault-transition-capture>`);
-    resetCapturePending(projectRoot);
+    resetCapturePending(projectRoot, sessionId);
     emitStop(lines.join("\n"), true);
     return;
   }
@@ -880,7 +895,7 @@ async function handleStop(projectRoot) {
       `Outage session ending. Before closing: draft a postmortem via \`mcp__semantic-vault__synthesize_note\` with \`type: gotcha\` (or \`decision\` if architectural). Include timeline, root cause, fix, preventive actions. Dry-run first, confirm with the user, then apply.`,
       `</vault-transition-capture>`,
     ];
-    resetCapturePending(projectRoot);
+    resetCapturePending(projectRoot, sessionId);
     emitStop(lines.join("\n"), true);
     return;
   }
@@ -902,7 +917,7 @@ async function handleStop(projectRoot) {
   lines.push(`Before ending: for each still-unsynthesized item above, either call \`mcp__semantic-vault__synthesize_note\` to file it with provenance, or explicitly acknowledge that it was already captured / not worth capturing.`);
   lines.push(`If a cue is a speaker correction (how the user talks — "when I say X I mean Y"), update the speaker profile via \`mcp__semantic-vault__manage_profile\` (action:update_section) instead of synthesize_note.`);
   lines.push(`</vault-capture-prompt>`);
-  resetCapturePending(projectRoot);
+  resetCapturePending(projectRoot, sessionId);
   emitStop(lines.join("\n"), true);
 }
 
@@ -936,7 +951,7 @@ async function handlePrompt(projectRoot, sources, cliBin, input) {
   saveFingerprints(projectRoot, state);
   const cue = detectCaptureCue(prompt);
   if (cue) {
-    addCapturePending(projectRoot, prompt, cue);
+    addCapturePending(projectRoot, prompt, cue, typeof input.session_id === "string" ? input.session_id : undefined);
   }
   // Two-hop: if the utterance names a tracked entity, lead with its dossier head.
   const dossier = resolveDossierForPrompt(projectRoot, prompt);
@@ -955,6 +970,7 @@ async function main() {
   const input = readStdinJson();
   const eventName = input.hook_event_name || process.env.CLAUDE_HOOK_EVENT || "SessionStart";
   const projectRoot = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  const sessionId = typeof input.session_id === "string" ? input.session_id : undefined;
   debug(`event=${eventName} projectRoot=${projectRoot}`);
 
   const sources = findNotesSources(projectRoot);
@@ -976,9 +992,9 @@ async function main() {
     if (eventName === "UserPromptSubmit") {
       await handlePrompt(projectRoot, sources, cliBin, input);
     } else if (eventName === "Stop") {
-      await handleStop(projectRoot);
+      await handleStop(projectRoot, sessionId);
     } else {
-      await handleSessionStart(projectRoot, vaultPath, cliBin, sources);
+      await handleSessionStart(projectRoot, vaultPath, cliBin, sources, sessionId);
     }
   } catch (e) {
     debug(`handler failed: ${e.message}`);
