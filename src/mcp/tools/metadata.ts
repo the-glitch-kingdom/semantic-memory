@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
+import { redactedNote } from "../../core/redact.js";
 
 export function registerMetadataTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
@@ -20,8 +21,8 @@ export function registerMetadataTools(server: McpServer, ctx: ServerContext): vo
     "Set or delete YAML frontmatter keys — pass null to delete a key",
     { path: z.string(), fields: z.record(z.unknown()) },
     async ({ path, fields }) => {
-      await ctx.frontmatterManager.update(path, fields);
-      return ctx.textResponse(`Frontmatter updated: ${path}`);
+      const { redacted } = await ctx.frontmatterManager.update(path, fields);
+      return ctx.textResponse(`Frontmatter updated: ${path}${redactedNote(redacted)}`);
     }
   );
 

@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { glob } from "glob";
 import matter from "gray-matter";
+import { redactDeep } from "./redact.js";
 
 export class FrontmatterManager {
   private notesPath: string;
@@ -20,12 +21,13 @@ export class FrontmatterManager {
   async update(
     relativePath: string,
     fields: Record<string, unknown>
-  ): Promise<void> {
+  ): Promise<{ redacted: number }> {
     const absPath = join(this.notesPath, relativePath);
     const raw = await readFile(absPath, "utf-8");
     const { data, content } = matter(raw);
+    const incoming = redactDeep(fields, "precise");
 
-    for (const [key, value] of Object.entries(fields)) {
+    for (const [key, value] of Object.entries(incoming.value)) {
       if (value === null || value === undefined) {
         delete data[key];
       } else {
@@ -35,6 +37,7 @@ export class FrontmatterManager {
 
     const updated = matter.stringify(content, data);
     await writeFile(absPath, updated, "utf-8");
+    return { redacted: incoming.count };
   }
 }
 

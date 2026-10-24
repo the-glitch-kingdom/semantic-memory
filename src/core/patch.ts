@@ -47,6 +47,8 @@ export interface ApplyPatchOptions {
 export interface AppliedOp {
   op: "create" | "update" | "delete" | "move";
   path: string;
+  /** secrets masked in this op's content; omitted when none */
+  redacted?: number;
 }
 
 export interface ApplyPatchResult {
@@ -166,16 +168,16 @@ export async function applyPatch(
   try {
     for (const c of changeset.creates ?? []) {
       const abs = join(notesPath, c.path);
-      await crud.create(c.path, c.content, c.frontmatter);
+      const { redacted } = await crud.create(c.path, c.content, c.frontmatter);
       snapshots.push({ op: "create", path: c.path, absPath: abs });
-      applied.push({ op: "create", path: c.path });
+      applied.push({ op: "create", path: c.path, ...(redacted ? { redacted } : {}) });
     }
     for (const u of changeset.updates ?? []) {
       const abs = join(notesPath, u.path);
       const prev = await readFile(abs, "utf-8");
-      await crud.update(u.path, u.content, { mode: u.mode, heading: u.heading } as UpdateNoteOptions);
+      const { redacted } = await crud.update(u.path, u.content, { mode: u.mode, heading: u.heading } as UpdateNoteOptions);
       snapshots.push({ op: "update", path: u.path, absPath: abs, prevContent: prev });
-      applied.push({ op: "update", path: u.path });
+      applied.push({ op: "update", path: u.path, ...(redacted ? { redacted } : {}) });
     }
     for (const m of changeset.moves ?? []) {
       await crud.move(m.from, m.to);

@@ -571,7 +571,21 @@ function readAllCapturePending(projectRoot) {
   }
 }
 
-function addCapturePending(projectRoot, prompt, cueSource, sessionId) {
+// The redactor ships in the built package next to this hook (dist/core/redact.js: fs/os/path only).
+// If it can't be loaded, the excerpt is withheld rather than written to disk unredacted.
+const WITHHELD = "[excerpt withheld: redactor unavailable]";
+async function redactExcerpt(prompt) {
+  try {
+    const { redact } = await import(new URL("../dist/core/redact.js", import.meta.url).href);
+    // redact the whole prompt before cutting, so a secret split at the cut is still caught
+    return redact(prompt, "broad").text.slice(0, 200);
+  } catch (e) {
+    debug(`redactor unavailable: ${e.message}`);
+    return WITHHELD;
+  }
+}
+
+function addCapturePending(projectRoot, excerpt, cueSource, sessionId) {
   try {
     const { writePath } = statePath(projectRoot, "capture-pending");
     ensureStateDir(writePath);
@@ -579,7 +593,7 @@ function addCapturePending(projectRoot, prompt, cueSource, sessionId) {
     items.push({
       ts: new Date().toISOString(),
       cue: cueSource,
-      excerpt: prompt.slice(0, 200),
+      excerpt,
       ...(sessionId ? { session_id: sessionId } : {}),
     });
     writeFileSync(writePath, JSON.stringify({ items }));
@@ -951,7 +965,7 @@ async function handlePrompt(projectRoot, sources, cliBin, input) {
   saveFingerprints(projectRoot, state);
   const cue = detectCaptureCue(prompt);
   if (cue) {
-    addCapturePending(projectRoot, prompt, cue, typeof input.session_id === "string" ? input.session_id : undefined);
+    addCapturePending(projectRoot, await redactExcerpt(prompt), cue, typeof input.session_id === "string" ? input.session_id : undefined);
   }
   // Two-hop: if the utterance names a tracked entity, lead with its dossier head.
   const dossier = resolveDossierForPrompt(projectRoot, prompt);

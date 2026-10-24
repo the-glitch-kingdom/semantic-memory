@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
+import { redactedNote } from "../../core/redact.js";
 
 export function registerWriteTools(server: McpServer, ctx: ServerContext): void {
   if (ctx.options.readOnly) return;
@@ -14,8 +15,8 @@ export function registerWriteTools(server: McpServer, ctx: ServerContext): void 
       frontmatter: z.record(z.unknown()).optional(),
     },
     async ({ path, content, frontmatter }) => {
-      await ctx.crud.create(path, content, frontmatter);
-      return ctx.textResponse(`Created: ${path}`);
+      const { redacted } = await ctx.crud.create(path, content, frontmatter);
+      return ctx.textResponse(`Created: ${path}${redactedNote(redacted)}`);
     }
   );
 
@@ -29,8 +30,8 @@ export function registerWriteTools(server: McpServer, ctx: ServerContext): void 
       heading: z.string().optional(),
     },
     async ({ path, content, mode, heading }) => {
-      await ctx.crud.update(path, content, { mode, heading });
-      return ctx.textResponse(`Updated: ${path} (${mode})`);
+      const { redacted } = await ctx.crud.update(path, content, { mode, heading });
+      return ctx.textResponse(`Updated: ${path} (${mode})${redactedNote(redacted)}`);
     }
   );
 

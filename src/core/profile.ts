@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import matter from "gray-matter";
+import { redact } from "./redact.js";
 import { replaceSectionBody, appendToSection } from "./dossier.js";
 
 /**
@@ -132,14 +133,15 @@ export async function updateProfileSection(
   section: string,
   text: string,
   mode: "replace" | "append" = "append"
-): Promise<{ path: string }> {
+): Promise<{ path: string; redacted?: number }> {
   await initSpeakerProfile(vaultPath);
   const abs = join(vaultPath, SPEAKER_PROFILE_PATH);
   const raw = await readFile(abs, "utf-8");
   const parsed = matter(raw);
+  const incoming = redact(text.trim());
   const patchedBody = mode === "replace"
-    ? replaceSectionBody(parsed.content, section, text.trim())
-    : appendToSection(parsed.content, section, `- ${text.trim()}`);
+    ? replaceSectionBody(parsed.content, section, incoming.text)
+    : appendToSection(parsed.content, section, `- ${incoming.text}`);
   await writeFile(abs, matter.stringify(patchedBody, parsed.data), "utf-8");
-  return { path: SPEAKER_PROFILE_PATH };
+  return { path: SPEAKER_PROFILE_PATH, ...(incoming.count ? { redacted: incoming.count } : {}) };
 }

@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { glob } from "glob";
 import matter from "gray-matter";
+import { redactDeep } from "./redact.js";
 import { deriveSessionDir } from "./session.js";
 import { listDossiers } from "./dossier.js";
 
@@ -130,7 +131,9 @@ export function expandQuery(aliases: AliasEntry[], query: string): { expanded: s
   return { expanded: `${query} ${additions}`, matched };
 }
 
-async function writeAliasNote(vaultPath: string, rel: string, entry: Omit<AliasEntry, "path">): Promise<void> {
+async function writeAliasNote(vaultPath: string, rel: string, raw: Omit<AliasEntry, "path">): Promise<void> {
+  // phrases are captured from user utterances
+  const entry = redactDeep(raw, "precise").value;
   const fm = {
     type: "alias",
     canonical: entry.canonical,

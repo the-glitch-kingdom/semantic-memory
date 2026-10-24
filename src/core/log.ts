@@ -1,6 +1,7 @@
 import { readFile, writeFile, appendFile, access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join } from "node:path";
+import { redact, redactDeep } from "./redact.js";
 
 /**
  * Structured append-only log at the vault root.
@@ -47,12 +48,14 @@ export interface LogQueryOptions {
 export async function logEvent(vaultPath: string, input: LogEventInput): Promise<LogEntry> {
   const path = join(vaultPath, LOG_FILE);
   const ts = input.ts ?? new Date().toISOString();
-  const entry: LogEntry = { ts, kind: input.kind, summary: input.summary };
-  if (input.payload) entry.payload = input.payload;
+  // log.md is a vault note (usually committed): precise set, so paths and ids in payloads survive
+  const summary = redact(input.summary).text;
+  const entry: LogEntry = { ts, kind: input.kind, summary };
+  if (input.payload) entry.payload = redactDeep(input.payload, "precise").value;
 
   await ensureLogFile(path);
 
-  const line = `- ${ts} — ${input.kind}: ${input.summary}\n`;
+  const line = `- ${ts} — ${input.kind}: ${summary}\n`;
   const block = renderYamlBlock(entry);
   await appendFile(path, line + block + "\n", "utf-8");
 

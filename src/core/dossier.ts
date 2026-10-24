@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { glob } from "glob";
 import matter from "gray-matter";
+import { redact } from "./redact.js";
 import { deriveSessionDir } from "./session.js";
 import { extractSection } from "./section.js";
 
@@ -222,6 +223,7 @@ export interface InitDossierResult {
   path: string;
   created: boolean;
   entity: string;
+  redacted?: number;
 }
 
 /**
@@ -244,6 +246,7 @@ export async function initDossier(
   if (existsSync(abs)) return { path: rel, created: false, entity };
 
   const today = new Date().toISOString().slice(0, 10);
+  const purpose = redact(opts.purpose ?? "");
   const fm: Record<string, unknown> = {
     title: entity,
     type: "dossier",
@@ -254,11 +257,11 @@ export async function initDossier(
     ...(opts.aliases && opts.aliases.length > 0 ? { aliases: opts.aliases } : {}),
     ...(opts.seeded_from ? { sources: [opts.seeded_from] } : {}),
   };
-  const body = dossierTemplate(entity, { purpose: opts.purpose, seeded_from: opts.seeded_from });
+  const body = dossierTemplate(entity, { purpose: opts.purpose === undefined ? undefined : purpose.text, seeded_from: opts.seeded_from });
   await mkdir(join(vaultPath, DOSSIER_DIR), { recursive: true });
   await writeFile(abs, matter.stringify(body, fm), "utf-8");
   await compileDossiers(vaultPath);
-  return { path: rel, created: true, entity };
+  return { path: rel, created: true, entity, ...(purpose.count ? { redacted: purpose.count } : {}) };
 }
 
 /**
@@ -270,17 +273,18 @@ export async function appendIncident(
   entityOrPath: string,
   incident: string,
   opts: { today?: string } = {}
-): Promise<{ path: string } | null> {
+): Promise<{ path: string; redacted?: number } | null> {
   const rel = await resolveDossierPath(vaultPath, entityOrPath);
   if (!rel) return null;
   const doc = await readDossierRaw(vaultPath, rel);
   if (!doc) return null;
   const today = opts.today ?? new Date().toISOString().slice(0, 10);
-  const line = `- ${today} — ${incident.trim()}`;
+  const text = redact(incident.trim());
+  const line = `- ${today} — ${text.text}`;
   const patched = appendToSection(doc.raw, "Incident log", line);
   await writeFile(join(vaultPath, rel), patched, "utf-8");
   await compileDossiers(vaultPath);
-  return { path: rel };
+  return { path: rel, ...(text.count ? { redacted: text.count } : {}) };
 }
 
 /**
@@ -291,15 +295,16 @@ export async function setCurrentState(
   vaultPath: string,
   entityOrPath: string,
   state: string
-): Promise<{ path: string } | null> {
+): Promise<{ path: string; redacted?: number } | null> {
   const rel = await resolveDossierPath(vaultPath, entityOrPath);
   if (!rel) return null;
   const doc = await readDossierRaw(vaultPath, rel);
   if (!doc) return null;
-  const patched = replaceSectionBody(doc.raw, "Current state", state.trim());
+  const text = redact(state.trim());
+  const patched = replaceSectionBody(doc.raw, "Current state", text.text);
   await writeFile(join(vaultPath, rel), patched, "utf-8");
   await compileDossiers(vaultPath);
-  return { path: rel };
+  return { path: rel, ...(text.count ? { redacted: text.count } : {}) };
 }
 
 // --- section-level markdown editing (heading-scoped, format-preserving) ---

@@ -170,3 +170,8 @@ export function redactDeep<T>(value: T, mode: RedactMode = "broad"): { value: T;
   };
   return { value: walk(value) as T, count };
 }
+
+/** Suffix for a tool result: says how many secrets were masked, never which. "" when none. */
+export function redactedNote(count: number): string {
+  return count > 0 ? ` (${count} secret${count === 1 ? "" : "s"} redacted)` : "";
+}
