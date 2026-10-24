@@ -14,6 +14,5 @@
 | `/template-ai-workspace-developer-skill` | `/template-ai-workspace-developer-skill` | skills |
 | `/vault-first` | `/vault-first` | skills |
 | `/research-mode` | `/research-mode` | skills |
-| `/persistent-planning` | `/persistent-planning` | skills |
 | `/outage-silence` | `/outage-silence` | skills |
 | `/documentation-lifecycle` | `/documentation-lifecycle` | skills |
