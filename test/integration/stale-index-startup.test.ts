@@ -65,6 +65,15 @@ describe("startup with a cached index", () => {
     expect(after.indexedAt).not.toBe(before.indexedAt);
   }, 120_000);
 
+  it("still forces a reindex when the embedding model changed", async () => {
+    const before = await readMeta(tempDir);
+    await writeFile(metaPath(tempDir), JSON.stringify({ ...before, model: "someone/other-model" }), "utf-8");
+
+    client = await connect(tempDir);
+    await waitFor(async () => (await readMeta(tempDir)).model === before.model);
+    expect((await readMeta(tempDir)).indexedAt).not.toBe(before.indexedAt);
+  }, 120_000);
+
   it("does not reindex a fresh cache", async () => {
     const before = await readMeta(tempDir);
 
