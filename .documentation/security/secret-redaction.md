@@ -45,7 +45,7 @@ Two layers, in order:
 | authorization header | `Bearer` / `Basic` + a 16+ char token containing a digit |
 | secret-named value | `name=value`, `name: value`, `"name": "value"` where the name's last segment is key / token / secret / password / passwd / pwd / credential(s), optionally `api`-prefixed |
 | secret flag | `--token VALUE`, `--api-key=VALUE` |
-| vendor API key | `sk-`/`pk-`/`rk-`, `whsec_`, `gh[pousr]_`, `github_pat_`, `glpat-`, `xox[abprs]-`, `re_`, `hf_`, `npm_`, `AKIA`/`ASIA`, `AIza` |
+| vendor API key | `sk-`/`pk-`/`rk-`, `whsec_`, `gh[pousr]_`, `github_pat_`, `glpat-`, `xox[abprs]-`, `re_`, `hf_`, `npm_`, `GOCSPX-`, `hvs.`, `AKIA`/`ASIA`, `AIza` (skipped when it holds `...`, `…` or `xxxx`) |
 | JWT | `eyJ….….…` |
 | base64 blob (broad only) | 40+ chars mixing upper, lower and digits |
 | long token (broad only) | 32+ `[\w-]` chars mixing letters and digits |
@@ -55,7 +55,8 @@ Two layers, in order:
 - **precise** — notes, frontmatter, dossiers, profile, lexicon, `log.md`. A false positive here is data loss, so the rules are tuned to leave ordinary content alone:
   - the secret word must *start* a name segment (`api_key`, `DB_PASSWORD`; not `monkey`, `max_tokens`, `tokenizer`);
   - vendor prefixes with word-shaped bodies need a digit in the body (`pk_customer_orders`, `npm_package_version` stay);
-  - name=value needs an 8+ char value;
+  - name=value, flags and URL passwords need an 8+ char value that *looks random*: it contains a digit, or is 16+ letters (a passphrase). Code in notes — `api_key = os.getenv`, `token: settings.get_decrypted_key`, `password=self._key` — has dots/underscores and no digits, so it survives. Measured on a real 537-note vault: this cut findings from 740 to 163, and the rest were real-looking credentials or test passwords;
+  - URL credentials where the password equals the user (`postgres:postgres@`) are defaults, not secrets;
   - placeholders stay: `<your-key>`, `${API_TOKEN}`, `$VAR`, `process.env.X`, `os.environ…`, `changeme`, `example`, `xxxx…`, `****`, bare `password`/`secret`/`token`, and `[REDACTED]` (so redaction is idempotent).
 - **broad** — search queries, session state, capture-pending. Adds the base64 and long-token rules; name=value needs only 4 chars. Over-redaction is fine in logs.
 

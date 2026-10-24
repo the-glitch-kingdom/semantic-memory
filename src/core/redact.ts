@@ -33,7 +33,11 @@ const VALUE = String.raw`[^\s"'\`,;&|()<>\[\]{}]`;
 // Obvious placeholders in how-to notes are left alone: <your-key>, ${API_KEY}, process.env.X, changeme, xxxx, ****
 const PLACEHOLDER =
   /^(?:<[^>]*>|\$\{?\w+\}?|(?:process\.env|os\.environ|env)\b.*|\[REDACTED\]|(.)\1{3,}|\*+|x{3,}.*|password|passwd|pass|secret|token|pwd)$|example|changeme|placeholder|your[-_]|dummy|redacted/i;
-const isPlaceholder = (value: string) => PLACEHOLDER.test(value);
+const isPlaceholder = (value: string) => PLACEHOLDER.test(value) || /\.\.\.|…|x{4}/i.test(value);
+// Precise mode: a value counts only if it looks random — contains a digit, or is a long run of
+// letters (a passphrase). Code in notes (`api_key = os.getenv`, `token: settings.get_decrypted_key`,
+// `password=self._key`) has dots/underscores and no digits, and must survive.
+const looksRandom = (value: string) => /\d/.test(value) || /^[A-Za-z]{16,}$/.test(value);
 
 // Vendor key prefixes. Word-shaped bodies must contain a digit, so identifiers like
 // pk_customer_orders or npm_package_version stay; real keys are random and always have digits.
@@ -50,6 +54,8 @@ const VENDOR = new RegExp(
       withDigit("re_", String.raw`\w`, 16),
       withDigit("hf_", String.raw`\w`, 20),
       withDigit("npm_", String.raw`\w`, 20),
+      withDigit("GOCSPX-", String.raw`[\w-]`, 20), // Google OAuth client secret
+      withDigit(String.raw`hvs\.`, String.raw`[\w-]`, 20), // HashiCorp Vault service token
       String.raw`(?:AKIA|ASIA)[0-9A-Z]{16}\b`,
       String.raw`AIza[\w-]{30,}`,
     ].join("|") +
@@ -65,6 +71,7 @@ interface Rule {
 
 function rules(mode: RedactMode): Rule[] {
   const minValue = mode === "precise" ? 8 : 4;
+  const isSecretValue = (value: string) => !isPlaceholder(value) && (mode === "broad" || looksRandom(value));
   const precise: Rule[] = [
     // PEM private keys, even when the END line was cut off
     {
@@ -76,7 +83,7 @@ function rules(mode: RedactMode): Rule[] {
     {
       name: "URL credentials",
       re: /(:\/\/)([^/\s:@]+):([^/\s@]+)@/g,
-      replace: (_m, scheme, _user, pass) => (isPlaceholder(pass) ? null : `${scheme}${REDACTED}@`),
+      replace: (_m, scheme, user, pass) => (!isSecretValue(pass) || pass === user ? null : `${scheme}${REDACTED}@`),
     },
     // Authorization headers
     {
@@ -88,16 +95,16 @@ function rules(mode: RedactMode): Rule[] {
     {
       name: "secret-named value",
       re: new RegExp(String.raw`(${SECRET_NAME}["']?\s*[:=]\s*["']?)(${VALUE}{${minValue},})`, "gi"),
-      replace: (_m, prefix, value) => (isPlaceholder(value) ? null : `${prefix}${REDACTED}`),
+      replace: (_m, prefix, value) => (isSecretValue(value) ? `${prefix}${REDACTED}` : null),
     },
     // command-line flags: --token VALUE, --api-key=VALUE
     {
       name: "secret flag",
       // a flag starts after whitespace/start, and its name is bounded: keeps long dash/hyphen runs linear
       re: new RegExp(String.raw`((?<![\w-])--?[\w-]{0,64}?${SECRET_WORD}[ =])(${VALUE}{${minValue},})`, "gi"),
-      replace: (_m, flag, value) => (isPlaceholder(value) ? null : `${flag}${REDACTED}`),
+      replace: (_m, flag, value) => (isSecretValue(value) ? `${flag}${REDACTED}` : null),
     },
-    { name: "vendor API key", re: VENDOR, replace: () => REDACTED },
+    { name: "vendor API key", re: VENDOR, replace: (m) => (isPlaceholder(m) ? null : REDACTED) },
     // JWTs
     { name: "JWT", re: /\beyJ[\w-]{8,}\.[\w-]{8,}\.[\w-]{8,}/g, replace: () => REDACTED },
   ];

@@ -38,4 +38,4 @@ Before 1.5.3 nothing stopped an API key, token or password that passed through t
 
 ## Tests
 
-507 green (440 in 1.5.2). One integration test per write point through the real MCP tools — all 13 fail without the change — plus a sweep of the whole vault for the fake values; false-positive cases for ordinary note content; linear-time checks on 1 MB pathological inputs (a quadratic rule took 107 s before it was anchored — [regex-unanchored-prefix-is-quadratic](../knowledge-base/facts/regex-unanchored-prefix-is-quadratic.md)).
+516 green (440 in 1.5.2). One integration test per write point through the real MCP tools — all 13 fail without the change — plus a sweep of the whole vault for the fake values; false-positive cases for ordinary note content; linear-time checks on 1 MB pathological inputs (a quadratic rule took 107 s before it was anchored — [regex-unanchored-prefix-is-quadratic](../knowledge-base/facts/regex-unanchored-prefix-is-quadratic.md)).

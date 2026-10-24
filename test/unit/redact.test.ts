@@ -11,6 +11,8 @@ const FAKE = {
   stripe: j("s", "k_", "live_", RANDOM),
   slack: j("xo", "xb-", "1234567890-", RANDOM),
   aws: j("AK", "IA", "ABCDEFGH12345678"),
+  googleOauth: j("GOC", "SPX-", RANDOM),
+  vault: j("hv", "s.", RANDOM),
   google: j("AI", "za", "Sy", RANDOM),
   jwt: j("ey", "JhbGciOiJIUzI1NiJ9", ".", "eyJzdWIiOiIxMjM0NTY3ODkwIn0", ".", "dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"),
   pem: j("-----BEGIN RSA PRI", "VATE KEY-----\nMIIEowIBAAKCAQEA\nabc123\n-----END RSA PRI", "VATE KEY-----"),
@@ -37,6 +39,8 @@ describe("redact: secrets are masked", () => {
   it("masks name=value, name: value and JSON pairs", () => {
     const pw = j("hunter", "2-correct-horse");
     expect(masked(`DB_PASSWORD=${pw}`)).toBe(`DB_PASSWORD=${REDACTED}`);
+    // long values count even without a digit
+    expect(masked(`password: ${j("correcthorse", "batterystaple")}`)).toBe(`password: ${REDACTED}`);
     expect(masked(`api_key: ${pw}`)).toBe(`api_key: ${REDACTED}`);
     expect(masked(`{"client_secret": "${pw}"}`)).toBe(`{"client_secret": "${REDACTED}"}`);
     expect(masked(`OPENAI_API_KEY=${pw}`)).toBe(`OPENAI_API_KEY=${REDACTED}`);
@@ -91,6 +95,14 @@ describe("redact: ordinary note content is left alone (precise)", () => {
     "re_compile_pattern_cache_helper",
     "Bearer authentication is described below in detail",
     "already masked: api_key: [REDACTED]",
+    // code in notes (seen in a real vault): identifiers and expressions are not secrets
+    "api_key = os.getenv",
+    "token: settings.get_decrypted_key",
+    "password=self._key and secret_key = settings.minio_secret_key",
+    "auth_token = localStorage.getItem",
+    "postgres://postgres:postgres@localhost:5432/app",
+    "export ANTHROPIC_API_KEY=sk-ant-...",
+    "npm_xxxxxxxxxxxxxxxxxxxxxxxx1",
   ];
   for (const text of untouched) {
     it(`leaves: ${text.slice(0, 50)}`, () => {

@@ -8,8 +8,8 @@ Patch release. Until now nothing stopped an API key, token or password that pass
 
 ### Security
 
-- **Redaction at every write point** (`src/core/redact.ts`), two layers: the exact values of secret-named env vars on the machine (process env + `~/.claude/settings.json` `env`), then patterns — PEM private keys, `user:pass@` URL credentials, `Bearer`/`Basic` headers, secret-named `name=value` / `name: value` / JSON pairs, `--token VALUE` flags, vendor key prefixes (`sk-`/`pk-`/`rk-`, `ghp_`, `github_pat_`, `glpat-`, `xox*-`, `AKIA`/`ASIA`, `AIza`, `whsec_`, `re_`, `hf_`, `npm_`), JWTs.
-  - **Notes** (create/update, `apply_patch`, synthesize, ingest, promote, `update_frontmatter`, dossiers, speaker profile, lexicon aliases, `log.md`) use a *precise* set tuned so ordinary content survives: commit SHAs, UUIDs, hashes, paths, `pk_customer_orders`, `max_tokens`, `monkey: …` and placeholders (`<your-key>`, `${API_TOKEN}`, `process.env.X`, `changeme`, `xxxx`) are untouched. `update_note` redacts only the incoming text.
+- **Redaction at every write point** (`src/core/redact.ts`), two layers: the exact values of secret-named env vars on the machine (process env + `~/.claude/settings.json` `env`), then patterns — PEM private keys, `user:pass@` URL credentials, `Bearer`/`Basic` headers, secret-named `name=value` / `name: value` / JSON pairs, `--token VALUE` flags, vendor key prefixes (`sk-`/`pk-`/`rk-`, `ghp_`, `github_pat_`, `glpat-`, `xox*-`, `GOCSPX-`, `hvs.`, `AKIA`/`ASIA`, `AIza`, `whsec_`, `re_`, `hf_`, `npm_`), JWTs.
+  - **Notes** (create/update, `apply_patch`, synthesize, ingest, promote, `update_frontmatter`, dossiers, speaker profile, lexicon aliases, `log.md`) use a *precise* set tuned so ordinary content survives: commit SHAs, UUIDs, hashes, paths, `pk_customer_orders`, `max_tokens`, `monkey: …`, code such as `api_key = os.getenv` (a name=value only counts when the value looks random: a digit, or 16+ letters) and placeholders (`<your-key>`, `${API_TOKEN}`, `process.env.X`, `changeme`, `xxxx`) are untouched. `update_note` redacts only the incoming text.
   - **Logs and state** (search queries in `selection.jsonl`, `session.json` task / `session_run` command and output tail, the hook's capture-pending excerpt) also mask long base64 and letter-and-digit tokens.
   - The hook imports the redactor from `dist/core/redact.js`; if it cannot load, the capture excerpt is withheld rather than stored raw.
   - Tool results say how many secrets were redacted (`… (2 secrets redacted)`, or `redacted: N` in JSON results), never which.
@@ -22,7 +22,7 @@ Patch release. Until now nothing stopped an API key, token or password that pass
 
 ### Tests
 
-- Full suite **507 green** (440 in 1.5.2). One integration test per write point through the real MCP tools (all fail without the change), a sweep of the whole vault for the fake values, false-positive cases for ordinary note content, linear-time checks on 1 MB pathological inputs.
+- Full suite **516 green** (440 in 1.5.2). One integration test per write point through the real MCP tools (all fail without the change), a sweep of the whole vault for the fake values, false-positive cases for ordinary note content, linear-time checks on 1 MB pathological inputs.
 
 ## [1.5.2] - 2026-10-24 — Docs index freshness (issue #29)
 
