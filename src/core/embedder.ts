@@ -181,8 +181,8 @@ export class Embedder {
       return_tensor: false,
     });
 
-    const inputIdsRaw: number[] = Array.from(encoded.input_ids.data ?? encoded.input_ids);
-    const attentionMaskRaw: number[] = Array.from(encoded.attention_mask.data ?? encoded.attention_mask);
+    const inputIdsRaw: number[] = Array.from(encoded.input_ids);
+    const attentionMaskRaw: number[] = Array.from(encoded.attention_mask);
     const seqLen = inputIdsRaw.length;
 
     // Build ONNX input tensors (most models expect int64)
@@ -313,8 +313,8 @@ export class Embedder {
 
     // Extract flat token arrays and find max sequence length for this batch
     const tokenized = encodings.map((enc) => ({
-      ids: Array.from(enc.input_ids.data ?? enc.input_ids) as number[],
-      mask: Array.from(enc.attention_mask.data ?? enc.attention_mask) as number[],
+      ids: Array.from(enc.input_ids) as number[],
+      mask: Array.from(enc.attention_mask) as number[],
     }));
     const seqLen = Math.max(...tokenized.map((t) => t.ids.length));
 

@@ -97,17 +97,17 @@
     "vitest": "^4.1.2"
   },
   "comments": {
-    "overrides": "Pin patched versions of transitive deps to keep this package's supply chain clean (v1.5.1). All are same-MAJOR bumps — no breaking changes. NOTE: npm ignores a dependency's overrides in downstream installs, so consuming projects that gate CI on `npm audit` should mirror this block or run `npm audit fix`. Every advisory here is unreachable in practice: this is a local stdio MCP server + hook scripts processing the user's own files — the hono/express-rate-limit/ip-address/qs cluster is the MCP SDK's HTTP transport, which this plugin never instantiates (stdio only). js-yaml (gray-matter) and fast-uri (ajv) are deliberately NOT overridden: their only fixes are MAJOR bumps that would break frontmatter parsing / MCP tool-input validation, and the DoS vectors require attacker-controlled input this plugin never accepts."
+    "overrides": "Pin patched versions of transitive deps to keep this package's supply chain clean (v1.5.1). All are same-MAJOR bumps — no breaking changes. NOTE: npm ignores a dependency's overrides in downstream installs, so consuming projects that gate CI on `npm audit` should mirror this block or run `npm audit fix`. Every advisory here is unreachable in practice: this is a local stdio MCP server + hook scripts processing the user's own files — the hono/express-rate-limit/ip-address/qs cluster is the MCP SDK's HTTP transport, which this plugin never instantiates (stdio only). js-yaml (gray-matter) and fast-uri (ajv) are NOT overridden: they resolve to patched same-major versions (3.15.2 / 3.1.9 as of v1.5.2). v1.5.2 re-pinned the block to current patches. Known open: zod (all 3.x vulnerable, fix is zod 4: breaking for the MCP SDK tool schemas in src/mcp/tools/*) and esbuild (dev-only, via tsup)."
   },
   "overrides": {
-    "protobufjs": "7.6.5",
+    "protobufjs": "7.6.6",
     "@protobufjs/utf8": "1.1.2",
-    "@xmldom/xmldom": "0.9.10",
-    "brace-expansion": "5.0.7",
-    "qs": "6.15.3",
-    "ip-address": "10.2.0",
-    "express-rate-limit": "8.5.2",
-    "hono": "4.12.29",
-    "@hono/node-server": "1.19.14"
+    "@xmldom/xmldom": "0.9.12",
+    "brace-expansion": "5.0.12",
+    "qs": "6.16.1",
+    "ip-address": "10.7.4",
+    "express-rate-limit": "8.7.1",
+    "hono": "4.13.13",
+    "@hono/node-server": "1.19.17"
   }
 }

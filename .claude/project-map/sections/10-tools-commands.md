@@ -16,3 +16,4 @@
 | `/research-mode` | `/research-mode` | skills |
 | `/persistent-planning` | `/persistent-planning` | skills |
 | `/outage-silence` | `/outage-silence` | skills |
+| `/documentation-lifecycle` | `/documentation-lifecycle` | skills |
