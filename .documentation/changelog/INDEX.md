@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 14
+- **Total Documents:** 15
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -39,6 +39,7 @@ purpose: Complete listing of changelog documentation
 | [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](v1-5-0-expert-character.md) | active | 2026-07-11 | 2,127 |
 | [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) | active | 2026-10-24 | 521 |
 | [v1.5.3 — secret redaction](v1-5-3-secret-redaction.md) | active | 2026-10-24 | 366 |
+| [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](v1-6-0-failure-lookup.md) | active | 2026-10-24 | 387 |
 
 ## Keywords
 

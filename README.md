@@ -78,6 +78,10 @@ System (2): `get_stats`, `reindex`
 
 See the originating design discussion in `.planning/semantic-sidekick/` for rationale and phase-by-phase build plan.
 
+## Fact lookup on failed commands (opt-in, v1.6+)
+
+Set `SEMANTIC_MEMORY_FAILURE_HOOK=1` (e.g. in `~/.claude/settings.json` → `env`) and a failed Bash/MCP call gets the knowledge-base fact that most likely explains it, when one scores high enough. Measured on real failures it is right about 6 times in 10, so it is off by default. Facts with the literal error in `symptoms:` are found far more reliably. If you already run another `PostToolUseFailure` hook, both can add a note to the same failure — see [the guide](.documentation/operational/failure-lookup-guide.md).
+
 ## Privacy and secrets
 
 Everything stays on your machine (local embedding model, no network telemetry). Since v1.5.3 every write masks API keys, tokens, passwords and private keys before they reach disk, and `lint_vault({ checks: ["secrets"] })` finds ones already in notes. Details and limits: [SECURITY.md](SECURITY.md#secret-redaction-v153).
