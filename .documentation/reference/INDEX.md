@@ -1,30 +1,46 @@
 ---
-title: Reference Index
-tier: guide
+title: Reference Documentation Index
+tier: reference
 domains: [reference]
-audience: [developers]
-tags: [index, reference]
 status: active
-last_updated: '2026-07-11'
-version: '1.5.0'
-purpose: Navigation hub for reference domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of reference documentation
 ---
 
-# Reference Index
+# Reference Documentation
 
-> API/tool/command surfaces: MCP tools, CLI, hooks, configuration, frontmatter.
+> Tool, CLI, configuration and frontmatter reference
 
-## Documents in this domain
+## Overview
 
-- **[Frontmatter Spec](./frontmatter-spec.md)** — Authoritative field-by-field spec for note frontmatter. Every field, what type, what defaults, which tools surface it, how lint validates it. Includes the v1.4 `alias` type and the v1.5 `dossier`/`profile` types.
-- **[CLI Reference](./cli-reference.md)** — Every `semantic-memory` (and legacy `semantic-sidekick`) subcommand + flags + env vars + exit codes. Covers v1.1's `skills` tree, v1.2's `migrate-state`, v1.3's `decay-config`/`decay-trace`, v1.3.1's `selection-stats`, v1.4's `lexicon`, and v1.5's `dossier`/`profile` subcommand groups.
-- **[Configuration Reference](./configuration-reference.md)** — Every config file, env var, schema field, and tunable. Includes the v1.5 `usage_boost` schema block and `dossier-cache.json` state file.
-- **[Hooks Reference](./hooks-reference.md)** — SessionStart / UserPromptSubmit / Stop hook contracts + state files.
-- **[MCP Tools Reference](./mcp-tools-reference.md)** — All 44 MCP tools by category with args, use-when/skip-when guidance — see [v1-stack-overview.md](../architecture/v1-stack-overview.md) for the v1.1 additions (regenerate_contract, inspect_contract, synthesize_promote, session_start/run/finish/status), v1.3's `verify_note`, v1.4's `manage_lexicon`, and v1.5's `manage_dossier`/`manage_profile`.
+- **Total Documents:** 5
+- **Domain:** `reference/`
+- **Category:** core
+- **Load Priority:** 7/10
 
-## See also
+## Documents
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
-- [What Gets Indexed](../architecture/what-gets-indexed.md) — content-perspective view of frontmatter consumers
+### References
+
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [CLI Reference](cli-reference.md) | active | 2026-07-11 | 2,394 |
+| [Configuration Reference](configuration-reference.md) | active | 2026-07-11 | 2,452 |
+| [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) | active | 2026-07-11 | 3,052 |
+| [Hooks Reference](hooks-reference.md) | active | 2026-04-23 | 797 |
+| [MCP Tools Reference (44 tools)](mcp-tools-reference.md) | active | 2026-07-11 | 2,520 |
+
+## Keywords
+
+This domain covers: reference, cli, tools, configuration, frontmatter
+
+## Related Domains
+
+- [API](../api/) - API endpoints, routes, specifications, contracts
+- [Database](../database/) - Schema, migrations, RLS, queries, procedures
+- [DevOps](../devops/) - Deployment, CI/CD, Docker, environments, infrastructure
+
+---
+
+*Last updated: 2026-10-24*

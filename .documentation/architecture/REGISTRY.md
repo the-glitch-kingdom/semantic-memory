@@ -2,38 +2,60 @@
 title: Architecture Registry
 tier: reference
 domains: [architecture]
-audience: [developers]
-tags: [registry, architecture]
 status: active
-last_updated: '2026-05-09'
-version: '1.2.0'
+last_updated: '2026-10-24'
+version: '1.0.0'
 purpose: Quick reference for architecture documentation
-load_priority: 5
 ---
 
 # Architecture Registry
 
-> How semantic-memory is built: the v0.x five-layer substrate, what v1.x added on top, MCP internals, indices, and what gets indexed where.
+> Quick reference for system design, ai coach, project registry, patterns.
 
 ## At a Glance
 
 | Metric | Value |
 |--------|-------|
 | Documents | 7 |
-| Domain | architecture |
+| Category | development |
+| Load Priority | 7/10 |
 
-## Documents
+## Active Documents
 
-| File | Tier | Version | Purpose |
-|------|------|---------|---------|
-| [`architecture-layers.md`](./architecture-layers.md) | reference | 0.2.3 | Each of the 5 layers with responsibilities, key files, contracts, gotchas |
-| [`injection-points.md`](./injection-points.md) | reference | 0.2.3 | Every place semantic-memory touches Claude's context — symptom→check table |
-| [`schema-and-provenance.md`](./schema-and-provenance.md) | reference | 0.2.3 | vault.schema.yml, 4 types, lint rules, provenance frontmatter |
-| [`v1-stack-overview.md`](./v1-stack-overview.md) | reference | 1.2.0 | What v1.0/1.1/1.2 added on top of the v0.x substrate. Architectural narrative. |
-| [`mcp-internals.md`](./mcp-internals.md) | reference | 1.2.0 | server.ts composition + per-domain tool modules. Required reading for adding a new MCP tool. |
-| [`indices-and-storage.md`](./indices-and-storage.md) | reference | 1.2.0 | Every file the plugin writes to disk: per-vault index, model cache, runtime state. |
-| [`what-gets-indexed.md`](./what-gets-indexed.md) | reference | 1.2.0 | Content-perspective: for each kind of content, where it ends up and which tools query it. |
+- [Architecture — the Five Layers](architecture-layers.md)
+- [Indices and storage — every file semantic-memory writes](indices-and-storage.md)
+- [Injection Points](injection-points.md)
+- [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md)
+- [Schema and Provenance](schema-and-provenance.md)
+- [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md)
+- [What gets indexed where and why](what-gets-indexed.md)
+
+## Recently Updated
+
+- [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) - 2026-07-10
+- [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) - 2026-07-10
+- [Indices and storage — every file semantic-memory writes](indices-and-storage.md) - 2026-05-09
+- [What gets indexed where and why](what-gets-indexed.md) - 2026-05-09
+- [Architecture — the Five Layers](architecture-layers.md) - 2026-04-23
+
+## By Status
+
+| Status | Count |
+|--------|-------|
+| active | 7 |
+| draft | 0 |
+| deprecated | 0 |
+| archived | 0 |
 
 ## Keywords
 
-`architecture` `layers` `design` `injection` `schema` `provenance` `mcp` `indices` `storage` `v1.x`
+`architecture` `design` `system` `system-design` `pattern` `patterns` `microservices` `monolith` `serverless` `event-driven` `cqrs` `ddd` `domain-driven` `clean-architecture` `hexagonal` `decision` `adr` `registry` `diagram`
+
+## See Also
+
+- [Full Index](INDEX.md) - Complete document listing
+- [Root Index](../INDEX.md) - All domains
+
+---
+
+*Last updated: 2026-10-24*

@@ -7,7 +7,7 @@ tags: [phase-1, activation, hooks, skill, changelog]
 status: active
 last_updated: '2026-04-23'
 version: '0.2.3'
-purpose: What the Phase 1 activation layer shipped: hooks, vault-first skill, CLAUDE.md rule
+purpose: 'What the Phase 1 activation layer shipped: hooks, vault-first skill, CLAUDE.md rule'
 load_priority: 4
 ---
 

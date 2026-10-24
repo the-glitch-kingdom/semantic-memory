@@ -1,47 +1,58 @@
 ---
-title: Operational Index
-tier: guide
+title: Operational Documentation Index
+tier: reference
 domains: [operational]
-audience: [developers]
-tags: [index, operational]
 status: active
-last_updated: '2026-07-11'
-version: '1.5.0'
-purpose: Navigation hub for operational domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of operational documentation
 ---
 
-# Operational Index
+# Operational Documentation
 
-> Day-to-day operation: modes, sessions, capture, contracts, drift, logs, state migration.
+> Day-to-day operating guides for the plugin
 
-## Documents in this domain
+## Overview
 
-### Foundational
+- **Total Documents:** 12
+- **Domain:** `operational/`
+- **Category:** features
+- **Load Priority:** 6/10
 
-- **[Modes Guide](./modes-guide.md)** — vault-first / research / outage-silence entry signals, behavior, misroute recovery
-- **[Capture Workflows](./capture-workflows.md)** — synthesize_note, ingest_source, Stop-hook capture, /mode transitions — golden path
-- **[Logs and Events (log.md)](./logs-and-events.md)** — log.md format, auto-kinds, state-delta preload, future-Claude usage
+## Documents
 
-### v1.1+ additions
+### Guides
 
-- **[Sessions Guide](./sessions-guide.md)** — Verification-gated work units. When to open a session, the hard-gate semantics of `session_finish`, when to use the `verified: false` waiver path, what the Stop hook does with open sessions.
-- **[AGENTS.md Contract Guide](./contract-guide.md)** — The canonical agent contract artifact. When to generate, what's in the managed block, hand-edit detection, how it relates to CLAUDE.md, what to commit to git.
-- **[Drift Detection](./drift-detection.md)** — SessionStart fast-tier auto-check + manual `/healthcheck` deep audit. Per-finding remediation. What `/healthcheck --fix` (v1.2.3) auto-fixes.
-- **[Confidence Decay Guide](./decay-guide.md)** — Operating v1.3 confidence decay: read decay state (`decay` block, `decay-trace`), re-verify with `verify_note`, mark `evergreen`, tune half-lives, disable.
-- **[Lexicon & Bridge Guide](./lexicon-guide.md)** — Operating the human→LLM bridge (v1.4): learned aliases (manage_lexicon), propose-and-confirm capture, alias_conflicts, verbatim symptom capture, and Tier-1/Tier-2 query expansion.
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Capture Workflows](capture-workflows.md) | active | 2026-04-23 | 1,256 |
+| [AGENTS.md contract guide](contract-guide.md) | active | 2026-05-09 | 1,430 |
+| [Confidence Decay — Operating Guide](decay-guide.md) | active | 2026-07-10 | 645 |
+| [Entity Dossiers — Operating Guide](dossiers-guide.md) | active | 2026-07-11 | 1,114 |
+| [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) | active | 2026-07-10 | 1,561 |
+| [Lexicon & Query Expansion — Operating Guide](lexicon-guide.md) | active | 2026-07-10 | 988 |
+| [Modes Guide](modes-guide.md) | active | 2026-04-23 | 1,069 |
+| [Session Paging & Speaker Profile — Operating Guide](session-paging-guide.md) | active | 2026-07-11 | 1,110 |
+| [Sessions guide — verification-gated work units](sessions-guide.md) | active | 2026-05-09 | 1,375 |
+| [State migration — moving legacy .sidekick-* files to .semantic-memory/](state-migration.md) | active | 2026-05-09 | 1,374 |
+| [Usage-Feedback Ranking & Decoys — Operating Guide](usage-feedback-guide.md) | active | 2026-07-11 | 938 |
 
-### v1.2+ additions
+### References
 
-- **[State Migration](./state-migration.md)** — `bin/semantic-memory migrate-state` for moving legacy `.claude/.sidekick-*` files under `.claude/.semantic-memory/`. Read-with-fallback semantics, conflict resolution.
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Logs and Events (log.md)](logs-and-events.md) | active | 2026-04-23 | 964 |
 
-### v1.5+ additions — the expert-character layer
+## Keywords
 
-- **[Entity Dossiers Guide](./dossiers-guide.md)** — Operating v1.5 entity dossiers: creating them (CLI + `manage_dossier`), the accretion model (Incident log append, Current state replace), two-hop retrieval, aliases feeding the lexicon, seeding from babel-fish.
-- **[Usage-Feedback Ranking & Decoys Guide](./usage-feedback-guide.md)** — Operating v1.5 usage-feedback ranking: how citations become a bounded rank boost, composition with decay/path-class, reading the `usage` block, running the `decoys` lint, disabling.
-- **[Session Paging & Speaker Profile Guide](./session-paging-guide.md)** — Operating v1.5 session paging (Stop digest-as-proposal, SessionStart curated digest) and the speaker profile (init, sections, correction-cue updates, injection).
+This domain covers: operational, guide, operate, sessions, dossier
 
-## See also
+## Related Domains
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+- [Features](../features/) - Feature implementation guides, admin docs
+- [Procedures](../procedures/) - Step-by-step operational procedures (SOP)
+- [Quickstart](../quickstart/) - Setup guides, dev workflow, onboarding
+
+---
+
+*Last updated: 2026-10-24*

@@ -1,86 +1,302 @@
 ---
-title: semantic-memory Documentation Index
-tier: guide
-domains: [all]
-audience: [developers, admin]
-tags: [documentation, navigation, index, hewtd]
+title: Documentation Index
+tier: reference
+domains: [root]
 status: active
-last_updated: '2026-07-11'
-version: '1.5.0'
-purpose: Root navigation hub for all semantic-memory operator documentation
-load_priority: 10
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Navigation hub for all documentation
 ---
 
-# semantic-memory Documentation
+# Documentation Index
 
-> Operator's manual for `@theglitchking/semantic-memory` — the unified memory-layer plugin for Claude Code. Organized as a hewtd-style hierarchical domain structure: each domain has its own `INDEX.md` (human navigation) and `REGISTRY.md` (metadata/registry view).
+> Complete listing of all documentation organized by domain.
 
-**Plugin version:** 1.5.0 · **Tool count:** 44 MCP tools (write mode), 21 (read-only) · **Test suite:** 418/418
+## Overview
 
-## What's covered
+| Domain | Documents | Description |
+|--------|-----------|-------------|
+| [Agents](#agents) | 0 | Expert agent documentation, specialty matrix |
+| [API](#api) | 0 | API endpoints, routes, specifications, contracts |
+| [Architecture](#architecture) | 7 | System design, AI coach, project registry, patterns |
+| [Backups](#backups) | 0 | Backup/restore guides, disaster recovery |
+| [Database](#database) | 0 | Schema, migrations, RLS, queries, procedures |
+| [DevOps](#devops) | 0 | Deployment, CI/CD, Docker, environments, infrastructure |
+| [Features](#features) | 0 | Feature implementation guides, admin docs |
+| [Plans](#plans) | 0 | Planning documents, roadmaps, proposals |
+| [Procedures](#procedures) | 0 | Step-by-step operational procedures (SOP) |
+| [Quickstart](#quickstart) | 2 | Setup guides, dev workflow, onboarding |
+| [Security](#security) | 0 | Security, auth, Vault, Keycloak, RLS |
+| [Standards](#standards) | 0 | Coding standards (backend, frontend, database, devops, security) |
+| [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
+| [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
+| [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
+| [Changelog](#changelog) | 13 | Release notes per version and phase |
+| [Operational](#operational) | 12 | Day-to-day operating guides for the plugin |
+| [Reference](#reference) | 5 | Tool, CLI, configuration and frontmatter reference |
+| [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
+| [Deployment](#deployment) | 1 | Publishing and offline packaging |
 
-This documentation set covers everything from the original five-layer activation/routing/capture stack (v0.x → v1.0 substrate) through the v1.1 brain-absorption (AGENTS.md contract, hard-gated sessions, multi-agent skill bundler, drift detection), v1.2 state consolidation under `.claude/.semantic-memory/`, the v1.2.3 hygiene completion (`/healthcheck --fix`, `code_symbols` lint, fresh-install CI smoke), v1.3 confidence decay (age-aware ranking, `verify_note`, `evergreen`), v1.3.1 selection-logging telemetry (`selection.jsonl`, `decay_candidates` lint, `selection-stats`), the v1.4.0 resident-expert bridge (learned lexicon + alias capture, symptom-keyed indexing, query expansion, path-class down-weight, injection hygiene, section reads), and the v1.5.0 expert-character layer (entity dossiers + two-hop retrieval, usage-feedback ranking + `decoys` lint, session paging, speaker profile).
+---
 
-If you're upgrading from v0.x or v1.0, start with the [v1.0 rebrand changelog](./changelog/v1-0-rebrand.md) and the [v1.1 brain-absorption changelog](./changelog/v1-1-brain-absorption.md).
+## Agents
 
-## Quick Navigation
+> Expert agent documentation, specialty matrix
 
-| Domain | Index | Purpose |
-|---|---|---|
-| **Quickstart** | [quickstart/INDEX.md](./quickstart/INDEX.md) | Install + overview — read first |
-| **Architecture** | [architecture/INDEX.md](./architecture/INDEX.md) | Five layers, injection points, MCP internals, sessions, contract, indices |
-| **Reference** | [reference/INDEX.md](./reference/INDEX.md) | All 44 MCP tools, CLI, hooks, frontmatter spec, config |
-| **Operational** | [operational/INDEX.md](./operational/INDEX.md) | Modes, sessions, capture workflows, drift detection, logs, migrate-state |
-| **Troubleshooting** | [troubleshooting/INDEX.md](./troubleshooting/INDEX.md) | Symptom / cause / fix matrix |
-| **Testing** | [testing/INDEX.md](./testing/INDEX.md) | Test suite + validation |
-| **Deployment** | [deployment/INDEX.md](./deployment/INDEX.md) | Marketplace + npm publish + offline tarball |
-| **Changelog** | [changelog/INDEX.md](./changelog/INDEX.md) | Per-version release notes (v0.x phases through v1.5) |
-| **Legacy** | [legacy/INDEX.md](./legacy/INDEX.md) | Substrate docs inherited from semantic-pages |
+**Path:** `agents/`
 
-## Read these first
+*No documents yet.*
 
-For someone new to semantic-memory, in order:
+---
 
-1. [Quickstart: Overview](./quickstart/sidekick-overview.md) — what it is, why it exists, design principles.
-2. [Quickstart: Installation](./quickstart/installation-guide.md) — plugin install + first reindex + verification.
-3. [Architecture: Five Layers](./architecture/architecture-layers.md) — the stack at a glance.
-4. [Architecture: v1 Stack Overview](./architecture/v1-stack-overview.md) — what v1.0/1.1/1.2 added on top.
-5. [Operational: Modes Guide](./operational/modes-guide.md) — how `/mode` routes behavior.
-6. [Operational: Sessions Guide](./operational/sessions-guide.md) — verification-gated work units (v1.1+).
+## API
 
-Then depending on what you're doing:
+> API endpoints, routes, specifications, contracts
 
-- **Wiring tools or writing prompts that call the MCP API:** [Reference / MCP Tools](./reference/mcp-tools-reference.md)
-- **Writing notes:** [Operational / Capture Workflows](./operational/capture-workflows.md), [Reference / Frontmatter Spec](./reference/frontmatter-spec.md)
-- **Running multi-step work with verification:** [Operational / Sessions Guide](./operational/sessions-guide.md)
-- **Setting up project contract:** [Operational / Contract Guide](./operational/contract-guide.md)
-- **Drift / install health:** [Operational / Drift Detection](./operational/drift-detection.md)
-- **Upgrade-from-legacy state files:** [Operational / State Migration](./operational/state-migration.md)
-- **Something broken:** [Troubleshooting](./troubleshooting/troubleshooting.md) — golden diagnostic sequence at the bottom.
-- **Understanding where Claude sees vault data:** [Architecture / Injection Points](./architecture/injection-points.md).
+**Path:** `api/`
 
-## Tier conventions (hewtd)
+*No documents yet.*
 
-| Tier | Meaning | Typical load_priority |
-|---|---|---|
-| `guide` | Step-by-step how-to, tutorial, walkthrough | 5–10 |
-| `standard` | Conventions, rules, patterns | 5–8 |
-| `example` | Worked examples of a pattern | 3–6 |
-| `reference` | API / tool / command catalogs | 4–9 |
-| `admin` | Operational runbook for maintainers | 5–8 |
+---
 
-## hewtd integration
+## Architecture
 
-These docs follow the [hewtd](https://github.com/TheGlitchKing/hit-em-with-the-docs) frontmatter convention. If hewtd is installed in your environment:
+> System design, AI coach, project registry, patterns
 
-```bash
-npx hewtd list                         # list all domains
-npx hewtd load quickstart              # load quickstart domain
-/docs load architecture                # slash-command equivalent
-/docs search "injection points"        # search across all docs
-/docs stats                            # documentation health report
-```
+**Path:** `architecture/`
 
-## Project planning
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Architecture — the Five Layers](architecture/architecture-layers.md) | reference | active | 2026-04-23 |
+| [Indices and storage — every file semantic-memory writes](architecture/indices-and-storage.md) | reference | active | 2026-05-09 |
+| [Injection Points](architecture/injection-points.md) | reference | active | 2026-04-23 |
+| [MCP server internals — composition, context, per-domain tool modules](architecture/mcp-internals.md) | reference | active | 2026-07-10 |
+| [Schema and Provenance](architecture/schema-and-provenance.md) | reference | active | 2026-04-23 |
+| [v1 stack overview — what v1.0 / v1.1 / v1.2 added](architecture/v1-stack-overview.md) | reference | active | 2026-07-10 |
+| [What gets indexed where and why](architecture/what-gets-indexed.md) | reference | active | 2026-05-09 |
 
-Phased build plans + per-phase rationale live under [`.planning/`](../.planning/) at the repo root (gitignored runtime planning artifacts; durable summary lives in [`/ROADMAP.md`](../ROADMAP.md)). That's the design-decision journal; this is the operator's manual.
+---
+
+## Backups
+
+> Backup/restore guides, disaster recovery
+
+**Path:** `backups/`
+
+*No documents yet.*
+
+---
+
+## Database
+
+> Schema, migrations, RLS, queries, procedures
+
+**Path:** `database/`
+
+*No documents yet.*
+
+---
+
+## DevOps
+
+> Deployment, CI/CD, Docker, environments, infrastructure
+
+**Path:** `devops/`
+
+*No documents yet.*
+
+---
+
+## Features
+
+> Feature implementation guides, admin docs
+
+**Path:** `features/`
+
+*No documents yet.*
+
+---
+
+## Plans
+
+> Planning documents, roadmaps, proposals
+
+**Path:** `plans/`
+
+*No documents yet.*
+
+---
+
+## Procedures
+
+> Step-by-step operational procedures (SOP)
+
+**Path:** `procedures/`
+
+*No documents yet.*
+
+---
+
+## Quickstart
+
+> Setup guides, dev workflow, onboarding
+
+**Path:** `quickstart/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Installation Guide](quickstart/installation-guide.md) | guide | active | 2026-04-23 |
+| [semantic-sidekick — Overview](quickstart/sidekick-overview.md) | guide | active | 2026-04-23 |
+
+---
+
+## Security
+
+> Security, auth, Vault, Keycloak, RLS
+
+**Path:** `security/`
+
+*No documents yet.*
+
+---
+
+## Standards
+
+> Coding standards (backend, frontend, database, devops, security)
+
+**Path:** `standards/`
+
+*No documents yet.*
+
+---
+
+## Testing
+
+> Test strategies, fixtures, patterns, integration/e2e
+
+**Path:** `testing/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Tests and Validation](testing/tests-and-validation.md) | guide | active | 2026-04-23 |
+
+---
+
+## Troubleshooting
+
+> Debug guides, common issues, solutions
+
+**Path:** `troubleshooting/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Troubleshooting](troubleshooting/troubleshooting.md) | guide | active | 2026-05-09 |
+
+---
+
+## Workflows
+
+> Process documentation, multi-step operations
+
+**Path:** `workflows/`
+
+*No documents yet.*
+
+---
+
+## Changelog
+
+> Release notes per version and phase
+
+**Path:** `changelog/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Phase 1 — Activation Layer](changelog/phase-1-activation.md) | reference | active | 2026-04-23 |
+| [Phase 2 — Structure + Capture](changelog/phase-2-structure.md) | reference | active | 2026-04-23 |
+| [Phase 3 — Ingest + Maintenance](changelog/phase-3-ingest.md) | reference | active | 2026-04-23 |
+| [Phase 4 — Routing + Transitions](changelog/phase-4-routing.md) | reference | active | 2026-04-23 |
+| [v1.0 — Rebrand to semantic-memory](changelog/v1-0-rebrand.md) | reference | active | 2026-05-09 |
+| [v1.1 — brain-absorption](changelog/v1-1-brain-absorption.md) | reference | active | 2026-05-09 |
+| [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](changelog/v1-2-3-hygiene-completion.md) | reference | active | 2026-07-10 |
+| [v1.2 — state consolidation under .claude/.semantic-memory/](changelog/v1-2-state-consolidation.md) | reference | active | 2026-05-09 |
+| [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 |
+| [v1.3 — confidence decay (age-aware retrieval ranking)](changelog/v1-3-confidence-decay.md) | reference | active | 2026-07-10 |
+| [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](changelog/v1-4-0-resident-bridge.md) | reference | active | 2026-07-10 |
+| [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](changelog/v1-5-0-expert-character.md) | reference | active | 2026-07-11 |
+| [v1.5.2 — docs index freshness (issue](changelog/v1-5-2-docs-index-freshness.md) | reference | active | 2026-10-24 |
+
+---
+
+## Operational
+
+> Day-to-day operating guides for the plugin
+
+**Path:** `operational/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Capture Workflows](operational/capture-workflows.md) | guide | active | 2026-04-23 |
+| [AGENTS.md contract guide](operational/contract-guide.md) | guide | active | 2026-05-09 |
+| [Confidence Decay — Operating Guide](operational/decay-guide.md) | guide | active | 2026-07-10 |
+| [Entity Dossiers — Operating Guide](operational/dossiers-guide.md) | guide | active | 2026-07-11 |
+| [Drift detection — SessionStart auto-check + /healthcheck deep audit](operational/drift-detection.md) | guide | active | 2026-07-10 |
+| [Lexicon & Query Expansion — Operating Guide](operational/lexicon-guide.md) | guide | active | 2026-07-10 |
+| [Logs and Events (log.md)](operational/logs-and-events.md) | reference | active | 2026-04-23 |
+| [Modes Guide](operational/modes-guide.md) | guide | active | 2026-04-23 |
+| [Session Paging & Speaker Profile — Operating Guide](operational/session-paging-guide.md) | guide | active | 2026-07-11 |
+| [Sessions guide — verification-gated work units](operational/sessions-guide.md) | guide | active | 2026-05-09 |
+| [State migration — moving legacy .sidekick-* files to .semantic-memory/](operational/state-migration.md) | guide | active | 2026-05-09 |
+| [Usage-Feedback Ranking & Decoys — Operating Guide](operational/usage-feedback-guide.md) | guide | active | 2026-07-11 |
+
+---
+
+## Reference
+
+> Tool, CLI, configuration and frontmatter reference
+
+**Path:** `reference/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [CLI Reference](reference/cli-reference.md) | reference | active | 2026-07-11 |
+| [Configuration Reference](reference/configuration-reference.md) | reference | active | 2026-07-11 |
+| [Frontmatter spec — every field, what it does, who reads it](reference/frontmatter-spec.md) | reference | active | 2026-07-11 |
+| [Hooks Reference](reference/hooks-reference.md) | reference | active | 2026-04-23 |
+| [MCP Tools Reference (44 tools)](reference/mcp-tools-reference.md) | reference | active | 2026-07-11 |
+
+---
+
+## Legacy
+
+> Pre-rebrand substrate docs, kept for history
+
+**Path:** `legacy/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Legacy Changelog (semantic-pages)](legacy/changelog.md) | reference | active | 2026-04-23 |
+| [Embedder Guide (substrate)](legacy/embedder-guide.md) | reference | active | 2026-04-23 |
+| [Frontmatter Guide (substrate)](legacy/frontmatter-guide.md) | reference | active | 2026-04-23 |
+| [How Semantic Pages Works (substrate)](legacy/how-it-works.md) | reference | active | 2026-04-23 |
+| [Performance Tuning (substrate)](legacy/performance-tuning.md) | guide | active | 2026-04-23 |
+
+---
+
+## Deployment
+
+> Publishing and offline packaging
+
+**Path:** `deployment/`
+
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Marketplace Registration](deployment/marketplace-registration.md) | guide | active | 2026-04-23 |
+
+---
+
+## Maintenance
+
+- **Last generated:** 2026-10-24
+- **Run maintenance:** `npx hit-em-with-the-docs maintain`
+- **Regenerate index:** `npx hit-em-with-the-docs index`

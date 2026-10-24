@@ -1,25 +1,42 @@
 ---
-title: Troubleshooting Index
-tier: guide
+title: Troubleshooting Documentation Index
+tier: reference
 domains: [troubleshooting]
-audience: [developers]
-tags: [index, troubleshooting]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
-purpose: Navigation hub for troubleshooting domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of troubleshooting documentation
 ---
 
-# Troubleshooting Index
+# Troubleshooting Documentation
 
-> Known failure modes + diagnostic sequences.
+> Debug guides, common issues, solutions
 
-## Documents in this domain
+## Overview
 
-- **[Troubleshooting](./troubleshooting.md)** — Symptom / cause / fix across all 5 layers — golden diagnostic sequence
+- **Total Documents:** 1
+- **Domain:** `troubleshooting/`
+- **Category:** advanced
+- **Load Priority:** 6/10
 
-## See also
+## Documents
 
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+### Guides
+
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Troubleshooting](troubleshooting.md) | active | 2026-05-09 | 2,758 |
+
+## Keywords
+
+This domain covers: troubleshooting, troubleshoot, debug, debugging, issue, issues, problem, problems, error, errors
+
+## Related Domains
+
+- [Agents](../agents/) - Expert agent documentation, specialty matrix
+- [Backups](../backups/) - Backup/restore guides, disaster recovery
+- [Plans](../plans/) - Planning documents, roadmaps, proposals
+
+---
+
+*Last updated: 2026-10-24*

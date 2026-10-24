@@ -50,7 +50,8 @@ export async function createServer(notesPath: string, options: ServerOptions = {
   } else {
     ctx.tryLoadCachedIndex()
       .then((cached) => {
-        if (!cached) ctx.backgroundIndex();
+        // a stale cache (chunk count drifted from the notes on disk) is served while it rebuilds
+        if (!cached || ctx.getIndexState() === "stale") ctx.backgroundIndex();
       })
       .catch((err) => {
         process.stderr.write(`Startup error: ${err?.message ?? err}\n`);

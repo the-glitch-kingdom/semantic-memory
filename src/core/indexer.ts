@@ -12,6 +12,16 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
+// Invalid YAML (e.g. an unquoted colon in a value) keeps the body searchable with empty frontmatter
+function parseFrontmatter(raw: string, file: string): { data: Record<string, unknown>; content: string } {
+  try {
+    return matter(raw);
+  } catch (err: any) {
+    process.stderr.write(`Invalid frontmatter in ${file}, indexing body only: ${err?.message?.split("\n")[0] ?? err}\n`);
+    return { data: {}, content: raw.replace(/^---\r?\n[\s\S]*?\r?\n---[^\S\r\n]*(\r?\n|$)/, "") };
+  }
+}
+
 export class Indexer {
   private notesPath: string;
   private processor: any;
@@ -28,10 +38,16 @@ export class Indexer {
     // symlinked content. glob does cycle detection via visited inodes so
     // circular symlinks are handled safely.
     const files = await glob("**/*.md", { cwd: this.notesPath, follow: true });
+    // One unreadable file must not take the whole corpus down with it
     const docs = await Promise.all(
-      files.map((file) => this.indexFile(join(this.notesPath, file), file))
+      files.map((file) =>
+        this.indexFile(join(this.notesPath, file), file).catch((err) => {
+          process.stderr.write(`Skipping ${file}: ${err?.message ?? err}\n`);
+          return null;
+        })
+      )
     );
-    return docs;
+    return docs.filter((d): d is IndexedDocument => d !== null);
   }
 
   /**
@@ -67,7 +83,7 @@ export class Indexer {
       readFile(absolutePath, "utf-8"),
       stat(absolutePath),
     ]);
-    const { data: frontmatter, content } = matter(raw);
+    const { data: frontmatter, content } = parseFrontmatter(raw, relativePath);
     const tree = this.processor.parse(content);
 
     const wikilinks = this.extractWikilinks(tree);

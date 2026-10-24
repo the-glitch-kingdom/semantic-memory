@@ -1,0 +1,72 @@
+{
+  "updatePolicy": "nudge",
+  "domains": [
+    {
+      "id": "changelog",
+      "name": "Changelog",
+      "description": "Release notes per version and phase",
+      "keywords": [
+        "changelog",
+        "release",
+        "version",
+        "shipped"
+      ],
+      "loadPriority": 5,
+      "category": "development"
+    },
+    {
+      "id": "operational",
+      "name": "Operational",
+      "description": "Day-to-day operating guides for the plugin",
+      "keywords": [
+        "operational",
+        "guide",
+        "operate",
+        "sessions",
+        "dossier"
+      ],
+      "loadPriority": 6,
+      "category": "features"
+    },
+    {
+      "id": "reference",
+      "name": "Reference",
+      "description": "Tool, CLI, configuration and frontmatter reference",
+      "keywords": [
+        "reference",
+        "cli",
+        "tools",
+        "configuration",
+        "frontmatter"
+      ],
+      "loadPriority": 7,
+      "category": "core"
+    },
+    {
+      "id": "legacy",
+      "name": "Legacy",
+      "description": "Pre-rebrand substrate docs, kept for history",
+      "keywords": [
+        "legacy",
+        "substrate",
+        "semantic-pages"
+      ],
+      "loadPriority": 2,
+      "category": "advanced"
+    },
+    {
+      "id": "deployment",
+      "name": "Deployment",
+      "description": "Publishing and offline packaging",
+      "keywords": [
+        "deployment",
+        "publish",
+        "release",
+        "tarball",
+        "offline"
+      ],
+      "loadPriority": 6,
+      "category": "core"
+    }
+  ]
+}

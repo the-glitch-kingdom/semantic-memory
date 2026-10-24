@@ -2,6 +2,27 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.5.2] - 2026-10-24 — Docs index freshness (issue #29)
+
+Patch release. In the standard two-server setup (`semantic-vault` → `.claude/.vault`, `semantic-sidekick` → `.documentation --read-only`) the docs index went stale after it was first built and the hooks never searched the docs. Fixes for every cause found, plus the dependency audit.
+
+### Fixed
+
+- **Stale cached index is rebuilt at startup.** A cache whose `meta.totalChunks` no longer matches the notes on disk loaded as `"stale"` and was served forever; startup only reindexed when the cache failed to load. It now rebuilds in the background and serves the stale index meanwhile.
+- **File watcher works under chokidar 5.** `watch("**/*.md")` is a literal path since chokidar 4 dropped globs, so no event ever fired and edits during a session were never reindexed. The watcher now watches the notes folder and filters (`node_modules`, `.semantic-sidekick-index`, `.git`, non-markdown).
+- **One bad doc no longer fails the whole index.** `indexAll()` rejected if any file failed, so a single doc with invalid YAML frontmatter (e.g. an unquoted colon in `purpose:`) left the entire corpus unindexed. Invalid frontmatter now indexes the body with empty frontmatter; any other per-file error skips that file. Both are reported on stderr.
+- **Hooks search every `semantic-*` notes path.** The prompt hook and the SessionStart search used only the first `.mcp.json` entry, normally an (often empty) vault. They now search every entry's `--notes` path in parallel and merge hits by score; with more than one corpus each hit is labelled with its server. Writes (log events, dossiers, session digests, speaker profile) stay on one path: the first entry without `--read-only`. `SIDEKICK_VAULT_PATH` still means a single path. Hook latency on a two-server project: ~670 ms → ~800 ms.
+- **Capture prompts stay in their own session.** `capture-pending.json` is per project, so a cue typed in one session showed up in another concurrent session's Stop prompt, and any SessionStart or Stop wiped every session's items. Items now carry `session_id`; each session asks about and clears only its own. Items from before 1.5.2 go to whichever session reads them first; other sessions' items older than a week are pruned.
+- **Watcher tests can fail again.** They treated their own timeout as "filesystem events not available" and passed while the watcher was dead.
+
+### Changed
+
+- **Dependency audit:** 30 findings (1 critical, 19 high; 22 in production) → 3 (1 in production). `overrides` re-pinned to current patches (several 1.5.1 pins had become the vulnerable versions); in-range updates including `@modelcontextprotocol/sdk` 1.32.2, `@huggingface/transformers` 4.3.1, `onnxruntime-node` 1.30.0, `vitest` 4.1.12. Still open, breaking-only fixes: `zod` (every 3.x is affected; the fix is zod 4, which changes the MCP tool schemas) and dev-only `esbuild` (low).
+
+### Tests
+
+- Full suite **440 green** (was 418); build and lint clean; golden retrieval eval unchanged (recall@1 86%, MRR 0.929). Each fix has a test that fails on 1.5.1.
+
 ## [1.5.1] - 2026-07-12 — Dependency audit hardening (supply chain)
 
 Patch release: clears the transitive `npm audit` findings surfaced after upgrading from the 1.2.x line, with **no runtime or API change**. Every advisory was unreachable in practice — this is a local **stdio** MCP server plus hook scripts processing the user's **own** files: the `hono`/`express-rate-limit`/`ip-address`/`qs`/`fast-uri` cluster is the MCP SDK's HTTP-server transport, which this plugin never instantiates (stdio only); `protobufjs`/`@xmldom/xmldom` are the local embedding runtime; `js-yaml`/`brace-expansion` parse your own notes/globs.

@@ -1,13 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Watcher } from "../../src/core/watcher.js";
 import { createTempVault, cleanupTempDir } from "../setup.js";
-import { writeFile, unlink } from "node:fs/promises";
+import { writeFile, unlink, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
 
-// Chokidar filesystem events are unreliable on WSL2 mounted drives (/mnt/).
-// These tests use native tmpdir which may work better, but skip if events don't fire.
-const IS_WSL = process.platform === "linux" && tmpdir().startsWith("/tmp");
+// No skip-on-timeout: an earlier version treated a timeout as "events not available"
+// and passed while the watcher received nothing at all (chokidar ≥4 dropped glob support, issue #29).
 
 const DEBOUNCE_MS = 200;
 
@@ -21,13 +19,16 @@ function waitForChanged(watcher: Watcher, timeoutMs = 5_000): Promise<string[]> 
   });
 }
 
-describe("Watcher", () => {
+describe.each([
+  { mode: "polling", usePolling: true },
+  { mode: "native", usePolling: false },
+])("Watcher ($mode)", ({ usePolling }) => {
   let tempDir: string;
   let watcher: Watcher;
 
   beforeEach(async () => {
     tempDir = await createTempVault();
-    watcher = new Watcher(tempDir, DEBOUNCE_MS, true);
+    watcher = new Watcher(tempDir, DEBOUNCE_MS, usePolling);
   });
 
   afterEach(async () => {
@@ -39,54 +40,41 @@ describe("Watcher", () => {
     watcher.start();
     await watcher.ready();
 
-    try {
-      const changed = waitForChanged(watcher);
-      await writeFile(join(tempDir, "new-watched.md"), "# New\n\nWatched file.");
-      const paths = await changed;
-      expect(paths.some((p) => p.includes("new-watched.md"))).toBe(true);
-    } catch (e: any) {
-      if (e.message === "Watcher timeout") {
-        console.warn("Skipping: filesystem events not available in this environment");
-        return;
-      }
-      throw e;
-    }
+    const changed = waitForChanged(watcher);
+    await writeFile(join(tempDir, "new-watched.md"), "# New\n\nWatched file.");
+    const paths = await changed;
+    expect(paths.some((p) => p.includes("new-watched.md"))).toBe(true);
+  }, 15_000);
+
+  it("should detect new files in subfolders", async () => {
+    await mkdir(join(tempDir, "sub"), { recursive: true });
+    watcher.start();
+    await watcher.ready();
+
+    const changed = waitForChanged(watcher);
+    await writeFile(join(tempDir, "sub", "nested.md"), "# Nested");
+    const paths = await changed;
+    expect(paths.some((p) => p.includes("nested.md"))).toBe(true);
   }, 15_000);
 
   it("should detect modified files", async () => {
     watcher.start();
     await watcher.ready();
 
-    try {
-      const changed = waitForChanged(watcher);
-      await writeFile(join(tempDir, "orphan.md"), "# Modified content");
-      const paths = await changed;
-      expect(paths.some((p) => p.includes("orphan.md"))).toBe(true);
-    } catch (e: any) {
-      if (e.message === "Watcher timeout") {
-        console.warn("Skipping: filesystem events not available in this environment");
-        return;
-      }
-      throw e;
-    }
+    const changed = waitForChanged(watcher);
+    await writeFile(join(tempDir, "orphan.md"), "# Modified content");
+    const paths = await changed;
+    expect(paths.some((p) => p.includes("orphan.md"))).toBe(true);
   }, 15_000);
 
   it("should detect deleted files", async () => {
     watcher.start();
     await watcher.ready();
 
-    try {
-      const changed = waitForChanged(watcher);
-      await unlink(join(tempDir, "orphan.md"));
-      const paths = await changed;
-      expect(paths.some((p) => p.includes("orphan.md"))).toBe(true);
-    } catch (e: any) {
-      if (e.message === "Watcher timeout") {
-        console.warn("Skipping: filesystem events not available in this environment");
-        return;
-      }
-      throw e;
-    }
+    const changed = waitForChanged(watcher);
+    await unlink(join(tempDir, "orphan.md"));
+    const paths = await changed;
+    expect(paths.some((p) => p.includes("orphan.md"))).toBe(true);
   }, 15_000);
 
   it("should debounce rapid changes into a single event", async () => {
@@ -106,15 +94,15 @@ describe("Watcher", () => {
 
     await new Promise((r) => setTimeout(r, 1500));
 
-    if (emitCount === 0) {
-      console.warn("Skipping: filesystem events not available in this environment");
-      return;
-    }
+    expect(emitCount).toBeGreaterThanOrEqual(1);
     expect(emitCount).toBeLessThanOrEqual(2);
     expect(lastPaths.length).toBeGreaterThan(0);
   }, 15_000);
 
-  it("should ignore non-markdown files", async () => {
+  it("should ignore non-markdown files and index/vcs folders", async () => {
+    for (const dir of [".semantic-sidekick-index", ".git", "node_modules"]) {
+      await mkdir(join(tempDir, dir), { recursive: true });
+    }
     let emitted = false;
     watcher.on("changed", () => { emitted = true; });
     watcher.start();
@@ -122,6 +110,9 @@ describe("Watcher", () => {
 
     await writeFile(join(tempDir, "ignored.txt"), "not markdown");
     await writeFile(join(tempDir, "ignored.png"), "not markdown");
+    await writeFile(join(tempDir, ".semantic-sidekick-index", "x.md"), "index");
+    await writeFile(join(tempDir, ".git", "x.md"), "vcs");
+    await writeFile(join(tempDir, "node_modules", "x.md"), "dep");
 
     await new Promise((r) => setTimeout(r, 1000));
     expect(emitted).toBe(false);

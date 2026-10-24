@@ -30,13 +30,17 @@ load_priority: 8
 ```
 **Two blocks composed:**
 - `<vault-state-since>` — 14-day summary of log.md kinds + the 6 most recent entries. Lets future-Claude see what past-Claude was doing.
-- `<vault-context source="sessionstart">` — hybrid search results seeded from `{project basename} {git branch}`.
+- `<vault-context source="sessionstart">` — hybrid search results seeded from `{project basename} {git branch}`. Only when there is no session digest to page in (see below).
+
+**Which corpora are searched (v1.5.2+):** every `semantic-vault` / `semantic-sidekick` / `semantic-memory` entry in `.mcp.json` whose `--notes` folder exists, in parallel (one CLI spawn each), hits merged by score. With the standard setup that is both the vault (`.claude/.vault`) and the docs (`.documentation --read-only`). When more than one corpus is searched each hit is labelled with its server — `` `path` (semantic-sidekick, score: 0.43) `` — so you know which `read_note` to call; with one corpus the format is unchanged. Before 1.5.2 only the first entry was searched, so an empty vault meant the docs never surfaced.
+
+**Where the hook writes:** log events, dossiers, session digests and the speaker profile use one path — the first entry *without* `--read-only` (falling back to the first entry). `SIDEKICK_VAULT_PATH` overrides the whole lookup with a single path (search and writes).
 
 **Side effects:**
 - Resets `.claude/.sidekick-mode` to `vault-first`.
 - If prior mode was non-default, logs `kind=mode_change` event so the reset is visible in log.md.
 
-**Latency:** ~0.7s on cache hit, ~6s on cache miss.
+**Latency:** ~0.7s on cache hit, ~6s on cache miss. Searching two corpora in parallel adds ~130 ms (~0.67 s → ~0.8 s measured on a two-server project, v1.5.2).
 
 ## 2. UserPromptSubmit hook — `<vault-context source="prompt">` block
 
@@ -46,7 +50,7 @@ load_priority: 8
 - The prompt's normalized sha1 is in the fingerprint ring (last 10 prompts) — avoids re-injecting the same context for rephrased questions.
 
 **Source:** `hooks/vault-context.js` → `handlePrompt`.
-**Output shape:** identical to SessionStart but with `source="prompt"` and `query="<user prompt>"`.
+**Output shape:** identical to SessionStart but with `source="prompt"` and `query="<user prompt>"`. Searches the same corpora as SessionStart (above).
 
 **Side effect:** capture-cue detection. If the prompt matches one of:
 - `\bbecause\b`
@@ -55,7 +59,7 @@ load_priority: 8
 - `\bgotcha\b | \bworkaround\b | \bhack\b`
 - `\bnew convention\b | \bfrom now on\b | \bgoing forward\b`
 
-…the prompt excerpt + cue is appended to `.claude/.sidekick-capture-pending.json` for the Stop hook to consume.
+…the prompt excerpt + cue is appended to `.claude/.semantic-memory/capture-pending.json` (legacy `.claude/.sidekick-capture-pending.json`) for the Stop hook to consume. Since v1.5.2 each item carries the hook input's `session_id`: a session's Stop asks about and clears only its own items, and SessionStart clears only its own, so concurrent sessions in one project never see each other's cues. Items without a `session_id` (written before 1.5.2) go to whichever session's Stop reads them first; other sessions' items older than a week are pruned.
 
 **Fingerprint cache:** `.claude/.sidekick-fingerprints.json` — ring buffer of 10 sha1 hashes. Cleared on Phase 1 test runner invocation; otherwise persists across prompts within a session and across sessions.
 
@@ -124,9 +128,10 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 | Symptom | First check |
 |---|---|
 | No vault context at session start | `SIDEKICK_DEBUG=1 claude` — look for `[vault-context] event=SessionStart` in stderr; verify `.mcp.json` points at a real vault path |
-| Vault context appears but seems stale | Rebuild index — `semantic-sidekick --notes <vault> --reindex` |
+| Vault context appears but seems stale | Since v1.5.2 the server rebuilds a stale cache at startup and the watcher reindexes edits; if it still looks stale, rebuild by hand — `semantic-memory --notes <vault> --reindex` — and check stderr for `Invalid frontmatter in …` / `Skipping …` |
+| Docs never appear in `<vault-context>` | Pre-1.5.2 hooks searched only the first `.mcp.json` entry. On 1.5.2+, check the docs entry has an existing `--notes` folder and a built index (`<docs>/.semantic-sidekick-index/`) |
 | No injection on a prompt that should trigger it | Fingerprint collision — `cat .claude/.sidekick-fingerprints.json` and check if your prompt's sha1 is there, or mode is outage-silence — `cat .claude/.sidekick-mode` |
-| Stop hook doesn't fire capture prompt | Check `.claude/.sidekick-capture-pending.json` — empty = no cues matched the session's prompts |
+| Stop hook doesn't fire capture prompt | Check `.claude/.semantic-memory/capture-pending.json` — no items with this session's `session_id` = no cues matched this session's prompts |
 | Claude doesn't cite notes | vault-first skill didn't fire — check `ls .claude/skills/vault-first` (should be symlink to `skills/vault-first`); CLAUDE.md rule may also be missing |
 | `[outage]` prefix on non-incident turn | `cat .claude/.sidekick-mode`; if it says `outage-silence`, run `/mode vault-first` |
 | `/mode` command doesn't persist | Permission issue writing to `.claude/.sidekick-mode` — check the command ran via `/mode status` afterward |

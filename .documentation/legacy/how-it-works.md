@@ -7,7 +7,7 @@ tags: [legacy, substrate, mcp, indexer, embedder]
 status: active
 last_updated: '2026-04-23'
 version: '0.2.3'
-purpose: Substrate-level: MCP server startup, indexer, embedder internals
+purpose: 'Substrate-level: MCP server startup, indexer, embedder internals'
 load_priority: 3
 ---
 

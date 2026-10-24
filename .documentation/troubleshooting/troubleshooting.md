@@ -30,6 +30,27 @@ load_priority: 9
 - **Cause:** mid-migration state. v0.x → v1.x users sometimes end up with both packages.
 - **Fix:** remove the legacy package: `npm uninstall @theglitchking/semantic-sidekick`. The new package keeps both `bin/semantic-memory` and `bin/semantic-sidekick` aliases internally; nothing scripted against the legacy bin name will break.
 
+## v1.5.2 docs index + hook issues (issue #29)
+
+### Docs index stuck at an old `totalChunks` / `indexedAt` while `.documentation/` keeps growing
+- **Cause (pre-1.5.2, any of):** a stale cached index was served forever (startup only rebuilt when the cache failed to load); the watcher never fired under chokidar 5 (glob target); one doc with invalid frontmatter made every rebuild fail.
+- **Check:** `cat <docs>/.semantic-sidekick-index/meta.json` (compare `totalChunks` / `indexedAt` with the folder); the server's stderr for `Invalid frontmatter in …` or `Skipping …`.
+- **Fix:** upgrade to 1.5.2+ and restart the session — a stale cache now rebuilds at startup and edits reindex live. Quote any frontmatter value named in an `Invalid frontmatter` line (an unquoted colon is the usual cause). Manual rebuild: `semantic-memory --notes <docs> --reindex`.
+- **See:** [indices-and-storage.md](../architecture/indices-and-storage.md), [what-gets-indexed.md](../architecture/what-gets-indexed.md)
+
+### Hooks inject nothing although the docs clearly cover the question
+- **Cause (pre-1.5.2):** the prompt and SessionStart hooks searched only the first `semantic-*` entry in `.mcp.json` — normally the vault. An empty vault meant every prompt searched nothing.
+- **Fix:** upgrade to 1.5.2+, which searches every entry's `--notes` folder and labels hits by server. Each folder needs a built index (`<folder>/.semantic-sidekick-index/`). `SIDEKICK_VAULT_PATH` limits the hook to one folder — unset it to search both.
+- **See:** [injection-points.md](../architecture/injection-points.md)
+
+### Stop hook asks you to file a capture from a conversation this session never had
+- **Cause (pre-1.5.2):** `capture-pending.json` was shared by every session in the project, so a cue from a concurrent session showed up in this session's Stop prompt.
+- **Fix:** upgrade to 1.5.2+ (items are keyed by `session_id`). Items written before the upgrade are asked about once, by whichever session stops first.
+
+### `npm audit fix` / `npm update` crash with `Cannot read properties of null (reading 'edgesOut')`
+- **Cause:** an npm 10 arborist bug resolving vitest 4's optional peer dependencies (`#loadPeerSet`).
+- **Fix:** update the affected packages by name (`npm update <pkg> …`, leaving vitest out), and update the vitest chain with npm 11: `npx -y npm@11 update vitest`. npm 11 skips install scripts it hasn't approved, so run `npm rebuild <pkg>` for any it warns about.
+
 ## v1.1+ session issues
 
 ### `session_finish` refuses with "no verification commands recorded"

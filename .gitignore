@@ -47,3 +47,6 @@ skills/*-workspace/
 # Stale semantic-first symlink (points at npx cache — regenerated per machine)
 .claude/skills/semantic-first
 .npmrc
+
+# hit-em-with-the-docs run reports (timestamped, regenerated on every maintain/audit)
+.documentation/reports/

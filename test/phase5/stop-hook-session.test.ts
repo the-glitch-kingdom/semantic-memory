@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, mkdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -113,5 +113,66 @@ describe("Stop hook: session-active branch (Phase 5)", () => {
     // OR a payload without additionalContext. Either way, no session prompt.
     const stringified = JSON.stringify(out);
     expect(stringified).not.toContain("vault-session-close");
+  });
+});
+
+// Issue #29: capture-pending.json is per project, so a cue typed in one session showed up in a
+// different concurrent session's Stop prompt. Items are now keyed by session_id.
+describe("Stop hook: capture-pending is per session", () => {
+  let projectRoot: string;
+  const pendingFile = () => join(projectRoot, ".claude", ".semantic-memory", "capture-pending.json");
+  const prompt = (session_id: string, text: string) =>
+    runHook(projectRoot, { hook_event_name: "UserPromptSubmit", cwd: projectRoot, session_id, prompt: text });
+  const stop = (session_id?: string) =>
+    runHook(projectRoot, { hook_event_name: "Stop", cwd: projectRoot, ...(session_id ? { session_id } : {}) }).stdout;
+
+  beforeEach(async () => {
+    projectRoot = await seedProject();
+  });
+  afterEach(async () => {
+    await rm(projectRoot, { recursive: true, force: true });
+  });
+
+  it("a cue from session A is asked about only at A's Stop", async () => {
+    prompt("sess-A", "the fix was to quote the purpose field in frontmatter");
+    expect(stop("sess-B")).not.toContain("vault-capture-prompt");
+    const a = stop("sess-A");
+    expect(a).toContain("vault-capture-prompt");
+    expect(a).toContain("quote the purpose field");
+    expect(stop("sess-A")).not.toContain("vault-capture-prompt"); // cleared after asking
+  });
+
+  it("another session starting does not clear A's pending items", async () => {
+    prompt("sess-A", "we decided to search every notes path");
+    runHook(projectRoot, { hook_event_name: "SessionStart", cwd: projectRoot, session_id: "sess-B", source: "startup" });
+    expect(stop("sess-A")).toContain("search every notes path");
+  });
+
+  it("a legacy item without session_id is handled once, by whichever session stops first", async () => {
+    await mkdir(join(projectRoot, ".claude", ".semantic-memory"), { recursive: true });
+    await writeFile(
+      pendingFile(),
+      JSON.stringify({ items: [{ ts: new Date().toISOString(), cue: "because", excerpt: "legacy pending item" }] })
+    );
+    expect(stop("sess-A")).toContain("legacy pending item");
+    expect(stop("sess-B")).not.toContain("legacy pending item");
+  });
+
+  it("a Stop without session_id still sees every item (old behavior)", async () => {
+    prompt("sess-A", "the bug was a shared state file");
+    expect(stop()).toContain("a shared state file");
+  });
+
+  it("prunes other sessions' items older than a week", async () => {
+    const old = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    await mkdir(join(projectRoot, ".claude", ".semantic-memory"), { recursive: true });
+    await writeFile(
+      pendingFile(),
+      JSON.stringify({ items: [{ ts: old, cue: "because", excerpt: "dead session item", session_id: "sess-dead" }] })
+    );
+    prompt("sess-A", "the fix was pruning old items");
+    stop("sess-A");
+    const left = JSON.parse(await readFile(pendingFile(), "utf8")).items;
+    expect(left).toEqual([]);
   });
 });

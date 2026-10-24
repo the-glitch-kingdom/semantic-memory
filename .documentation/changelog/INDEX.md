@@ -1,43 +1,54 @@
 ---
-title: Changelog Index
-tier: guide
+title: Changelog Documentation Index
+tier: reference
 domains: [changelog]
-audience: [developers]
-tags: [index, changelog]
 status: active
-last_updated: '2026-07-11'
-version: '1.5.0'
-purpose: Navigation hub for changelog domain
-load_priority: 6
+last_updated: '2026-10-24'
+version: '1.0.0'
+purpose: Complete listing of changelog documentation
 ---
 
-# Changelog Index
+# Changelog Documentation
 
-> Per-version change logs (v0.x phases through v1.5).
+> Release notes per version and phase
 
-## v1.x — semantic-memory era
+## Overview
 
-- **[v1.0 — Rebrand to semantic-memory](./v1-0-rebrand.md)** — Public-facing rename from `semantic-sidekick`. Multi-corpus framing announced. Internal wiring partly left for v1.1.1 to clean up.
-- **[v1.1 — brain-absorption](./v1-1-brain-absorption.md)** — AGENTS.md contract, hard-gated verification sessions, multi-agent skill bundler, drift detection, distill/synthesize unification. Plus the v1.1.1 hotfix for the unfinished v1.0 rebrand.
-- **[v1.2 — state consolidation](./v1-2-state-consolidation.md)** — Three transient state files moved from `.claude/.sidekick-*` to `.claude/.semantic-memory/`. New `migrate-state` CLI. New `legacy_state_files` healthcheck finding.
-- **[v1.2.3 — hygiene line completed](./v1-2-3-hygiene-completion.md)** — The three v1.2 roadmap items that slipped: `/healthcheck --fix` auto-remediation, `lint_vault({checks:['code_symbols']})` code-path drift, and a fresh-install CI smoke gate.
-- **[v1.3 — confidence decay](./v1-3-confidence-decay.md)** — Age-aware retrieval ranking (`0.5^(age/half-life)`, type-aware, floored, composes with `load_priority`). New `verify_note` tool (40→41), `evergreen` frontmatter, `decay` block in results, `decay-config`/`decay-trace` CLI.
-- **[v1.3.1 — selection-logging telemetry](./v1-3-1-telemetry.md)** — Local, append-only `selection.jsonl` recording which search result each answer used. New `decay_candidates` lint and `selection-stats` CLI. Observes only (no ranking change) — the precursor to v1.4 usage-feedback ranking. Also carries the `regenerate_contract` version-freeze fix.
-- **[v1.3.2 — fix hook double-registration](../operational/drift-detection.md#hook_double_registration-warn-v132)** — Removed the redundant `hooks` block from `.claude/settings.json` (the plugin's `hooks.json` already registers them) that fired `vault-context.js` twice per prompt; added a `hook_double_registration` healthcheck finding.
-- **[v1.4.0 — resident-expert bridge](./v1-4-0-resident-bridge.md)** — The human→LLM bridge: learned lexicon (`manage_lexicon`) + propose-and-confirm alias capture, verbatim symptom capture + symptom-keyed indexing, Tier-1 lexicon query expansion, archive path-class down-weight, injection hygiene, section-targeted `read_note`, conditional tool registration, and the golden eval harness. Tool surface 41→42.
-- **[v1.5.0 — the expert-character layer](./v1-5-0-expert-character.md)** — Entity dossiers (`manage_dossier`) with two-hop retrieval + lexicon alias fold-in, usage-feedback ranking (`usage_boost`, consumes the v1.3.1 selection log) plus the `decoys` lint, Stop/SessionStart session paging (digest-as-proposal, curated SessionStart digest), and a speaker profile (`manage_profile`) learned via correction cues. Tool surface 42→44.
+- **Total Documents:** 13
+- **Domain:** `changelog/`
+- **Category:** development
+- **Load Priority:** 5/10
 
-## v0.x — semantic-sidekick phased build
+## Documents
 
-- **[Phase 1 — Activation Layer](./phase-1-activation.md)** — What the Phase 1 activation layer shipped: hooks, vault-first skill, CLAUDE.md rule.
-- **[Phase 2 — Structure + Capture](./phase-2-structure.md)** — Schema, apply_patch, synthesize_note, lint, Stop capture, parsed-doc cache.
-- **[Phase 3 — Ingest + Maintenance](./phase-3-ingest.md)** — ingest_source, structured log.md, hierarchical index auto-regen, broken-link lint.
-- **[Phase 4 — Routing + Transitions](./phase-4-routing.md)** — research-mode + outage-silence skills, /mode, /vault, mode-aware hooks, transition capture.
+### References
 
-## See also
+| Document | Status | Updated | Words |
+|----------|--------|---------|-------|
+| [Phase 1 — Activation Layer](phase-1-activation.md) | active | 2026-04-23 | 1,084 |
+| [Phase 2 — Structure + Capture](phase-2-structure.md) | active | 2026-04-23 | 1,431 |
+| [Phase 3 — Ingest + Maintenance](phase-3-ingest.md) | active | 2026-04-23 | 1,092 |
+| [Phase 4 — Routing + Transitions](phase-4-routing.md) | active | 2026-04-23 | 1,208 |
+| [v1.0 — Rebrand to semantic-memory](v1-0-rebrand.md) | active | 2026-05-09 | 510 |
+| [v1.1 — brain-absorption](v1-1-brain-absorption.md) | active | 2026-05-09 | 862 |
+| [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](v1-2-3-hygiene-completion.md) | active | 2026-07-10 | 613 |
+| [v1.2 — state consolidation under .claude/.semantic-memory/](v1-2-state-consolidation.md) | active | 2026-05-09 | 671 |
+| [v1.3.1 — selection-logging telemetry](v1-3-1-telemetry.md) | active | 2026-07-10 | 653 |
+| [v1.3 — confidence decay (age-aware retrieval ranking)](v1-3-confidence-decay.md) | active | 2026-07-10 | 753 |
+| [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](v1-4-0-resident-bridge.md) | active | 2026-07-10 | 961 |
+| [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](v1-5-0-expert-character.md) | active | 2026-07-11 | 2,127 |
+| [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) | active | 2026-10-24 | 521 |
 
-- [Root CHANGELOG.md](../../CHANGELOG.md) — git-tracked release notes per npm version
-- [ROADMAP.md](../../ROADMAP.md) — committed near-term direction (v1.2 hygiene, v1.3 confidence-decay, v2.0 close-the-window)
-- [v1-stack-overview.md](../architecture/v1-stack-overview.md) — architectural narrative for the v1.x changes
-- [`REGISTRY.md`](./REGISTRY.md) — tabular metadata view
-- [Root INDEX](../INDEX.md) — navigate all domains
+## Keywords
+
+This domain covers: changelog, release, version, shipped
+
+## Related Domains
+
+- [Architecture](../architecture/) - System design, AI coach, project registry, patterns
+- [Standards](../standards/) - Coding standards (backend, frontend, database, devops, security)
+- [Testing](../testing/) - Test strategies, fixtures, patterns, integration/e2e
+
+---
+
+*Last updated: 2026-10-24*
