@@ -53,3 +53,6 @@ export type {
 } from "./types.js";
 export { redact, redactDeep, REDACTED } from "./redact.js";
 export type { RedactMode, RedactResult } from "./redact.js";
+export { failureQuery, errorSignal, commandVerbs } from "./failure-query.js";
+export { evaluateFailures, formatFailureEval } from "./failure-eval.js";
+export type { FailureCase, Judgment, CaseResult, FailureEvalReport, ThresholdRow } from "./failure-eval.js";
