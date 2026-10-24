@@ -10,12 +10,14 @@
 //
 // Fails open: any error logs to stderr and emits an empty additionalContext.
 
-import { spawnSync } from "node:child_process";
+import { spawnSync, execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, basename, dirname } from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
+const execFileAsync = promisify(execFile);
 const DEBUG = process.env.SIDEKICK_DEBUG === "1";
 function debug(msg) {
   if (DEBUG) process.stderr.write(`[vault-context] ${msg}\n`);
@@ -39,13 +41,16 @@ function emit(eventName, additionalContext) {
   process.stdout.write(JSON.stringify(out) + "\n");
 }
 
-function findVaultPath(projectRoot) {
-  // 1. Explicit env override (useful for tests)
+// Every notes path the hook searches: [{ name, path, readOnly }], in .mcp.json order.
+// The standard setup has two (semantic-vault → .claude/.vault, semantic-sidekick → .documentation --read-only).
+function findNotesSources(projectRoot) {
+  // 1. Explicit env override (useful for tests) — a single path, replaces the lookup
   if (process.env.SIDEKICK_VAULT_PATH) {
     const p = resolve(process.env.SIDEKICK_VAULT_PATH);
-    return existsSync(p) ? p : null;
+    return existsSync(p) ? [{ name: "vault", path: p, readOnly: false }] : [];
   }
-  // 2. Read .mcp.json → mcpServers.semantic-vault.args[--notes ...]
+  // 2. Read .mcp.json → mcpServers.semantic-{vault,sidekick,memory}.args[--notes ...]
+  const sources = [];
   const mcpPath = join(projectRoot, ".mcp.json");
   if (existsSync(mcpPath)) {
     try {
@@ -58,16 +63,24 @@ function findVaultPath(projectRoot) {
         const i = args.indexOf("--notes");
         if (i >= 0 && i + 1 < args.length) {
           const p = resolve(projectRoot, args[i + 1]);
-          if (existsSync(p)) return p;
+          if (existsSync(p) && !sources.some((s) => s.path === p)) {
+            sources.push({ name, path: p, readOnly: args.includes("--read-only") });
+          }
         }
       }
     } catch (e) {
       debug(`.mcp.json parse failed: ${e.message}`);
     }
   }
+  if (sources.length > 0) return sources;
   // 3. Default
   const def = join(projectRoot, ".claude", ".vault");
-  return existsSync(def) ? def : null;
+  return existsSync(def) ? [{ name: "vault", path: def, readOnly: false }] : [];
+}
+
+// The one path the hook writes to (log events, dossiers, digests, profile): never a read-only docs server
+function pickVaultPath(sources) {
+  return (sources.find((s) => !s.readOnly) ?? sources[0])?.path ?? null;
 }
 
 function findCliBin(projectRoot) {
@@ -86,21 +99,29 @@ function findCliBin(projectRoot) {
   return null;
 }
 
-function runSearchCli(cliBin, args, timeoutMs) {
-  const r = spawnSync("node", [cliBin, "search", ...args], {
-    stdio: ["ignore", "pipe", "pipe"],
-    timeout: timeoutMs,
-  });
-  if (r.status !== 0) {
-    debug(`search exited ${r.status}: ${r.stderr?.toString().trim()}`);
-    return null;
-  }
+async function runSearchCli(cliBin, args, timeoutMs) {
   try {
-    return JSON.parse(r.stdout.toString());
+    const { stdout } = await execFileAsync("node", [cliBin, "search", ...args], {
+      timeout: timeoutMs,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    return JSON.parse(stdout);
   } catch (e) {
-    debug(`search output parse failed: ${e.message}`);
+    debug(`search failed: ${e.stderr?.toString().trim() || e.message}`);
     return null;
   }
+}
+
+// Search every source in parallel (one CLI spawn each) and merge by score. Hits carry
+// `source` only when more than one corpus was searched, so single-corpus output is unchanged.
+async function searchSources(cliBin, sources, limit, query) {
+  const results = await Promise.all(
+    sources.map((s) => runSearchCli(cliBin, ["--notes", s.path, "--limit", String(limit), query], 30_000))
+  );
+  const multi = sources.length > 1;
+  return results
+    .flatMap((hits, i) => (Array.isArray(hits) ? hits : []).map((h) => (multi ? { ...h, source: sources[i].name } : h)))
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }
 
 // Fire-and-forget structured log event via CLI. Hooks don't import core modules;
@@ -148,7 +169,8 @@ function dedupeByBasename(hits) {
   const seen = new Set();
   const out = [];
   for (const h of hits) {
-    const base = String(h.path || "").split("/").pop();
+    // per corpus: the same basename in the vault and in the docs is two different notes
+    const base = `${h.source ?? ""}:${String(h.path || "").split("/").pop()}`;
     if (seen.has(base)) continue;
     seen.add(base);
     out.push(h);
@@ -169,7 +191,8 @@ export function formatContextBlock(source, query, hits) {
   lines.push("");
   for (const h of shown) {
     const score = typeof h.score === "number" ? h.score.toFixed(2) : "";
-    lines.push(`- \`${h.path}\`${score ? ` (score: ${score})` : ""}`);
+    const meta = [h.source, score ? `score: ${score}` : ""].filter(Boolean).join(", ");
+    lines.push(`- \`${h.path}\`${meta ? ` (${meta})` : ""}`);
     if (h.snippet) {
       const snip = h.snippet.replace(/\s+/g, " ").slice(0, 240);
       lines.push(`  > ${snip}`);
@@ -594,7 +617,7 @@ function saveFingerprints(projectRoot, state) {
   }
 }
 
-async function handleSessionStart(projectRoot, vaultPath, cliBin) {
+async function handleSessionStart(projectRoot, vaultPath, cliBin, sources) {
   // Capture the previous mode (if any) before we reset — so future-Claude
   // can tell, from log.md, that we rolled back from research/outage without
   // being shown the postmortem prompt (which is the lossy case).
@@ -613,8 +636,8 @@ async function handleSessionStart(projectRoot, vaultPath, cliBin) {
   if (!digestBlock) {
     const query = sessionSeedQuery(projectRoot);
     debug(`sessionstart seed query: "${query}"`);
-    const hits = runSearchCli(cliBin, ["--notes", vaultPath, "--limit", "6", query], 30_000);
-    searchBlock = hits && hits.length > 0 ? formatContextBlock("sessionstart", query, hits) : "";
+    const hits = await searchSources(cliBin, sources, 6, query);
+    searchBlock = hits.length > 0 ? formatContextBlock("sessionstart", query, hits) : "";
   } else {
     debug("sessionstart: paging in curated digest (skipping broad search)");
   }
@@ -883,7 +906,7 @@ async function handleStop(projectRoot) {
   emitStop(lines.join("\n"), true);
 }
 
-async function handlePrompt(projectRoot, vaultPath, cliBin, input) {
+async function handlePrompt(projectRoot, sources, cliBin, input) {
   const prompt = typeof input.prompt === "string" ? input.prompt : "";
   if (!prompt || prompt.length < 8) {
     emit("UserPromptSubmit", "");
@@ -908,7 +931,7 @@ async function handlePrompt(projectRoot, vaultPath, cliBin, input) {
   // Tier-1 lexicon expansion: search with the alias-expanded query, but keep the
   // original prompt for display in the block.
   const searchQuery = expandQueryViaLexicon(projectRoot, prompt);
-  const hits = runSearchCli(cliBin, ["--notes", vaultPath, "--limit", "8", searchQuery], 30_000);
+  const hits = await searchSources(cliBin, sources, 8, searchQuery);
   state.recent = [fp, ...recent].slice(0, 10);
   saveFingerprints(projectRoot, state);
   const cue = detectCaptureCue(prompt);
@@ -918,7 +941,7 @@ async function handlePrompt(projectRoot, vaultPath, cliBin, input) {
   // Two-hop: if the utterance names a tracked entity, lead with its dossier head.
   const dossier = resolveDossierForPrompt(projectRoot, prompt);
   const dossierHead = dossier ? formatDossierHead(dossier) : "";
-  if (!hits || hits.length === 0) {
+  if (hits.length === 0) {
     // Even with no semantic hits, a resolved dossier is worth injecting.
     emit("UserPromptSubmit", dossierHead);
     return;
@@ -934,7 +957,8 @@ async function main() {
   const projectRoot = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   debug(`event=${eventName} projectRoot=${projectRoot}`);
 
-  const vaultPath = findVaultPath(projectRoot);
+  const sources = findNotesSources(projectRoot);
+  const vaultPath = pickVaultPath(sources);
   if (!vaultPath) {
     debug(`no vault found under ${projectRoot}`);
     emitNoop(eventName);
@@ -946,15 +970,15 @@ async function main() {
     emitNoop(eventName);
     return;
   }
-  debug(`vault=${vaultPath} bin=${cliBin}`);
+  debug(`vault=${vaultPath} search=${sources.map((s) => s.path).join(",")} bin=${cliBin}`);
 
   try {
     if (eventName === "UserPromptSubmit") {
-      await handlePrompt(projectRoot, vaultPath, cliBin, input);
+      await handlePrompt(projectRoot, sources, cliBin, input);
     } else if (eventName === "Stop") {
       await handleStop(projectRoot);
     } else {
-      await handleSessionStart(projectRoot, vaultPath, cliBin);
+      await handleSessionStart(projectRoot, vaultPath, cliBin, sources);
     }
   } catch (e) {
     debug(`handler failed: ${e.message}`);
