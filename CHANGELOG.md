@@ -2,6 +2,28 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.5.3] - 2026-10-24 — Secret redaction
+
+Patch release. Until now nothing stopped an API key, token or password that passed through the plugin from being written to disk in the clear — and vault notes are usually committed to git. Every write point now masks secrets first, and `lint_vault` can find the ones already there.
+
+### Security
+
+- **Redaction at every write point** (`src/core/redact.ts`), two layers: the exact values of secret-named env vars on the machine (process env + `~/.claude/settings.json` `env`), then patterns — PEM private keys, `user:pass@` URL credentials, `Bearer`/`Basic` headers, secret-named `name=value` / `name: value` / JSON pairs, `--token VALUE` flags, vendor key prefixes (`sk-`/`pk-`/`rk-`, `ghp_`, `github_pat_`, `glpat-`, `xox*-`, `AKIA`/`ASIA`, `AIza`, `whsec_`, `re_`, `hf_`, `npm_`), JWTs.
+  - **Notes** (create/update, `apply_patch`, synthesize, ingest, promote, `update_frontmatter`, dossiers, speaker profile, lexicon aliases, `log.md`) use a *precise* set tuned so ordinary content survives: commit SHAs, UUIDs, hashes, paths, `pk_customer_orders`, `max_tokens`, `monkey: …` and placeholders (`<your-key>`, `${API_TOKEN}`, `process.env.X`, `changeme`, `xxxx`) are untouched. `update_note` redacts only the incoming text.
+  - **Logs and state** (search queries in `selection.jsonl`, `session.json` task / `session_run` command and output tail, the hook's capture-pending excerpt) also mask long base64 and letter-and-digit tokens.
+  - The hook imports the redactor from `dist/core/redact.js`; if it cannot load, the capture excerpt is withheld rather than stored raw.
+  - Tool results say how many secrets were redacted (`… (2 secrets redacted)`, or `redacted: N` in JSON results), never which.
+- **`lint_vault({ checks: ["secrets"] })`** — opt-in check that reports notes already containing a secret: path, line and kind, never the value; nothing is rewritten. A secret that was ever committed must be **rotated**: redaction cannot remove it from git history.
+- Known limit: a secret written as plain prose ("the password is hunter2") is not caught.
+
+### Changed
+
+- `NoteCrud.create()` returns `{ path, redacted }` instead of the path string; `NoteCrud.update()` returns the same shape (was `void`). Only affects code using `@theglitchking/semantic-memory` as a library.
+
+### Tests
+
+- Full suite **507 green** (440 in 1.5.2). One integration test per write point through the real MCP tools (all fail without the change), a sweep of the whole vault for the fake values, false-positive cases for ordinary note content, linear-time checks on 1 MB pathological inputs.
+
 ## [1.5.2] - 2026-10-24 — Docs index freshness (issue #29)
 
 Patch release. In the standard two-server setup (`semantic-vault` → `.claude/.vault`, `semantic-sidekick` → `.documentation --read-only`) the docs index went stale after it was first built and the hooks never searched the docs. Fixes for every cause found, plus the dependency audit.

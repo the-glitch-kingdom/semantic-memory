@@ -6,13 +6,13 @@
   },
   "metadata": {
     "description": "Single-plugin marketplace for semantic-memory — the unified memory-layer plugin. v1.1.0 absorbs brain's strengths: AGENTS.md contract artifact, hard-gated verification sessions, multi-agent skill bundler (codex/copilot/pi), and SessionStart drift detection. v1.3 adds confidence decay — age-aware retrieval ranking with verify_note to reset the clock. All backwards-compatible with v1.0.x via deprecation shims.",
-    "version": "1.5.2"
+    "version": "1.5.3"
   },
   "plugins": [
     {
       "name": "semantic-memory",
       "description": "Unified memory-layer plugin for Claude Code. One MCP server, 44 tools across multi-corpus search/read/write/graph/lint/sessions/contract. v1.1.0 adds: AGENTS.md contract artifact, hard-gated verification sessions (session_start/run/finish/status), proposal-mode synthesize_note + synthesize_promote, multi-agent skill bundler (codex/copilot/pi via the new `skills` CLI), and SessionStart drift detection. v1.2 completes the hygiene line: `/healthcheck --fix` auto-remediation, `lint_vault({checks:['code_symbols']})` code-path drift, and a fresh-install CI smoke gate. v1.3 adds confidence decay: age-aware search ranking (0.5^(age/half-life), type-aware, floored, composes with load_priority), a `decay` block surfaced on decayed results, `verify_note` to reset the clock, `evergreen` opt-out, and `decay-config`/`decay-trace` CLI introspection. v1.3.1 adds local-only selection-logging telemetry (which note each search result actually got used), the `decay_candidates` lint, and a `selection-stats` CLI. v1.4.0 is the resident-expert bridge: a learned human→artifact lexicon (`manage_lexicon`) with propose-and-confirm alias capture, verbatim symptom capture + symptom-keyed indexing (terse symptom queries match the note), Tier-1 lexicon query expansion in the hook, archive path-class down-weight, injection hygiene (score-gate + dedup + top-3 + compact instructions), section-targeted `read_note`, and opt-in conditional tool registration. v1.5.0 is the expert-character layer: entity dossiers (`manage_dossier`) — per-component living notes (purpose / failure modes / knobs / incident log / current state) that accrete in place, with two-hop retrieval (utterance→entity→dossier injected first); usage-feedback ranking that boosts repeatedly-cited notes (capped, composes with decay/path-class) plus a `decoys` lint for retrieved-but-never-cited notes (surfaced, never auto-down-ranked); session paging (Stop drafts a durable session digest as a proposal, SessionStart pages in a curated digest instead of a broad sweep); and a speaker profile (`manage_profile`) that models how the human communicates — severity calibration, chronic omissions, verbosity, shorthand — injected at SessionStart. Backwards-compatible with v1.0.x — every previous tool name remains callable through deprecation shims (removed in v2.0.0).",
-      "version": "1.5.2",
+      "version": "1.5.3",
       "author": {
         "name": "TheGlitchKing"
       },
