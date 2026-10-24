@@ -26,12 +26,12 @@ purpose: Navigation hub for all documentation
 | [Plans](#plans) | 0 | Planning documents, roadmaps, proposals |
 | [Procedures](#procedures) | 0 | Step-by-step operational procedures (SOP) |
 | [Quickstart](#quickstart) | 2 | Setup guides, dev workflow, onboarding |
-| [Security](#security) | 0 | Security, auth, Vault, Keycloak, RLS |
+| [Security](#security) | 1 | Security, auth, Vault, Keycloak, RLS |
 | [Standards](#standards) | 0 | Coding standards (backend, frontend, database, devops, security) |
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 13 | Release notes per version and phase |
+| [Changelog](#changelog) | 14 | Release notes per version and phase |
 | [Operational](#operational) | 12 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 5 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -156,7 +156,9 @@ purpose: Navigation hub for all documentation
 
 **Path:** `security/`
 
-*No documents yet.*
+| Document | Tier | Status | Updated |
+|----------|------|--------|----------|
+| [Secret redaction — design, write points, and how to add a pattern](security/secret-redaction.md) | reference | active | 2026-10-24 |
 
 ---
 
@@ -225,6 +227,7 @@ purpose: Navigation hub for all documentation
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](changelog/v1-4-0-resident-bridge.md) | reference | active | 2026-07-10 |
 | [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](changelog/v1-5-0-expert-character.md) | reference | active | 2026-07-11 |
 | [v1.5.2 — docs index freshness (issue](changelog/v1-5-2-docs-index-freshness.md) | reference | active | 2026-10-24 |
+| [v1.5.3 — secret redaction](changelog/v1-5-3-secret-redaction.md) | reference | active | 2026-10-24 |
 
 ---
 

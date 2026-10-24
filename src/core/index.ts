@@ -51,3 +51,5 @@ export type {
   GraphEdge,
   VaultStats,
 } from "./types.js";
+export { redact, redactDeep, REDACTED } from "./redact.js";
+export type { RedactMode, RedactResult } from "./redact.js";

@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 13
+- **Total Documents:** 14
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -38,6 +38,7 @@ purpose: Complete listing of changelog documentation
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](v1-4-0-resident-bridge.md) | active | 2026-07-10 | 961 |
 | [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](v1-5-0-expert-character.md) | active | 2026-07-11 | 2,127 |
 | [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) | active | 2026-10-24 | 521 |
+| [v1.5.3 — secret redaction](v1-5-3-secret-redaction.md) | active | 2026-10-24 | 366 |
 
 ## Keywords
 

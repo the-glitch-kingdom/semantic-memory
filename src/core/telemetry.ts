@@ -1,6 +1,7 @@
 import { appendFile, readFile, mkdir } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { redact } from "./redact.js";
 import { parse as parseYaml } from "yaml";
 import { deriveSessionDir } from "./session.js";
 
@@ -66,7 +67,9 @@ export async function appendEvent(vaultPath: string, event: TelemetryEvent, nowI
     if (!telemetryEnabled(vaultPath)) return;
     const dir = deriveSessionDir(vaultPath);
     await mkdir(dir, { recursive: true });
-    const line = JSON.stringify({ ts: nowIso ?? new Date().toISOString(), ...event });
+    // only the free-text query: note_path feeds usage-boost citation counts and must stay intact
+    const safe = event.kind === "search" ? { ...event, query: redact(event.query, "broad").text } : event;
+    const line = JSON.stringify({ ts: nowIso ?? new Date().toISOString(), ...safe });
     await appendFile(selectionLogPath(vaultPath), line + "\n", "utf-8");
   } catch {
     // fire-and-forget

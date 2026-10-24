@@ -4,6 +4,13 @@ import { existsSync } from "node:fs";
 import { glob } from "glob";
 import matter from "gray-matter";
 import type { UpdateNoteOptions } from "./types.js";
+import { redact, redactDeep } from "./redact.js";
+
+/** `redacted`: secrets masked in the content written (never the values). */
+export interface NoteWriteResult {
+  path: string;
+  redacted: number;
+}
 
 export class NoteCrud {
   private notesPath: string;
@@ -16,7 +23,7 @@ export class NoteCrud {
     relativePath: string,
     content: string,
     frontmatter?: Record<string, unknown>
-  ): Promise<string> {
+  ): Promise<NoteWriteResult> {
     const absPath = join(this.notesPath, relativePath);
     if (existsSync(absPath)) {
       throw new Error(`Note already exists: ${relativePath}`);
@@ -24,13 +31,15 @@ export class NoteCrud {
 
     await mkdir(dirname(absPath), { recursive: true });
 
+    const body = redact(content);
+    const fm = redactDeep(frontmatter ?? {}, "precise");
     // Merge auto-stamps with caller-supplied frontmatter (caller wins on conflicts)
-    const stamps = computeStamps(content);
-    const merged = { ...stamps, ...(frontmatter ?? {}) };
-    const fileContent = matter.stringify(content, merged);
+    const stamps = computeStamps(body.text);
+    const merged = { ...stamps, ...fm.value };
+    const fileContent = matter.stringify(body.text, merged);
 
     await writeFile(absPath, fileContent, "utf-8");
-    return relativePath;
+    return { path: relativePath, redacted: body.count + fm.count };
   }
 
   async read(relativePath: string): Promise<string> {
@@ -57,13 +66,16 @@ export class NoteCrud {
     relativePath: string,
     content: string,
     options: UpdateNoteOptions
-  ): Promise<void> {
+  ): Promise<NoteWriteResult> {
     const absPath = join(this.notesPath, relativePath);
     if (!existsSync(absPath)) {
       throw new Error(`Note does not exist: ${relativePath}`);
     }
 
     const existing = await readFile(absPath, "utf-8");
+    // only the incoming text is redacted; secrets already in the note are lint_vault's to report
+    const incoming = redact(content);
+    content = incoming.text;
 
     let updated: string;
 
@@ -96,6 +108,7 @@ export class NoteCrud {
     const stamps = computeStamps(body);
     const newFm = { ...existingFm, ...stamps };
     await writeFile(absPath, matter.stringify(body, newFm), "utf-8");
+    return { path: relativePath, redacted: incoming.count };
   }
 
   async delete(relativePath: string): Promise<void> {

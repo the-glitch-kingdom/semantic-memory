@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
+import { redact } from "./redact.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
@@ -93,7 +94,7 @@ export class SessionManager {
     const id = `ses_${now.replace(/[:.]/g, "-")}`;
     const state: SessionState = {
       id,
-      task: task.trim(),
+      task: redact(task.trim(), "broad").text,
       started_at: now,
       last_activity_at: now,
       verifications: [],
@@ -120,7 +121,9 @@ export class SessionManager {
       return { ok: false, error: "session_run requires a non-empty command." };
     }
     const start = Date.now();
-    const record = await this.spawnAndCapture(cmd, timeoutMs ?? DEFAULT_TIMEOUT_MS);
+    const raw = await this.spawnAndCapture(cmd, timeoutMs ?? DEFAULT_TIMEOUT_MS);
+    // session.json keeps the command and its output tail: either can carry a token
+    const record = { ...raw, cmd: redact(raw.cmd, "broad").text, tail: redact(raw.tail, "broad").text };
     record.duration_ms = Date.now() - start;
     state.verifications.push(record);
     state.last_activity_at = new Date().toISOString();
