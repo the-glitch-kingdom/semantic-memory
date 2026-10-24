@@ -31,7 +31,7 @@ This installs: persistent-planning, babel-fish, and hit-em-with-the-docs.
 ### persistent-planning
 Structured planning system for complex tasks. Use this when starting any multi-step or non-trivial task.
 - `/start-planning "task name"` — initializes a persistent plan with task_plan.md and notes.md in `.planning/`
-- Skill definition: `.claude/skills/persistent-planning/SKILL.md`
+- Installed as the `persistent-planning@persistent-planning-marketplace` Claude Code plugin (not copied into `.claude/skills/`)
 
 ### babel-fish
 Generates and maintains a live project map of routes, models, import chains, vocabulary, and infra profile.

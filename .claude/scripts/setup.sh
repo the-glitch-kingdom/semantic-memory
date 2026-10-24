@@ -35,11 +35,17 @@ ok "npm dependencies installed"
 
 # --- persistent-planning ---
 step "Installing persistent-planning"
-git clone --depth=1 --quiet \
-    https://github.com/TheGlitchKing/persistent-planning.git \
-    "$TMP_DIR/persistent-planning"
-bash "$TMP_DIR/persistent-planning/install.sh" --scope project
-ok "persistent-planning installed"
+# v2+ installs through the plugin marketplace; the old install.sh --scope flow was removed
+if command -v claude >/dev/null 2>&1; then
+    claude plugin marketplace add TheGlitchKing/persistent-planning >/dev/null 2>&1 || true
+    claude plugin install persistent-planning@persistent-planning-marketplace \
+        || err "persistent-planning plugin install failed"
+    ok "persistent-planning installed (Claude Code plugin)"
+else
+    echo "  claude CLI not found; in Claude Code run:"
+    echo "    /plugin marketplace add TheGlitchKing/persistent-planning"
+    echo "    /plugin install persistent-planning@persistent-planning-marketplace"
+fi
 
 # --- babel-fish ---
 step "Installing babel-fish"
@@ -56,7 +62,7 @@ echo -e "${GREEN}Setup complete!${NC}"
 echo -e "${GREEN}=============================${NC}"
 echo ""
 echo "Installed plugins:"
-echo "  • persistent-planning  → .claude/skills/, .claude/commands/"
+echo "  • persistent-planning  → Claude Code plugin (/start-planning, /plan-status, …)"
 echo "  • babel-fish           → .claude/skills/, .claude/rules/, .claude/templates/"
 echo "  • hit-em-with-the-docs → node_modules/ (CLI: hewtd)"
 echo ""
