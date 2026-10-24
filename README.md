@@ -78,6 +78,10 @@ System (2): `get_stats`, `reindex`
 
 See the originating design discussion in `.planning/semantic-sidekick/` for rationale and phase-by-phase build plan.
 
+## Privacy and secrets
+
+Everything stays on your machine (local embedding model, no network telemetry). Since v1.5.3 every write masks API keys, tokens, passwords and private keys before they reach disk, and `lint_vault({ checks: ["secrets"] })` finds ones already in notes. Details and limits: [SECURITY.md](SECURITY.md#secret-redaction-v153).
+
 ## Development
 
 ```bash
