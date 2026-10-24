@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Indexer } from "../../src/core/indexer.js";
-import { FIXTURES_VAULT } from "../setup.js";
+import { FIXTURES_VAULT, createTempVault, cleanupTempDir } from "../setup.js";
+import { writeFile, symlink } from "node:fs/promises";
+import { join } from "node:path";
 import type { IndexedDocument } from "../../src/core/types.js";
 
 describe("Indexer", () => {
@@ -92,6 +94,40 @@ describe("Indexer", () => {
       // No chunk should drastically exceed target
       for (const chunk of chunks) {
         expect(chunk.length).toBeLessThan(4000);
+      }
+    });
+  });
+
+  // issue #29 follow-on: one bad doc made indexAll reject, leaving the whole corpus unindexed
+  describe("bad files", () => {
+    it("indexes the body of a doc with invalid frontmatter and keeps the rest", async () => {
+      const dir = await createTempVault();
+      try {
+        await writeFile(
+          join(dir, "bad-frontmatter.md"),
+          "---\ntitle: Bad\npurpose: Substrate-level: unquoted colon\n---\n\n# Bad frontmatter\n\nzebra-crossing body text\n"
+        );
+        const docs = await new Indexer(dir).indexAll();
+        const bad = docs.find((d) => d.path === "bad-frontmatter.md");
+        expect(bad).toBeDefined();
+        expect(bad!.frontmatter).toEqual({});
+        expect(bad!.content).toContain("zebra-crossing body text");
+        expect(bad!.content).not.toContain("purpose:");
+        expect(docs.length).toBeGreaterThan(1);
+      } finally {
+        await cleanupTempDir(dir);
+      }
+    });
+
+    it("skips an unreadable file instead of failing the whole index", async () => {
+      const dir = await createTempVault();
+      try {
+        const before = (await new Indexer(dir).indexAll()).length;
+        await symlink(join(dir, "does-not-exist.md"), join(dir, "dangling.md"));
+        const docs = await new Indexer(dir).indexAll();
+        expect(docs.length).toBe(before);
+      } finally {
+        await cleanupTempDir(dir);
       }
     });
   });
