@@ -97,10 +97,15 @@ function landedText(text: string, global: boolean): string {
   return renderSkill({ name: s.name, description: s.description, meta, body: s.body });
 }
 
-export function approveDraft(repo: string, id: string, opts: { promote?: boolean; env?: NodeJS.ProcessEnv } = {}): LedgerEntry {
+export function approveDraft(repo: string, id: string, opts: { promote?: boolean; override?: string; env?: NodeJS.ProcessEnv } = {}): LedgerEntry {
   const env = opts.env ?? process.env;
   const d = getDraft(repo, id);
   const r = d.record;
+  // evals are optional, but once they ran a failing draft stays a draft unless a person overrides (ledgered)
+  const gate = (r.evals as { gate?: { verdict: string; reasons: string[] } } | undefined)?.gate;
+  if (gate && gate.verdict !== "adopt" && !opts.override) {
+    throw new Error(`the eval gate said ${gate.verdict}: ${gate.reasons.join("; ")} — re-run --eval, or approve with --override "<why>"`);
+  }
   if (opts.promote && !r.promotion?.length) throw new Error(`${id} has no promotion: a skill goes global only when another repo has the same lesson`);
   const dest = destinationFor(repo, r, { global: opts.promote, env });
   const text = landedText(d.text, !!opts.promote);
@@ -114,7 +119,7 @@ export function approveDraft(repo: string, id: string, opts: { promote?: boolean
     throw new Error(`${dest} already exists`);
   }
   for (const p of replaced) if (!existsSync(p)) throw new Error(`${p}, which this merge replaces, is gone: reject the merge`);
-  const why = `${r.kind}${opts.promote ? " promoted to global" : ""} from session ${r.session_id}`;
+  const why = `${r.kind}${opts.promote ? " promoted to global" : ""} from session ${r.session_id}${gate && gate.verdict !== "adopt" ? `; eval gate ${gate.verdict}, overridden: ${opts.override}` : ""}`;
   // a merge lands the new skill and archives the ones it supersedes, in one ledger entry (one rollback)
   const archived = replaced.filter((p) => p !== dest).flatMap((p) => [
     { path: join(repo, ".claude", ".semantic-memory", "skills-archive", basename(dirname(p)), "SKILL.md"), content: readFileSync(p) as Buffer | string | null },

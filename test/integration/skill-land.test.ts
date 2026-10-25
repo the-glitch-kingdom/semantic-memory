@@ -47,6 +47,15 @@ describe("landing skill drafts (v1.7)", () => {
     expect(() => approveDraft(repo, id, { env })).toThrow(/no draft/);
   });
 
+  it("once evals ran, a draft the gate did not adopt needs --override (ledgered)", async () => {
+    const id = await make();
+    const f = join(listDrafts(repo)[0].dir, "draft.json");
+    const rec = JSON.parse(await readFile(f, "utf8"));
+    await writeFile(f, JSON.stringify({ ...rec, evals: { gate: { verdict: "keep-draft", reasons: ["task pass 100% with the skill does not beat 100% without"] } } }));
+    expect(() => approveDraft(repo, id, { env })).toThrow(/eval gate said keep-draft/);
+    expect(approveDraft(repo, id, { env, override: "docs already cover it; keep for speed" }).why).toContain("overridden: docs already cover it");
+  });
+
   it("reject drops the draft and ledgers it; nothing lands", async () => {
     const id = await make();
     expect(rejectDraft(repo, id).action).toBe("reject");

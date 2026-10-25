@@ -33,6 +33,7 @@ export function registerReviewCommands(cmd: Command) {
     .option("--json", "JSON output")
     .option("--approve <id>", "Land a draft (writes the skill and a ledger entry)")
     .option("--promote", "With --approve: land it as a global skill replacing the project copies (needs a promotion)")
+    .option("--override <why>", "With --approve: land it although its eval gate did not adopt it (the reason is ledgered)")
     .option("--reject <id>", "Drop a draft (ledgered)")
     .option("--eval <id>", "Run the trigger eval on a draft and record the scores and the gate's verdict")
     .option("--task", "With --eval: also replay the task with and without the skill (runs the draft's Verify command)")
@@ -42,7 +43,7 @@ export function registerReviewCommands(cmd: Command) {
       const repo = repoRoot(process.cwd());
       try {
         if (opts.approve) {
-          const e = land.approveDraft(repo, opts.approve, { promote: opts.promote });
+          const e = land.approveDraft(repo, opts.approve, { promote: opts.promote, override: opts.override });
           console.log(`✓ ${e.action}: ${e.files.map((f) => f.path).join(", ")} (ledger ${e.id}; undo: skill-loop rollback ${e.id})`);
         } else if (opts.reject) {
           const e = land.rejectDraft(repo, opts.reject);
