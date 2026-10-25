@@ -1016,6 +1016,33 @@ async function jevSaysFits(projectRoot, command, error, fact, started) {
   }
 }
 
+// v1.7 skill loop: failures, corrections and /skill uses become evidence for the between-session review.
+// Never blocks or changes this hook's output; any error is swallowed.
+async function recordSkillEvidence(eventName, projectRoot, input) {
+  try {
+    const ev = await import(new URL("../dist/core/skill-evidence.js", import.meta.url).href);
+    const root = ev.repoRoot(projectRoot);
+    const session_id = typeof input.session_id === "string" ? input.session_id : null;
+    if (eventName === "PostToolUseFailure") {
+      const name = String(input.tool_name || "");
+      const error = String(input.error || "");
+      if ((name === "Bash" || name.startsWith("mcp__")) && !input.is_interrupt && error && !USER_DENIED.test(error.trim())) {
+        ev.appendEvidence(root, "failures", ev.failureRecord(input));
+      }
+    } else if (eventName === "UserPromptSubmit" && typeof input.prompt === "string") {
+      const cue = ev.detectCorrection(input.prompt);
+      if (cue) ev.appendEvidence(root, "corrections", { session_id, cue, excerpt: input.prompt.slice(0, 300) });
+      const slash = ev.slashSkill(input.prompt);
+      if (slash) {
+        const file = join(root, ".claude", "skills", slash, "SKILL.md");
+        if (existsSync(file) && /^skill_loop:/m.test(readFileSync(file, "utf8"))) ev.appendEvidence(root, "usage", { session_id, skill: slash, via: "slash" });
+      }
+    }
+  } catch (e) {
+    debug(`skill evidence failed: ${e.message}`);
+  }
+}
+
 async function handleFailure(projectRoot, sources, cliBin, input, sessionId, started = Date.now()) {
   const name = String(input.tool_name || "");
   const error = String(input.error || "");
@@ -1128,7 +1155,13 @@ async function main() {
   const sessionId = typeof input.session_id === "string" ? input.session_id : undefined;
   debug(`event=${eventName} projectRoot=${projectRoot}`);
   const started = Date.now();
+  // recursion guard: inside a skill-loop claude run every semantic-memory hook leaves at once
+  if (process.env.SEMANTIC_MEMORY_REVIEWER === "1") {
+    emitNoop(eventName);
+    return;
+  }
   await loadFeatures();
+  if (featuresMod?.featureOn("skill_loop", projectRoot)) await recordSkillEvidence(eventName, projectRoot, input);
   // opt-in, and registered for every failed tool call: leave before any lookup when off
   if (eventName === "PostToolUseFailure" && !FAILURE_HOOK_ON(projectRoot)) {
     emitNoop(eventName);

@@ -1,5 +1,5 @@
 {
-  "description": "semantic-sidekick activation + mode hooks. SessionStart reconciles .mcp.json + resets mode + preloads vault context. UserPromptSubmit injects vault search results (mode-aware, fingerprinted). Stop emits mode-specific transition-capture prompts (research\u2192synthesis, outage\u2192postmortem, vault-first\u2192generic capture). PostToolUseFailure (opt-in, SEMANTIC_MEMORY_FAILURE_HOOK=1) looks up a knowledge-base fact for a failed Bash/MCP call.",
+  "description": "semantic-sidekick activation + mode hooks. SessionStart reconciles .mcp.json + resets mode + preloads vault context. UserPromptSubmit injects vault search results (mode-aware, fingerprinted). Stop emits mode-specific transition-capture prompts (research\u2192synthesis, outage\u2192postmortem, vault-first\u2192generic capture). PostToolUseFailure (opt-in, SEMANTIC_MEMORY_FAILURE_HOOK=1) looks up a knowledge-base fact for a failed Bash/MCP call. PostToolUse (Skill) and SessionEnd feed the skill loop (v1.7, off by default: SEMANTIC_MEMORY_SKILL_LOOP=1).",
   "hooks": {
     "SessionStart": [
       {
@@ -42,6 +42,17 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/vault-context.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-loop.js\""
           }
         ]
       }

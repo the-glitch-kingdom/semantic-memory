@@ -18,6 +18,11 @@ import { reconcile } from "./reconcile.js";
 
 async function main() {
   const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  // recursion guard: a skill-loop claude run (v1.7) must not reconcile or update anything
+  if (process.env.SEMANTIC_MEMORY_REVIEWER === "1") {
+    emit();
+    return;
+  }
 
   // 1. Reconcile — no-deps, always runs.
   try {
