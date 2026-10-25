@@ -139,3 +139,147 @@ export function formatFailureEval(report: FailureEvalReport, label = ""): string
   lines.push(`  unjudged top hits: ${report.unjudged.length}`);
   return lines.join("\n");
 }
+
+// --- v1.7 jev mode: the judge's agreement with labels, and the failure hook's Jev gate ---
+
+/** jev-loop's adoption bar: right >= 95% of the time over >= 40 picks, with at most 2 wrong. */
+export const meetsBar = (picks: number, wrong: number) => picks >= 40 && wrong <= 2 && (picks - wrong) / picks >= 0.95;
+
+export interface JevJudgment {
+  case: string;
+  path: string;
+  p: number | null;
+}
+
+export interface JudgeCalibration {
+  /** labelled pairs Jev answered */
+  pairs: number;
+  /** label relevant / not relevant: picks Jev made (>= bar yes, <= 1-bar no), how many disagree, unsure */
+  relevant: { pairs: number; yes: number; no: number; unsure: number };
+  notRelevant: { pairs: number; yes: number; no: number; unsure: number };
+  /** every pick (yes or no): agreement with the labels */
+  picks: number;
+  wrong: number;
+  agreement: number | null;
+  unsureRate: number;
+  /** yes picks alone (the side that would inject) */
+  yesPicks: number;
+  yesWrong: number;
+  /** "jev": Jev alone may judge (meets the bar on all picks); "hybrid": Jev's picks, unsure pairs to Claude */
+  verdict: "jev" | "hybrid";
+}
+
+export function calibrateJudge(labels: Judgment[], jev: JevJudgment[], bar = 0.95): JudgeCalibration {
+  const label = new Map<string, boolean>();
+  for (const j of labels) label.set(key(j.case, j.path), (label.get(key(j.case, j.path)) ?? false) || j.relevant);
+  const relevant = { pairs: 0, yes: 0, no: 0, unsure: 0 };
+  const notRelevant = { pairs: 0, yes: 0, no: 0, unsure: 0 };
+  const seen = new Set<string>();
+  for (const r of jev) {
+    const k = key(r.case, r.path);
+    const l = label.get(k);
+    if (l === undefined || seen.has(k)) continue;
+    seen.add(k);
+    const side = l ? relevant : notRelevant;
+    side.pairs++;
+    if (r.p !== null && r.p >= bar) side.yes++;
+    else if (r.p !== null && r.p <= 1 - bar + 1e-9) side.no++;
+    else side.unsure++;
+  }
+  const pairs = relevant.pairs + notRelevant.pairs;
+  const picks = relevant.yes + relevant.no + notRelevant.yes + notRelevant.no;
+  const wrong = relevant.no + notRelevant.yes;
+  return {
+    pairs,
+    relevant,
+    notRelevant,
+    picks,
+    wrong,
+    agreement: picks ? (picks - wrong) / picks : null,
+    unsureRate: pairs ? (relevant.unsure + notRelevant.unsure) / pairs : 0,
+    yesPicks: relevant.yes + notRelevant.yes,
+    yesWrong: notRelevant.yes,
+    verdict: meetsBar(picks, wrong) ? "jev" : "hybrid",
+  };
+}
+
+export interface GateRow {
+  threshold: number;
+  /** cases with a candidate fact (first fact in the top hits scoring >= threshold) */
+  candidates: number;
+  /** candidates Jev has not answered yet (ask, then re-run) */
+  missing: number;
+  /** candidates Jev said yes to at >= the bar: would be injected */
+  injected: number;
+  judged: number;
+  correct: number;
+  precision: number | null;
+  coverage: number;
+  meetsBar: boolean;
+}
+
+/**
+ * The failure hook's Jev gate, replayed: per threshold T, the candidate is the first fact among the top
+ * `topK` hits scoring >= T; it is injected only when Jev scores it >= the bar. Precision is measured on
+ * the injected candidates that carry a label.
+ */
+export function evaluateGate(
+  results: CaseResult[],
+  judgments: Judgment[],
+  jev: JevJudgment[],
+  opts: { thresholds?: number[]; topK?: number; bar?: number; isCandidate?: (path: string) => boolean } = {},
+): { rows: GateRow[]; missing: { case: string; path: string }[] } {
+  const thresholds = opts.thresholds ?? [0.3, 0.35, 0.4, 0.5];
+  const topK = opts.topK ?? 5;
+  const bar = opts.bar ?? 0.95;
+  const isCandidate = opts.isCandidate ?? ((p: string) => /(^|\/)facts\/[^/]+\.md$/.test(p));
+  const label = new Map<string, boolean>();
+  for (const j of judgments) label.set(key(j.case, j.path), (label.get(key(j.case, j.path)) ?? false) || j.relevant);
+  const score = new Map<string, number | null>();
+  for (const r of jev) score.set(key(r.case, r.path), r.p);
+  const missing = new Map<string, { case: string; path: string }>();
+  const rows = thresholds.map((threshold) => {
+    let candidates = 0, miss = 0, injected = 0, judged = 0, correct = 0;
+    for (const r of results) {
+      const hit = r.hits.slice(0, topK).find((h) => isCandidate(h.path) && h.score >= threshold);
+      if (!hit) continue;
+      candidates++;
+      const k = key(r.case, hit.path);
+      if (!score.has(k)) {
+        miss++;
+        missing.set(k, { case: r.case, path: hit.path });
+        continue;
+      }
+      const p = score.get(k);
+      if (p === null || p === undefined || p < bar) continue;
+      injected++;
+      const l = label.get(k);
+      if (l === undefined) continue;
+      judged++;
+      if (l) correct++;
+    }
+    return {
+      threshold,
+      candidates,
+      missing: miss,
+      injected,
+      judged,
+      correct,
+      precision: judged ? correct / judged : null,
+      coverage: results.length ? injected / results.length : 0,
+      meetsBar: meetsBar(judged, judged - correct),
+    };
+  });
+  return { rows, missing: [...missing.values()] };
+}
+
+export function formatGate(rows: GateRow[]): string {
+  const pct = (n: number | null) => (n === null ? "  -  " : `${(n * 100).toFixed(1)}%`);
+  const lines = ["Jev gate (inject the first fact >= T only when Jev says yes at >= 0.95)", "", "     T  candidates  missing  injected  judged  correct  precision  coverage  bar"];
+  for (const r of rows) {
+    lines.push(
+      `  ${r.threshold.toFixed(2)}  ${String(r.candidates).padStart(10)}  ${String(r.missing).padStart(7)}  ${String(r.injected).padStart(8)}  ${String(r.judged).padStart(6)}  ${String(r.correct).padStart(7)}  ${pct(r.precision).padStart(9)}  ${pct(r.coverage).padStart(8)}  ${r.meetsBar ? "yes" : "no"}`,
+    );
+  }
+  return lines.join("\n");
+}

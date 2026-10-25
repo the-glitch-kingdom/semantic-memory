@@ -434,6 +434,10 @@ program
   .option("--unjudged-out <file>", "Write unlabelled top hits here (JSONL) for labelling")
   .option("--hits-out <file>", "Write every case's hits here (JSONL) for analysis")
   .option("--json", "Print the report as JSON")
+  .option("--hits-in <file>", "Reuse hits from an earlier --hits-out instead of searching")
+  .option("--gate <kind>", "Also replay the failure hook's gate: 'jev' (needs --jev-scores)")
+  .option("--jev-scores <files...>", "JSONL of {case, path, p} from scripts/eval-failures/judge-jev.mjs")
+  .option("--gate-batch-out <file>", "With --gate jev: write the candidates Jev has not scored as a judge batch (set B format)")
   .action(async (opts) => {
     const { openSearch } = await import("./search.js");
     const { evaluateFailures, formatFailureEval } = await import("../core/failure-eval.js");
@@ -447,13 +451,51 @@ program
 
     // one searcher per corpus: the model loads once, not once per case
     const searchers = new Map<string, Awaited<ReturnType<typeof openSearch>>>();
-    const results = [];
-    for (const c of cases) {
-      if (!searchers.has(c.notes)) searchers.set(c.notes, await openSearch(c.notes));
-      const hits = await searchers.get(c.notes)!.search(toQuery(c), opts.limit);
-      results.push({ case: c.id, hits: hits.map((h) => ({ path: h.path, score: h.score })) });
+    const results: import("../core/failure-eval.js").CaseResult[] = [];
+    if (opts.hitsIn) {
+      const ids = new Set(cases.map((c) => c.id));
+      results.push(...(readJsonl(opts.hitsIn) as import("../core/failure-eval.js").CaseResult[]).filter((r) => ids.has(r.case)));
+    } else {
+      for (const c of cases) {
+        if (!searchers.has(c.notes)) searchers.set(c.notes, await openSearch(c.notes));
+        const hits = await searchers.get(c.notes)!.search(toQuery(c), opts.limit);
+        results.push({ case: c.id, hits: hits.map((h) => ({ path: h.path, score: h.score })) });
+      }
     }
     const report = evaluateFailures(results, judgments, { targetPrecision: opts.target, minJudged: opts.minJudged });
+    if (opts.gate) {
+      if (opts.gate !== "jev" || !opts.jevScores) {
+        console.error("--gate jev needs --jev-scores <file...>");
+        process.exit(2);
+      }
+      const { evaluateGate, formatGate } = await import("../core/failure-eval.js");
+      const jev = (opts.jevScores as string[]).flatMap((f) => readJsonl(f));
+      const gate = evaluateGate(results, judgments, jev);
+      if (opts.gateBatchOut) {
+        const { default: matter } = await import("../core/matter.js");
+        const byId = new Map(cases.map((c) => [c.id, c]));
+        const batch = gate.missing.map((m) => {
+          const c = byId.get(m.case)!;
+          let title = m.path, excerpt = "";
+          try {
+            const doc = matter(readFileSync(join(c.notes, m.path), "utf-8"));
+            title = String(doc.data.title ?? m.path);
+            excerpt = doc.content.replace(/^#.*$/m, "").trim().slice(0, 600);
+          } catch {}
+          return { case: m.case, path: m.path, command: c.command, error: c.error, doc_title: title, doc_excerpt: excerpt };
+        });
+        writeFileSync(resolve(opts.gateBatchOut), JSON.stringify(batch, null, 1));
+        console.error(`${batch.length} unscored candidates → ${opts.gateBatchOut} (judge them with judge-jev.mjs, then re-run)`);
+      }
+      if (opts.json) {
+        console.log(JSON.stringify({ ...report, gate: gate.rows }, null, 2));
+        process.exit(0);
+      }
+      console.log(formatFailureEval(report, `query: ${opts.query}`));
+      console.log("");
+      console.log(formatGate(gate.rows));
+      process.exit(0);
+    }
     if (opts.hitsOut) {
       writeFileSync(resolve(opts.hitsOut), results.map((r) => JSON.stringify(r)).join("\n") + "\n");
     }

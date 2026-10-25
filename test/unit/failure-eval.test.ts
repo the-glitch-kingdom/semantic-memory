@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluateFailures, formatFailureEval } from "../../src/core/failure-eval.js";
+import { evaluateFailures, formatFailureEval, calibrateJudge, evaluateGate, meetsBar } from "../../src/core/failure-eval.js";
 
 const hit = (path: string, score: number) => ({ path, score });
 
@@ -75,5 +75,62 @@ describe("evaluateFailures", () => {
     expect(text).toContain("baseline");
     expect(text).toContain("answer ranked first: 2/3");
     expect(text).toContain("unjudged top hits: 1");
+  });
+});
+
+// v1.7 jev mode
+describe("meetsBar", () => {
+  it("needs >= 40 picks, <= 2 wrong and >= 95% right", () => {
+    expect(meetsBar(40, 2)).toBe(true);
+    expect(meetsBar(39, 0)).toBe(false);
+    expect(meetsBar(100, 3)).toBe(false);
+    expect(meetsBar(40, 0)).toBe(true);
+  });
+});
+
+describe("calibrateJudge", () => {
+  const labels = Array.from({ length: 50 }, (_, i) => ({ case: `c${i}`, path: "f.md", relevant: i < 5 }));
+  it("counts picks per label class, wrong picks and unsure", () => {
+    const jev = labels.map((l, i) => ({ case: l.case, path: l.path, p: l.relevant ? 0.97 : i === 10 ? 0.5 : 0.01 }));
+    const c = calibrateJudge(labels, jev);
+    expect(c.relevant).toEqual({ pairs: 5, yes: 5, no: 0, unsure: 0 });
+    expect(c.notRelevant).toEqual({ pairs: 45, yes: 0, no: 44, unsure: 1 });
+    expect([c.picks, c.wrong, c.unsureRate]).toEqual([49, 0, 1 / 50]);
+    expect(c.verdict).toBe("jev");
+  });
+  it("is hybrid when Jev is wrong too often, and ignores unlabelled pairs", () => {
+    const jev = labels.map((l) => ({ case: l.case, path: l.path, p: l.relevant ? 0.01 : 0.97 })).concat([{ case: "x", path: "y", p: 0.99 }]);
+    const c = calibrateJudge(labels, jev);
+    expect(c.pairs).toBe(50);
+    expect(c.wrong).toBe(50);
+    expect(c.yesWrong).toBe(45);
+    expect(c.verdict).toBe("hybrid");
+  });
+});
+
+describe("evaluateGate", () => {
+  const results = [
+    { case: "a", hits: [{ path: "guides/g.md", score: 0.9 }, { path: "facts/a.md", score: 0.45 }] },
+    { case: "b", hits: [{ path: "facts/b.md", score: 0.32 }] },
+    { case: "c", hits: [{ path: "facts/c.md", score: 0.6 }] },
+    { case: "d", hits: [] },
+  ];
+  const judgments = [
+    { case: "a", path: "facts/a.md", relevant: true },
+    { case: "b", path: "facts/b.md", relevant: false },
+  ];
+  it("candidate = first fact >= T; inject only at Jev >= 0.95; precision on labelled injections", () => {
+    const jev = [
+      { case: "a", path: "facts/a.md", p: 0.99 },
+      { case: "b", path: "facts/b.md", p: 0.96 },
+    ];
+    const { rows, missing } = evaluateGate(results, judgments, jev, { thresholds: [0.3, 0.5] });
+    expect(rows[0]).toMatchObject({ threshold: 0.3, candidates: 3, missing: 1, injected: 2, judged: 2, correct: 1, precision: 0.5 });
+    expect(rows[1]).toMatchObject({ threshold: 0.5, candidates: 1, missing: 1, injected: 0, judged: 0, precision: null, meetsBar: false });
+    expect(missing).toEqual([{ case: "c", path: "facts/c.md" }]);
+  });
+  it("a Jev no or an unsure score injects nothing", () => {
+    const jev = [{ case: "a", path: "facts/a.md", p: 0.9 }, { case: "b", path: "facts/b.md", p: null }];
+    expect(evaluateGate(results, judgments, jev, { thresholds: [0.3] }).rows[0].injected).toBe(0);
   });
 });
