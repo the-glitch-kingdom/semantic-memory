@@ -5,8 +5,8 @@ domains: [architecture]
 audience: [developers]
 tags: [mcp, server, context, tools, modules, refactor, v1.1]
 status: active
-last_updated: '2026-07-10'
-version: '1.3.0'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: How the MCP server is structured internally — composition root, shared context, per-domain tool modules. Read this if you're adding a new MCP tool or debugging tool registration.
 load_priority: 7
 ---
@@ -168,7 +168,7 @@ export function registerMetadataTools(server, ctx) {
 }
 ```
 
-Final tool surface in read-only mode: 21 tools (search × 4, read × 3, get_frontmatter, log × 2, lint × 5, graph × 4, system × 2 = 21).
+Final tool surface in read-only mode: 20 tools (search × 4, read × 3, get_frontmatter, `log_query`, lint × 5, graph × 4, system × 2 = 20). `log_event` is write-gated since v1.6.1; before, it made 21 and could append to `log.md` in a read-only folder.
 
 ## Adding a new tool
 

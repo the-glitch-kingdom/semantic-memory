@@ -3,7 +3,7 @@ title: Deployment Documentation Index
 tier: reference
 domains: [deployment]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Complete listing of deployment documentation
 ---
@@ -25,7 +25,7 @@ purpose: Complete listing of deployment documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [Marketplace Registration](marketplace-registration.md) | active | 2026-04-23 | 479 |
+| [Release Process](release-process.md) | active | 2026-10-24 | 337 |
 
 ## Keywords
 
@@ -39,4 +39,4 @@ This domain covers: deployment, publish, release, tarball, offline
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

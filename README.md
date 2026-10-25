@@ -11,34 +11,33 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 ## Status
 
-**Phases 1–4 shipped** (2026-04-22). Layers 2–5 fully implemented and committed to `feat/sidekick-layers`. Phase 5 (advanced calibration + contradiction detection) is explicitly gated per the plan ("only build when Phase 4 has been in use for ≥2 weeks and a specific failure demands it").
+**v1.6.1** (2026-10-24), on npm as `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
 
-| Phase | What it adds | Commit |
-|---|---|---|
-| **1 — Activation** | `vault-first` skill + SessionStart/UserPromptSubmit hooks + CLAUDE.md cite-or-deflect rule | `c8f722f` |
-| **2 — Structure + Capture** | schema, `apply_patch`, `synthesize_note`, lint (schema/provenance/stale), Stop-hook capture-on-close, parsed-doc cache (9x hook speedup) | `1807c58` |
-| **3 — Ingest + Maintenance** | `ingest_source`, structured `log.md` + `log_event`/`log_query`, hierarchical index auto-regen, broken-link lint | `b8d4492` |
-| **4 — Routing + Transitions** | `research-mode` + `outage-silence` skills, `/mode` + `/vault` commands, mode-aware hooks, transition-capture prompts | `75ee813` |
-
-Per-phase design docs live in `.documentation/phase-{1..4}-*.md`.
+| Version | What it adds |
+|---|---|
+| **1.6.1** | Release-audit fixes: invalid frontmatter stays body-only on every reindex, frontmatter `api_key:` values are masked, `--read-only` servers no longer expose `log_event` |
+| **1.6.0** | Opt-in fact lookup on failed commands (`PostToolUseFailure`), `eval-failures` |
+| **1.5.3** | Secret redaction at every write point, `lint_vault({checks: ["secrets"]})` |
+| **1.5.2** | Docs stay fresh: a stale cache is rebuilt at startup, the file watcher works, one bad doc no longer stops indexing, hooks search every `semantic-*` server, capture prompts per session |
 
 ## Quickstart as a Claude Code plugin
 
 ```bash
 # Add the marketplace (from git)
-/plugin marketplace add https://github.com/TheGlitchKing/semantic-sidekick
+/plugin marketplace add https://github.com/TheGlitchKing/semantic-memory
 
 # Install the plugin
-/plugin install semantic-sidekick
+/plugin install semantic-memory@semantic-memory-marketplace
 ```
 
 On install:
-- `.mcp.json` is reconciled to point at `.claude/.vault` (or your `--notes <path>`).
-- Skills (`vault-first`, `research-mode`, `outage-silence`) are linked into `.claude/skills/`.
-- Hooks (`SessionStart`, `UserPromptSubmit`, `Stop`) register from `hooks/hooks.json`.
-- Commands (`/mode`, `/vault`) become available.
+- `.mcp.json` is reconciled at every session start: `semantic-vault` points at `.claude/.vault`. When hit-em-with-the-docs is installed and `.documentation/` exists, `semantic-sidekick` serves that folder `--read-only`.
+- Skills (`vault-first`, `research-mode`, `outage-silence`, `semantic-first`) and commands (`/mode`, `/vault`, `/healthcheck`, `/contract`, `/status`, `/update`, `/policy`, `/relink`, `/normalize-config`) become available.
+- Hooks register from `hooks/hooks.json`: `SessionStart`, `UserPromptSubmit` and `Stop`, plus `PostToolUseFailure`, which does nothing unless `SEMANTIC_MEMORY_FAILURE_HOOK=1`.
 
-First run: `semantic-sidekick --notes ./path/to/vault --reindex` to build the vector index (writes `.semantic-sidekick-index/`). Subsequent hook calls hit the cache in <1s.
+The first server start builds the vector index (`.semantic-sidekick-index/` in each notes folder). To build it ahead of time, run `semantic-memory --notes <folder> --reindex`. After that, the hooks read the cache in under a second, and a running server reindexes when a note changes.
+
+Update an existing install with `claude plugin update semantic-memory@semantic-memory-marketplace` and restart Claude Code.
 
 ## Using the modes
 
@@ -50,17 +49,21 @@ First run: `semantic-sidekick --notes ./path/to/vault --reindex` to build the ve
 | `/mode status` | Print the current mode. |
 | `/vault <query>` | Explicit vault query. Always works, even in outage-silence. |
 
-## 33 MCP tools shipped
+## 44 MCP tools
 
-Search (4): `search_semantic`, `search_text`, `search_graph`, `search_hybrid`  
-Read (3): `read_note`, `read_multiple_notes`, `list_notes`  
-Write (4): `create_note`, `update_note`, `delete_note`, `move_note`  
-Metadata (4): `get_frontmatter`, `update_frontmatter`, `manage_tags`, `rename_tag`  
-Graph (4): `backlinks`, `forwardlinks`, `graph_path`, `graph_statistics`  
-System (2): `get_stats`, `reindex`  
-**Patch/Synthesis (4):** `apply_patch`, `synthesize_note`, `ingest_source`, `install_schema`  
-**Lint (4):** `find_schema_violations`, `find_missing_provenance`, `find_stale`, `find_broken_links`, `lint_vault`  
-**Log/Maintenance (3):** `log_event`, `log_query`, `regenerate_index`
+Search (4): `search_semantic`, `search_text`, `search_graph`, `search_hybrid`
+Read (3): `read_note`, `read_multiple_notes`, `list_notes`
+Write (4): `create_note`, `update_note`, `delete_note`, `move_note`
+Metadata (4): `get_frontmatter`, `update_frontmatter`, `manage_tags`, `rename_tag`
+Graph (4): `backlinks`, `forwardlinks`, `graph_path`, `graph_statistics`
+System (2): `get_stats`, `reindex`
+Patch/Synthesis (9): `apply_patch`, `synthesize_note`, `synthesize_promote`, `ingest_source`, `install_schema`, `verify_note`, `manage_lexicon`, `manage_dossier`, `manage_profile`
+Lint (5): `lint_vault`, plus the deprecated `find_schema_violations`, `find_missing_provenance`, `find_stale`, `find_broken_links`
+Log/Maintenance (3): `log_event`, `log_query`, `regenerate_index`
+Contract (2): `regenerate_contract`, `inspect_contract`
+Sessions (4): `session_start`, `session_run`, `session_finish`, `session_status`
+
+A `--read-only` server (the docs folder) exposes 20: search, read, graph, system, lint, `get_frontmatter` and `log_query`. Full reference: [.documentation/reference/mcp-tools-reference.md](.documentation/reference/mcp-tools-reference.md).
 
 ## Relationship to semantic-pages
 
@@ -76,11 +79,11 @@ System (2): `get_stats`, `reindex`
 4. **Activation** — SessionStart / UserPromptSubmit / Stop hooks, `vault-first` skill, CLAUDE.md rules
 5. **Routing** — mode skills (research / default / outage), signal weighting, transition capture
 
-See the originating design discussion in `.planning/semantic-sidekick/` for rationale and phase-by-phase build plan.
+How the layers fit: [.documentation/architecture/architecture-layers.md](.documentation/architecture/architecture-layers.md).
 
 ## Fact lookup on failed commands (opt-in, v1.6+)
 
-Set `SEMANTIC_MEMORY_FAILURE_HOOK=1` (e.g. in `~/.claude/settings.json` → `env`) and a failed Bash/MCP call gets the knowledge-base fact that most likely explains it, when one scores high enough. Measured on real failures it is right about 6 times in 10, so it is off by default. Facts with the literal error in `symptoms:` are found far more reliably. If you already run another `PostToolUseFailure` hook, both can add a note to the same failure — see [the guide](.documentation/operational/failure-lookup-guide.md).
+Set `SEMANTIC_MEMORY_FAILURE_HOOK=1` (e.g. in `~/.claude/settings.json` → `env`) and a failed Bash/MCP call gets the knowledge-base fact that most likely explains it, when one scores high enough. Measured on real failures it is right about 6 times in 10, so it is off by default. Facts with the literal error in `symptoms:` are found far more reliably (in a hit-em-with-the-docs tree, read the guide first: hewtd uses `symptoms:` for something else). If you already run another `PostToolUseFailure` hook, both can add a note to the same failure — see [the guide](.documentation/operational/failure-lookup-guide.md).
 
 ## Privacy and secrets
 

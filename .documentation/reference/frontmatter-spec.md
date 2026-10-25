@@ -5,9 +5,9 @@ domains: [reference]
 audience: [developers, admin]
 tags: [frontmatter, schema, yaml, fields, spec, provenance]
 status: active
-last_updated: '2026-07-11'
-version: '1.5.0'
-purpose: Authoritative field-by-field spec for note frontmatter. Covers every field the indexer / lint / search tools read, what types they expect, what defaults apply, and which tools surface them. Includes the v1.4.0 symptoms field and alias note type, plus the v1.5.0 entity/aliases fields and the dossier + profile note types.
+last_updated: '2026-10-24'
+version: '1.6.1'
+purpose: Authoritative field-by-field spec for note frontmatter. Covers every field the indexer / lint / search tools read, what types they expect, what defaults apply, and which tools surface them. Includes the v1.4.0 symptoms field and alias note type, plus the v1.5.0 entity/aliases fields and the dossier + profile note types, how invalid YAML is handled (v1.5.2/v1.6.1), and the measured effect of symptoms on failure lookup (v1.6).
 load_priority: 9
 ---
 
@@ -41,6 +41,12 @@ Body text here. The `# Heading` line typically matches `title` but the frontmatt
 ```
 
 Frontmatter sits between two `---` lines at the very top of the file. Anything after the closing `---` is body content.
+
+### Invalid YAML (v1.5.2+, fixed for re-parses in v1.6.1)
+
+A value with an unquoted `: ` is invalid YAML, for example `purpose: Use this: when it breaks`. A note whose frontmatter does not parse is still indexed: its frontmatter is treated as empty, its body is searchable, and the server logs `Invalid frontmatter in <path>, indexing body only: <reason>` to stderr. Before 1.6.1, only the first parse in a process dropped the YAML block. Later parses (the startup rebuild, the watcher, `reindex`) indexed it as a heading. Write tools refuse to change such a note's frontmatter (`update_frontmatter` throws) instead of writing a second block. To fix the note, quote the value: `purpose: "Use this: when it breaks"`.
+
+Write tools mask secrets in frontmatter values before writing (v1.5.3+). Since 1.6.1, a value under a secret-named key (`api_key`, `client_secret`, `password`, ...) is masked even when the value alone doesn't look like a known key format. See [secret-redaction.md](../security/secret-redaction.md).
 
 ## Field reference (alphabetical)
 
@@ -275,6 +281,8 @@ Frontmatter sits between two `---` lines at the very top of the file. Anything a
     - "connection refused on port 5432"
     - "ECONNREFUSED during migration"
   ```
+- **Measured effect (v1.6):** with the literal error text in `symptoms:`, the failure-lookup query for a real failure scored the right fact 0.75 instead of 0.44, above the 0.50 injection threshold of the opt-in `PostToolUseFailure` hook. Write symptoms as the exact strings a tool prints (`Exit code 144`, `ERR_MODULE_NOT_FOUND`, `Watcher timeout`), not paraphrases. See [failure-lookup-guide.md](../operational/failure-lookup-guide.md).
+- **Clash with hit-em-with-the-docs:** in a hewtd-managed `.documentation/`, `symptoms:` is hewtd's playbook schema (objects with `error_pattern`, `target`, `cites`), and a string list fails `hewtd audit`. semantic-memory ignores non-string entries. In a hewtd tree, put the error strings in `tags:` and the title instead (see the failure-lookup guide).
 
 ### `tags`
 - **Type:** `string[]`

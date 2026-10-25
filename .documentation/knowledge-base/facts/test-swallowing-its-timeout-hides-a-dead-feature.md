@@ -1,23 +1,27 @@
 ---
-title: A test that treats its own timeout as "environment unsupported" passes while the feature is dead
+title: >-
+  A test that treats its own timeout as "environment unsupported" passes while
+  the feature is dead
 tier: fact
 domains:
   - testing
 status: active
-last_updated: 2026-10-24
+last_updated: 2026-10-24T00:00:00.000Z
 id: test-swallowing-its-timeout-hides-a-dead-feature
 confidence: high
-last_verified: 2026-10-24
-verify_command: |
-  cd "$(git rev-parse --show-toplevel)" && ! grep -rn "Skipping: filesystem events not available" test/
+last_verified: '2026-10-25'
+verify_command: >
+  cd "$(git rev-parse --show-toplevel)" && ! grep -rn "Skipping: filesystem
+  events not available" test/
 provenance:
-  - https://github.com/the-glitch-kingdom/semantic-memory/issues/29
+  - 'https://github.com/the-glitch-kingdom/semantic-memory/issues/29'
 sources:
   - test/integration/watcher.test.ts
 tags:
   - gotcha
   - testing
   - flaky-test
+  - 'Skipping: filesystem events not available in this environment'
 ---
 
 # A test that treats its own timeout as "environment unsupported" passes while the feature is dead

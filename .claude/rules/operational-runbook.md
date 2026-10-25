@@ -43,6 +43,17 @@ Before running `npm publish` (or bumping the version):
    rm -rf ~/.npm/_npx/*/node_modules/@theglitchking
    ```
 
+4. **Bump all five version fields** — `package.json`, both `version` fields in
+   `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`, and `AGENTS.md` frontmatter.
+   Then `npm install --package-lock-only --ignore-scripts`. A missed marketplace field means
+   `claude plugin update` keeps serving the old version.
+
+5. **The tarball 404s for a few minutes after publish** — `npm view` shows the new version at
+   once, but `npm i …@X.Y.Z` can fail with `404 Not Found - GET …/-/semantic-memory-X.Y.Z.tgz`
+   for ~5 minutes. Not a failed publish: wait, don't republish.
+
+Full procedure: `.documentation/deployment/release-process.md`.
+
 ### Offline / air-gapped tarball
 
 Self-contained `.tgz` for installs on RHEL 9 / RHEL 10 / Ubuntu 24.04 (x86_64) with
@@ -63,6 +74,11 @@ Build flags:
 - `--skip-model` / `--skip-npm` / `--skip-build` — fast iteration on script changes
 
 The build refuses by default if the working tree is dirty — the manifest's gitSha must mean something.
+
+**Expected size: ~0.55 GB** (1.6.1: 557 MB, model cache 87 MB). Several GB means junk in
+`~/.semantic-sidekick/models/`: `model.onnx.<pid>.<ts>.tmp` files from downloads killed mid-way
+(1.6.0 and earlier re-downloaded the model on every server start). 1.6.1's build skips `*.tmp`;
+reclaim the space with `rm ~/.semantic-sidekick/models/*/model.onnx.*.tmp`.
 
 **Install (on the air-gapped target):**
 

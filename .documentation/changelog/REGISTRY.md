@@ -3,7 +3,7 @@ title: Changelog Registry
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Quick reference for changelog documentation
 ---
@@ -16,7 +16,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 15 |
+| Documents | 16 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -38,14 +38,14 @@ purpose: Quick reference for changelog documentation
 - [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) - 2026-10-24
 - [v1.5.3 — secret redaction](v1-5-3-secret-redaction.md) - 2026-10-24
 - [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](v1-6-0-failure-lookup.md) - 2026-10-24
+- [v1.6.1 — release audit of 1.5.2 → 1.6.0](v1-6-1-release-audit.md) - 2026-10-24
 - [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](v1-5-0-expert-character.md) - 2026-07-11
-- [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](v1-2-3-hygiene-completion.md) - 2026-07-10
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 15 |
+| active | 16 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
@@ -61,4 +61,4 @@ purpose: Quick reference for changelog documentation
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

@@ -27,13 +27,13 @@ Three snapshots:
 | Snapshot | Captures | Size |
 |---|---|---|
 | `tool-surface 1` | Full list of registered tools — name, description, complete JSON Schema for inputs | ~1000 lines |
-| `tool-name list (compact) 1` | Sorted list of tool names in default mode (33 entries) | ~35 lines |
-| `tool-name list in read-only mode 1` | Sorted list of tool names in `--read-only` mode (21 entries) | ~22 lines |
+| `tool-name list (compact) 1` | Sorted list of tool names in default mode (44 entries as of v1.6.1; 33 at baseline) | ~46 lines |
+| `tool-name list in read-only mode 1` | Sorted list of tool names in `--read-only` mode (20 entries as of v1.6.1; 21 at baseline) | ~21 lines |
 
 Plus structural assertions:
-- Default mode exposes exactly 33 tools
-- `--read-only` mode exposes exactly 21 tools
-- Read-only mode never exposes any of the 12 write tools (explicit name list)
+- Default mode exposes exactly 44 tools (33 at baseline)
+- `--read-only` mode exposes exactly 20 tools (21 at baseline; `log_event` became write-gated in v1.6.1)
+- Read-only mode never exposes any of the 13 listed write tools (explicit name list, `log_event` added in v1.6.1)
 
 ### `test/regression/tool-outputs.test.ts` — output contract
 

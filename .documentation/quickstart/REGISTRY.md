@@ -3,7 +3,7 @@ title: Quickstart Registry
 tier: reference
 domains: [quickstart]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Quick reference for quickstart documentation
 ---
@@ -27,8 +27,8 @@ purpose: Quick reference for quickstart documentation
 
 ## Recently Updated
 
-- [Installation Guide](installation-guide.md) - 2026-04-23
-- [semantic-sidekick — Overview](sidekick-overview.md) - 2026-04-23
+- [Installation Guide](installation-guide.md) - 2026-10-24
+- [semantic-sidekick — Overview](sidekick-overview.md) - 2026-10-24
 
 ## By Status
 
@@ -50,4 +50,4 @@ purpose: Quick reference for quickstart documentation
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

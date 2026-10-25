@@ -5,8 +5,8 @@ domains: [architecture]
 audience: [developers, admin]
 tags: [architecture, v1, rebrand, brain-absorption, sessions, contract, drift]
 status: active
-last_updated: '2026-07-10'
-version: '1.3.0'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Single doc covering everything v1.0 / v1.1 / v1.2 added on top of the v0.x five-layer substrate. Read this BEFORE the per-version changelog entries; it's the architectural narrative, they're the bullet lists.
 load_priority: 9
 ---
@@ -88,7 +88,7 @@ v1.1.1 fixed:
 - `scripts/link-skills.js` — postinstall passes the new `packageName`/`pluginName`/`hookCommand`
 - `hooks/reconcile.js` — new path preferred; legacy fallback for mid-migration installs
 - `hooks/session-start.js` — runtime delegate uses new name
-- `hooks/vault-context.js` — `findVaultPath` matches `semantic-memory` `.mcp.json` entries; `findCliBin` prefers new path
+- `hooks/vault-context.js` — `findVaultPath` matches `semantic-memory` `.mcp.json` entries; `findCliBin` prefers new path (v1.5.2 replaced `findVaultPath` with `findNotesSources`, which returns every `semantic-*` entry; the hooks search them all)
 - All 7 slash commands updated
 - `src/cli/index.ts` — `PKG_NAME`, `findLocalBin`, `runRelink`, `isLocalForm`, `isNpxForm` updated; `LEGACY_PKG_NAME` kept for fallback
 

@@ -5,8 +5,8 @@ domains: [reference]
 audience: [developers]
 tags: [cli, commands, flags, reference]
 status: active
-last_updated: '2026-07-11'
-version: '1.5.0'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Every semantic-memory subcommand + flags + env vars + exit codes. Covers v1.1 skills tree, v1.2 migrate-state, v1.3 confidence-decay (healthcheck --fix, decay-config, decay-trace), v1.3.1 selection-stats telemetry introspection, the v1.4.0 lexicon subcommand group, and the v1.5.0 dossier + profile subcommand groups.
 load_priority: 9
 ---
@@ -54,7 +54,7 @@ semantic-memory --notes <path> [--reindex] [--stats] [--wait-for-ready] [--read-
 - `--reindex` — force full reindex and exit.
 - `--stats` — print note/chunk/wikilink/tag counts and exit.
 - `--wait-for-ready` — block until index fully built (default: lazy; search tools return "Indexing in progress" until ready).
-- `--read-only` — suppress write tools. Read-only mode exposes 21 tools (search × 4, read × 3, get_frontmatter, log × 2, lint × 5, graph × 4, system × 2) — unchanged in v1.3/v1.4/v1.5 since `verify_note`, `manage_lexicon`, `manage_dossier`, and `manage_profile` are all write-gated. Write-mode exposes 44 (v1.5+; was 42 in v1.4, 41 in v1.3, 40 in v1.2).
+- `--read-only` — suppress write tools. Read-only mode exposes 20 tools (search × 4, read × 3, get_frontmatter, `log_query`, lint × 5, graph × 4, system × 2). `verify_note`, `manage_lexicon`, `manage_dossier`, `manage_profile` and, since v1.6.1, `log_event` are write-gated (21 before 1.6.1). Write-mode exposes 44 (v1.5+; was 42 in v1.4, 41 in v1.3, 40 in v1.2).
 - `--model <name>` — override the embedding model (default: `all-MiniLM-L6-v2`). Switching models invalidates the existing index — startup detects mismatch and forces a reindex.
 - `--workers <n>` — number of worker threads for parallel embedding.
 - `--batch-size <n>` — batch size for embedding requests.

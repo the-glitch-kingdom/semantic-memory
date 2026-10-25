@@ -5,8 +5,8 @@ domains: [legacy]
 audience: [developers]
 tags: [legacy, frontmatter, indexer]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Indexer-consumed frontmatter fields (title, tags, load_priority, etc.)
 load_priority: 3
 ---
@@ -97,7 +97,7 @@ That's all you need to get date filtering, priority boosting, and status filteri
 
 ## Full Schema Example
 
-The fields above are compatible with [**hit-em-with-the-docs**](https://github.com/TheGlitchKing/hit-em-with-the-docs) — Semantic Pages' sister plugin. hewtd is the canonical **writer** of `./.documentation/` (enforces a 22-field schema, auto-classifies into 15 domains, generates health reports); Semantic Pages is the canonical **reader** (indexes the schema natively). When both plugins are installed in the same project, Semantic Pages auto-wires a read-only MCP server over `./.documentation/` via its `SessionStart` hook — see the [Sister Plugin section of the README](../README.md#sister-plugin-hit-em-with-the-docs) for the full auto-wiring behavior. All hewtd frontmatter fields index automatically with no extra configuration.
+The fields above are compatible with [**hit-em-with-the-docs**](https://github.com/TheGlitchKing/hit-em-with-the-docs) — Semantic Pages' sister plugin. hewtd is the canonical **writer** of `./.documentation/` (enforces a 22-field schema, auto-classifies into 15 domains, generates health reports); Semantic Pages is the canonical **reader** (indexes the schema natively). When both plugins are installed in the same project, Semantic Pages auto-wires a read-only MCP server over `./.documentation/` via its `SessionStart` hook — see the [project README](../../README.md) and [injection points](../architecture/injection-points.md) for the auto-wiring behavior. All hewtd frontmatter fields index automatically with no extra configuration.
 
 ```yaml
 ---

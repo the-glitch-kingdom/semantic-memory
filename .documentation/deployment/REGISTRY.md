@@ -3,7 +3,7 @@ title: Deployment Registry
 tier: reference
 domains: [deployment]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Quick reference for deployment documentation
 ---
@@ -22,11 +22,11 @@ purpose: Quick reference for deployment documentation
 
 ## Active Documents
 
-- [Marketplace Registration](marketplace-registration.md)
+- [Release Process](release-process.md)
 
 ## Recently Updated
 
-- [Marketplace Registration](marketplace-registration.md) - 2026-04-23
+- [Release Process](release-process.md) - 2026-10-24
 
 ## By Status
 
@@ -48,4 +48,4 @@ purpose: Quick reference for deployment documentation
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

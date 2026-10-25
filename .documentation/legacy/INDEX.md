@@ -3,7 +3,7 @@ title: Legacy Documentation Index
 tier: reference
 domains: [legacy]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Complete listing of legacy documentation
 ---
@@ -32,8 +32,8 @@ purpose: Complete listing of legacy documentation
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
 | [Legacy Changelog (semantic-pages)](changelog.md) | active | 2026-04-23 | 2,306 |
-| [Embedder Guide (substrate)](embedder-guide.md) | active | 2026-04-23 | 984 |
-| [Frontmatter Guide (substrate)](frontmatter-guide.md) | active | 2026-04-23 | 676 |
+| [Embedder Guide (substrate)](embedder-guide.md) | active | 2026-10-24 | 1,051 |
+| [Frontmatter Guide (substrate)](frontmatter-guide.md) | active | 2026-10-24 | 674 |
 | [How Semantic Pages Works (substrate)](how-it-works.md) | active | 2026-04-23 | 952 |
 
 ## Keywords
@@ -48,4 +48,4 @@ This domain covers: legacy, substrate, semantic-pages
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

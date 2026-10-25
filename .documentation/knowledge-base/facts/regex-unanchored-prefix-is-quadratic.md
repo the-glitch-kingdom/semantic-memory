@@ -4,12 +4,13 @@ tier: fact
 domains:
   - security
 status: active
-last_updated: 2026-10-24
+last_updated: 2026-10-24T00:00:00.000Z
 id: regex-unanchored-prefix-is-quadratic
 confidence: high
-last_verified: 2026-10-24
-verify_command: |
-  cd "$(git rev-parse --show-toplevel)" && npx vitest run test/unit/redact.test.ts -t "stays linear"
+last_verified: '2026-10-25'
+verify_command: >
+  cd "$(git rev-parse --show-toplevel)" && npx vitest run
+  test/unit/redact.test.ts -t "stays linear"
 provenance:
   - src/core/redact.ts (v1.5.3 development)
 sources:
@@ -20,6 +21,8 @@ tags:
   - regex
   - performance
   - redos
+  - redact hangs on a long hyphenated or base64 run
+  - Test timed out in 5000ms (redact.test.ts stays linear)
 ---
 
 # A regex with an unanchored start and a greedy class is quadratic on long runs

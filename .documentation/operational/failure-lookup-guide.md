@@ -16,7 +16,7 @@ tags:
   - knowledge-base
 status: active
 last_updated: '2026-10-24'
-version: 1.6.0
+version: '1.6.1'
 purpose: How to turn on the opt-in PostToolUseFailure fact lookup, what it
   injects and when, how to write gotcha facts it can find (symptoms with the
   literal error), how it coexists with other failure hooks, and how to measure
@@ -89,6 +89,8 @@ symptoms:
 ```
 
 Good symptoms are the exact text an agent sees: the exit code line, the error class and message (`staged content different`, `PermissionError: [Errno 13]`, `ERR_MODULE_NOT_FOUND`), without paths or ids that change per run. Two or three per fact is plenty.
+
+**In a hit-em-with-the-docs tree (`.documentation/`), don't use string `symptoms:` on facts.** There, `symptoms:` is hewtd's playbook field, a list of objects with `error_pattern` / `user_phrase` / `alert_name`, a `target` and `cites`. A string list fails `hewtd audit` with `symptoms.0: Expected object, received string`. semantic-memory 1.6.1 reads only string symptoms, so hewtd's objects are not symptom-keyed yet (a planned follow-up). Until then, put the literal error strings in the fact's `tags:` and in its title or first `## Claim` line. This repo's facts do that. It hasn't been measured separately: the 0.44 → 0.75 result above is for string `symptoms:`.
 
 ## Running it next to another PostToolUseFailure hook
 

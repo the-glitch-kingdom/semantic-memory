@@ -5,8 +5,8 @@ domains: [operational]
 audience: [developers]
 tags: [capture, synthesis, ingest, workflow, provenance]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: synthesize_note, ingest_source, Stop-hook capture, /mode transitions — golden path
 load_priority: 9
 ---
@@ -131,7 +131,7 @@ mcp__semantic-vault__ingest_source({
 **When:** session is ending. The Stop hook decides whether to block Claude and prompt for capture.
 
 **Sources of capture-pending:**
-- UserPromptSubmit hook's cue detection. Each prompt containing one of the 5 cue regexes appends an entry to `.claude/.sidekick-capture-pending.json`.
+- UserPromptSubmit hook's cue detection. Each prompt containing one of the 5 cue regexes appends `{ts, cue, excerpt, session_id}` to `.claude/.semantic-memory/capture-pending.json` (legacy `.claude/.sidekick-capture-pending.json`). The excerpt is redacted first (v1.5.3+). Each session's Stop hook asks only about its own items (v1.5.2+), so two sessions in one project don't see each other's cues.
 
 **Triggering paths:**
 

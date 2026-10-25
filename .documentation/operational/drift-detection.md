@@ -5,8 +5,8 @@ domains: [operational]
 audience: [developers, admin]
 tags: [drift, healthcheck, sessionstart, auto-check, install-health, v1.1, fix]
 status: active
-last_updated: '2026-07-10'
-version: '1.3.2'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Operational guide to drift detection. The fast-tier auto-check that fires on every SessionStart, the manual /healthcheck deep audit, what each finding means, and how to fix them.
 load_priority: 7
 ---
@@ -27,7 +27,7 @@ The SessionStart hook (`hooks/vault-context.js`) runs these checks in parallel. 
 | Check | What it looks at | When it warns |
 |---|---|---|
 | `mcp_json_entry` | `<project>/.mcp.json` | Present but missing a server entry for `semantic-vault`/`semantic-sidekick`/`semantic-memory` |
-| `hook_registration` | `<project>/.claude/settings.json` | Missing one of `SessionStart` / `UserPromptSubmit` / `Stop` hook entries |
+| `hook_registration` | `<project>/.claude/settings.json` + the plugin's `hooks/hooks.json` | Missing one of `SessionStart` / `UserPromptSubmit` / `Stop` (the opt-in `PostToolUseFailure` is not required) |
 | `hook_double_registration` (v1.3.2+) | `settings.json` × plugin `hooks/hooks.json` | Same event registered in BOTH → each hook fires twice (plugin context only) |
 | `agents_contract` | `<project>/AGENTS.md` | File exists but lacks managed-block markers |
 | `session_staleness` | `<project>/.claude/.semantic-memory/session.json` | Open session with `last_activity_at` >24h ago |
