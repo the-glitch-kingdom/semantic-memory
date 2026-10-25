@@ -56,3 +56,5 @@ export type { RedactMode, RedactResult } from "./redact.js";
 export { failureQuery, errorSignal, commandVerbs } from "./failure-query.js";
 export { evaluateFailures, formatFailureEval } from "./failure-eval.js";
 export type { FailureCase, Judgment, CaseResult, FailureEvalReport, ThresholdRow } from "./failure-eval.js";
+export { featureState, featureOn, jevAvailable, describeFeature } from "./features.js";
+export type { Feature, FeatureState } from "./features.js";

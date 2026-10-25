@@ -18,6 +18,8 @@ import {
   type Scope,
 } from "./skills.js";
 import { migrateState } from "./migrate-state.js";
+import { registerFeatureCommands } from "./features.js";
+import { featureState, describeFeature } from "../core/features.js";
 
 const require_ = createRequire(import.meta.url);
 const { version } = require_("../../package.json") as { version: string };
@@ -791,7 +793,8 @@ program
 
     // 5. Emit.
     if (opts.json) {
-      console.log(JSON.stringify({ smoke: { ok: smokeOk, version: smokeVersion }, result, fix: opts.fix ? { plan, outcomes: fixOutcomes } : undefined }, null, 2));
+      const features = { skill_loop: featureState("skill_loop", cwd), jev: featureState("jev", cwd) };
+      console.log(JSON.stringify({ smoke: { ok: smokeOk, version: smokeVersion }, result, features, fix: opts.fix ? { plan, outcomes: fixOutcomes } : undefined }, null, 2));
     } else {
       if (opts.fix) {
         if (fixOutcomes.length === 0 && plan.skipped.length === 0) {
@@ -809,6 +812,7 @@ program
       } else {
         console.log(`\n✓ no drift detected (${result.findings.length} checks ran in ${result.duration_ms}ms)`);
       }
+      console.log(`\n${describeFeature(featureState("skill_loop", cwd))}\n${describeFeature(featureState("jev", cwd))}`);
     }
 
     process.exit(smokeOk ? 0 : 1);
@@ -1120,5 +1124,9 @@ program
     }
     process.exit(0);
   });
+
+// --- v1.7 switches: skill loop and jev mode ---
+
+registerFeatureCommands(program);
 
 program.parse();
