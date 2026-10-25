@@ -58,5 +58,5 @@ export { evaluateFailures, formatFailureEval } from "./failure-eval.js";
 export type { FailureCase, Judgment, CaseResult, FailureEvalReport, ThresholdRow } from "./failure-eval.js";
 export { featureState, featureOn, jevAvailable, describeFeature } from "./features.js";
 export type { Feature, FeatureState } from "./features.js";
-export { askJev, jevSpendToday, JEV_BAR } from "./jev.js";
+export { askJev, jevSpendToday, jevVerdict, relevanceQuestion, failureState, JEV_BAR } from "./jev.js";
 export type { JevCaller, JevQuestion, JevAnswer } from "./jev.js";

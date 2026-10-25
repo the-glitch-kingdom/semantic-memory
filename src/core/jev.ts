@@ -94,3 +94,15 @@ export function jevSpendToday(jevDir: string, now = new Date()): Record<string, 
   }
   return out;
 }
+
+/** A Jev probability as a verdict: yes at or above the bar, no at or below 1 − bar, otherwise unsure (null). */
+export const jevVerdict = (p: number | undefined, bar = JEV_BAR): boolean | null =>
+  p === undefined ? null : p >= bar ? true : p <= 1 - bar + 1e-9 ? false : null;
+
+/** The failure → document relevance question (judge, gate and the failure hook ask the same thing). */
+export const relevanceQuestion = (title: string, excerpt: string) =>
+  `Does this document explain the cause of this failure, or how to fix or avoid it — the same specific problem, ` +
+  `not just the same tool or topic? Document: ${title} — ${excerpt.replace(/\s+/g, " ").trim().slice(0, 600)}`;
+
+/** The state Jev sees for a failed tool call: the command and its error, capped. */
+export const failureState = (command: string, error: string) => `Command: ${command}\nError: ${error}`.slice(0, 2000);

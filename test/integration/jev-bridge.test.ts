@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { askJev } from "../../src/core/jev.js";
+import { FAKE_ROUTER } from "../jev-fake.js";
 
 // v1.7: the jev bridge. CI has no jev-loop, so the first block uses a fake router module; the second runs
 // the real router (copied, so its ledger and cache land in a temp dir) with urlopen faked, when present.
@@ -11,26 +12,6 @@ import { askJev } from "../../src/core/jev.js";
 const j = (...p: string[]) => p.join("");
 const FAKE_SECRET = j("gh", "p_", "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8");
 
-const FAKE_ROUTER = `
-import json, os, sys
-from pathlib import Path
-HERE = Path(__file__).parent
-LOGS = HERE / "logs"
-R = {"max_prompt_chars": 2000, "timeout_seconds": 10}
-CALLER = os.environ.get("JEV_CALLER") or Path(sys.argv[0]).stem
-def repo_for(cwd, repos):
-    return "excluded" if "kentro" in str(cwd) else None
-def ask_all(state, items):
-    (HERE / "calls.jsonl").open("a").write(json.dumps({"caller": CALLER, "state": state, "items": items, "timeout": R["timeout_seconds"]}) + "\\n")
-    mode = (HERE / "mode").read_text().strip() if (HERE / "mode").exists() else "ok"
-    if mode == "raise":
-        raise RuntimeError("HTTP Error 503")
-    if mode == "sleep":
-        import time; time.sleep(30)
-    return {k: (0.97 if "yes" in q else 0.02) for k, q in items}, 42
-def flush_ledger():
-    pass
-`;
 
 describe("jev bridge (fake router)", () => {
   let dir: string;
