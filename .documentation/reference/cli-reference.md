@@ -3,11 +3,11 @@ title: CLI Reference
 tier: reference
 domains: [reference]
 audience: [developers]
-tags: [cli, commands, flags, reference]
+tags: [cli, commands, flags, reference, v1.7.0]
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
-purpose: Every semantic-memory subcommand + flags + env vars + exit codes. Covers v1.1 skills tree, v1.2 migrate-state, v1.3 confidence-decay (healthcheck --fix, decay-config, decay-trace), v1.3.1 selection-stats telemetry introspection, the v1.4.0 lexicon subcommand group, and the v1.5.0 dossier + profile subcommand groups.
+last_updated: '2026-10-25'
+version: '1.7.0'
+purpose: Every semantic-memory subcommand + flags + env vars + exit codes. Covers v1.1 skills tree, v1.2 migrate-state, v1.3 confidence-decay (healthcheck --fix, decay-config, decay-trace), v1.3.1 selection-stats telemetry introspection, the v1.4.0 lexicon subcommand group, the v1.5.0 dossier + profile subcommand groups, and the v1.7.0 skill-loop, jev-mode, skills lint and skill-eval commands.
 load_priority: 9
 ---
 
@@ -37,6 +37,10 @@ Binary: `node node_modules/@theglitchking/semantic-memory/bin/semantic-memory` (
 | `dossier <action>` (v1.5+) | Maintenance | Manage entity dossiers — per-component living notes (init/list) |
 | `profile <action>` (v1.5+) | Maintenance | Manage the speaker profile — how this human communicates (init/show) |
 | `eval-failures` (v1.6+) | Measurement | Replay failed tool calls through the hook's search; precision/coverage per threshold |
+| `skill-loop <action>` (v1.7+) | Skill loop | Turn the skill loop on/off, review and land drafts, roll back, curate, restore, verify |
+| `jev-mode <action>` (v1.7+) | Jev mode | Turn jev mode on/off, show its state |
+| `skills lint` (v1.7+) | Maintenance | Lint the learned skills this repo loads |
+| `skill-eval <action>` (v1.7+) | Measurement | Trigger, task and description-tuning evals for one skill |
 | `update` / `policy` | Plugin runtime | Inherited from `@theglitchking/claude-plugin-runtime` |
 
 All subcommands accept `--help`.
@@ -210,6 +214,14 @@ semantic-memory skills list
 ```
 
 Lists shipped skill bundle names.
+
+### `skills lint` (v1.7+)
+
+```bash
+semantic-memory skills lint [--root <dir>] [--json]
+```
+
+Lints the learned skills this repo loads: format, description, evidence, sections, cites, `applies_to`, secrets, name clashes. `--root` is the repo root (default cwd). Same checks as `lint_vault({checks: ["skills"]})`; see [mcp-tools-reference.md](./mcp-tools-reference.md) and [skill-format.md](./skill-format.md).
 
 **Agent target paths:**
 
@@ -415,7 +427,8 @@ Prints the speaker profile's injection head — the capped, placeholder-stripped
 ```bash
 semantic-memory eval-failures --cases cases.jsonl --judgments judgments.jsonl \
   [--query normalized|raw] [--limit 5] [--target 0.95] [--min-judged 20] \
-  [--unjudged-out next.jsonl] [--hits-out hits.jsonl] [--json]
+  [--unjudged-out next.jsonl] [--hits-out hits.jsonl] [--json] \
+  [--hits-in hits.jsonl] [--gate jev --jev-scores a.jsonl ...] [--gate-batch-out batch.json]
 ```
 
 - `cases.jsonl` — one failed tool call per line: `{id, notes, error, command}` (`notes` = the docs folder that repo searches, indexed).
@@ -423,7 +436,76 @@ semantic-memory eval-failures --cases cases.jsonl --judgments judgments.jsonl \
 - Loads each corpus once (`openSearch`) and searches with the same scoring the hooks use. `--query normalized` (default) uses `failureQuery()`; `raw` uses error + command as-is.
 - Prints: answer ranked first / anywhere in hits; for thresholds 0.20–1.00 the injected, judged, correct, precision and coverage of the top hit; the lowest threshold that holds `--target` from there up with ≥ `--min-judged` judged injections; and the count of unlabelled top hits (`--unjudged-out` writes them for labelling).
 
+v1.7 options:
+
+- `--hits-in <file>` — reuse the hits from an earlier `--hits-out` instead of searching.
+- `--gate jev` — also replay the failure hook's jev-mode gate on the same hits (candidate: first fact in the top 5 at >= 0.35; injected only at Jev's >= 0.95). Needs `--jev-scores`.
+- `--jev-scores <files...>` — JSONL of `{case, path, p}` from `scripts/eval-failures/judge-jev.mjs`.
+- `--gate-batch-out <file>` — with `--gate jev`: write the candidates Jev has not scored yet as a judge batch (set B format), ready for `judge-jev.mjs`.
+
+Scripts (run with `node` from the repo root; both reach Jev only through jev-loop's redacting `router.ask`):
+
+- `scripts/eval-failures/judge-jev.mjs [--max-tokens 700000] [--concurrency 4] <batch.json>...` — asks Jev one yes/no per failure-and-document pair. Reads set A (`{failure, repo, command, error, candidates}`) or set B (`{case, path, command, error, doc_title, doc_excerpt}`) batches and writes `<batch>.jev.out.jsonl` with `{case, path, p, relevant}`: relevant at p >= 0.95, not relevant at p <= 0.05, null between. Pairs already answered are skipped, so a stopped run resumes. Prints the Jev tokens spent.
+- `scripts/eval-failures/calibrate-jev.mjs [--dir <dir>] [--json]` — compares Jev's picks with the Claude labels (`judgments.jsonl` and `judge/*.jev.out.jsonl` under `--dir`, default `~/.semantic-memory/eval/failures`): agreement per label class and the unsure rate. Verdict "jev" only if all picks together are right at least 95% of the time over at least 40 picks, with at most 2 wrong.
+
 Building the inputs from real failures: [failure-lookup-guide.md](../operational/failure-lookup-guide.md#measuring-it-on-your-own-failures).
+
+## `skill-loop` (v1.7+) — learned skills between sessions
+
+Off by default. Guide: [skill-loop.md](../operational/skill-loop.md).
+
+```bash
+semantic-memory skill-loop on|off [--repo] [--clear]
+semantic-memory skill-loop status [--json]
+semantic-memory skill-loop worker [--repo <dir>]
+semantic-memory skill-loop review [--json] [--approve <id> [--promote] [--override <why>]] [--reject <id>] [--eval <id> [--task]]
+semantic-memory skill-loop rollback <ledger-id>
+semantic-memory skill-loop curate [--dry-run] [--merge] [--auto]
+semantic-memory skill-loop restore <name>
+semantic-memory skill-loop verify
+```
+
+| Command | What it does |
+|---|---|
+| `on` / `off` | Set or remove `SEMANTIC_MEMORY_SKILL_LOOP=1` in `~/.claude/settings.json` `env` (a `.bak` is kept; invalid JSON is never overwritten). `--repo` writes `skill_loop: on|off` in `.claude/.semantic-memory/config` instead, which beats the global switch. `--clear` (with `--repo`) removes that override so the global switch applies. |
+| `status` | On or off, and why (default, env, or repo override); reviews used today against `SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS`. |
+| `worker` | Drain this repo's review queue. The SessionEnd hook starts it detached; safe to run by hand. `--repo <dir>` sets the repo (default cwd). |
+| `review` | With no flag, list drafts with evidence, scope, Verify command and (for patches) a diff. `--approve <id>` lands a draft and writes a ledger entry. `--promote` (with `--approve`) lands it as a global skill replacing the project copies; it needs a promotion. `--override <why>` (with `--approve`) lands it although its eval gate did not adopt it, and ledgers the reason. `--reject <id>` drops a draft (ledgered). `--eval <id>` runs the trigger eval and records scores and the gate's verdict; `--task` (with `--eval`) also replays the task with and without the skill. |
+| `rollback <ledger-id>` | Undo one ledgered change exactly. Refuses if a file changed since. |
+| `curate` | Mark learned skills unused 14 days stale; archive those unused 30 days. Pinned, cited and new skills are skipped. `--dry-run` changes nothing. `--merge` also proposes merges of overlapping skills as review drafts (opt-in). `--auto` is the quiet form the SessionStart hook starts; it logs to `skill-loop.log`. |
+| `restore <name>` | Bring an archived learned skill back, active. |
+| `verify` | Run each landed learned skill's `## Verify` command here. Failures are flagged; nothing is archived. |
+
+---
+
+## `jev-mode` (v1.7+) — Jev for closed-set decisions
+
+Off by default. Guide: [jev-mode.md](../operational/jev-mode.md).
+
+```bash
+semantic-memory jev-mode on|off
+semantic-memory jev-mode status [--json]
+```
+
+`on` sets `SEMANTIC_MEMORY_JEV=1` in `~/.claude/settings.json` `env`; `off` removes it. `status` says on or off, and why, and when it is on but cannot run, why not (jev-loop missing, no `TYPESAFE_API_KEY`, no `python3`). The key is never printed.
+
+---
+
+## `skill-eval` (v1.7+) — evaluate one learned skill
+
+```bash
+semantic-memory skill-eval trigger <skill-md> [--prompts <jsonl>] [--json]
+semantic-memory skill-eval task <skill-md> [--prompt <text>] [--json]
+semantic-memory skill-eval tune <skill-md> [--prompts <jsonl>] [--json]
+```
+
+- `trigger` — does the skill trigger on its own prompts and stay quiet on near-misses? `--prompts` is JSONL of `{session, text}`.
+- `task` — replay a task with and without the skill, then check its `## Verify`. `--prompt` is the task.
+- `tune` — propose a better description. Never writes the skill file.
+
+Each run is a fenced `claude -p` (model `SEMANTIC_MEMORY_SKILL_LOOP_MODEL`). Trigger answers are cached in `~/.semantic-memory/skill-eval-cache.jsonl`.
+
+---
 
 ## Plugin runtime commands
 
@@ -442,6 +524,8 @@ In v1.1.1+, `update` re-runs the v1.2-aware skill linker after `npm update`, so 
 | `SEMANTIC_MEMORY_FAILURE_HOOK=1` | (v1.6+) Turns on the opt-in `PostToolUseFailure` fact lookup. Off by default. |
 | `SEMANTIC_MEMORY_FAILURE_MIN_SCORE=<n>` | (v1.6+) Score a fact needs to be injected on a failure (default `0.50`). |
 | `SEMANTIC_MEMORY_INJECT_MIN_SCORE=<n>` | Score gate for the prompt/SessionStart `<vault-context>` block (default `0.35`). |
+| `SEMANTIC_MEMORY_SKILL_LOOP=1`, `SEMANTIC_MEMORY_JEV=1` | (v1.7+) Turn on the skill loop / jev mode. Both off by default; prefer `skill-loop on` and `jev-mode on`. Every other v1.7 variable: [configuration-reference.md](./configuration-reference.md#v17-skill-loop-and-jev-mode-state). |
+| `SEMANTIC_MEMORY_REVIEWER=1` | (v1.7+) Set by semantic-memory on skill-loop `claude` runs; every semantic-memory hook exits at once. |
 | `CLAUDE_STOP_HOOK_ACTIVE=1` | Set by Claude Code when re-entering after a Stop-hook block. Hook respects this as a loop-guard. |
 | `CLAUDE_PROJECT_DIR` | Set by Claude Code to the project root. Hooks default to this over `process.cwd()`. |
 | `CLAUDE_PLUGIN_ROOT` | Set by Claude Code to the plugin install dir. Used in `hooks.json` command resolution. |

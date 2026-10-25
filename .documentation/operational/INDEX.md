@@ -14,7 +14,7 @@ purpose: Complete listing of operational documentation
 
 ## Overview
 
-- **Total Documents:** 13
+- **Total Documents:** 14
 - **Domain:** `operational/`
 - **Category:** features
 - **Load Priority:** 6/10
@@ -35,6 +35,7 @@ purpose: Complete listing of operational documentation
 | [Modes Guide](modes-guide.md) | active | 2026-10-24 | 1,092 |
 | [Session Paging & Speaker Profile — Operating Guide](session-paging-guide.md) | active | 2026-07-11 | 1,110 |
 | [Sessions guide — verification-gated work units](sessions-guide.md) | active | 2026-05-09 | 1,375 |
+| [The skill loop — learned skills between sessions](skill-loop.md) | active | 2026-10-25 | 1,427 |
 | [State migration — moving legacy .sidekick-* files to .semantic-memory/](state-migration.md) | active | 2026-10-24 | 1,443 |
 | [Usage-Feedback Ranking & Decoys — Operating Guide](usage-feedback-guide.md) | active | 2026-07-11 | 938 |
 

@@ -16,7 +16,7 @@ purpose: Quick reference for reference documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 5 |
+| Documents | 6 |
 | Category | core |
 | Load Priority | 7/10 |
 
@@ -27,20 +27,21 @@ purpose: Quick reference for reference documentation
 - [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md)
 - [Hooks Reference](hooks-reference.md)
 - [MCP Tools Reference (44 tools)](mcp-tools-reference.md)
+- [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md)
 
 ## Recently Updated
 
+- [Configuration Reference](configuration-reference.md) - 2026-10-25
+- [Hooks Reference](hooks-reference.md) - 2026-10-25
+- [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) - 2026-10-25
 - [CLI Reference](cli-reference.md) - 2026-10-24
-- [Configuration Reference](configuration-reference.md) - 2026-10-24
 - [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) - 2026-10-24
-- [Hooks Reference](hooks-reference.md) - 2026-10-24
-- [MCP Tools Reference (44 tools)](mcp-tools-reference.md) - 2026-10-24
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 5 |
+| active | 6 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

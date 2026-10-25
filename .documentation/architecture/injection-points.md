@@ -3,17 +3,17 @@ title: Injection Points
 tier: reference
 domains: [architecture]
 audience: [developers]
-tags: [hooks, skills, injection, context, debugging]
+tags: [hooks, skills, injection, context, debugging, v1.7.0]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-25'
+version: '1.7.0'
 purpose: Every place semantic-sidekick touches Claude's context — symptom→check table
 load_priority: 8
 ---
 
 # Injection points — everywhere sidekick touches Claude's context
 
-> Four mechanisms put vault-derived content into Claude's working memory. Understanding which one is firing for a given symptom is 80% of troubleshooting.
+> Four mechanisms put vault-derived content into Claude's working memory. Understanding which one is firing for a given symptom is 80% of troubleshooting. v1.7 adds one opt-in line to SessionStart (the skill-loop drafts note, 3c) and an opt-in gate on the failure hook (jev mode, 3b).
 
 ## 1. SessionStart hook — `<vault-state-since>` + `<vault-context>` blocks
 
@@ -97,6 +97,16 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 **Skips:** interrupts, user denials, other tools, `outage-silence` mode.
 **Why opt-in:** measured on 553 real failures it is right about 6 times in 10 — below the 95% bar. See [failure-lookup-guide.md](../operational/failure-lookup-guide.md).
 
+**In jev mode (v1.7, `SEMANTIC_MEMORY_JEV=1`):** the candidate is the first fact in the top 5 at score >= 0.35. One live Jev call (`hooks/jev-bridge.py` → jev-loop `router.ask`) asks whether the fact fits this failure. The block is injected only at >= 0.95 and carries `checked="jev"`. A "no", an unsure answer, an error, a timeout or the daily ceiling (`SEMANTIC_MEMORY_JEV_DAILY_TOKENS`) injects nothing; the ungated path is never the fallback. The whole lookup has a budget, `SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS` (1500). `SEMANTIC_MEMORY_FAILURE_HOOK=0` wins. See [jev-mode.md](../operational/jev-mode.md).
+
+## 3c. SessionStart skill-loop note — `[skill loop] N skill drafts waiting` (v1.7, opt-in)
+
+**When:** session start (`startup` or `resume`), only with the skill loop on and at least one draft in `.claude/.semantic-memory/skill-drafts/`. Once per session; nothing on `clear` or `compact`.
+**Source:** `hooks/skill-loop.js`, a third SessionStart command after `session-start.js` and `vault-context.js`. Its `additionalContext` is merged with theirs.
+**What it says:** `[skill loop] N skill draft(s) waiting for review (/skill-loop review).` It never shows a draft's content. Landed learned skills load through Claude Code's normal skill mechanism (section 4), not through a hook.
+**Side effect:** starts the curator detached (`skill-loop curate --auto`) when due. It injects nothing.
+**Off:** returns at once. Also returns at once under `SEMANTIC_MEMORY_REVIEWER=1`. See [skill-loop.md](../operational/skill-loop.md).
+
 ## 4. Skill descriptions (always active, no hook involvement)
 
 **When:** Claude evaluates which skill to use on every turn. This is the LLM-level routing layer, not a hook.
@@ -138,6 +148,8 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 | No vault context at session start | `SIDEKICK_DEBUG=1 claude` — look for `[vault-context] event=SessionStart` in stderr; verify `.mcp.json` points at a real vault path |
 | Vault context appears but seems stale | Since v1.5.2 the server rebuilds a stale cache at startup and the watcher reindexes edits; if it still looks stale, rebuild by hand — `semantic-memory --notes <vault> --reindex` — and check stderr for `Invalid frontmatter in …` / `Skipping …` |
 | No `<vault-fact>` after a failed command | The failure hook is opt-in: set `SEMANTIC_MEMORY_FAILURE_HOOK=1`. It injects facts only (`facts/*.md`), at score ≥ 0.50, once per session per fact — `SIDEKICK_DEBUG=1` shows the search |
+| No `<vault-fact>` after a failed command in jev mode | Jev said no or unsure, or the call failed, timed out or hit `SEMANTIC_MEMORY_JEV_DAILY_TOKENS`: each injects nothing by design. `SIDEKICK_DEBUG=1` prints the reason. `jev-mode status` says whether jev-loop and the key are reachable. Is `SEMANTIC_MEMORY_FAILURE_HOOK=0` set? |
+| No "skill drafts waiting" note | The skill loop is off (`skill-loop status`), there are no drafts (`skill-loop review`), or the event was `clear`/`compact`. |
 | Docs never appear in `<vault-context>` | Pre-1.5.2 hooks searched only the first `.mcp.json` entry. On 1.5.2+, check the docs entry has an existing `--notes` folder and a built index (`<docs>/.semantic-sidekick-index/`) |
 | No injection on a prompt that should trigger it | Fingerprint collision — `cat .claude/.sidekick-fingerprints.json` and check if your prompt's sha1 is there, or mode is outage-silence — `cat .claude/.sidekick-mode` |
 | Stop hook doesn't fire capture prompt | Check `.claude/.semantic-memory/capture-pending.json` — no items with this session's `session_id` = no cues matched this session's prompts |

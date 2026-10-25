@@ -11,10 +11,11 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 ## Status
 
-**v1.6.1** (2026-10-24), on npm as `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
+**v1.7.0** (2026-10-26), on npm as `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
 
 | Version | What it adds |
 |---|---|
+| **1.7.0** | The skill loop (learned skills between sessions) and jev mode, both opt-in |
 | **1.6.1** | Release-audit fixes: invalid frontmatter stays body-only on every reindex, frontmatter `api_key:` values are masked, `--read-only` servers no longer expose `log_event` |
 | **1.6.0** | Opt-in fact lookup on failed commands (`PostToolUseFailure`), `eval-failures` |
 | **1.5.3** | Secret redaction at every write point, `lint_vault({checks: ["secrets"]})` |
@@ -85,6 +86,21 @@ How the layers fit: [.documentation/architecture/architecture-layers.md](.docume
 
 Set `SEMANTIC_MEMORY_FAILURE_HOOK=1` (e.g. in `~/.claude/settings.json` → `env`) and a failed Bash/MCP call gets the knowledge-base fact that most likely explains it, when one scores high enough. Measured on real failures it is right about 6 times in 10, so it is off by default. Facts with the literal error in `symptoms:` are found far more reliably (in a hit-em-with-the-docs tree, read the guide first: hewtd uses `symptoms:` for something else). If you already run another `PostToolUseFailure` hook, both can add a note to the same failure — see [the guide](.documentation/operational/failure-lookup-guide.md).
 
+## The skill loop (opt-in, v1.7+)
+
+`semantic-memory skill-loop on` (or `/skill-loop on`). After a session that failed a command and found the fix, or
+was corrected, a background review drafts a skill — a short playbook Claude Code loads the next time the same
+thing happens. The session never waits; the reviewer is a fenced, read-only `claude -p`; nothing lands until you
+approve it in `/skill-loop review`; unused learned skills go stale at 14 days and are archived at 30. Off (the
+default) changes nothing. See [the guide](.documentation/operational/skill-loop.md).
+
+## Jev mode (opt-in, v1.7+)
+
+`semantic-memory jev-mode on` (or `/jev-mode on`) lets semantic-memory use Jev, TypeSafe's yes/no model, through
+[jev-loop](https://github.com/the-glitch-kingdom/jev-loop) for closed-set decisions — whether a fact fits a
+failure before the failure hook shows it, whether a learned skill could be general, whether two skills are
+duplicates. Needs jev-loop, `TYPESAFE_API_KEY` and python3. See [the guide](.documentation/operational/jev-mode.md).
+
 ## Privacy and secrets
 
 Everything stays on your machine (local embedding model, no network telemetry). Since v1.5.3 every write masks API keys, tokens, passwords and private keys before they reach disk, and `lint_vault({ checks: ["secrets"] })` finds ones already in notes. Details and limits: [SECURITY.md](SECURITY.md#secret-redaction-v153).
@@ -99,4 +115,5 @@ node dist/cli/index.js --version
 
 ## License
 
-MIT
+MIT. The skill-eval prompts in `src/core/skill-eval/prompts/` are adapted from Anthropic's skill-creator
+(Apache License 2.0): see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt).

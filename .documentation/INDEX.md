@@ -32,8 +32,8 @@ purpose: Navigation hub for all documentation
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
 | [Changelog](#changelog) | 16 | Release notes per version and phase |
-| [Operational](#operational) | 13 | Day-to-day operating guides for the plugin |
-| [Reference](#reference) | 5 | Tool, CLI, configuration and frontmatter reference |
+| [Operational](#operational) | 14 | Day-to-day operating guides for the plugin |
+| [Reference](#reference) | 6 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
 | [Deployment](#deployment) | 1 | Publishing and offline packaging |
 
@@ -252,6 +252,7 @@ purpose: Navigation hub for all documentation
 | [Modes Guide](operational/modes-guide.md) | guide | active | 2026-10-24 |
 | [Session Paging & Speaker Profile — Operating Guide](operational/session-paging-guide.md) | guide | active | 2026-07-11 |
 | [Sessions guide — verification-gated work units](operational/sessions-guide.md) | guide | active | 2026-05-09 |
+| [The skill loop — learned skills between sessions](operational/skill-loop.md) | guide | active | 2026-10-25 |
 | [State migration — moving legacy .sidekick-* files to .semantic-memory/](operational/state-migration.md) | guide | active | 2026-10-24 |
 | [Usage-Feedback Ranking & Decoys — Operating Guide](operational/usage-feedback-guide.md) | guide | active | 2026-07-11 |
 
@@ -266,10 +267,11 @@ purpose: Navigation hub for all documentation
 | Document | Tier | Status | Updated |
 |----------|------|--------|----------|
 | [CLI Reference](reference/cli-reference.md) | reference | active | 2026-10-24 |
-| [Configuration Reference](reference/configuration-reference.md) | reference | active | 2026-10-24 |
+| [Configuration Reference](reference/configuration-reference.md) | reference | active | 2026-10-25 |
 | [Frontmatter spec — every field, what it does, who reads it](reference/frontmatter-spec.md) | reference | active | 2026-10-24 |
-| [Hooks Reference](reference/hooks-reference.md) | reference | active | 2026-10-24 |
+| [Hooks Reference](reference/hooks-reference.md) | reference | active | 2026-10-25 |
 | [MCP Tools Reference (44 tools)](reference/mcp-tools-reference.md) | reference | active | 2026-10-24 |
+| [Learned skill format — the skill_loop frontmatter block and its lint rules](reference/skill-format.md) | reference | active | 2026-10-25 |
 
 ---
 

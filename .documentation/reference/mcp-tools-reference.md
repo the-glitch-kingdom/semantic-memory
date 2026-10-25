@@ -3,11 +3,11 @@ title: MCP Tools Reference (44 tools)
 tier: reference
 domains: [reference]
 audience: [developers]
-tags: [mcp, tools, api, reference, tools-catalog]
+tags: [mcp, tools, api, reference, tools-catalog, v1.7.0]
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
-purpose: All 44 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check.
+last_updated: '2026-10-25'
+version: '1.7.0'
+purpose: All 44 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check, and the v1.7 opt-in `skills` lint check.
 load_priority: 9
 ---
 
@@ -39,6 +39,8 @@ v1.3.0 added 1 tool: `verify_note` (confidence-decay Phase — resets a note's d
 v1.4.0 added 1 tool: `manage_lexicon` (resident-bridge Phase — the learned human→artifact lexicon). No deprecations in v1.4.0. v1.4.0 also extended three existing tools: `read_note` (new `section` param), `synthesize_note` (new `symptoms` param), and `lint_vault` (two new opt-in checks: `alias_conflicts`, alongside the existing `code_symbols`/`decay_candidates`).
 
 v1.5.0 added 2 tools: `manage_dossier` (Phase 8 — entity dossiers: per-component living notes) and `manage_profile` (Phase 11 — the speaker profile). No deprecations in v1.5.0. v1.5.0 also extended `lint_vault` with one more opt-in check (`decoys`, alongside `code_symbols`/`decay_candidates`/`alias_conflicts`) and added a `usage` block to decay-affected search results (`search_semantic`/`search_hybrid`), the v1.5 usage-feedback ranking signal.
+
+v1.7.0 added no tools. It extended `lint_vault` with one more opt-in check, `skills` (see below). The skill loop itself has no MCP tools: it runs through hooks and the `skill-loop` CLI ([skill-loop.md](../operational/skill-loop.md)).
 
 ---
 
@@ -197,7 +199,9 @@ Run lint rules across the vault. Default returns the full report.
 - **`decoys`** (v1.5+) — flags notes retrieved 3+ times (per the selection log) that were NEVER subsequently cited (`read_note`'d). Surfaced for human review only — usage-feedback ranking never auto-down-ranks on this ambiguous signal (a decoy might be noise, or a note the answers were wrong to skip). No-op with no selection log yet. Findings sorted most-retrieved first. See [v1-5-0-expert-character.md](../changelog/v1-5-0-expert-character.md), [usage-feedback-guide.md](../operational/usage-feedback-guide.md).
 - **`secrets`** (v1.5.3+) — flags notes that already contain a secret: an API key or token (vendor prefixes like `sk-`, `ghp_`, `AKIA`, `npm_`), a JWT, a private key, `user:pass@` URL credentials, a secret-named `name=value` pair, or the exact value of a secret-named env var on this machine. Each finding is an **error** reading `line N: <kind> — rotate it…`: path, line and kind, never the value. Nothing is rewritten. Placeholders (`<your-key>`, `${API_TOKEN}`, `changeme`) are not flagged. Works on the read-only docs server. See [secret-redaction.md](../security/secret-redaction.md).
 
-Request any of them via `checks: ["code_symbols"]` / `["decay_candidates"]` / `["alias_conflicts"]` / `["decoys"]` / `["secrets"]` (or combine with the standard four — the `checks` param's enum includes all nine: `schema`, `provenance`, `stale`, `broken_links`, `code_symbols`, `decay_candidates`, `alias_conflicts`, `decoys`, `secrets`).
+- **`skills`** (v1.7+) — lints the skill loop's learned skills this repo loads (`.claude/skills/*/SKILL.md`; the repo is the project root, or the repo above a `.documentation` corpus). Each finding reads `<rule>: <message>` under rule `skills`. It checks, per skill (`lintSkill` in `src/core/skill-schema.ts`): YAML frontmatter present; `name` kebab-case, at most 64 characters, equal to its folder; `description` present, 40 to 1024 characters, says *when* to use it (a vague verb is a warning); a `skill_loop:` block with `schema: 1`, a valid `scope` (`directory`, `project`, `global`) and `status` (`draft`, `active`, `stale`, `archived`), and `triggers` (none is a warning); provenance (the session, failure or correction it came from); the sections `## When to use`, `## Steps`, `## Pitfalls`, `## Verify`; every `cites` entry is a knowledge-base fact here; every `applies_to` path exists, and a directory-scoped skill has at least one; no secret in the file; no name clash with a skill the skill loop did not write. Same checks as `semantic-memory skills lint`. Format: [skill-format.md](./skill-format.md).
+
+Request any of them via `checks: ["code_symbols"]` / `["decay_candidates"]` / `["alias_conflicts"]` / `["decoys"]` / `["secrets"]` / `["skills"]` (or combine with the standard four — the `checks` param's enum includes all ten: `schema`, `provenance`, `stale`, `broken_links`, `code_symbols`, `decay_candidates`, `alias_conflicts`, `decoys`, `secrets`, `skills`).
 
 **Write tools and redaction (v1.5.3+):** `create_note`, `update_note`, `update_frontmatter`, `apply_patch`, `synthesize_note`, `ingest_source`, `synthesize_promote`, `manage_dossier`, `manage_profile`, `manage_lexicon` and `log_event` mask secrets before writing. Text results end with `(N secrets redacted)`; JSON results carry `redacted: N` (per op in `apply_patch`'s `applied`). The values are never echoed.
 

@@ -16,7 +16,7 @@ purpose: Quick reference for operational documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 13 |
+| Documents | 14 |
 | Category | features |
 | Load Priority | 6/10 |
 
@@ -35,17 +35,17 @@ purpose: Quick reference for operational documentation
 
 ## Recently Updated
 
+- [The skill loop — learned skills between sessions](skill-loop.md) - 2026-10-25
 - [Capture Workflows](capture-workflows.md) - 2026-10-24
 - [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) - 2026-10-24
 - [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) - 2026-10-24
 - [Modes Guide](modes-guide.md) - 2026-10-24
-- [State migration — moving legacy .sidekick-* files to .semantic-memory/](state-migration.md) - 2026-10-24
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 13 |
+| active | 14 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
