@@ -942,7 +942,8 @@ async function handleStop(projectRoot, sessionId) {
 // v1.7 jev mode: Jev can veto the candidate fact. Measured on 1,171 Claude-labelled failure/doc pairs, Jev's
 // confident no's (<= 0.05) were 727 of 729 right, but it never said yes at >= 0.95 to a relevant pair (max 0.89):
 // a "yes" gate would inject nothing. So a confident no suppresses, anything else keeps the plain hook's choice.
-// Neither shape reaches the 95% bar on precision (veto: 29-42%), so jev mode does not turn the hook on by itself.
+// Replayed, the veto removed only wrong facts (12 wrong, 0 right at score 0.30) but none at the shipped 0.50, and
+// precision stays far from the 95% bar, so jev mode does not turn the hook on by itself.
 const JEV_GATE = { adopted: false, budgetMs: Number(process.env.SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS) || 1500 };
 const FAILURE_HOOK_ENV = () => process.env.SEMANTIC_MEMORY_FAILURE_HOOK;
 const FAILURE_HOOK_ON = (projectRoot) =>

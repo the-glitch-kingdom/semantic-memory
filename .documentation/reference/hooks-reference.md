@@ -239,7 +239,7 @@ In jev mode `handleFailure` adds a veto after picking the fact:
 4. An error, a timeout or a daily-ceiling stop injects **nothing**.
 5. The whole lookup has a budget, `SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS` (default 1500). If the search leaves no time, the Jev call is skipped.
 
-Why a veto and not a yes-gate: on 1,171 labelled pairs Jev's confident no's were 99.7% right, but it never said yes at >= 0.95 to a relevant pair. Jev mode does **not** turn the hook on by itself (precision with the veto: 29–42%, below the 95% bar); `SEMANTIC_MEMORY_FAILURE_HOOK=1` still does, and `=0` always wins. See [the jev mode guide](../operational/jev-mode.md).
+Why a veto and not a yes-gate: on 1,171 labelled pairs Jev's confident no's were 99.7% right, but it never said yes at >= 0.95 to a relevant pair. Replayed, the veto removed only wrong facts (12 wrong, 0 right at score 0.30) and none at the shipped 0.50 (precision 61%). Jev mode does **not** turn the hook on by itself (far below the 95% bar); `SEMANTIC_MEMORY_FAILURE_HOOK=1` still does, and `=0` always wins. See [the jev mode guide](../operational/jev-mode.md).
 
 ---
 
