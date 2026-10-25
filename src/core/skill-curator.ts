@@ -66,7 +66,7 @@ function lastUsed(repo: string): Map<string, number> {
 }
 
 /** When the skill landed here (ms): its ledger entry, else the file's mtime. */
-function landedAt(repo: string, s: SkillFile, ledger: LedgerEntry[]): number {
+function landedAt(s: SkillFile, ledger: LedgerEntry[]): number {
   const e = ledger.filter((x) => x.skill === s.skill.name && ["land", "patch", "restore", "merge", "promote"].includes(x.action)).pop();
   return e ? Date.parse(e.ts) : statSync(s.path).mtimeMs;
 }
@@ -87,7 +87,7 @@ export function plan(repo: string, now = Date.now(), env = process.env): Curator
     if (meta.pinned) { out.push({ ...base, action: "skip", why: "pinned" }); continue; }
     if (referenced.has(name)) { out.push({ ...base, action: "skip", why: "cited by another skill" }); continue; }
     const last = used.get(name);
-    const since = last ?? landedAt(repo, s, ledger);
+    const since = last ?? landedAt(s, ledger);
     const idle = (now - since) / DAY;
     if (last === undefined && idle < STALE_DAYS) { out.push({ ...base, action: "skip", why: `never used, landed ${idle.toFixed(0)} d ago` }); continue; }
     if (idle >= ARCHIVE_DAYS) out.push({ ...base, action: "archive", why: `unused ${Math.floor(idle)} days` });
