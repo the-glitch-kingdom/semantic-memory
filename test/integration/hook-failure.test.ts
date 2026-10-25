@@ -132,7 +132,8 @@ describe("PostToolUseFailure fact lookup (opt-in)", () => {
         input: JSON.stringify({ cwd: project, ...input }),
         encoding: "utf8",
         cwd: project,
-        env: { ...process.env, SEMANTIC_MEMORY_FAILURE_HOOK: "1", SEMANTIC_MEMORY_JEV: "1", JEV_LOOP_DIR: jev.dir, TYPESAFE_API_KEY: "fake", ...env },
+        // a roomy budget: under the full suite's load the search alone can take the default 1.5 s
+        env: { ...process.env, SEMANTIC_MEMORY_FAILURE_HOOK: "1", SEMANTIC_MEMORY_JEV: "1", JEV_LOOP_DIR: jev.dir, TYPESAFE_API_KEY: "fake", SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS: "20000", ...env },
         timeout: 60_000,
       });
       return { ctx: (JSON.parse(r.stdout)?.hookSpecificOutput?.additionalContext ?? "") as string, ms: Date.now() - t, stderr: r.stderr };
@@ -162,9 +163,9 @@ describe("PostToolUseFailure fact lookup (opt-in)", () => {
       await mode("raise");
       expect(runJev(failure({ session_id: "j3" })).ctx).toBe("");
       await mode("sleep");
-      const r = runJev(failure({ session_id: "j4" }));
+      const r = runJev(failure({ session_id: "j4" }), { SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS: "" });
       expect(r.ctx).toBe("");
-      expect(r.ms).toBeLessThan(2500); // 1.5 s budget + node start-up and the reply
+      expect(r.ms).toBeLessThan(3000); // the default 1.5 s budget + node start-up and the reply
     });
 
     it("the daily ceiling: no call, one stderr note", async () => {

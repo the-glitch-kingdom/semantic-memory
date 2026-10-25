@@ -941,7 +941,7 @@ async function handleStop(projectRoot, sessionId) {
 // injections were on target, firing on ~4% of failures. Below the plan's 95% bar, hence off by default.
 // v1.7 jev mode: a candidate fact is injected only when Jev says it fits this failure (>= 0.95). The gate's
 // threshold and whether it turns the hook on by itself come from the Phase 8 replay (scripts/eval-failures).
-const JEV_GATE = { threshold: 0.35, adopted: false, budgetMs: 1500 };
+const JEV_GATE = { threshold: 0.35, adopted: false, budgetMs: Number(process.env.SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS) || 1500 };
 const FAILURE_HOOK_ENV = () => process.env.SEMANTIC_MEMORY_FAILURE_HOOK;
 const FAILURE_HOOK_ON = (projectRoot) =>
   FAILURE_HOOK_ENV() === "1" || (FAILURE_HOOK_ENV() !== "0" && JEV_GATE.adopted && jevOn(projectRoot));
