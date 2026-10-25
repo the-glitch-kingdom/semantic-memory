@@ -29,7 +29,9 @@
     "README.md",
     "CHANGELOG.md",
     "ROADMAP.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSES"
   ],
   "scripts": {
     "build": "tsup",

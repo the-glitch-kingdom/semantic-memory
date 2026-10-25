@@ -37,6 +37,9 @@ describe("fenced claude runs (v1.7)", () => {
     expect(run.reviewer).toBe("1");
     expect(run.cwd).toBe(dir);
     expect(fencedArgs({ tools: [], maxTurns: 1 }, env)).not.toContain("Bash");
+    expect(a).not.toContain("--allowedTools");
+    const allowed = fencedArgs({ tools: ["Edit", "Bash"], allowedTools: ["Edit", "Bash(npm test:*)"], maxTurns: 1 }, env);
+    expect(allowed[allowed.indexOf("--allowedTools") + 1]).toBe("Edit,Bash(npm test:*)");
   });
 
   it("reports the skills a stream-json run called", async () => {

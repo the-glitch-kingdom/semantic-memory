@@ -64,3 +64,6 @@ export type { SkillLoopMeta, ParsedSkill, SkillFile, SkillFinding, SkillScope, S
 export type { Feature, FeatureState } from "./features.js";
 export { askJev, jevSpendToday, jevVerdict, relevanceQuestion, failureState, JEV_BAR } from "./jev.js";
 export type { JevCaller, JevQuestion, JevAnswer } from "./jev.js";
+export * from "./skill-eval/index.js";
+export { gateSkill, GATE_MIN_POSITIVE_RATE, GATE_MAX_FALSE_TRIGGER_RATE } from "./skill-gate.js";
+export type { SkillScores, GateVerdict } from "./skill-gate.js";

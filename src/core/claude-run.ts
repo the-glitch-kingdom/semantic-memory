@@ -75,6 +75,8 @@ export interface ClaudeRunOptions {
   cwd: string;
   /** built-in tools the run may use; [] = none */
   tools: string[];
+  /** with dontAsk, only these permission rules run un-prompted, e.g. "Edit", "Bash(npm test:*)"; the rest is denied */
+  allowedTools?: string[];
   maxTurns: number;
   model?: string;
   /** "json": one result object; "stream-json": every event (to see which tools were called) */
@@ -101,7 +103,7 @@ export const claudeBin = (env = process.env) => env.SEMANTIC_MEMORY_CLAUDE_BIN |
 export const skillLoopModel = (env = process.env) => env.SEMANTIC_MEMORY_SKILL_LOOP_MODEL || "sonnet";
 
 /** The fenced argument list (exported for tests: these flags are the security boundary). */
-export function fencedArgs(o: Pick<ClaudeRunOptions, "tools" | "maxTurns" | "model" | "output" | "addDirs" | "appendSystemPrompt">, env = process.env): string[] {
+export function fencedArgs(o: Pick<ClaudeRunOptions, "tools" | "allowedTools" | "maxTurns" | "model" | "output" | "addDirs" | "appendSystemPrompt">, env = process.env): string[] {
   const args = [
     "-p",
     "--tools", o.tools.join(","),
@@ -115,6 +117,7 @@ export function fencedArgs(o: Pick<ClaudeRunOptions, "tools" | "maxTurns" | "mod
     "--model", o.model ?? skillLoopModel(env),
     "--output-format", o.output ?? "json",
   ];
+  if (o.allowedTools?.length) args.push("--allowedTools", o.allowedTools.join(","));
   if ((o.output ?? "json") === "stream-json") args.push("--verbose");
   for (const d of o.addDirs ?? []) args.push("--add-dir", d);
   if (o.appendSystemPrompt) args.push("--append-system-prompt", o.appendSystemPrompt);
