@@ -3,10 +3,10 @@ title: Troubleshooting
 tier: guide
 domains: [troubleshooting]
 audience: [developers]
-tags: [troubleshooting, debugging, failure-modes, diagnostics]
+tags: [troubleshooting, debugging, failure-modes, diagnostics, v1.7.0, skill-loop, jev-mode]
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
+last_updated: '2026-10-25'
+version: '1.7.0'
 purpose: Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command.
 load_priority: 9
 ---
@@ -329,6 +329,47 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 ### State-delta preload shows "No logged activity" despite recent activity
 - **Cause:** window is 14 days; entries older than that don't appear. Or timestamps are inconsistent (UTC vs local).
 - **Check:** `semantic-sidekick log-query --notes <vault> --limit 5` — shows what the parser sees.
+
+## The skill loop
+
+### No drafts appear
+- **Check first:** `semantic-memory skill-loop status` — is it on (and why), are sessions queued, is today's cap used?
+- **Off for this repo:** a `skill_loop: off` in `.claude/.semantic-memory/config` beats the global switch. The switch is read at session start: turning it on mid-session takes effect next session.
+- **No signal:** only sessions with a failed Bash/MCP call, a correction ("no, …", "use X instead", "don't …") or 20+ tool calls are queued. A failure the agent swallowed itself (`cmd; echo $?`, `cmd || true`) is not a failure to the hook.
+- **Reviewed, nothing worth a skill:** `.claude/.semantic-memory/skill-loop.log` shows each review: `0 draft(s)` with the reviewer's reason, or `rejected` with the lint rule that failed. Most sessions teach nothing reusable; that is by design.
+
+### The worker isn't running
+- **Check:** `semantic-memory skill-loop status` shows the queue and the worker's pid; `.claude/.semantic-memory/skill-loop.log` shows what it did.
+- **Lock left by a dead worker:** the next worker reclaims it (the pid is checked). Run one by hand: `semantic-memory skill-loop worker`.
+- **`claude` not on PATH for hooks:** the reviewer runs `claude` (or `SEMANTIC_MEMORY_CLAUDE_BIN`); the log says `could not start claude`.
+- **A job that keeps failing** is retried at the next worker start and set aside after 3 attempts in `~/.semantic-memory/review-queue/failed/` with the reason.
+
+### "daily cap reached"
+- At most `SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS` (10) reviews a day across all repos; the rest wait in the queue and run on the next worker start after midnight. Raise the variable if you want more.
+
+### A skill I wanted was archived
+- The curator archives learned skills unused for 30 days. `semantic-memory skill-loop restore <name>` brings it back; set `skill_loop.pinned: true` in its frontmatter so the curator leaves it alone. `skill-loop rollback <ledger-id>` undoes any single change exactly (`.claude/.semantic-memory/skill-ledger.jsonl` lists them).
+
+### `--approve` refuses
+- **"the eval gate said keep-draft":** evals ran and the draft did not beat the bar (with one or two sessions there is no held-out set yet). Land it anyway with `--override "<why>"`, which is recorded.
+- **"changed since this patch was drafted":** the skill was edited after the patch was made. Reject the patch; the next review will redo it against the current text.
+- **lint `name_clash`:** a skill the loop did not write has that name. Rename the draft (edit its SKILL.md and folder) or reject it.
+
+### A skill-loop `claude` run sees MCP tools or hooks
+- It must not: every run passes `--strict-mcp-config` and `disableAllHooks`. Without `--strict-mcp-config`, claude.ai connectors (Drive, Docs) load even with `--tools` set ([fact](../knowledge-base/facts/claude-p-tools-flag-keeps-claude-ai-connectors.md)).
+
+## Jev mode
+
+### `jev-mode status` says "on but unavailable"
+- **jev-loop not found:** `router.py` missing at `~/.claude/jev-loop` — set `JEV_LOOP_DIR`.
+- **`TYPESAFE_API_KEY is not set`:** neither the environment nor `~/.claude/settings.json` `env` has it.
+- **`python3 not found`:** the bridge is a Python script.
+- While unavailable, jev mode is effectively off: the failure hook behaves as without jev mode, the skill loop uses its rule-based defaults.
+
+### The failure hook injects less (or nothing) in jev mode
+- Jev mode only removes: a confident Jev no (≤ 0.05) suppresses the fact, and a timeout, an error or the daily ceiling inject nothing. Jev mode does not turn the hook on: it still needs `SEMANTIC_MEMORY_FAILURE_HOOK=1`. `SIDEKICK_DEBUG=1` prints the reason on stderr.
+- **Ceiling:** `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` (500,000) for the hook; the hook says so once on stderr.
+- **Slow search:** the gate's whole budget is 1.5 s (`SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS`); with less than 300 ms left after the search, Jev is not asked.
 
 ---
 

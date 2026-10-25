@@ -2,6 +2,67 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.7.0] - 2026-10-26 — The skill loop and jev mode
+
+Two new features, **both off by default**, each with its own switch. With both off, 1.7.0 behaves like 1.6.1.
+
+### The skill loop (`SEMANTIC_MEMORY_SKILL_LOOP=1`, `/skill-loop on|off|status`)
+
+semantic-memory now learns *procedures* as well as facts. After a session with something to learn from (a failed
+command, a correction, a long session), a background review drafts a skill, or a patch to a learned skill that was
+used and then failed. Nothing lands until you approve it.
+
+- **Quiet.** `SessionEnd` only writes a job and starts a detached worker; the session never waits. One worker per
+  repo, at most 10 reviews a day across all repos (`SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS`).
+- **Fenced reviewer.** Each review is one `claude -p` with Read/Grep/Glob only: no Bash, no MCP servers, no hooks,
+  no subagents, nothing outside the repo, no session file. It answers JSON; semantic-memory writes the draft after
+  redaction and lint. At most 5 skill-loop `claude` processes run at once on the machine
+  (`SEMANTIC_MEMORY_SKILL_LOOP_CONCURRENCY`, 1–5).
+- **Evidence.** Hooks record skill use (PostToolUse `Skill`, and `/name`), failed commands and corrections to
+  redacted logs under `.claude/.semantic-memory/`.
+- **Scope.** Directory or project by rule (the paths a skill names). Global only by promotion, when the same lesson
+  exists in two repos, and only on approval. Private repos (`SEMANTIC_MEMORY_PRIVATE_PATHS`, default
+  `~/workspace/kentro`) stay project and are never indexed.
+- **Review.** `/skill-loop review` shows each draft's evidence, scope, Verify command and (for patches) diff:
+  approve, reject, or `--eval` it. Every change is in a ledger with exact bytes, so `skill-loop rollback <id>` undoes
+  one change.
+- **Curator.** Weekly when the repo is quiet: learned skills unused 14 days go stale, 30 days are archived (never
+  deleted; `skill-loop restore <name>`). Pinned and hand-written skills are never touched. Merging is opt-in.
+- **Skill format.** A normal `SKILL.md` plus a `skill_loop:` frontmatter block (scope, status, triggers, applies_to,
+  provenance, cites); `semantic-memory skills lint` and `lint_vault({checks: ["skills"]})` check it.
+- **Skill evals.** `semantic-memory skill-eval trigger|task|tune`: does the skill trigger on its own prompts and
+  stay quiet on near-misses, does it beat doing the task without it, can its description be better. A TypeScript
+  rewrite of the method in Anthropic's skill-creator, with its prompts adapted (Apache-2.0, see
+  `THIRD_PARTY_NOTICES.md`).
+
+### Jev mode (`SEMANTIC_MEMORY_JEV=1`, `/jev-mode on|off|status`)
+
+semantic-memory can use Jev (TypeSafe's yes/no model) for closed-set decisions, always through jev-loop's
+`router.ask` (redaction, cache, ledger, budget): `hooks/jev-bridge.py`. Callers `semantic-memory-hook` (the failure hook, with its own
+ceiling `SEMANTIC_MEMORY_JEV_DAILY_TOKENS`, default 500,000 a day), `semantic-memory-judge` and
+`semantic-memory-skill-loop`. jev-loop counts all three as batch callers (capped by its daily batch cap, cached)
+until it lists `semantic-memory-hook` among its live callers.
+
+- **Failure hook veto.** In jev mode a fact the failure hook picked is suppressed when Jev is confident it does not
+  fit (<= 0.05), inside the hook's 1.5 s budget; an error injects nothing. Measured on 1,171 labelled pairs: Jev's
+  no's were 99.7% right, but it never said yes at >= 0.95, so a yes-gate would inject nothing. Replayed, the veto
+  removed only wrong facts (12 wrong, 0 right at score 0.30) and none at the shipped 0.50, where precision stays
+  61%: well below the 95% bar, so jev mode does not turn the hook on by itself.
+- **Failure-eval judge.** `scripts/eval-failures/judge-jev.mjs`, `calibrate-jev.mjs`, and
+  `eval-failures --gate jev`.
+- **Skill loop.** The scope question (could this be general?) and duplicate checks before a merge.
+
+### Also
+
+- Every semantic-memory hook exits at once under `SEMANTIC_MEMORY_REVIEWER=1` (set on every skill-loop `claude` run).
+- `healthcheck` reports both switches.
+
+### Validation
+
+- 664 tests (545 in 1.6.1). With both switches off, every hook's output matches 1.6.1 byte for byte. Golden eval and
+  failure eval unchanged. A real end-to-end run (sessions → review → draft → eval → approve → use) found three bugs,
+  fixed here. Details: `.documentation/changelog/v1-7-0-skill-loop-and-jev-mode.md`.
+
 ## [1.6.1] - 2026-10-24 — Release audit fixes (1.5.2 → 1.6.0)
 
 A full validation of 1.5.2, 1.5.3 and 1.6.0 through the published packages and real entry points (fresh install, plugin update, upgrade from 1.5.1 state, a stdio MCP server, the read-only docs server, the live watcher, the hooks as real processes, the offline tarball) found seven defects. Each has a regression test.

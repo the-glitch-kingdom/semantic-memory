@@ -7,6 +7,13 @@ export default defineConfig({
     // standalone so hooks (plain JS) can import them without loading the embedder
     "core/redact": "src/core/redact.ts",
     "core/failure-query": "src/core/failure-query.ts",
+    "core/features": "src/core/features.ts",
+    "core/jev": "src/core/jev.ts",
+    "core/skill-evidence": "src/core/skill-evidence.ts",
+    "core/skill-queue": "src/core/skill-queue.ts",
+    "core/skill-worker": "src/core/skill-worker.ts",
+    "core/skill-review": "src/core/skill-review.ts",
+    "core/skill-curator": "src/core/skill-curator.ts",
     "mcp/server": "src/mcp/server.ts",
     "cli/index": "src/cli/index.ts",
   },

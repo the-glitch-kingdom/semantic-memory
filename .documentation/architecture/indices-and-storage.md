@@ -3,17 +3,17 @@ title: Indices and storage — every file semantic-memory writes
 tier: reference
 domains: [architecture]
 audience: [developers, admin]
-tags: [storage, indices, paths, files, gitignore, backup, disk]
+tags: [storage, indices, paths, files, gitignore, backup, disk, v1.7.0]
 status: active
-last_updated: '2026-05-09'
-version: '1.2.0'
+last_updated: '2026-10-25'
+version: '1.7.0'
 purpose: Comprehensive map of every file and directory semantic-memory creates on disk. Use for backup planning, gitignore decisions, disk-usage forensics, and v2.0 migration prep.
 load_priority: 7
 ---
 
 # Indices and storage
 
-semantic-memory writes to three distinct locations with different lifecycles. This doc maps every file, what it's for, what creates it, and how to safely delete it.
+semantic-memory writes to three distinct locations with different lifecycles (plus, since v1.7 with the skill loop on, a machine-wide state folder: see below). This doc maps every file, what it's for, what creates it, and how to safely delete it.
 
 ## The three storage tiers
 
@@ -153,6 +153,23 @@ Lives at `<project>/.claude/.semantic-memory/` (v1.2+) and `<project>/.claude/.s
 | `session.json` | Active session state: id, task, started_at, last_activity_at, verifications, notes_touched, optionally closed_at + closed_summary | `src/core/session.ts` (v1.1+) | Removed on `session_finish` |
 | `healthcheck-cache.json` | Cached healthcheck result to avoid re-running fast-tier on every SessionStart within 5min | `src/core/healthcheck.ts` (v1.1+) | Auto-expires after 5min |
 
+### Skill-loop state (v1.7+, only with the skill loop on)
+
+More files in the same folder. Evidence logs are redacted before they are written and rotate to `<file>.1` past 5 MB (`SEMANTIC_MEMORY_SKILL_LOOP_EVIDENCE_MB`). Full detail: [configuration-reference.md](../reference/configuration-reference.md#v17-skill-loop-and-jev-mode-state).
+
+| File | Purpose | Safe to delete? |
+|---|---|---|
+| `skill-usage.jsonl` | Learned-skill uses (tool or `/name`). The curator reads it. | Yes; skills then look unused to the curator |
+| `failures.jsonl`, `corrections.jsonl` | Evidence for reviews | Yes; pending evidence is lost |
+| `skill-drafts/` | Drafts awaiting review | Yes, but the drafts are lost. Use `skill-loop review --reject` to keep the ledger right. |
+| `skill-ledger.jsonl`, `skill-ledger-blobs/` | Every change to a learned skill, with exact bytes | **No.** `skill-loop rollback` needs them. |
+| `skills-archive/` | Archived learned skills | **No.** `skill-loop restore` needs them. Never auto-deleted. |
+| `curator.json` | Last curator run | Yes; the curator then runs when next due |
+| `skill-loop.log`, `skill-loop.lock` | Worker and curator log; one-worker-per-repo lock | Yes (not the lock while a worker runs) |
+| `config` | Repo overrides (`skill_loop:`, `skill_loop_consolidate:`) | It is your setting; commit it if you want it shared |
+
+**Machine-wide, `~/.semantic-memory/` (v1.7+, base `SEMANTIC_MEMORY_STATE_HOME`):** `review-queue/` (+ `done/`, `failed/`), `skill-loop-runs.jsonl` (the daily cap's count), `skill-index.jsonl` (learned skills across repos, for promotion; private repos are never indexed), `claude-slots/` (concurrency slots), `skill-eval-cache.jsonl`. All safe to delete; the queue loses unreviewed jobs. Learned skills themselves live in `<repo>/.claude/skills/` (or a directory's `.claude/skills/`, or `~/.claude/skills/` when promoted): they are **content, commit them**.
+
 ### Legacy paths (still readable through v1.x)
 
 | Legacy path | New path | Status |
@@ -231,6 +248,9 @@ If you're backing up a project:
 - `<vault>/.semantic-sidekick-index/` — derived
 - `<project>/.claude/.semantic-memory/` — runtime state
 - `<project>/.claude/.sidekick-*` — legacy runtime state
+- `~/.semantic-memory/` — queue and caches (v1.7)
+
+**Never skip with the skill loop on:** `skill-ledger*` and `skills-archive/` under `.claude/.semantic-memory/` (rollback and restore need them), and the learned skills in `.claude/skills/`.
 - `~/.semantic-sidekick/models/` — re-downloadable
 
 ## Disk forensics

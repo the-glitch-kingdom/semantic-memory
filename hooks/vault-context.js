@@ -939,7 +939,32 @@ async function handleStop(projectRoot, sessionId) {
 // --- PostToolUseFailure: look up a knowledge-base fact for a failed tool call (v1.6, opt-in) ---
 // Measured on 553 real failures (scripts/eval-failures): facts-only at score >= 0.50, about 6 in 10
 // injections were on target, firing on ~4% of failures. Below the plan's 95% bar, hence off by default.
-const FAILURE_HOOK_ON = () => process.env.SEMANTIC_MEMORY_FAILURE_HOOK === "1";
+// v1.7 jev mode: Jev can veto the candidate fact. Measured on 1,171 Claude-labelled failure/doc pairs, Jev's
+// confident no's (<= 0.05) were 727 of 729 right, but it never said yes at >= 0.95 to a relevant pair (max 0.89):
+// a "yes" gate would inject nothing. So a confident no suppresses, anything else keeps the plain hook's choice.
+// Replayed, the veto removed only wrong facts (12 wrong, 0 right at score 0.30) but none at the shipped 0.50, and
+// precision stays far from the 95% bar, so jev mode does not turn the hook on by itself.
+const JEV_GATE = { adopted: false, budgetMs: Number(process.env.SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS) || 1500 };
+const FAILURE_HOOK_ENV = () => process.env.SEMANTIC_MEMORY_FAILURE_HOOK;
+const FAILURE_HOOK_ON = (projectRoot) =>
+  FAILURE_HOOK_ENV() === "1" || (FAILURE_HOOK_ENV() !== "0" && JEV_GATE.adopted && jevOn(projectRoot));
+
+// cheap (env + a few stats); the hook-side copy of src/core/features.ts
+let featuresMod;
+async function loadFeatures() {
+  if (featuresMod === undefined) {
+    try {
+      featuresMod = await import(new URL("../dist/core/features.js", import.meta.url).href);
+    } catch (e) {
+      debug(`features unavailable: ${e.message}`);
+      featuresMod = null;
+    }
+  }
+  return featuresMod;
+}
+function jevOn(projectRoot) {
+  return Boolean(featuresMod && featuresMod.featureOn("jev", projectRoot));
+}
 const FAILURE_MIN_SCORE = Number(process.env.SEMANTIC_MEMORY_FAILURE_MIN_SCORE) || 0.5;
 const USER_DENIED = /^(The user doesn't want to proceed|Permission to use .* has been denied)/;
 const isFactPath = (p) => /(^|\/)facts\/[^/]+\.md$/.test(String(p));
@@ -964,7 +989,65 @@ async function redactText(text) {
   }
 }
 
-async function handleFailure(projectRoot, sources, cliBin, input, sessionId) {
+// One live Jev call for the candidate: a confident no (<= 0.05) vetoes it, a yes or an unsure answer lets it
+// through. An error, a timeout or the daily ceiling injects nothing: in jev mode an unchecked fact is not shown.
+async function jevAllows(projectRoot, command, error, fact, started) {
+  try {
+    const jev = await import(new URL("../dist/core/jev.js", import.meta.url).href);
+    const title = String(fact.title ?? fact.path);
+    const excerpt = await redactText(String(fact.snippet ?? ""));
+    const left = JEV_GATE.budgetMs - (Date.now() - started);
+    if (left < 300) {
+      debug(`jev gate: ${left} ms left of the hook budget — skipped`);
+      return false;
+    }
+    const a = await jev.askJev(
+      {
+        cwd: projectRoot,
+        caller: "semantic-memory-hook",
+        state: jev.failureState(command, error),
+        questions: [{ key: "fits", instructions: jev.relevanceQuestion(title, excerpt) }],
+      },
+      { timeoutMs: left - 50 },
+    );
+    if (a.ceiling) process.stderr.write(`[semantic-memory] jev mode: ${a.error}; the failure hook injects nothing until tomorrow\n`);
+    else if (a.error) debug(`jev gate: ${a.error}`);
+    if (a.error || typeof a.scores.fits !== "number") return false;
+    return jev.jevVerdict(a.scores.fits) !== false;
+  } catch (e) {
+    debug(`jev gate failed: ${e.message}`);
+    return false;
+  }
+}
+
+// v1.7 skill loop: failures, corrections and /skill uses become evidence for the between-session review.
+// Never blocks or changes this hook's output; any error is swallowed.
+async function recordSkillEvidence(eventName, projectRoot, input) {
+  try {
+    const ev = await import(new URL("../dist/core/skill-evidence.js", import.meta.url).href);
+    const root = ev.repoRoot(projectRoot);
+    const session_id = typeof input.session_id === "string" ? input.session_id : null;
+    if (eventName === "PostToolUseFailure") {
+      const name = String(input.tool_name || "");
+      const error = String(input.error || "");
+      if ((name === "Bash" || name.startsWith("mcp__")) && !input.is_interrupt && error && !USER_DENIED.test(error.trim())) {
+        ev.appendEvidence(root, "failures", ev.failureRecord(input));
+      }
+    } else if (eventName === "UserPromptSubmit" && typeof input.prompt === "string") {
+      const cue = ev.detectCorrection(input.prompt);
+      if (cue) ev.appendEvidence(root, "corrections", { session_id, cue, excerpt: input.prompt.slice(0, 300) });
+      const slash = ev.slashSkill(input.prompt);
+      if (slash) {
+        const file = join(root, ".claude", "skills", slash, "SKILL.md");
+        if (existsSync(file) && /^skill_loop:/m.test(readFileSync(file, "utf8"))) ev.appendEvidence(root, "usage", { session_id, skill: slash, via: "slash" });
+      }
+    }
+  } catch (e) {
+    debug(`skill evidence failed: ${e.message}`);
+  }
+}
+
+async function handleFailure(projectRoot, sources, cliBin, input, sessionId, started = Date.now()) {
   const name = String(input.tool_name || "");
   const error = String(input.error || "");
   if (!(name === "Bash" || name.startsWith("mcp__")) || input.is_interrupt || !error || USER_DENIED.test(error.trim())) {
@@ -979,8 +1062,13 @@ async function handleFailure(projectRoot, sources, cliBin, input, sessionId) {
   const command = typeof args.command === "string" ? args.command : `${name} ${JSON.stringify(args)}`.slice(0, 300);
   const query = await failureQueryFor(error, command);
   const hits = await searchSources(cliBin, sources, 8, query);
+  const gated = jevOn(projectRoot);
   const fact = hits.find((h) => isFactPath(h.path) && typeof h.score === "number" && h.score >= FAILURE_MIN_SCORE);
   if (!fact) {
+    emit("PostToolUseFailure", "");
+    return;
+  }
+  if (gated && !(await jevAllows(projectRoot, command, error, fact, started))) {
     emit("PostToolUseFailure", "");
     return;
   }
@@ -1006,8 +1094,10 @@ async function handleFailure(projectRoot, sources, cliBin, input, sessionId) {
   }
 
   const lines = [
-    `<vault-fact source="tool-failure" score="${fact.score.toFixed(2)}">`,
-    `A knowledge-base fact may explain this failure. Check it applies before acting on it (measured: about 6 in 10 of these are on target).`,
+    `<vault-fact source="tool-failure" score="${fact.score.toFixed(2)}"${gated ? ` checked="jev"` : ""}>`,
+    gated
+      ? `A knowledge-base fact may explain this failure (checked: not ruled out). Check it applies before acting on it.`
+      : `A knowledge-base fact may explain this failure. Check it applies before acting on it (measured: about 6 in 10 of these are on target).`,
     `- \`${fact.path}\`${fact.source ? ` (${fact.source})` : ""}`,
   ];
   if (fact.snippet) lines.push(`  > ${(await redactText(String(fact.snippet))).replace(/\s+/g, " ").slice(0, 240)}`);
@@ -1066,8 +1156,16 @@ async function main() {
   const projectRoot = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const sessionId = typeof input.session_id === "string" ? input.session_id : undefined;
   debug(`event=${eventName} projectRoot=${projectRoot}`);
+  const started = Date.now();
+  // recursion guard: inside a skill-loop claude run every semantic-memory hook leaves at once
+  if (process.env.SEMANTIC_MEMORY_REVIEWER === "1") {
+    emitNoop(eventName);
+    return;
+  }
+  await loadFeatures();
+  if (featuresMod?.featureOn("skill_loop", projectRoot)) await recordSkillEvidence(eventName, projectRoot, input);
   // opt-in, and registered for every failed tool call: leave before any lookup when off
-  if (eventName === "PostToolUseFailure" && !FAILURE_HOOK_ON()) {
+  if (eventName === "PostToolUseFailure" && !FAILURE_HOOK_ON(projectRoot)) {
     emitNoop(eventName);
     return;
   }
@@ -1091,7 +1189,7 @@ async function main() {
     if (eventName === "UserPromptSubmit") {
       await handlePrompt(projectRoot, sources, cliBin, input);
     } else if (eventName === "PostToolUseFailure") {
-      await handleFailure(projectRoot, sources, cliBin, input, sessionId);
+      await handleFailure(projectRoot, sources, cliBin, input, sessionId, started);
     } else if (eventName === "Stop") {
       await handleStop(projectRoot, sessionId);
     } else {

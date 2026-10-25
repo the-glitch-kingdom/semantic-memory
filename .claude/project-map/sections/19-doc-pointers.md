@@ -9,4 +9,5 @@
 - [`README.md`](README.md)
 - [`SECURITY.md`](SECURITY.md)
 - [`CHANGELOG.md`](CHANGELOG.md)
+- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 - [`AGENTS.md`](AGENTS.md)

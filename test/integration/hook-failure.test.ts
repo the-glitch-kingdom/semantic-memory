@@ -4,6 +4,7 @@ import { mkdtemp, rm, writeFile, mkdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { fakeJevLoop } from "../jev-fake.js";
 
 // v1.6: the opt-in PostToolUseFailure hook injects one knowledge-base fact for a failed Bash/MCP call.
 // Regression for issue #29: the `pkill -f` self-match (exit 144) fact is found from the raw failure.
@@ -118,5 +119,81 @@ describe("PostToolUseFailure fact lookup (opt-in)", () => {
     run(failure({ session_id: "s9" }));
     const state = JSON.parse(await readFile(join(project, ".claude", ".semantic-memory", "failure-shown.json"), "utf8"));
     expect(Object.keys(state)).toEqual(["s9"]);
+  });
+
+  // v1.7 jev mode: Jev's confident no vetoes the candidate; yes or unsure lets it through; errors inject nothing
+  describe("jev mode gate", () => {
+    let jev: { dir: string; env: NodeJS.ProcessEnv };
+    const mode = (m: string) => writeFile(join(jev.dir, "mode"), m);
+    const calls = async () => (await readFile(join(jev.dir, "calls.jsonl"), "utf8").catch(() => "")).trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    const runJev = (input: object, env: Record<string, string> = {}) => {
+      const t = Date.now();
+      const r = spawnSync("node", [HOOK], {
+        input: JSON.stringify({ cwd: project, ...input }),
+        encoding: "utf8",
+        cwd: project,
+        // a roomy budget: under the full suite's load the search alone can take the default 1.5 s
+        env: { ...process.env, SEMANTIC_MEMORY_FAILURE_HOOK: "1", SEMANTIC_MEMORY_JEV: "1", JEV_LOOP_DIR: jev.dir, TYPESAFE_API_KEY: "fake", SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS: "20000", ...env },
+        timeout: 60_000,
+      });
+      return { ctx: (JSON.parse(r.stdout)?.hookSpecificOutput?.additionalContext ?? "") as string, ms: Date.now() - t, stderr: r.stderr };
+    };
+    beforeAll(async () => {
+      jev = await fakeJevLoop();
+    });
+    afterAll(async () => rm(jev.dir, { recursive: true, force: true }));
+
+    it("Jev yes → the pkill fact is injected, marked as checked (issue #29 still found)", async () => {
+      await mode("yes");
+      const { ctx } = runJev(failure({ session_id: "j1" }));
+      expect(ctx).toContain('checked="jev"');
+      expect(ctx).toContain("pkill-f-self-match.md");
+      const last = (await calls()).at(-1);
+      expect(last.caller).toBe("semantic-memory-hook");
+      expect(last.state).toContain("Exit code 144");
+      expect(last.items).toHaveLength(1);
+    });
+
+    it("Jev no → nothing; Jev unsure → the fact is shown", async () => {
+      await mode("no");
+      expect(runJev(failure({ session_id: "j2" })).ctx).toBe("");
+      await mode("maybe");
+      expect(runJev(failure({ session_id: "j2b" })).ctx).toContain('checked="jev"');
+    });
+
+    it("Jev error or hang → nothing, and the hook stays inside its budget", async () => {
+      await mode("raise");
+      expect(runJev(failure({ session_id: "j3" })).ctx).toBe("");
+      await mode("sleep");
+      const r = runJev(failure({ session_id: "j4" }), { SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS: "" });
+      expect(r.ctx).toBe("");
+      expect(r.ms).toBeLessThan(3000); // the default 1.5 s budget + node start-up and the reply
+    });
+
+    it("the daily ceiling: no call, one stderr note", async () => {
+      await mode("yes");
+      const day = new Date();
+      const local = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+      await writeFile(join(jev.dir, "logs", "jev-usage-x.jsonl"), JSON.stringify({ time: `${local}T00:00:01`, caller: "semantic-memory-hook", input_tokens: 10, output_tokens: 0 }) + "\n");
+      const before = (await calls()).length;
+      const r = runJev(failure({ session_id: "j5" }), { SEMANTIC_MEMORY_JEV_DAILY_TOKENS: "5" });
+      await rm(join(jev.dir, "logs", "jev-usage-x.jsonl"));
+      expect(r.ctx).toBe("");
+      expect((await calls()).length).toBe(before);
+      expect(r.stderr).toContain("daily ceiling reached");
+    });
+
+    it("SEMANTIC_MEMORY_FAILURE_HOOK=0 wins over jev mode", async () => {
+      await mode("yes");
+      const before = (await calls()).length;
+      expect(runJev(failure({ session_id: "j6" }), { SEMANTIC_MEMORY_FAILURE_HOOK: "0" }).ctx).toBe("");
+      expect((await calls()).length).toBe(before);
+    });
+
+    it("jev mode on but unavailable → the ungated hook (jev mode is effectively off)", async () => {
+      const { ctx } = runJev(failure({ session_id: "j7" }), { JEV_LOOP_DIR: join(jev.dir, "missing") });
+      expect(ctx).toContain("pkill-f-self-match.md");
+      expect(ctx).not.toContain('checked="jev"');
+    });
   });
 });

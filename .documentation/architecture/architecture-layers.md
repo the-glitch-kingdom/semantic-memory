@@ -3,11 +3,11 @@ title: Architecture — the Five Layers
 tier: reference
 domains: [architecture]
 audience: [developers]
-tags: [architecture, layers, substrate, activation, routing]
+tags: [architecture, layers, substrate, activation, routing, learning, v1.7.0]
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
-purpose: Each of the 5 layers with responsibilities, key files, contracts, gotchas
+last_updated: '2026-10-25'
+version: '1.7.0'
+purpose: Each of the 5 layers with responsibilities, key files, contracts, gotchas, plus the opt-in v1.7 skill loop layer and the Jev bridge
 load_priority: 8
 ---
 
@@ -160,6 +160,49 @@ Each layer has a single responsibility. Lower layers have no knowledge of upper 
 
 **Gotcha:** signal weighting lives in skill description prose, not code. If a mode mis-fires, the fix is in the skill file, not the hook.
 
+## Layer 6 — Learning (v1.7, opt-in)
+
+**Purpose:** Learn *procedures* between sessions, as skills, with a person approving every change. Off by default; off is 1.6.1 behaviour. It sits beside Layer 4 (it uses the same hooks) and writes to `.claude/skills/`, which Claude Code loads on its own.
+
+```
+ evidence ──► queue ──► fenced reviewer ──► drafts ──► review / landing ──► curator
+ (hooks)     (SessionEnd)  (claude -p,        (skill-drafts/)  (skill-loop review,   (weekly: stale,
+                           Read/Grep/Glob)                      --eval gate)         archive, merge)
+                                                                     │
+                                                              ledger (exact bytes) ──► rollback
+```
+
+| Stage | What | Key files |
+|---|---|---|
+| Evidence | Redacted logs of failed commands, corrections and learned-skill uses | `hooks/vault-context.js`, `hooks/skill-loop.js`, `src/core/skill-evidence.ts` |
+| Queue | SessionEnd writes a job if the session has signal and starts a detached worker (SessionEnd's 1.5 s limit means it only writes and spawns). One worker per repo; at most 10 reviews a day | `src/core/skill-queue.ts`, `skill-worker.ts` |
+| Fenced reviewer | One `claude -p` per job: Read/Grep/Glob only, no Bash, MCP, hooks or subagents, nothing outside the repo; at most 5 `claude` processes machine-wide; `SEMANTIC_MEMORY_REVIEWER=1` makes every semantic-memory hook exit. It answers JSON; semantic-memory redacts, lints and writes the draft | `src/core/claude-run.ts`, `skill-review.ts`, `skill-review-prompt.ts`, `skill-schema.ts` |
+| Scope | Directory or project by rule; global only by promotion (the same lesson in two repos) and approval; private repos stay project and are never indexed | `src/core/skill-scope.ts` |
+| Review and landing | `skill-loop review`: approve, reject or `--eval` (trigger eval, optional task replay). The eval gate must adopt a draft, or `--override <why>` | `src/core/skill-land.ts`, `skill-eval/`, `skill-gate.ts` |
+| Ledger | Every change with its exact before/after bytes; `rollback <id>` undoes one | `src/core/skill-ledger.ts` |
+| Curator | Unused 14 days: stale. Unused 30 days: archived (never deleted; `restore`). Pinned and hand-written skills untouched. Merging is opt-in | `src/core/skill-curator.ts`, `skill-merge.ts` |
+
+**Contract:**
+- **Nothing lands unapproved.** The reviewer never writes a skill; semantic-memory writes drafts, a person lands them.
+- **Nothing blocks a session.** Hooks only write small files and spawn detached processes; errors are swallowed.
+- **Off means off.** No writes, no spawns, no hook output.
+
+**Gotcha:** the reviewer is a nested `claude` run. If a hook ever acted inside it, it would record evidence of its own review. That is what the recursion guard prevents.
+
+Docs: [skill-loop.md](../operational/skill-loop.md), [skill-format.md](../reference/skill-format.md).
+
+### The Jev bridge (v1.7, opt-in)
+
+Jev mode lets semantic-memory ask Jev (TypeSafe's typed-decision model) closed-set yes/no questions. Every call goes through `hooks/jev-bridge.py`, which loads jev-loop's `router.ask` (redaction, cache, ledger, budget). `src/core/jev.ts` spawns it with a hard timeout; any failure is `{scores: {}, error}`, and a missing score is treated as "no", never as permission. Acting on a yes needs >= 0.95.
+
+| Caller | Mode | Used for |
+|---|---|---|
+| `semantic-memory-hook` | batch in jev-loop until it lists it as live; own daily ceiling `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` | The failure hook's fit gate (Layer 4) |
+| `semantic-memory-judge` | batch | `eval-failures` judging (`scripts/eval-failures/judge-jev.mjs`) |
+| `semantic-memory-skill-loop` | batch | The skill loop's scope question and duplicate checks before a merge |
+
+Requires jev-loop (`JEV_LOOP_DIR`), `TYPESAFE_API_KEY` and `python3`; `jev-mode status` says what is missing. Never used on text that has not passed jev-loop's redaction. See [jev-mode.md](../operational/jev-mode.md).
+
 ## Cross-layer concerns
 
 ### Logging (Phase 4.5)
@@ -173,6 +216,7 @@ All layers write to `log.md` when they do something durable or fail visibly:
 | Layer 2 `apply_patch` (direct MCP) | `error` | On ok=false |
 | Layer 4 `SessionStart` hook | `mode_change` | If prior mode was non-default (drift from a previous session that didn't `/mode vault-first` before closing) |
 | Layer 4 hook crashes | `error` | Uncaught exception in vault-context.js |
+| Layer 6 skill loop | none in `log.md` | Its record is `.claude/.semantic-memory/skill-ledger.jsonl` and `skill-loop.log` |
 
 See [logs-and-events.md](../operational/logs-and-events.md) for the full format + query patterns.
 

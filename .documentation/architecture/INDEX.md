@@ -25,9 +25,9 @@ purpose: Complete listing of architecture documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [Architecture — the Five Layers](architecture-layers.md) | active | 2026-10-24 | 1,211 |
-| [Indices and storage — every file semantic-memory writes](indices-and-storage.md) | active | 2026-05-09 | 1,695 |
-| [Injection Points](injection-points.md) | active | 2026-04-23 | 1,341 |
+| [Architecture — the Five Layers](architecture-layers.md) | active | 2026-10-25 | 1,758 |
+| [Indices and storage — every file semantic-memory writes](indices-and-storage.md) | active | 2026-10-25 | 1,992 |
+| [Injection Points](injection-points.md) | active | 2026-10-25 | 1,653 |
 | [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) | active | 2026-10-24 | 1,502 |
 | [Schema and Provenance](schema-and-provenance.md) | active | 2026-04-23 | 878 |
 | [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) | active | 2026-10-24 | 1,330 |

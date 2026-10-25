@@ -3,17 +3,19 @@ title: Hooks Reference
 tier: reference
 domains: [reference]
 audience: [developers]
-tags: [hooks, contracts, state, debugging]
+tags: [hooks, contracts, state, debugging, v1.7.0]
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
-purpose: SessionStart / UserPromptSubmit / Stop / PostToolUseFailure hook contracts + state files (current to v1.6.1)
+last_updated: '2026-10-25'
+version: '1.7.0'
+purpose: SessionStart / UserPromptSubmit / Stop / PostToolUseFailure / PostToolUse (Skill) / SessionEnd hook contracts + state files (current to v1.7.0)
 load_priority: 8
 ---
 
 # Hooks reference
 
 > Four Claude Code hook events drive activation, capture and failure lookup. All four are handled by `hooks/vault-context.js`; SessionStart also runs `hooks/session-start.js`, which reconciles `.mcp.json`. `PostToolUseFailure` (v1.6+) does nothing unless `SEMANTIC_MEMORY_FAILURE_HOOK=1`.
+>
+> v1.7 adds two more events, `PostToolUse` (matcher `Skill`) and `SessionEnd`, handled by `hooks/skill-loop.js` for the skill loop. The skill loop and jev mode are both **off by default**; with both off, 1.7.0 behaves like 1.6.1. See [the skill loop guide](../operational/skill-loop.md) and [the jev mode guide](../operational/jev-mode.md).
 
 ## Hook registration
 
@@ -26,7 +28,8 @@ Current `hooks/hooks.json`:
     "SessionStart": [
       { "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.js\"" },
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/vault-context.js\"" }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/vault-context.js\"" },
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-loop.js\"" }
       ] }
     ],
     "UserPromptSubmit": [
@@ -44,12 +47,23 @@ Current `hooks/hooks.json`:
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/vault-context.js\"" }
       ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Skill",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-loop.js\"" }
+      ] }
+    ],
+    "SessionEnd": [
+      { "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-loop.js\"" }
+      ] }
     ]
   }
 }
 ```
 
-Composing two SessionStart hooks is safe: Claude Code merges `additionalContext` from multiple handlers.
+Composing three SessionStart hooks is safe: Claude Code merges `additionalContext` from multiple handlers.
 
 ### Which notes folders the hooks use (v1.5.2+)
 
@@ -185,6 +199,50 @@ All hook inputs carry `session_id`. Since 1.5.2 it keys capture-pending items, a
 
 ---
 
+## v1.7 additions
+
+### Recursion guard — `SEMANTIC_MEMORY_REVIEWER=1`
+
+Every skill-loop `claude -p` run (the reviewer, the eval runs) sets `SEMANTIC_MEMORY_REVIEWER=1`. When it is set, **every** semantic-memory hook exits at once: `vault-context.js` emits a no-op, `session-start.js` skips reconcile and update checks, and `skill-loop.js` returns. A reviewer session never injects context, records evidence or queues another review.
+
+### Evidence recording in `vault-context.js` (skill loop on)
+
+When the skill loop is on, `vault-context.js` also writes redacted evidence lines under `.claude/.semantic-memory/`. This never changes the hook's output and any error is swallowed.
+
+| Event | Evidence | File |
+|---|---|---|
+| `PostToolUseFailure` | A failed Bash or `mcp__*` call (not interrupts, not user denials). Recorded **regardless of the failure hook**: `SEMANTIC_MEMORY_FAILURE_HOOK` does not matter here. | `failures.jsonl` |
+| `UserPromptSubmit` | A correction cue in the prompt ("no, ...", "that's wrong", "not what I asked"). | `corrections.jsonl` |
+| `UserPromptSubmit` | A `/name` that names a learned skill (one with a `skill_loop:` block). | `skill-usage.jsonl` (`via: slash`) |
+
+Free text (command, error, excerpt, prompt) is redacted before it is written. Files rotate to `<file>.1` past `SEMANTIC_MEMORY_SKILL_LOOP_EVIDENCE_MB` (5).
+
+### `hooks/skill-loop.js` (skill loop on)
+
+Off, or under the recursion guard, every event leaves at once: no writes, no spawns. It never blocks or fails a session.
+
+| Event | What it does |
+|---|---|
+| `SessionStart` (`startup` / `resume` only; not `clear` or `compact`) | Emits a one-line note when drafts wait: `[skill loop] N skill drafts waiting for review (/skill-loop review).` Starts the curator detached (`skill-loop curate --auto`) when it is due: every 7 days, repo quiet for 2 hours. |
+| `PostToolUse`, matcher `Skill` | Appends one usage line (`via: tool`) to `skill-usage.jsonl`. |
+| `SessionEnd` | If the session has signal (a failure, a correction, or at least `SEMANTIC_MEMORY_SKILL_LOOP_MIN_TOOL_CALLS` tool calls), writes a review job to `~/.semantic-memory/review-queue/` and starts the repo's worker detached. |
+
+SessionEnd's default timeout is 1.5 s. That is why the hook only **writes the job and spawns the worker**. The review itself (one fenced `claude -p`) runs in the detached worker, after the session is gone.
+
+### Failure hook in jev mode (`SEMANTIC_MEMORY_JEV=1`)
+
+In jev mode `handleFailure` adds a veto after picking the fact:
+
+1. Candidate: chosen as without jev mode (the first knowledge-base fact at >= `SEMANTIC_MEMORY_FAILURE_MIN_SCORE`, 0.50).
+2. One live Jev call through `hooks/jev-bridge.py` (jev-loop's `router.ask`): does this fact fit this failure?
+3. A confident **no (<= 0.05) suppresses** it. A yes or an unsure answer lets it through, marked `checked="jev"`.
+4. An error, a timeout or a daily-ceiling stop injects **nothing**.
+5. The whole lookup has a budget, `SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS` (default 1500). If the search leaves no time, the Jev call is skipped.
+
+Why a veto and not a yes-gate: on 1,171 labelled pairs Jev's confident no's were 99.7% right, but it never said yes at >= 0.95 to a relevant pair. Replayed, the veto removed only wrong facts (12 wrong, 0 right at score 0.30) and none at the shipped 0.50 (precision 61%). Jev mode does **not** turn the hook on by itself (far below the 95% bar); `SEMANTIC_MEMORY_FAILURE_HOOK=1` still does, and `=0` always wins. See [the jev mode guide](../operational/jev-mode.md).
+
+---
+
 ## Error handling (Phase 4.5)
 
 Uncaught exceptions in `main()` trigger the global catch block:
@@ -204,10 +262,12 @@ Uncaught exceptions in `main()` trigger the global catch block:
 | `.claude/.semantic-memory/fingerprints.json` | UserPromptSubmit | Ring buffer of recent prompt sha1s | Yes |
 | `.claude/.semantic-memory/capture-pending.json` | UserPromptSubmit + Stop | Captured cues queued for Stop, keyed by `session_id` | Yes |
 | `.claude/.semantic-memory/failure-shown.json` (v1.6+) | PostToolUseFailure | Facts already shown this session | Yes |
+| `.claude/.semantic-memory/skill-usage.jsonl`, `failures.jsonl`, `corrections.jsonl` (v1.7) | `vault-context.js` + `skill-loop.js` (skill loop on) | Redacted evidence for the review | Yes |
+| `~/.semantic-memory/review-queue/` (v1.7) | `skill-loop.js` SessionEnd | Review jobs (+ `done/`, `failed/`) | n/a (home) |
 | `.claude/.semantic-sidekick-update-cache.json` | Plugin runtime | Auto-update policy cache | Yes |
 | `.claude/.vault/` | Plugin runtime reconcile | Default vault path (auto-created) | No (user content) |
 
-All project-local. The pre-1.2 `.claude/.sidekick-*` names are still read as a fallback; see [state-migration.md](../operational/state-migration.md). Each session clears only its own capture items.
+All project-local. The pre-1.2 `.claude/.sidekick-*` names are still read as a fallback; see [state-migration.md](../operational/state-migration.md). Each session clears only its own capture items. The full v1.7 state list is in the [configuration reference](./configuration-reference.md#v17-skill-loop-and-jev-mode-state).
 
 ---
 
@@ -218,4 +278,6 @@ All project-local. The pre-1.2 `.claude/.sidekick-*` names are still read as a f
 - **Turn the failure lookup on or off:** set or remove `SEMANTIC_MEMORY_FAILURE_HOOK=1` in `~/.claude/settings.json` → `env` (next session).
 - **Force re-injection for a prompt:** `rm .claude/.semantic-memory/fingerprints.json`.
 - **Clear mode:** `rm .claude/.semantic-memory/mode` (SessionStart recreates).
+- **Skill loop:** `semantic-memory skill-loop on|off` (global, in `~/.claude/settings.json` env) or `--repo` for one repo. Off is 1.6.1 behaviour.
+- **Jev mode:** `semantic-memory jev-mode on|off`. Off is 1.6.1 behaviour. `SEMANTIC_MEMORY_FAILURE_HOOK=0` keeps the failure hook off even in jev mode.
 - **See what the hook is doing:** `SIDEKICK_DEBUG=1 claude` then expand hook lines with `ctrl+o`.

@@ -50,3 +50,6 @@ skills/*-workspace/
 
 # hit-em-with-the-docs run reports (timestamped, regenerated on every maintain/audit)
 .documentation/reports/
+
+# Claude Code agent worktrees (local, per session)
+.claude/worktrees/

@@ -16,7 +16,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 16 |
+| Documents | 17 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -35,17 +35,17 @@ purpose: Quick reference for changelog documentation
 
 ## Recently Updated
 
+- [v1.7.0 — the skill loop and jev mode](v1-7-0-skill-loop-and-jev-mode.md) - 2026-10-25
 - [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) - 2026-10-24
 - [v1.5.3 — secret redaction](v1-5-3-secret-redaction.md) - 2026-10-24
 - [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](v1-6-0-failure-lookup.md) - 2026-10-24
 - [v1.6.1 — release audit of 1.5.2 → 1.6.0](v1-6-1-release-audit.md) - 2026-10-24
-- [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](v1-5-0-expert-character.md) - 2026-07-11
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 16 |
+| active | 17 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

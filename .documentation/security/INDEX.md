@@ -25,7 +25,7 @@ purpose: Complete listing of security documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [Secret redaction — design, write points, and how to add a pattern](secret-redaction.md) | active | 2026-10-24 | 767 |
+| [Secret redaction — design, write points, and how to add a pattern](secret-redaction.md) | active | 2026-10-25 | 767 |
 
 ## Keywords
 

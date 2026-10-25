@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 16
+- **Total Documents:** 17
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -41,6 +41,7 @@ purpose: Complete listing of changelog documentation
 | [v1.5.3 — secret redaction](v1-5-3-secret-redaction.md) | active | 2026-10-24 | 366 |
 | [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](v1-6-0-failure-lookup.md) | active | 2026-10-24 | 387 |
 | [v1.6.1 — release audit of 1.5.2 → 1.6.0](v1-6-1-release-audit.md) | active | 2026-10-24 | 717 |
+| [v1.7.0 — the skill loop and jev mode](v1-7-0-skill-loop-and-jev-mode.md) | active | 2026-10-25 | 691 |
 
 ## Keywords
 

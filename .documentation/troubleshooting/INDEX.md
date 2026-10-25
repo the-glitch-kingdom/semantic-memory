@@ -25,7 +25,7 @@ purpose: Complete listing of troubleshooting documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [Troubleshooting](troubleshooting.md) | active | 2026-10-24 | 3,362 |
+| [Troubleshooting](troubleshooting.md) | active | 2026-10-25 | 3,951 |
 
 ## Keywords
 

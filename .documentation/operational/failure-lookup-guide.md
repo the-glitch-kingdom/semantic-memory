@@ -14,9 +14,11 @@ tags:
   - eval-failures
   - gotcha
   - knowledge-base
+  - v1.7.0
+  - jev-mode
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
+last_updated: '2026-10-25'
+version: '1.7.0'
 purpose: How to turn on the opt-in PostToolUseFailure fact lookup, what it
   injects and when, how to write gotcha facts it can find (symptoms with the
   literal error), how it coexists with other failure hooks, and how to measure
@@ -72,6 +74,23 @@ The plan was to ship it only above ~95% precision, with the threshold measured, 
 | facts only, normalized, ≥ 0.60 | 67% (4/6) | 1% |
 
 About 95% of failures have no doc that explains them, and embedding similarity barely separates "the answer" from "same topic". Blending in keyword matching made it worse at every weight. So it is useful but not trustworthy enough to be on for everyone.
+
+## In jev mode (v1.7)
+
+With [jev mode](jev-mode.md) on as well, Jev can veto the fact: a confident no (≤ 0.05) suppresses it, anything
+else keeps it (marked `checked="jev"`); a timeout or error injects nothing. Measured on the same labelled set,
+Jev's no's were 99.7% right but it never said yes at ≥ 0.95, so it can only remove facts, never confirm them.
+Replayed on the Jev-scored candidates:
+
+| Score ≥ | facts shown, no Jev | with the veto |
+|---|---|---|
+| 0.30 | 17 right of 65 | 17 of 53 (12 wrong removed) |
+| 0.40 | 14 of 38 | 14 of 36 |
+| 0.50 (shipped) | 5 of 12 (over all candidates, scored or not: 11 of 18, 61%) | 5 of 12 (no change) |
+
+So jev mode makes the hook no noisier and, below 0.50, a little cleaner; it does not make it trustworthy enough to
+turn on for everyone. `eval-failures --gate jev --jev-scores <judge output>` replays both gate shapes on your
+own data.
 
 ## Writing facts it can find
 

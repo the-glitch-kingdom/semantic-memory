@@ -26,7 +26,7 @@ purpose: Quick reference for security documentation
 
 ## Recently Updated
 
-- [Secret redaction — design, write points, and how to add a pattern](secret-redaction.md) - 2026-10-24
+- [Secret redaction — design, write points, and how to add a pattern](secret-redaction.md) - 2026-10-25
 
 ## By Status
 

@@ -73,7 +73,20 @@ Writes `vault.schema.yml` with the default schema. Without it, lint runs against
 
 Add `"SEMANTIC_MEMORY_FAILURE_HOOK": "1"` to the `env` block of `~/.claude/settings.json`. It takes effect in the next session. After a failed Bash or MCP call, it injects the knowledge-base fact most likely to explain the failure. It is right about 6 times in 10. See [failure-lookup-guide.md](../operational/failure-lookup-guide.md).
 
-### 6. Verify
+### 6. Turn on the skill loop or jev mode (optional, v1.7+)
+
+Both are off by default, and off changes nothing.
+
+- **The skill loop** — `semantic-memory skill-loop on` (or `/skill-loop on`; `--repo` for one repo only). After a
+  session with a failed command or a correction, a background review drafts a skill; you approve it with
+  `/skill-loop review`. Needs `claude` on the PATH. See [skill-loop.md](../operational/skill-loop.md).
+- **Jev mode** — `semantic-memory jev-mode on` (or `/jev-mode on`). Needs jev-loop at `~/.claude/jev-loop`,
+  `TYPESAFE_API_KEY` and python3; `semantic-memory jev-mode status` says what is missing. See
+  [jev-mode.md](../operational/jev-mode.md).
+
+Both write `~/.claude/settings.json` `env` and take effect in the next session.
+
+### 7. Verify
 
 ```bash
 npx semantic-memory --version              # 1.6.1 or later

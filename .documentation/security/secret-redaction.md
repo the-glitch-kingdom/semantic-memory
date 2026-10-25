@@ -11,9 +11,10 @@ tags:
   - secrets
   - lint
   - v1.5.3
+  - v1.7.0
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
+last_updated: '2026-10-25'
+version: '1.7.0'
 purpose: 'How semantic-memory keeps API keys, tokens and passwords off disk: the
   redactor (src/core/redact.ts), its precise and broad pattern sets, every write
   point it covers, the lint_vault secrets check, its limits, and how to add a
@@ -73,6 +74,22 @@ Two layers, in order:
 | `selection.jsonl` (`appendEvent`) | broad, `query` only | `note_path` / `results` feed usage-boost citation counts and must stay intact |
 | `session.json` (task, `session_run` cmd and output tail) | broad | |
 | hook capture-pending excerpt (`hooks/vault-context.js`) | broad | whole prompt redacted before the 200-char cut; imports `dist/core/redact.js` (a standalone tsup entry, fs/os/path only). If the import fails the excerpt is **withheld**, never stored raw. |
+
+### Skill loop and jev mode write points (v1.7)
+
+| Where | Set | Notes |
+|---|---|---|
+| `failures.jsonl`, `corrections.jsonl`, `skill-usage.jsonl` (`appendEvidence`, `src/core/skill-evidence.ts`) | broad, free text only | `command`, `error`, `excerpt`, `prompt`. Session and tool-use ids are left intact — broad would mask them, and records must join up |
+| the reviewer's brief (`buildBrief`, `src/core/skill-review.ts`) | broad, free text only | prompts, tool calls, errors, skill text; the session and failure ids the reviewer cites back are not masked. Capped at 40k characters. This is what `claude -p` receives |
+| skill drafts (`materializeDraft`) | precise | the whole rendered SKILL.md; the lint's `secrets` rule then rejects anything left |
+| landed / archived skills, ledger blobs | — | copies of a draft that was already redacted and linted (re-linted before landing) |
+| `review-queue/` jobs, `skill-index.jsonl`, `skill-loop-runs.jsonl`, `curator.json`, `skill-loop.log` | — | ids, paths, names, counts and reasons only; no session text |
+| `skill-eval-cache.jsonl` | — | the skill's content hash and the **prompt's hash** — never the prompt |
+| Jev (jev mode) | jev-loop's `redact.py` | `hooks/jev-bridge.py` only calls jev-loop's `router.ask_all`, which redacts state and every question before sending. Excluded paths (`[paths] excluded`, kentro) are refused before anything is imported or sent |
+
+Validated end to end (`test/integration/skill-loop-redaction.test.ts`): five fake secret shapes sent through a failed
+command, a correction prompt, the transcript and a reviewer answer that echoes them in every field, then a draft,
+an approval and a curator archive — none appears in any file under the repo or the state home.
 
 **Structured values (frontmatter fields, `log_event` payloads, alias entries)** go through `redactDeep`, which checks every string field as `key=value`. A bare value under a secret-named key is therefore masked by the secret-named rule, for example `api_key: Hx7…` in `create_note`'s frontmatter. The same value under `title` is left alone. Before 1.6.1, the value was checked without its key and written unmasked unless it had a vendor shape.
 
