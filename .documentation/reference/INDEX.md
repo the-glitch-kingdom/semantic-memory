@@ -25,11 +25,11 @@ purpose: Complete listing of reference documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [CLI Reference](cli-reference.md) | active | 2026-10-24 | 2,608 |
+| [CLI Reference](cli-reference.md) | active | 2026-10-25 | 3,533 |
 | [Configuration Reference](configuration-reference.md) | active | 2026-10-25 | 3,434 |
 | [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) | active | 2026-10-24 | 3,309 |
-| [Hooks Reference](hooks-reference.md) | active | 2026-10-25 | 1,860 |
-| [MCP Tools Reference (44 tools)](mcp-tools-reference.md) | active | 2026-10-24 | 2,688 |
+| [Hooks Reference](hooks-reference.md) | active | 2026-10-25 | 1,905 |
+| [MCP Tools Reference (44 tools)](mcp-tools-reference.md) | active | 2026-10-25 | 2,885 |
 | [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) | active | 2026-10-25 | 560 |
 
 ## Keywords

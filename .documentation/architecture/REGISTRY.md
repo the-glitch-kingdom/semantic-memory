@@ -32,11 +32,11 @@ purpose: Quick reference for architecture documentation
 
 ## Recently Updated
 
-- [Architecture — the Five Layers](architecture-layers.md) - 2026-10-24
+- [Architecture — the Five Layers](architecture-layers.md) - 2026-10-25
+- [Indices and storage — every file semantic-memory writes](indices-and-storage.md) - 2026-10-25
+- [Injection Points](injection-points.md) - 2026-10-25
 - [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) - 2026-10-24
 - [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) - 2026-10-24
-- [Indices and storage — every file semantic-memory writes](indices-and-storage.md) - 2026-05-09
-- [What gets indexed where and why](what-gets-indexed.md) - 2026-05-09
 
 ## By Status
 

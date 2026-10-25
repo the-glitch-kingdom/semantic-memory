@@ -56,6 +56,12 @@ ceiling `SEMANTIC_MEMORY_JEV_DAILY_TOKENS`, default 500,000 a day), `semantic-me
 - Every semantic-memory hook exits at once under `SEMANTIC_MEMORY_REVIEWER=1` (set on every skill-loop `claude` run).
 - `healthcheck` reports both switches.
 
+### Validation
+
+- 664 tests (545 in 1.6.1). With both switches off, every hook's output matches 1.6.1 byte for byte. Golden eval and
+  failure eval unchanged. A real end-to-end run (sessions → review → draft → eval → approve → use) found three bugs,
+  fixed here. Details: `.documentation/changelog/v1-7-0-skill-loop-and-jev-mode.md`.
+
 ## [1.6.1] - 2026-10-24 — Release audit fixes (1.5.2 → 1.6.0)
 
 A full validation of 1.5.2, 1.5.3 and 1.6.0 through the published packages and real entry points (fresh install, plugin update, upgrade from 1.5.1 state, a stdio MCP server, the read-only docs server, the live watcher, the hooks as real processes, the offline tarball) found seven defects. Each has a regression test.

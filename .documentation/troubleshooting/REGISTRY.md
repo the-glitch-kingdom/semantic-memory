@@ -26,7 +26,7 @@ purpose: Quick reference for troubleshooting documentation
 
 ## Recently Updated
 
-- [Troubleshooting](troubleshooting.md) - 2026-10-24
+- [Troubleshooting](troubleshooting.md) - 2026-10-25
 
 ## By Status
 

@@ -14,7 +14,7 @@ purpose: Complete listing of operational documentation
 
 ## Overview
 
-- **Total Documents:** 14
+- **Total Documents:** 15
 - **Domain:** `operational/`
 - **Category:** features
 - **Load Priority:** 6/10
@@ -30,7 +30,8 @@ purpose: Complete listing of operational documentation
 | [Confidence Decay — Operating Guide](decay-guide.md) | active | 2026-07-10 | 645 |
 | [Entity Dossiers — Operating Guide](dossiers-guide.md) | active | 2026-07-11 | 1,114 |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) | active | 2026-10-24 | 1,569 |
-| [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) | active | 2026-10-24 | 775 |
+| [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) | active | 2026-10-25 | 775 |
+| [Jev mode — closed-set decisions through jev-loop](jev-mode.md) | active | 2026-10-25 | 728 |
 | [Lexicon & Query Expansion — Operating Guide](lexicon-guide.md) | active | 2026-07-10 | 988 |
 | [Modes Guide](modes-guide.md) | active | 2026-10-24 | 1,092 |
 | [Session Paging & Speaker Profile — Operating Guide](session-paging-guide.md) | active | 2026-07-11 | 1,110 |

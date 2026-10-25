@@ -31,11 +31,11 @@ purpose: Quick reference for reference documentation
 
 ## Recently Updated
 
+- [CLI Reference](cli-reference.md) - 2026-10-25
 - [Configuration Reference](configuration-reference.md) - 2026-10-25
 - [Hooks Reference](hooks-reference.md) - 2026-10-25
+- [MCP Tools Reference (44 tools)](mcp-tools-reference.md) - 2026-10-25
 - [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) - 2026-10-25
-- [CLI Reference](cli-reference.md) - 2026-10-24
-- [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) - 2026-10-24
 
 ## By Status
 

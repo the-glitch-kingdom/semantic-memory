@@ -16,7 +16,7 @@ purpose: Quick reference for operational documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 14 |
+| Documents | 15 |
 | Category | features |
 | Load Priority | 6/10 |
 
@@ -28,24 +28,24 @@ purpose: Quick reference for operational documentation
 - [Entity Dossiers — Operating Guide](dossiers-guide.md)
 - [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md)
 - [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md)
+- [Jev mode — closed-set decisions through jev-loop](jev-mode.md)
 - [Lexicon & Query Expansion — Operating Guide](lexicon-guide.md)
 - [Logs and Events (log.md)](logs-and-events.md)
 - [Modes Guide](modes-guide.md)
-- [Session Paging & Speaker Profile — Operating Guide](session-paging-guide.md)
 
 ## Recently Updated
 
+- [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) - 2026-10-25
+- [Jev mode — closed-set decisions through jev-loop](jev-mode.md) - 2026-10-25
 - [The skill loop — learned skills between sessions](skill-loop.md) - 2026-10-25
 - [Capture Workflows](capture-workflows.md) - 2026-10-24
 - [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) - 2026-10-24
-- [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) - 2026-10-24
-- [Modes Guide](modes-guide.md) - 2026-10-24
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 14 |
+| active | 15 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
