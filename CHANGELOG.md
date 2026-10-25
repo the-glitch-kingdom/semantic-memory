@@ -38,9 +38,10 @@ used and then failed. Nothing lands until you approve it.
 ### Jev mode (`SEMANTIC_MEMORY_JEV=1`, `/jev-mode on|off|status`)
 
 semantic-memory can use Jev (TypeSafe's yes/no model) for closed-set decisions, always through jev-loop's
-`router.ask` (redaction, cache, ledger, budget): `hooks/jev-bridge.py`. Callers `semantic-memory-hook` (live, its own
+`router.ask` (redaction, cache, ledger, budget): `hooks/jev-bridge.py`. Callers `semantic-memory-hook` (the failure hook, with its own
 ceiling `SEMANTIC_MEMORY_JEV_DAILY_TOKENS`, default 500,000 a day), `semantic-memory-judge` and
-`semantic-memory-skill-loop` (batch).
+`semantic-memory-skill-loop`. jev-loop counts all three as batch callers (capped by its daily batch cap, cached)
+until it lists `semantic-memory-hook` among its live callers.
 
 - **Failure hook veto.** In jev mode a fact the failure hook picked is suppressed when Jev is confident it does not
   fit (<= 0.05), inside the hook's 1.5 s budget; an error injects nothing. Measured on 1,171 labelled pairs: Jev's

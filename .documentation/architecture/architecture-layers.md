@@ -197,7 +197,7 @@ Jev mode lets semantic-memory ask Jev (TypeSafe's typed-decision model) closed-s
 
 | Caller | Mode | Used for |
 |---|---|---|
-| `semantic-memory-hook` | live; own daily ceiling `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` | The failure hook's fit gate (Layer 4) |
+| `semantic-memory-hook` | batch in jev-loop until it lists it as live; own daily ceiling `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` | The failure hook's fit gate (Layer 4) |
 | `semantic-memory-judge` | batch | `eval-failures` judging (`scripts/eval-failures/judge-jev.mjs`) |
 | `semantic-memory-skill-loop` | batch | The skill loop's scope question and duplicate checks before a merge |
 

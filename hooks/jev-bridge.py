@@ -11,9 +11,9 @@ The only way semantic-memory reaches TypeSafe is `router.ask`, which redacts the
 question (redact.py), caches answers, writes the usage ledger under the caller's name and enforces the
 batch budget. This file never builds a request itself and never prints the key.
 
-Callers: semantic-memory-hook (live: the failure hook; counted, never capped by jev-loop, no cache read)
-and semantic-memory-judge / semantic-memory-skill-loop (batch: capped and cached). The live caller has
-its own daily ceiling here, SEMANTIC_MEMORY_JEV_DAILY_TOKENS (default 500000).
+Callers: semantic-memory-hook (the failure hook) and semantic-memory-judge / semantic-memory-skill-loop.
+jev-loop counts all three as batch (capped and cached) until it lists semantic-memory-hook as live. The
+hook caller has its own daily ceiling here, SEMANTIC_MEMORY_JEV_DAILY_TOKENS (default 500000).
 """
 import json
 import os

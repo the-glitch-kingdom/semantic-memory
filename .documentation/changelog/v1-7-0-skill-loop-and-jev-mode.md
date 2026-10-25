@@ -81,4 +81,5 @@ dry run reported a fresh, used skill as "no learned skills".
   write point.
 - Golden retrieval eval unchanged (recall@1 86%, MRR 0.929); failure eval unchanged (32/38).
 - Offline tarball 557.7 MB, installs and verifies (10,663 files).
-- jev-loop: a separate PR names callers (`JEV_CALLER`) and counts `semantic-memory-hook` as live.
+- jev-loop is unchanged: it names callers from `argv[0]` (which the bridge sets), so it counts `semantic-memory-hook`
+  as a batch caller (capped, cached) until jev-loop lists it as live. A jev-loop change for that is deferred.

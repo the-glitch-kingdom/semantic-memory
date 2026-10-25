@@ -25,7 +25,7 @@ purpose: Complete listing of architecture documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [Architecture — the Five Layers](architecture-layers.md) | active | 2026-10-25 | 1,750 |
+| [Architecture — the Five Layers](architecture-layers.md) | active | 2026-10-25 | 1,758 |
 | [Indices and storage — every file semantic-memory writes](indices-and-storage.md) | active | 2026-10-25 | 1,992 |
 | [Injection Points](injection-points.md) | active | 2026-10-25 | 1,653 |
 | [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) | active | 2026-10-24 | 1,502 |

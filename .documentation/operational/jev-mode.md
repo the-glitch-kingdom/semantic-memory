@@ -61,7 +61,7 @@ Only through jev-loop. `hooks/jev-bridge.py` imports jev-loop's `router` and cal
 
 | Caller | Class | Used by |
 |---|---|---|
-| `semantic-memory-hook` | live: never capped by jev-loop; capped by the bridge at `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` (500,000/day) | the failure hook |
+| `semantic-memory-hook` | batch in jev-loop today (capped, cached) until jev-loop lists it as live; capped by the bridge at `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` (500,000/day) either way | the failure hook |
 | `semantic-memory-judge` | batch | `scripts/eval-failures/judge-jev.mjs` |
 | `semantic-memory-skill-loop` | batch | the skill loop's scope and merge questions, prose Verify grading |
 
@@ -75,7 +75,8 @@ With `SEMANTIC_MEMORY_FAILURE_HOOK=1` and jev mode on, the hook picks its fact a
 then asks Jev "does this document explain the cause of this failure, or how to fix or avoid it — the same
 specific problem?". A confident **no (≤ 0.05) suppresses** it; a yes or an unsure answer lets it through, marked
 `checked="jev"`. An error, a timeout (the hook's whole budget is 1.5 s, `SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS`) or
-the daily ceiling injects nothing. Jev mode never turns the hook on by itself.
+the daily ceiling injects nothing; so does jev-loop's batch cap being used up, while jev-loop counts the hook as a
+batch caller. Jev mode never turns the hook on by itself.
 
 ### The skill loop
 
