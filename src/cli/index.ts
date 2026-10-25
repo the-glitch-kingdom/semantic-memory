@@ -572,7 +572,7 @@ program
   .option("--reindex", "Force full reindex and exit")
   .option("--stats", "Show vault statistics and exit")
   .option("--wait-for-ready", "Block startup until index is fully built before serving (default: index in background; tools return 'Indexing in progress' until ready)")
-  .option("--read-only", "Suppress write tools (create_note, update_note, delete_note, move_note, update_frontmatter, manage_tags, rename_tag) — use for shared docs vaults owned by another tool")
+  .option("--read-only", "Suppress write tools (create_note, update_note, delete_note, move_note, update_frontmatter, manage_tags, rename_tag, log_event, ...) — use for shared docs vaults owned by another tool")
   .option("--model <name>", "Embedding model to use (default: all-MiniLM-L6-v2, fast; use nomic-ai/nomic-embed-text-v1.5 for higher quality)")
   .option("--workers <n>", "Number of worker threads for parallel embedding", parseInt)
   .option("--batch-size <n>", "Texts per ONNX forward pass (default: 8)", parseInt)
