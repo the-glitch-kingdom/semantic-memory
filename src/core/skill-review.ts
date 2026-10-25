@@ -19,6 +19,7 @@ import { runClaude } from "./claude-run.js";
 import { REVIEW_PROMPT } from "./skill-review-prompt.js";
 import type { ReviewJob } from "./skill-queue.js";
 import type { ReviewOutcome } from "./skill-worker.js";
+import { decideScope, indexSkill, promotionPeers, type ScopeDecision } from "./skill-scope.js";
 
 export const draftsDir = (repo: string) => join(stateDir(repo), "skill-drafts");
 const BRIEF_MAX = 40_000;
@@ -35,6 +36,13 @@ export interface DraftRecord {
   session_id: string;
   created: string;
   warnings: string[];
+  /** directory scope: where it lands (repo-relative subdirectory) */
+  directory?: string;
+  scope_why?: string;
+  /** Jev thinks it holds in any repo */
+  global_candidate?: boolean;
+  /** other repos with the same lesson: review offers one global skill replacing the copies */
+  promotion?: { repo: string; path: string }[];
   /** filled by skill evals (Phase 14) when they run at approval time */
   evals?: Record<string, unknown>;
 }
@@ -161,16 +169,19 @@ export function parseReviewerJson(text: string): { drafts: ReviewerDraft[]; none
 const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
+export type ScopeResolver = (d: ReviewerDraft) => Promise<ScopeDecision>;
+
 /**
  * Turn one reviewer draft into a draft folder, or say why not. `resolveScope` decides the final scope
- * (Phase 15: deterministic rules, then Jev); without it the reviewer's project / directory stands.
+ * (skill-scope.ts: deterministic rules, then Jev); the reviewer's own choice is never trusted for it.
  */
 export async function materializeDraft(
   repo: string,
   job: ReviewJob,
   d: ReviewerDraft,
   skills: SkillFile[],
-  resolveScope: (d: ReviewerDraft) => Promise<SkillScope> = async (x) => (x.scope === "directory" ? "directory" : "project"),
+  resolveScope: ScopeResolver = (x) => decideScope(repo, x),
+  env = process.env,
 ): Promise<{ id?: string; rejected?: string }> {
   if (!d || typeof d.name !== "string" || typeof d.body !== "string" || typeof d.description !== "string") return { rejected: "malformed draft" };
   let target: SkillFile | undefined;
@@ -188,7 +199,13 @@ export async function materializeDraft(
   if (prov.failures.length + prov.corrections.length === 0 && job.evidence.failures.length + job.evidence.corrections === 0) {
     return { rejected: "no failure or correction behind it" };
   }
-  const scope = await resolveScope(d);
+  // a patch keeps its skill's scope; a new skill's comes from the resolver
+  const decision: ScopeDecision = target
+    ? { scope: target.scope === "directory" ? "directory" : "project", globalCandidate: false, why: "patch: the skill's own scope" }
+    : await resolveScope(d);
+  const scope: SkillScope = target?.scope ?? decision.scope;
+  const paths = strs(d.applies_to?.paths);
+  if (decision.directory && !paths.includes(decision.directory)) paths.unshift(decision.directory);
   const name = d.kind === "patch" ? target!.skill.name : d.name;
   const meta: SkillLoopMeta = {
     schema: 1,
@@ -196,7 +213,7 @@ export async function materializeDraft(
     status: "draft",
     pinned: false,
     triggers: strs(d.triggers),
-    applies_to: { paths: strs(d.applies_to?.paths), commands: strs(d.applies_to?.commands) },
+    applies_to: { paths, commands: strs(d.applies_to?.commands) },
     provenance: prov,
     cites: strs(d.cites),
     supersedes: target?.skill.meta?.supersedes ?? [],
@@ -219,7 +236,15 @@ export async function materializeDraft(
     session_id: job.session_id,
     created: new Date().toISOString(),
     warnings: findings.filter((f) => f.severity === "warn").map((f) => `${f.rule}: ${f.message}`),
+    ...(decision.directory ? { directory: decision.directory } : {}),
+    scope_why: decision.why,
+    ...(decision.globalCandidate ? { global_candidate: true } : {}),
   };
+  if (!target) {
+    const peers = promotionPeers(repo, name, env);
+    if (peers.length) record.promotion = peers.map((p) => ({ repo: p.repo, path: p.path }));
+    indexSkill({ repo, name, path: join(dir, "SKILL.md"), status: "draft", ...(decision.globalCandidate ? { global_candidate: true } : {}) }, env);
+  }
   writeFileSync(join(dir, "draft.json"), JSON.stringify(record, null, 1));
   return { id };
 }
@@ -243,7 +268,7 @@ export function listDrafts(repo: string): { dir: string; record: DraftRecord }[]
 
 export interface ReviewOptions {
   env?: NodeJS.ProcessEnv;
-  resolveScope?: (d: ReviewerDraft, job: ReviewJob) => Promise<SkillScope>;
+  resolveScope?: ScopeResolver;
   maxTurns?: number;
 }
 
@@ -266,7 +291,8 @@ export async function reviewSession(job: ReviewJob, opts: ReviewOptions = {}): P
   const drafts: string[] = [];
   const rejected: { reason: string }[] = [];
   for (const d of answer.drafts.slice(0, 2)) {
-    const r = await materializeDraft(job.repo, job, d, skills, opts.resolveScope ? (x) => opts.resolveScope!(x, job) : undefined);
+    const env = opts.env ?? process.env;
+    const r = await materializeDraft(job.repo, job, d, skills, opts.resolveScope ?? ((x) => decideScope(job.repo, x, env)), env);
     if (r.id) drafts.push(r.id);
     else rejected.push({ reason: `${d?.name ?? "?"}: ${r.rejected}` });
   }

@@ -57,7 +57,7 @@ describe("skill-loop reviewer (v1.7, fake claude)", () => {
     await mkdir(join(repo, ".git"));
     await mkdir(join(repo, "scripts"));
     await writeFile(join(repo, "scripts", "dev.sh"), "npm run dev\n");
-    env = { ...process.env, SEMANTIC_MEMORY_CLAUDE_BIN: FAKE_CLAUDE, SEMANTIC_MEMORY_CLAUDE_SLOTS_DIR: join(tmp, "slots"), FAKE_CLAUDE_LOG: join(tmp, "log.jsonl"), FAKE_CLAUDE_RULES: join(tmp, "rules.json") };
+    env = { ...process.env, SEMANTIC_MEMORY_STATE_HOME: join(tmp, "state"), SEMANTIC_MEMORY_CLAUDE_BIN: FAKE_CLAUDE, SEMANTIC_MEMORY_CLAUDE_SLOTS_DIR: join(tmp, "slots"), FAKE_CLAUDE_LOG: join(tmp, "log.jsonl"), FAKE_CLAUDE_RULES: join(tmp, "rules.json") };
     appendEvidence(repo, "failures", { session_id: "s1", id: "t1", tool: "Bash", command: `pkill -f vite --token ${FAKE_SECRET}`, error: "Exit code 144" });
     const transcript = join(tmp, "s1.jsonl");
     await writeFile(
