@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // A stand-in for jev-loop's router.py (CI has no jev-loop): answers 0.97 to a question containing "yes",
-// 0.02 otherwise (0.5 for "maybe"), logs every call to calls.jsonl, and fails or hangs on demand (a "mode" file).
+// 0.02 otherwise (0.5 for "maybe"), logs every call to calls.jsonl; a "mode" file makes it answer yes / no to
+// everything, fail (raise, budget) or hang (sleep).
 export const FAKE_ROUTER = `
 import json, os, sys
 from pathlib import Path
@@ -20,6 +21,8 @@ def ask_all(state, items):
         raise RuntimeError("HTTP Error 503")
     if mode == "budget":
         raise RuntimeError("jev budget reached: 5,000,000 of 5,000,000 batch tokens today")
+    if mode in ("yes", "no"):
+        return {k: (0.97 if mode == "yes" else 0.02) for k, _ in items}, 42
     if mode == "sleep":
         import time; time.sleep(30)
     return {k: (0.97 if "yes" in q else 0.5 if "maybe" in q else 0.02) for k, q in items}, 42
