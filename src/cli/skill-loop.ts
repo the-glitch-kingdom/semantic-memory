@@ -101,7 +101,7 @@ export function registerCuratorCommands(cmd: Command) {
       const { curate } = await import("../core/skill-curator.js");
       const { log } = await import("../core/skill-queue.js");
       const r = curate(repo, { dryRun: opts.dryRun });
-      const changes = r.actions.filter((a) => a.action !== "skip");
+      const changes = r.actions.filter((a) => a.action !== "skip" && a.action !== "keep");
       if (opts.auto) log(repo, `curator: ${changes.map((a) => `${a.action} ${a.skill} (${a.why})`).join(", ") || "nothing to do"}`);
       else for (const a of r.actions) console.log(`${opts.dryRun ? "would " : ""}${a.action.padEnd(10)} ${a.skill} — ${a.why}`);
       if (!opts.auto && !r.actions.length) console.log("no learned skills here");

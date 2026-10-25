@@ -64,7 +64,7 @@ describe("skill-loop curator (v1.7)", () => {
     used("citer", 1);
     await put("mine", {}, { learned: false });
     const byName = Object.fromEntries(plan(repo, now, env).map((a) => [a.skill, a.action]));
-    expect(byName).toEqual({ "old-one": "archive", "idle-one": "stale", "pinned-one": "skip", "young-never-used": "skip", "cited-one": "skip" });
+    expect(byName).toEqual({ "old-one": "archive", "idle-one": "stale", "fresh-one": "keep", citer: "keep", "pinned-one": "skip", "young-never-used": "skip", "cited-one": "skip" });
     const before = await readFile(join(repo, ".claude", "skills", "mine", "SKILL.md"), "utf8");
     const r = curate(repo, { now, env });
     expect(r.ledger).toHaveLength(2);

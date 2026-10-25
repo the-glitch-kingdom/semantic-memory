@@ -50,7 +50,7 @@ function writeState(repo: string, s: CuratorState) {
 export interface CuratorAction {
   skill: string;
   path: string;
-  action: "stale" | "archive" | "reactivate" | "skip";
+  action: "stale" | "archive" | "reactivate" | "keep" | "skip";
   why: string;
 }
 
@@ -93,6 +93,7 @@ export function plan(repo: string, now = Date.now(), env = process.env): Curator
     if (idle >= ARCHIVE_DAYS) out.push({ ...base, action: "archive", why: `unused ${Math.floor(idle)} days` });
     else if (idle >= STALE_DAYS && meta.status === "active") out.push({ ...base, action: "stale", why: `unused ${Math.floor(idle)} days` });
     else if (idle < STALE_DAYS && meta.status === "stale") out.push({ ...base, action: "reactivate", why: `used ${Math.floor(idle)} days ago` });
+    else out.push({ ...base, action: "keep", why: `${meta.status}, ${last === undefined ? "landed" : "used"} ${Math.floor(idle)} days ago` });
   }
   return out;
 }
@@ -110,7 +111,7 @@ export function curate(repo: string, opts: { dryRun?: boolean; now?: number; env
   const ids: string[] = [];
   if (!opts.dryRun) {
     for (const a of actions) {
-      if (a.action === "skip") continue;
+      if (a.action === "skip" || a.action === "keep") continue;
       const raw = readFileSync(a.path, "utf8");
       if (a.action === "archive") {
         const dest = join(archiveDir(repo), a.skill, "SKILL.md");
@@ -125,7 +126,7 @@ export function curate(repo: string, opts: { dryRun?: boolean; now?: number; env
       }
     }
     const st = readState(repo);
-    writeState(repo, { ...st, last_run: new Date(now).toISOString(), last_report: actions.filter((a) => a.action !== "skip").map((a) => `${a.action} ${a.skill}`).join(", ") || "nothing to do" });
+    writeState(repo, { ...st, last_run: new Date(now).toISOString(), last_report: actions.filter((a) => a.action !== "skip" && a.action !== "keep").map((a) => `${a.action} ${a.skill}`).join(", ") || "nothing to do" });
   }
   return { actions, ledger: ids };
 }
