@@ -3,7 +3,7 @@ title: Legacy Registry
 tier: reference
 domains: [legacy]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Quick reference for legacy documentation
 ---
@@ -30,9 +30,9 @@ purpose: Quick reference for legacy documentation
 
 ## Recently Updated
 
+- [Embedder Guide (substrate)](embedder-guide.md) - 2026-10-24
+- [Frontmatter Guide (substrate)](frontmatter-guide.md) - 2026-10-24
 - [Legacy Changelog (semantic-pages)](changelog.md) - 2026-04-23
-- [Embedder Guide (substrate)](embedder-guide.md) - 2026-04-23
-- [Frontmatter Guide (substrate)](frontmatter-guide.md) - 2026-04-23
 - [How Semantic Pages Works (substrate)](how-it-works.md) - 2026-04-23
 - [Performance Tuning (substrate)](performance-tuning.md) - 2026-04-23
 
@@ -56,4 +56,4 @@ purpose: Quick reference for legacy documentation
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

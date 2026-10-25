@@ -1,17 +1,20 @@
 ---
-title: chokidar 4+ treats a glob as a literal path, so a "**/*.md" watcher never fires
+title: >-
+  chokidar 4+ treats a glob as a literal path, so a "**/*.md" watcher never
+  fires
 tier: fact
 domains:
   - troubleshooting
 status: active
-last_updated: 2026-10-24
+last_updated: 2026-10-24T00:00:00.000Z
 id: chokidar-4-glob-is-a-literal-path
 confidence: high
-last_verified: 2026-10-24
-verify_command: |
-  cd "$(git rev-parse --show-toplevel)" && npx vitest run test/integration/watcher.test.ts
+last_verified: '2026-10-25'
+verify_command: >
+  cd "$(git rev-parse --show-toplevel)" && npx vitest run
+  test/integration/watcher.test.ts
 provenance:
-  - https://github.com/the-glitch-kingdom/semantic-memory/issues/29
+  - 'https://github.com/the-glitch-kingdom/semantic-memory/issues/29'
 sources:
   - src/core/watcher.ts
   - test/integration/watcher.test.ts
@@ -19,7 +22,8 @@ tags:
   - gotcha
   - chokidar
   - watcher
-  - "Watcher timeout"
+  - Watcher timeout
+  - watcher reports ready but never emits add/change/unlink
 invalidated_by:
   - chokidar restores glob support in a future major
 ---

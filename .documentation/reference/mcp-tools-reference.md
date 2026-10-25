@@ -5,15 +5,15 @@ domains: [reference]
 audience: [developers]
 tags: [mcp, tools, api, reference, tools-catalog]
 status: active
-last_updated: '2026-07-11'
-version: '1.5.0'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: All 44 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check.
 load_priority: 9
 ---
 
 # MCP tools reference
 
-> 44 tools served by the `semantic-memory` MCP server over stdio (write mode); 21 in `--read-only` mode (`verify_note`, `manage_lexicon`, `manage_dossier`, and `manage_profile` are write-gated, so read-only mode is unchanged at 21). When the plugin is installed and `.mcp.json` is wired, they appear in Claude's tool list as `mcp__semantic-vault__<name>` (the entry name in `.mcp.json` controls the prefix; `semantic-vault` is the convention).
+> 44 tools served by the `semantic-memory` MCP server over stdio (write mode); 20 in `--read-only` mode (v1.6.1+; 21 before, when `log_event` was still exposed there). `verify_note`, `manage_lexicon`, `manage_dossier`, `manage_profile` and `log_event` are write-gated. When the plugin is installed and `.mcp.json` is wired, they appear in Claude's tool list as `mcp__semantic-vault__<name>` (the entry name in `.mcp.json` controls the prefix; `semantic-vault` is the convention).
 
 Tools fall into 11 categories. Write tools are gated by the `--read-only` flag on the server; read tools are always available.
 
@@ -187,7 +187,7 @@ Manage the speaker profile — the model of how THIS human communicates.
 Run lint rules across the vault. Default returns the full report.
 **Args:** `{ pathGlob?, checks? }`
 **v1.1+ checks filter:** when `checks: ["schema"|"provenance"|"stale"|"broken_links"][]` is provided, only the requested rules are returned in `byRule` and `findings`. Subsumes the four `find_*` tools below.
-**Returns:** `{ findings, byRule, counts, schemaPath }`.
+**Returns:** `{ findings, byRule, counts, schemaPath }`. With `checks`, `counts.errors` / `counts.warnings` count only the returned findings (v1.6.1+; before, they counted the full lint).
 
 **Opt-in checks — never included in the default (no-`checks`) report:**
 
@@ -239,8 +239,8 @@ All lint tools accept `{ pathGlob? }` to scope to a subset.
 
 ## Log / Maintenance (3)
 
-### `log_event` — always available
-Append to `log.md`.
+### `log_event` — read-only disables (v1.6.1+)
+Append to `log.md`. Before 1.6.1 it was also exposed on `--read-only` servers, where it wrote `log.md` into a folder another tool owns.
 **Args:** `{ kind, summary, payload? }`.
 **Common kinds:** `ingest`, `synthesis`, `error`, `mode_change`, `decision`, `incident`, `session`, `verify`, `migration`.
 

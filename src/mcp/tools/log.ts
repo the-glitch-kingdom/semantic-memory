@@ -6,20 +6,6 @@ import { regenIndexesForPaths, regenDirectoryIndex } from "../../core/index-rege
 
 export function registerLogTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
-    "log_event",
-    "Append a structured event to the vault's log.md. Each entry renders as a human line + a machine-readable YAML block for later querying.",
-    {
-      kind: z.string().describe("Category: ingest, synthesis, decision, incident, etc."),
-      summary: z.string().describe("One-line human summary"),
-      payload: z.record(z.unknown()).optional().describe("Arbitrary structured data"),
-    },
-    async (args) => {
-      const entry = await logEvent(ctx.notesPath, args);
-      return ctx.textResponse(JSON.stringify(entry, null, 2));
-    }
-  );
-
-  server.tool(
     "log_query",
     "Read structured log entries filtered by kind and/or date range. Returns parsed entries from log.md.",
     {
@@ -35,6 +21,20 @@ export function registerLogTools(server: McpServer, ctx: ServerContext): void {
   );
 
   if (!ctx.options.readOnly) {
+    server.tool(
+      "log_event",
+      "Append a structured event to the vault's log.md. Each entry renders as a human line + a machine-readable YAML block for later querying.",
+      {
+        kind: z.string().describe("Category: ingest, synthesis, decision, incident, etc."),
+        summary: z.string().describe("One-line human summary"),
+        payload: z.record(z.unknown()).optional().describe("Arbitrary structured data"),
+      },
+      async (args) => {
+        const entry = await logEvent(ctx.notesPath, args);
+        return ctx.textResponse(JSON.stringify(entry, null, 2));
+      }
+    );
+
     server.tool(
       "regenerate_index",
       "Force regeneration of INDEX.md for one directory (or all affected by a list of paths). Idempotent — skips write if unchanged.",

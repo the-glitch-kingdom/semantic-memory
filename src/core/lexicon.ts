@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { glob } from "glob";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import { redactDeep } from "./redact.js";
 import { deriveSessionDir } from "./session.js";
 import { listDossiers } from "./dossier.js";
@@ -131,9 +131,9 @@ export function expandQuery(aliases: AliasEntry[], query: string): { expanded: s
   return { expanded: `${query} ${additions}`, matched };
 }
 
-async function writeAliasNote(vaultPath: string, rel: string, raw: Omit<AliasEntry, "path">): Promise<void> {
+async function writeAliasNote(vaultPath: string, rel: string, raw: Omit<AliasEntry, "path">): Promise<number> {
   // phrases are captured from user utterances
-  const entry = redactDeep(raw, "precise").value;
+  const { value: entry, count } = redactDeep(raw, "precise");
   const fm = {
     type: "alias",
     canonical: entry.canonical,
@@ -147,6 +147,7 @@ async function writeAliasNote(vaultPath: string, rel: string, raw: Omit<AliasEnt
   const abs = join(vaultPath, rel);
   await mkdir(dirname(abs), { recursive: true });
   await writeFile(abs, matter.stringify(body, fm), "utf-8");
+  return count;
 }
 
 /**
@@ -156,7 +157,7 @@ async function writeAliasNote(vaultPath: string, rel: string, raw: Omit<AliasEnt
 export async function addAlias(
   vaultPath: string,
   input: { canonical: string; phrases: string[]; source?: "learned" | "authored"; today?: string }
-): Promise<{ path: string; created: boolean; evidence_count: number; confidence: Confidence }> {
+): Promise<{ path: string; created: boolean; evidence_count: number; confidence: Confidence; redacted?: number }> {
   const existing = await compileLexicon(vaultPath);
   const match = existing.find((a) => a.canonical === input.canonical);
   const today = input.today ?? new Date().toISOString().slice(0, 10);
@@ -166,15 +167,15 @@ export async function addAlias(
     const phrases = [...new Set([...match.phrases, ...cleanPhrases])];
     const evidence_count = match.evidence_count + 1;
     const confidence = confidenceFor(evidence_count);
-    await writeAliasNote(vaultPath, match.path, { ...match, phrases, evidence_count, confidence, last_used: today });
+    const redacted = await writeAliasNote(vaultPath, match.path, { ...match, phrases, evidence_count, confidence, last_used: today });
     await compileLexicon(vaultPath);
-    return { path: match.path, created: false, evidence_count, confidence };
+    return { path: match.path, created: false, evidence_count, confidence, ...(redacted ? { redacted } : {}) };
   }
 
   const rel = join(LEXICON_DIR, `${slugify(input.canonical)}.md`);
   const evidence_count = 1;
   const confidence = confidenceFor(evidence_count);
-  await writeAliasNote(vaultPath, rel, {
+  const redacted = await writeAliasNote(vaultPath, rel, {
     canonical: input.canonical,
     phrases: cleanPhrases,
     confidence,
@@ -183,7 +184,7 @@ export async function addAlias(
     source: input.source ?? "learned",
   });
   await compileLexicon(vaultPath);
-  return { path: rel, created: true, evidence_count, confidence };
+  return { path: rel, created: true, evidence_count, confidence, ...(redacted ? { redacted } : {}) };
 }
 
 export interface AliasConflict {

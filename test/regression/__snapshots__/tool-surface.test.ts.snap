@@ -1365,7 +1365,6 @@ exports[`Regression: MCP tool surface in --read-only mode > matches the golden t
   "graph_statistics",
   "lint_vault",
   "list_notes",
-  "log_event",
   "log_query",
   "read_multiple_notes",
   "read_note",

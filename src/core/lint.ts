@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { basename, join } from "node:path";
 import { glob } from "glob";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import { loadSchema, validateNote, type LintFinding, type VaultSchema } from "./schema.js";
 import { deriveProjectRoot } from "./session.js";
 import { computeDecay, loadDecayConfig, normalizeVerifiedDate } from "./decay.js";

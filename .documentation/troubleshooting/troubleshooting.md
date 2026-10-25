@@ -5,8 +5,8 @@ domains: [troubleshooting]
 audience: [developers]
 tags: [troubleshooting, debugging, failure-modes, diagnostics]
 status: active
-last_updated: '2026-05-09'
-version: '1.2.0'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command.
 load_priority: 9
 ---
@@ -50,6 +50,41 @@ load_priority: 9
 ### `npm audit fix` / `npm update` crash with `Cannot read properties of null (reading 'edgesOut')`
 - **Cause:** an npm 10 arborist bug resolving vitest 4's optional peer dependencies (`#loadPeerSet`).
 - **Fix:** update the affected packages by name (`npm update <pkg> …`, leaving vitest out), and update the vitest chain with npm 11: `npx -y npm@11 update vitest`. npm 11 skips install scripts it hasn't approved, so run `npm rebuild <pkg>` for any it warns about.
+
+## v1.6.1 release-audit issues
+
+### A note's YAML block shows up as its title or search snippet (`title: x purpose: …`)
+- **Cause (1.5.2–1.6.0):** the note has invalid frontmatter (usually an unquoted `: ` in a value). The first parse in a process indexed its body only, but gray-matter cached the failed parse, so every later parse (the startup rebuild, the watcher, `reindex`) returned the raw file and the YAML block was indexed as a heading.
+- **Fix:** upgrade to 1.6.1, then quote the value named in the server's `Invalid frontmatter in <path>` stderr line.
+
+### `update_frontmatter` wrote a second `---` block at the top of a note
+- **Cause (before 1.6.1):** the note's frontmatter was invalid. The first call threw. A retry in the same server process got the cached unparsed file back and wrote new frontmatter above the old block.
+- **Fix:** upgrade to 1.6.1 (it throws every time). Repair the note by hand: merge the two blocks and quote the bad value.
+
+### Every MCP server start prints `Downloading ONNX model … Quantized model not available, falling back to fp32`
+- **Cause (0.4.2–1.6.0):** the server asks for the quantized model, MiniLM has none, and the fp32 fallback ran before the cache was checked, so 90 MB were downloaded on every start. Offline, the download fails and the embedder never starts. A download killed mid-way leaves `model.onnx.<pid>.<ts>.tmp` behind.
+- **Check:** `ls ~/.semantic-sidekick/models/*/ | grep -c tmp` and `du -sh ~/.semantic-sidekick/models`.
+- **Fix:** upgrade to 1.6.1, which uses the cached `model.onnx`. Reclaim the space with `rm ~/.semantic-sidekick/models/*/model.onnx.*.tmp` (partial downloads only; `model.onnx` is the real model).
+
+### The offline tarball is several GB instead of about 0.55 GB
+- **Cause (before 1.6.1):** `build-offline-tarball.sh` copied the whole model cache, including the `*.tmp` partial downloads above.
+- **Fix:** 1.6.1 skips `*.tmp`. On older checkouts, delete the `.tmp` files before building.
+
+### `search_hybrid` says "Index not built. Run reindex first." right after the server starts
+- **Cause (before 1.6.1):** the server was still loading its cached index. The message was wrong advice, and reindexing doesn't help.
+- **Fix:** wait a few seconds and retry. 1.6.1 says "Indexing in progress… Try again shortly." instead.
+
+### `log_event` is missing on the docs (`--read-only`) server
+- **Expected since 1.6.1.** It wrote `log.md` into the docs folder. Log through the vault server (`mcp__semantic-vault__log_event`) or the `semantic-memory log-event` CLI.
+
+### A value was masked as `[REDACTED]` that wasn't a secret, or a secret wasn't masked
+- **Cause:** the redaction rules are pattern-based ([secret-redaction.md](../security/secret-redaction.md)). Notes use the *precise* set: a value is masked when it has a vendor key shape, follows a secret-named key (`api_key: …`; since 1.6.1, frontmatter fields too), is a URL password or a Bearer token, or exactly matches a secret-named env var on this machine. Logs and queries use the broader set, which also masks long random-looking tokens.
+- **Check:** `lint_vault({checks: ["secrets"]})` lists what the rules see in existing notes (path, line, kind).
+- **Fix:** for a false positive, rename the key (for example `token_count` instead of `token`) or write the value without a secret-named key in front. For a miss, add a named rule as described under "Adding a pattern" in secret-redaction.md, and open an issue with the *shape* of the value, never the value itself.
+
+### `npm i @theglitchking/semantic-memory@<new>` 404s right after a publish
+- **Cause:** the registry CDN serves the tarball a few minutes after `npm publish` succeeds (about 5 minutes for 1.6.0).
+- **Fix:** wait and retry; don't republish. See [release-process.md](../deployment/release-process.md).
 
 ## v1.1+ session issues
 
@@ -209,8 +244,8 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 - **Fix:** `/mode vault-first` to exit outage; `rm .claude/.sidekick-fingerprints.json` to clear dedupe.
 
 ### Capture-on-close doesn't fire
-- **Cause:** `.sidekick-capture-pending.json` is empty — no cue matched this session's prompts.
-- **Check:** `cat .claude/.sidekick-capture-pending.json` mid-session (before Stop) to verify cues were detected.
+- **Cause:** no item in `.claude/.semantic-memory/capture-pending.json` carries this session's `session_id` — no cue matched this session's prompts (a concurrent session's cues are not shown here, v1.5.2+).
+- **Check:** `cat .claude/.semantic-memory/capture-pending.json` mid-session (before Stop) to verify cues were detected (legacy installs: `.claude/.sidekick-capture-pending.json`).
 - **If detected but Stop still doesn't block:** check `SIDEKICK_DEBUG=1` output for stop-hook exit path (loop guard, mode, etc.).
 
 ### Stop hook loops
@@ -302,11 +337,11 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 When something feels off and you don't know where to start:
 
 ```bash
-# 1. Current mode
-cat .claude/.sidekick-mode
+# 1. Current mode (legacy: .claude/.sidekick-mode)
+cat .claude/.semantic-memory/mode
 
-# 2. Pending captures
-cat .claude/.sidekick-capture-pending.json
+# 2. Pending captures (each item has a session_id)
+cat .claude/.semantic-memory/capture-pending.json
 
 # 3. Recent errors
 semantic-sidekick log-query --notes <vault> --kind error --limit 10

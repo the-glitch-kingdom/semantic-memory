@@ -126,7 +126,7 @@ Tips:
 
 ## Lint rules
 
-See also [mcp-tools-reference.md](./mcp-tools-reference.md#lint-5) and [cli-reference.md](./cli-reference.md#lint).
+See also [mcp-tools-reference.md](../reference/mcp-tools-reference.md#lint-5) and [cli-reference.md](../reference/cli-reference.md#lint).
 
 ### `schema_violations` (error)
 Missing required field, unknown type, value not in declared enum. Blocks apply_patch when `validate: true` (default).

@@ -3,7 +3,7 @@ title: Quickstart Documentation Index
 tier: reference
 domains: [quickstart]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Complete listing of quickstart documentation
 ---
@@ -25,8 +25,8 @@ purpose: Complete listing of quickstart documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [Installation Guide](installation-guide.md) | active | 2026-04-23 | 823 |
-| [semantic-sidekick — Overview](sidekick-overview.md) | active | 2026-04-23 | 766 |
+| [Installation Guide](installation-guide.md) | active | 2026-10-24 | 808 |
+| [semantic-sidekick — Overview](sidekick-overview.md) | active | 2026-10-24 | 768 |
 
 ## Keywords
 
@@ -40,4 +40,4 @@ This domain covers: quickstart, quick-start, getting-started, setup, install, in
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

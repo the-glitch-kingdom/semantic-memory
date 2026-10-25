@@ -13,7 +13,7 @@ tags:
   - v1.5.3
 status: active
 last_updated: '2026-10-24'
-version: 1.5.3
+version: '1.6.1'
 purpose: 'How semantic-memory keeps API keys, tokens and passwords off disk: the
   redactor (src/core/redact.ts), its precise and broad pattern sets, every write
   point it covers, the lint_vault secrets check, its limits, and how to add a
@@ -74,9 +74,11 @@ Two layers, in order:
 | `session.json` (task, `session_run` cmd and output tail) | broad | |
 | hook capture-pending excerpt (`hooks/vault-context.js`) | broad | whole prompt redacted before the 200-char cut; imports `dist/core/redact.js` (a standalone tsup entry, fs/os/path only). If the import fails the excerpt is **withheld**, never stored raw. |
 
+**Structured values (frontmatter fields, `log_event` payloads, alias entries)** go through `redactDeep`, which checks every string field as `key=value`. A bare value under a secret-named key is therefore masked by the secret-named rule, for example `api_key: Hx7…` in `create_note`'s frontmatter. The same value under `title` is left alone. Before 1.6.1, the value was checked without its key and written unmasked unless it had a vendor shape.
+
 Not covered, by design: derived caches (docs cache, embeddings, graph, vector, `meta.json`, generated INDEX files) only re-store note text, and config writers (`.mcp.json`) only rewrite existing config.
 
-Tool results report the count: `Created: x.md (2 secrets redacted)`, or `redacted: N` in JSON results (per op in `apply_patch`'s `applied`).
+Tool results report the count: `Created: x.md (2 secrets redacted)`, or `redacted: N` in JSON results (per op in `apply_patch`'s `applied`; `manage_lexicon add` since 1.6.1). They never include the value. Validated end to end over stdio in the 1.6.1 audit: six fake secret shapes sent through every write tool, plus a search query and `session_run`, left none in the project tree or in any tool result.
 
 ## Finding secrets already in notes
 

@@ -3,7 +3,7 @@ title: Reference Documentation Index
 tier: reference
 domains: [reference]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Complete listing of reference documentation
 ---
@@ -25,11 +25,11 @@ purpose: Complete listing of reference documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [CLI Reference](cli-reference.md) | active | 2026-07-11 | 2,610 |
-| [Configuration Reference](configuration-reference.md) | active | 2026-07-11 | 2,452 |
-| [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) | active | 2026-07-11 | 3,052 |
-| [Hooks Reference](hooks-reference.md) | active | 2026-04-23 | 797 |
-| [MCP Tools Reference (44 tools)](mcp-tools-reference.md) | active | 2026-07-11 | 2,648 |
+| [CLI Reference](cli-reference.md) | active | 2026-10-24 | 2,608 |
+| [Configuration Reference](configuration-reference.md) | active | 2026-10-24 | 2,626 |
+| [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) | active | 2026-10-24 | 3,309 |
+| [Hooks Reference](hooks-reference.md) | active | 2026-10-24 | 1,208 |
+| [MCP Tools Reference (44 tools)](mcp-tools-reference.md) | active | 2026-10-24 | 2,688 |
 
 ## Keywords
 
@@ -43,4 +43,4 @@ This domain covers: reference, cli, tools, configuration, frontmatter
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

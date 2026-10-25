@@ -18,6 +18,7 @@ tags:
   - npm
   - npm-audit
   - "Cannot read properties of null (reading 'edgesOut')"
+  - "#loadPeerSet"
 invalidated_by:
   - an npm 10 release that fixes arborist #loadPeerSet, or moving the repo to npm 11
 ---

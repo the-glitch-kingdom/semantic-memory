@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import { redact } from "./redact.js";
 import { replaceSectionBody, appendToSection } from "./dossier.js";
 

@@ -140,6 +140,17 @@ describe("redact: broad mode (logs)", () => {
     expect(value.n).toBe(3);
     expect(count).toBe(2);
   });
+
+  // a frontmatter field `api_key: <value>` reaches redactDeep as key and bare value: the key is the context
+  it("redactDeep masks a bare value under a secret-named key, and only there", () => {
+    const value = j("Hx7kq2", "Lm9Vz4Rt8Wp3");
+    const out = redactDeep({ api_key: value, nested: { client_secret: value }, title: value, password: "changeme" }, "precise");
+    expect(out.value.api_key).toBe(REDACTED);
+    expect(out.value.nested.client_secret).toBe(REDACTED);
+    expect(out.value.title).toBe(value);
+    expect(out.value.password).toBe("changeme");
+    expect(out.count).toBe(2);
+  });
 });
 
 describe("redact: performance", () => {

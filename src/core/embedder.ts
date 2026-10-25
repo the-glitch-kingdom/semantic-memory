@@ -124,6 +124,10 @@ export class Embedder {
     // Download ONNX model if not cached. Tries quantized first if requested,
     // falls back to fp32 if the quantized file is not available for this model.
     let useQuantized = this.quantized;
+    // a model without a quantized file (MiniLM) leaves only model.onnx cached: use it, or every start re-downloads it (and fails offline)
+    if (useQuantized && !existsSync(join(modelDir, "model_quantized.onnx")) && existsSync(join(modelDir, "model.onnx"))) {
+      useQuantized = false;
+    }
     const modelFileName = useQuantized ? "model_quantized.onnx" : "model.onnx";
     this.modelPath = join(modelDir, modelFileName);
     const modelPath = this.modelPath;

@@ -5,8 +5,8 @@ domains: [legacy]
 audience: [developers]
 tags: [legacy, embedder, onnx, models]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: ONNX embedder options, model choices, quality/speed tradeoffs
 load_priority: 3
 ---
@@ -99,6 +99,8 @@ All options are available as CLI flags on both `serve` and `--reindex` commands:
 | `--quantized` | off | Use int8 quantized model (faster on CPU, not all models support it) |
 | `--no-quantized` | — | Explicit fp32 (default behavior) |
 | `--workers <n>` | `1` | Worker threads for parallel embedding |
+
+> **semantic-memory differs from the semantic-pages table above.** There is no `--quantized` flag (`error: unknown option '--quantized'`). The quantized model is requested by default, and `--no-quantized` turns that off. MiniLM has no quantized ONNX file, so the server uses the fp32 `model.onnx`. Since 1.6.1 that is the cached copy. Before 1.6.1, every start downloaded it again, and offline starts failed. For nomic, `model_quantized.onnx` exists and is used.
 
 ### Via `.mcp.json`
 

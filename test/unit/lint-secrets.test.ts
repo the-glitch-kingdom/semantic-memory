@@ -71,6 +71,8 @@ describe("lint_vault secrets check", () => {
       const text = (res.content as { text: string }[])[0].text;
       const body = JSON.parse(text);
       expect(Object.keys(body.byRule)).toEqual(["secrets"]);
+      // counts describe the filtered report, not the full lint
+      expect(body.counts.errors).toBe(body.findings.filter((f: { severity: string }) => f.severity === "error").length);
       expect(body.byRule.secrets.some((f: { path: string }) => f.path === "leaks/leaky.md")).toBe(true);
       expect(text).not.toContain(FAKE);
     } finally {

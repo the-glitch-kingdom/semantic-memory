@@ -2,6 +2,35 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.6.1] - 2026-10-24 — Release audit fixes (1.5.2 → 1.6.0)
+
+A full validation of 1.5.2, 1.5.3 and 1.6.0 through the published packages and real entry points (fresh install, plugin update, upgrade from 1.5.1 state, a stdio MCP server, the read-only docs server, the live watcher, the hooks as real processes, the offline tarball) found seven defects. Each has a regression test.
+
+### Fixed
+
+- **A note with invalid frontmatter was indexed with its YAML block as a heading after the first parse.** gray-matter caches parses by content when called without options, including a parse that threw, which then comes back unparsed and without an error. The 1.5.2 body-only fallback therefore only held for the first parse in a process; the startup cache load plus rebuild, the watcher and `reindex` all parse again. The same cache made `update_frontmatter` on such a note throw once and then **write a second frontmatter block** on retry, and shared one mutable `data` object between callers, so one update's edits showed up in the next parse of identical content. `src/core/matter.ts` bypasses the cache and every caller uses it.
+- **Frontmatter `api_key: <value>` was written unmasked.** `redactDeep` checked each value without its key, and a bare random value has no context for the secret-named rule. Object fields are now checked as `key=value`. Values under other keys are unchanged.
+- **`manage_lexicon add` now reports its redaction count** (`redacted`), like every other write tool.
+- **A search made while the cache was still loading said "Index not built. Run reindex first."** It now says indexing is in progress. That advice was never right: with no vector index, the server is always loading or building one.
+- **`--read-only` servers no longer expose `log_event`**, which appended to `log.md` in a folder another tool owns. The read-only surface is 20 tools. Hooks log through the CLI to the writable vault and are unaffected.
+- **Every MCP server start re-downloaded the 90 MB embedding model, and an offline install could not start the embedder at all.** This dates back to 0.4.2. The server defaults to the quantized model (`--no-quantized` turns it off), MiniLM has no quantized ONNX file (404), and the fp32 fallback ran before the cache was checked. The server now uses the cached `model.onnx`. Downloads killed mid-way had also left `model.onnx.<pid>.<ts>.tmp` files behind (5.4 GB on one machine), and `build-offline-tarball.sh` copied them into the tarball (5.7 GB instead of about 0.5 GB). It now skips `*.tmp`. To reclaim the space: `rm ~/.semantic-sidekick/models/*/model.onnx.*.tmp`.
+- **A filtered `lint_vault({checks: [...]})` reported the error and warning counts of the full lint**, for example 16 errors next to 2 secrets findings. Counts now match the returned findings.
+
+### Verified, unchanged
+
+- The v1.6 failure eval re-runs to the same numbers (32/38 ranked first). The golden eval holds (recall@1 86%, MRR 0.929). 545 tests pass.
+- `npm audit --omit=dev`: only zod, whose fix is zod 4 (see 1.5.2).
+
+### Docs
+
+- New: `.documentation/deployment/release-process.md`, which replaces the archived pre-1.0 `marketplace-registration.md`, and `.documentation/changelog/v1-6-1-release-audit.md`.
+- Rewritten: the installation guide (it still named the pre-rebrand package `@theglitchking/semantic-sidekick`) and the hooks reference (four hook events, per-session capture, multi-folder search).
+- Updated: README (stale "33 tools" and "Phases 1–4" sections), SECURITY.md, and the configuration, MCP-tools, CLI and frontmatter references.
+- New troubleshooting entries for every defect above, plus redaction surprises and the post-publish tarball 404.
+- Three new knowledge-base gotcha facts (gray-matter's cache, commander's `--no-` default, `hewtd archive` overwriting).
+- The hewtd scaffold `.documentation/README.md` was archived.
+- Known clash: in a hit-em-with-the-docs tree, `symptoms:` is hewtd's playbook object schema, so the string `symptoms:` this plugin indexes fail `hewtd audit`. The failure-lookup guide says what to do instead.
+
 ## [1.6.0] - 2026-10-24 — Failure-time fact lookup (opt-in) and the failure eval
 
 Issue #29's proposal: surface the right knowledge-base fact when a tool call fails, with the injection threshold *measured* rather than guessed. It was measured — and fell short of the 95%-precision bar — so the hook ships **off by default**.

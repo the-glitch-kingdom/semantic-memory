@@ -5,8 +5,8 @@ domains: [operational]
 audience: [developers, admin]
 tags: [migration, state, sidekick, semantic-memory, migrate-state, v1.2]
 status: active
-last_updated: '2026-05-09'
-version: '1.2.0'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Operational guide for v1.2's state-file consolidation. What's moving, when to run migrate-state, what conflicts mean, and what's deferred to v2.0.
 load_priority: 6
 ---
@@ -22,6 +22,8 @@ v1.2 consolidates three transient state files under `.claude/.semantic-memory/`.
 | `.claude/.sidekick-mode` | `.claude/.semantic-memory/mode` | Active mode (`vault-first`/`research`/`outage-silence`) |
 | `.claude/.sidekick-fingerprints.json` | `.claude/.semantic-memory/fingerprints.json` | sha1 prompts for re-fire suppression |
 | `.claude/.sidekick-capture-pending.json` | `.claude/.semantic-memory/capture-pending.json` | Stop-hook capture queue |
+
+**The capture-pending format changed in v1.5.2 too.** Items gained a `session_id`, and each session asks about and clears only its own. Items without one (written by 1.5.1 or earlier, at either path) are asked about once, by the first session to stop, and items older than 7 days are dropped. No migration step is needed. v1.6 adds `.claude/.semantic-memory/failure-shown.json` (the opt-in failure hook's shown-once list), which has no legacy path.
 
 These three were the v0.x → v1.1 carryover paths. v1.2 brings them into the `.claude/.semantic-memory/` namespace alongside `session.json` (v1.1+) and `healthcheck-cache.json` (v1.1+), which were already correctly placed.
 

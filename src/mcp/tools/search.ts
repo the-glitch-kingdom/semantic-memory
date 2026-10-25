@@ -35,9 +35,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
     async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain }) => {
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) {
-        return ctx.textResponse(
-          ctx.getIndexState() === "empty" ? ctx.indexingMessage() : "Index not built. Run reindex first."
-        );
+        return ctx.textResponse(ctx.indexingMessage());
       }
       const queryEmbed = await ctx.embedder.embed(query);
       await ctx.refreshUsageBoost();
@@ -116,9 +114,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
     async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain }) => {
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) {
-        return ctx.textResponse(
-          ctx.getIndexState() === "empty" ? ctx.indexingMessage() : "Index not built. Run reindex first."
-        );
+        return ctx.textResponse(ctx.indexingMessage());
       }
 
       const queryEmbed = await ctx.embedder.embed(query);

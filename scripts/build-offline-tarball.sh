@@ -283,7 +283,7 @@ if [[ ! -f "${MODEL_CACHE_DIR}/model.onnx" ]]; then
   err "Re-run without --skip-model to warm the cache."
   exit 1
 fi
-rsync -a "${MODEL_CACHE_ROOT}/" "${STAGE_ROOT}/${TARBALL_BASENAME}/models/"
+rsync -a --exclude "*.tmp" "${MODEL_CACHE_ROOT}/" "${STAGE_ROOT}/${TARBALL_BASENAME}/models/"  # *.tmp: partial downloads killed mid-way
 
 # Bundle the installer + helper libs at the tarball root
 log "Bundling install-offline.sh and lib/"

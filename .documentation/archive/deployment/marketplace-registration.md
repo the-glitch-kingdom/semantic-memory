@@ -1,14 +1,26 @@
 ---
 title: Marketplace Registration
 tier: guide
-domains: [deployment]
-audience: [developers]
-tags: [deployment, marketplace, npm, publish]
-status: active
+domains:
+  - deployment
+audience:
+  - developers
+tags:
+  - deployment
+  - marketplace
+  - npm
+  - publish
+status: archived
 last_updated: '2026-04-23'
-version: '0.2.3'
-purpose: Post-merge steps to register the plugin in glitch-kingdom-of-plugins + npm publish
+version: 0.2.3
+purpose: Post-merge steps to register the plugin in glitch-kingdom-of-plugins +
+  npm publish
 load_priority: 5
+archived_on: '2026-10-25'
+archived_from: deployment/marketplace-registration.md
+archived_reason: One-time v0.2.0 procedure for the central
+  glitch-kingdom-of-plugins catalog, which no longer lists this plugin;
+  superseded by deployment/release-process.md (v1.6.1 audit)
 ---
 
 # Marketplace registration
@@ -178,7 +190,7 @@ Then verify:
 ```bash
 cat .mcp.json                               # semantic-vault entry added
 ls .claude/skills/                          # vault-first, research-mode, outage-silence linked
-cat .claude/settings.json | jq '.hooks'     # three hooks registered
+jq '.hooks | keys' "$CLAUDE_PLUGIN_ROOT/hooks/hooks.json"   # SessionStart, UserPromptSubmit, Stop, PostToolUseFailure (opt-in)
 /mode status                                # responds with "current mode: vault-first"
 ```
 

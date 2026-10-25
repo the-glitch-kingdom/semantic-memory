@@ -3,7 +3,7 @@ title: Architecture Registry
 tier: reference
 domains: [architecture]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Quick reference for architecture documentation
 ---
@@ -32,11 +32,11 @@ purpose: Quick reference for architecture documentation
 
 ## Recently Updated
 
-- [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) - 2026-07-10
-- [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) - 2026-07-10
+- [Architecture — the Five Layers](architecture-layers.md) - 2026-10-24
+- [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) - 2026-10-24
+- [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) - 2026-10-24
 - [Indices and storage — every file semantic-memory writes](indices-and-storage.md) - 2026-05-09
 - [What gets indexed where and why](what-gets-indexed.md) - 2026-05-09
-- [Architecture — the Five Layers](architecture-layers.md) - 2026-04-23
 
 ## By Status
 
@@ -58,4 +58,4 @@ purpose: Quick reference for architecture documentation
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

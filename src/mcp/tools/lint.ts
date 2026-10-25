@@ -98,6 +98,11 @@ export function registerLintTools(server: McpServer, ctx: ServerContext): void {
             ...report,
             findings: filteredFindings,
             byRule: filteredByRule,
+            counts: {
+              ...report.counts,
+              errors: filteredFindings.filter((f) => f.severity === "error").length,
+              warnings: filteredFindings.filter((f) => f.severity === "warn").length,
+            },
           },
           null,
           2

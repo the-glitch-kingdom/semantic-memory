@@ -126,7 +126,8 @@ describe("secrets are redacted at every write point", () => {
 
   it("manage_lexicon: alias phrases", async () => {
     const a = secret("alias");
-    await call("manage_lexicon", { action: "add", canonical: "src/core/relay.ts", phrases: [`the ${a} thing`], source: "authored" });
+    const out = await call("manage_lexicon", { action: "add", canonical: "src/core/relay.ts", phrases: [`the ${a} thing`], source: "authored" });
+    expect(out).toMatch(/"redacted": 1/);
     for (const f of await filesUnder(vault)) {
       if (f.includes("alias") || f.includes("lexicon")) expect(await readFile(f, "utf-8")).not.toContain(a);
     }

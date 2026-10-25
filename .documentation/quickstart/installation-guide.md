@@ -3,58 +3,49 @@ title: Installation Guide
 tier: guide
 domains: [quickstart]
 audience: [developers]
-tags: [install, setup, plugin, npm]
+tags: [install, setup, plugin, npm, update]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
-purpose: Three install routes (plugin / npm / dev), post-install housekeeping, uninstall
+last_updated: '2026-10-24'
+version: '1.6.1'
+purpose: Three install routes (plugin / npm / dev), what a fresh install gets, updating, post-install housekeeping, uninstall
 load_priority: 10
 ---
 
 # Installation guide
 
-> From zero to a running semantic-sidekick in your project. Three routes: plugin install (recommended), npm install (bare), and dev (contributing to this repo).
+> From zero to a running semantic-memory in your project. Three routes: plugin install (recommended), npm install (bare), and dev (contributing to this repo). The package was called `semantic-sidekick` before v1.0. **Don't install `@theglitchking/semantic-sidekick`**: it is the frozen pre-rebrand package.
 
 ## Prerequisites
 
 - Node.js ≥ 18.
 - Claude Code CLI or a compatible MCP client.
-- A directory to serve as the vault (can be empty — a starter schema will be installed).
+- A directory to serve as the vault (can be empty: a starter schema will be installed).
 
 ## Route A — Claude Code plugin (recommended)
 
-This is the packaged path. Everything auto-wires.
-
-### 1. Add the marketplace
-
-In Claude Code, run:
-```
-/plugin marketplace add https://github.com/TheGlitchKing/semantic-sidekick
-```
-
-(Replace with the actual repo URL if you've forked or published to a different remote.)
-
-### 2. Install the plugin
+### 1. Add the marketplace and install
 
 ```
-/plugin install semantic-sidekick
+/plugin marketplace add https://github.com/TheGlitchKing/semantic-memory
+/plugin install semantic-memory@semantic-memory-marketplace
 ```
 
-On install:
-- `node_modules/@theglitchking/semantic-sidekick/` is added to the project.
-- `scripts/link-skills.js` runs via postinstall — symlinks `skills/{vault-first, research-mode, outage-silence, semantic-first}` into `.claude/skills/`.
-- `hooks/hooks.json` declares SessionStart + UserPromptSubmit + Stop hooks → merged into your `.claude/settings.json` via the plugin runtime.
-- Slash commands `/mode` and `/vault` are registered from `commands/`.
+What you get:
+- Skills `vault-first`, `research-mode`, `outage-silence` and `semantic-first`, plus the commands `/mode`, `/vault`, `/healthcheck`, `/contract`, `/status`, `/update`, `/policy`, `/relink` and `/normalize-config`.
+- Hooks from `hooks/hooks.json`: `SessionStart`, `UserPromptSubmit`, `Stop` and `PostToolUseFailure`. The last one does nothing unless you turn it on (step 5).
+- Write tools that mask API keys, tokens, passwords and private keys before writing (v1.5.3+).
 
-### 3. First session
+### 2. First session
 
-On the next `claude` invocation, the SessionStart hook fires:
-- `hooks/session-start.js` reconciles `.mcp.json` — auto-adds a `semantic-vault` entry pointing at `.claude/.vault/` (or a path you've set).
-- `hooks/vault-context.js` resets `.claude/.sidekick-mode` → `vault-first`.
+On the next `claude` start, the SessionStart hook:
+- reconciles `.mcp.json` (`hooks/reconcile.js`): adds a `semantic-vault` entry for `./.claude/.vault/` (created if missing). When hit-em-with-the-docs is installed and `.documentation/` exists, it also adds `semantic-sidekick` for `./.documentation --read-only`. Entries use the stable `node ./node_modules/@theglitchking/semantic-memory/bin/semantic-memory` form. Entries you edited by hand are left alone.
+- resets the mode in `.claude/.semantic-memory/mode` to `vault-first`.
 
-### 4. Set your vault path (optional)
+The first server start builds each folder's index (`<folder>/.semantic-sidekick-index/`) in the background. It downloads the ~90 MB embedding model once, into `~/.semantic-sidekick/models/`. Searches made before the index is ready answer "Indexing in progress… Try again shortly."
 
-By default the reconciler writes `--notes ./.claude/.vault`. To use a different vault, edit `.mcp.json`:
+### 3. Use a different vault (optional)
+
+Edit the `semantic-vault` entry's `--notes` argument in `.mcp.json`:
 
 ```json
 {
@@ -62,177 +53,118 @@ By default the reconciler writes `--notes ./.claude/.vault`. To use a different 
     "semantic-vault": {
       "type": "stdio",
       "command": "node",
-      "args": [
-        "./node_modules/@theglitchking/semantic-sidekick/bin/semantic-sidekick",
-        "--notes",
-        "/absolute/or/relative/path/to/vault"
-      ]
+      "args": ["./node_modules/@theglitchking/semantic-memory/bin/semantic-memory", "--notes", "/path/to/vault"]
     }
   }
 }
 ```
 
-The reconcile hook preserves manually-edited entries — it only rewrites entries it wrote itself.
+The hooks search every `semantic-*` entry's folder and write state to the first one without `--read-only` (v1.5.2+).
 
-### 5. Install the schema (optional but recommended)
-
-```bash
-npx semantic-sidekick install-schema --notes /path/to/vault
-```
-
-Writes `vault.schema.yml` with the default 4-type schema. Without this, lint runs against the bundled default. With a local file, you can customize types, enums, and lint thresholds.
-
-### 6. First reindex
+### 4. Install the schema (optional but recommended)
 
 ```bash
-npx semantic-sidekick --notes /path/to/vault --reindex
+npx semantic-memory install-schema --notes ./.claude/.vault
 ```
 
-Downloads the ONNX model (first time, ~90MB), indexes all `*.md` files. Writes `.semantic-sidekick-index/` with vector/graph/text indexes + parsed-doc cache. Required before hook-driven search works at low latency.
+Writes `vault.schema.yml` with the default schema. Without it, lint runs against the bundled default.
 
-Subsequent sessions use the cached index; reindex is only needed when notes change in bulk or the model is swapped.
+### 5. Turn on the failure-time fact lookup (optional)
 
-### 7. Verify
+Add `"SEMANTIC_MEMORY_FAILURE_HOOK": "1"` to the `env` block of `~/.claude/settings.json`. It takes effect in the next session. After a failed Bash or MCP call, it injects the knowledge-base fact most likely to explain the failure. It is right about 6 times in 10. See [failure-lookup-guide.md](../operational/failure-lookup-guide.md).
 
-In a Claude session:
+### 6. Verify
 
-1. Check the hook fired — expand a `ctrl+o` on the hook line, look for `<vault-state-since>` + `<vault-context>` blocks.
-2. `/mode status` — should print `current mode: vault-first`.
-3. Ask a project question — Claude should call `mcp__semantic-vault__search_hybrid`.
+```bash
+npx semantic-memory --version              # 1.6.1 or later
+npx semantic-memory healthcheck --fast     # "local install starts cleanly"; drift findings, if any
+```
+
+In a Claude session: expand a hook line with `ctrl+o` to find `<vault-state-since>` / `<vault-context>`, run `/mode status` (it should report `vault-first`), and ask a project question; Claude should call `mcp__semantic-vault__search_hybrid`.
+
+### Updating
+
+```bash
+claude plugin marketplace update semantic-memory-marketplace
+claude plugin update semantic-memory@semantic-memory-marketplace   # then restart Claude Code
+```
+
+The project-local npm package updates separately: `/update`, or `npm i @theglitchking/semantic-memory@latest`. State from 1.5.1 and earlier carries over. A stale index is rebuilt at server start, and old capture-pending items are asked about once.
 
 ---
 
 ## Route B — npm install (no Claude Code plugin system)
 
-For using `semantic-sidekick` as a standalone CLI + MCP server without the plugin runtime.
+The standalone CLI and MCP server, without the plugin runtime.
 
-### 1. Install
 ```bash
-npm install @theglitchking/semantic-sidekick
+npm install @theglitchking/semantic-memory
+npx semantic-memory --notes /path/to/vault            # stdio MCP server
 ```
 
-### 2. Run the MCP server
-```bash
-npx semantic-sidekick --notes /path/to/vault
-```
+Point your MCP client at `node ./node_modules/@theglitchking/semantic-memory/bin/semantic-memory --notes /path/to/vault`. Add `--read-only` for a folder another tool owns. That serves 20 read/search/lint tools and nothing that writes.
 
-### 3. Wire into your MCP client
-Point your client at `node ./node_modules/@theglitchking/semantic-sidekick/bin/semantic-sidekick --notes /path/to/vault` as a stdio command.
-
-### 4. Install the CLI globally (optional)
-```bash
-npm install -g @theglitchking/semantic-sidekick
-# then: semantic-sidekick --help
-```
-
-Route B gives you the 33 MCP tools but NOT the activation hooks, mode skills, or slash commands — those are plugin-only.
+Route B gives you the 44 MCP tools and the CLI, but **not** the hooks, mode skills or slash commands. Those are plugin-only. For air-gapped hosts, use the offline tarball (`.claude/rules/operational-runbook.md`).
 
 ---
 
 ## Route C — Development (contributing to this repo)
 
-### 1. Clone
 ```bash
-git clone https://github.com/TheGlitchKing/semantic-sidekick
-cd semantic-sidekick
-```
-
-### 2. Install dependencies
-```bash
+git clone https://github.com/TheGlitchKing/semantic-memory
+cd semantic-memory
+bash .claude/scripts/setup.sh   # persistent-planning, babel-fish, hit-em-with-the-docs
 npm install
-```
-
-### 3. Build
-```bash
 npm run build
+npm test                        # full vitest suite
+npm run lint                    # tsc --noEmit
+npm run eval                    # golden retrieval eval
+npm run dev                     # tsup watch mode
 ```
 
-### 4. Run tests
-```bash
-npm test             # full vitest suite
-npm run lint         # tsc --noEmit typecheck
-```
-
-### 5. Point a vault at this repo's CLI
-Edit `.mcp.json` (gitignored):
-```json
-{
-  "mcpServers": {
-    "semantic-vault": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["./dist/cli/index.js", "--notes", "/path/to/test/vault"]
-    }
-  }
-}
-```
-
-### 6. Run the Phase 1 activation test suite
-```bash
-node test/phase1/run.js
-```
-
-Expects `/home/tmarlette/workspace/the-glitch-kingdom/sidekick-test-vault/` or override via `vaultPath` in `test/phase1/prompts.json`.
-
-### 7. Active development loop
-```bash
-npm run dev    # tsup in watch mode
-```
-
-In another terminal, run `claude` from the repo root — it picks up `hooks/vault-context.js` via `.claude/settings.json`.
+To point a vault at this checkout's CLI, set the `.mcp.json` args to `["./dist/cli/index.js", "--notes", "/path/to/test/vault"]`. Releases: [release-process.md](../deployment/release-process.md).
 
 ---
 
 ## Post-install housekeeping
 
 ### Gitignore your runtime state
-If you're tracking the vault in git, add these to `.gitignore`:
+
 ```
-.claude/.sidekick-mode
-.claude/.sidekick-fingerprints.json
-.claude/.sidekick-capture-pending.json
-.claude/.semantic-sidekick-update-cache.json
+.claude/.semantic-memory/
+.claude/.sidekick-*            # pre-1.2 state names, still read as a fallback
 .semantic-sidekick-index/
-.mcp.json
 ```
 
-`log.md` SHOULD be committed — it's the durable record.
+Commit `log.md`: it is the durable record. The full recommended list is in [configuration-reference.md](../reference/configuration-reference.md).
 
 ### Pre-commit hook (vault repos)
-Only if you're using git to manage the vault itself:
+
 ```bash
-cp node_modules/@theglitchking/semantic-sidekick/scripts/pre-commit-lint.sh .git/hooks/pre-commit
+cp node_modules/@theglitchking/semantic-memory/scripts/pre-commit-lint.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-Blocks commits on schema errors; warns on stale / missing provenance / broken links.
+Blocks commits on schema errors and warns on stale notes, missing provenance and broken links. To check for secrets already in notes: `lint_vault({checks: ["secrets"]})`.
 
-### Start with the CLI to get feel
+### Get a feel for the CLI
+
 ```bash
-semantic-sidekick --help
-semantic-sidekick tools        # lists all 33 MCP tools
-semantic-sidekick lint --notes <vault>
-semantic-sidekick log-query --notes <vault> --limit 10
+npx semantic-memory --help
+npx semantic-memory lint --notes <vault>
+npx semantic-memory log-query --notes <vault> --limit 10
+npx semantic-memory search "how do we deploy" --notes <vault>
 ```
 
-These are the same interfaces the hooks use. Getting comfortable with the CLI makes hook behavior predictable.
+These are the interfaces the hooks use.
 
 ---
 
 ## Uninstall
 
-### From Claude Code
 ```
-/plugin uninstall semantic-sidekick
-```
-
-Removes the package and skill symlinks. Does NOT touch `.mcp.json` or your vault — those are yours.
-
-### Manual
-```bash
-npm uninstall @theglitchking/semantic-sidekick
-rm -rf .claude/skills/{vault-first,research-mode,outage-silence,semantic-first}
-# Optionally clean up hooks in .claude/settings.json
+/plugin uninstall semantic-memory@semantic-memory-marketplace
+npm uninstall @theglitchking/semantic-memory
 ```
 
-Vault and log.md persist. The vault is yours; the tool is just a layer.
+This doesn't touch `.mcp.json` or your vault, which are yours. Remove the `semantic-*` entries from `.mcp.json` by hand if you want them gone.

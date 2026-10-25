@@ -5,8 +5,8 @@ domains: [quickstart]
 audience: [developers]
 tags: [overview, goals, framing, architecture]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Value proposition, five-layer summary, firing timeline, design principles
 load_priority: 10
 ---
@@ -59,10 +59,10 @@ Session opens
 User types a prompt
   │
   ├─ UserPromptSubmit hook
-  │    ├─ reads .sidekick-mode
+  │    ├─ reads .semantic-memory/mode
   │    ├─ if outage-silence → no-op (respect mode contract)
   │    ├─ else: fingerprint check → hybrid search (or skip) → inject <vault-context>
-  │    └─ cue detection → append to .sidekick-capture-pending.json
+  │    └─ cue detection → append to .semantic-memory/capture-pending.json (per session_id)
   │
 Claude answers (consults vault per vault-first rule)
   │

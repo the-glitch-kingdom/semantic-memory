@@ -3,7 +3,7 @@ title: Operational Registry
 tier: reference
 domains: [operational]
 status: active
-last_updated: '2026-10-24'
+last_updated: '2026-10-25'
 version: '1.0.0'
 purpose: Quick reference for operational documentation
 ---
@@ -35,11 +35,11 @@ purpose: Quick reference for operational documentation
 
 ## Recently Updated
 
+- [Capture Workflows](capture-workflows.md) - 2026-10-24
+- [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) - 2026-10-24
 - [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) - 2026-10-24
-- [Entity Dossiers — Operating Guide](dossiers-guide.md) - 2026-07-11
-- [Session Paging & Speaker Profile — Operating Guide](session-paging-guide.md) - 2026-07-11
-- [Usage-Feedback Ranking & Decoys — Operating Guide](usage-feedback-guide.md) - 2026-07-11
-- [Confidence Decay — Operating Guide](decay-guide.md) - 2026-07-10
+- [Modes Guide](modes-guide.md) - 2026-10-24
+- [State migration — moving legacy .sidekick-* files to .semantic-memory/](state-migration.md) - 2026-10-24
 
 ## By Status
 
@@ -61,4 +61,4 @@ purpose: Quick reference for operational documentation
 
 ---
 
-*Last updated: 2026-10-24*
+*Last updated: 2026-10-25*

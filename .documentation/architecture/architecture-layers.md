@@ -5,8 +5,8 @@ domains: [architecture]
 audience: [developers]
 tags: [architecture, layers, substrate, activation, routing]
 status: active
-last_updated: '2026-04-23'
-version: '0.2.3'
+last_updated: '2026-10-24'
+version: '1.6.1'
 purpose: Each of the 5 layers with responsibilities, key files, contracts, gotchas
 load_priority: 8
 ---
@@ -121,7 +121,7 @@ Each layer has a single responsibility. Lower layers have no knowledge of upper 
 
 **Purpose:** Make the vault *present*. Inject context, drive behavior via skill descriptions, enforce citation.
 
-**Owns:** the three hooks (SessionStart / UserPromptSubmit / Stop), the `vault-first` skill, the CLAUDE.md cite-or-deflect rule.
+**Owns:** the hooks (SessionStart / UserPromptSubmit / Stop, plus the opt-in PostToolUseFailure fact lookup since v1.6), the `vault-first` skill, the CLAUDE.md cite-or-deflect rule. Since v1.5.2 the hooks search every `semantic-*` notes folder in `.mcp.json`, not only the first. Since v1.5.3 everything they store is redacted (see [secret-redaction.md](../security/secret-redaction.md)).
 
 **Key files:**
 - `hooks/vault-context.js` — dispatches on `hook_event_name` from stdin JSON, calls the `semantic-sidekick search` CLI for search injection, calls `semantic-sidekick log-event`/`log-query` for the structured log.

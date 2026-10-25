@@ -102,11 +102,11 @@ describe("Regression: MCP tool surface in --read-only mode", () => {
     await cleanupTempDir(tempDir);
   });
 
-  it("suppresses the expected number of write tools (read-only mode = 21)", async () => {
+  it("suppresses the expected number of write tools (read-only mode = 20)", async () => {
     const { tools } = await client.listTools();
     // Contract tools (regenerate_contract, inspect_contract) are gated behind
-    // !readOnly because they write AGENTS.md — read-only count stays at 21.
-    expect(tools.length).toBe(21);
+    // !readOnly because they write AGENTS.md; log_event too (writes log.md) — read-only count is 20.
+    expect(tools.length).toBe(20);
   });
 
   it("matches the golden tool-name list in read-only mode", async () => {
@@ -131,6 +131,7 @@ describe("Regression: MCP tool surface in --read-only mode", () => {
       "manage_tags",
       "rename_tag",
       "regenerate_index",
+      "log_event", // writes log.md into a folder another tool owns
     ];
     for (const tool of writeTools) {
       expect(names.has(tool), `read-only mode should not expose ${tool}`).toBe(false);

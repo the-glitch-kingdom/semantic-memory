@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 import { Embedder } from "../../src/core/embedder.js";
 
 describe("Embedder", () => {
@@ -70,4 +70,29 @@ describe("Embedder", () => {
 
     await rm(dir, { recursive: true, force: true });
   });
+});
+
+// The server defaults to quantized (commander's --no-quantized), MiniLM has no quantized ONNX (404), and
+// the fallback used to re-download the fp32 model on every start — failing outright when offline.
+describe("Embedder: quantized request with only the fp32 model cached", () => {
+  it("uses the cached fp32 model without downloading", async () => {
+    await new Embedder().init(); // make sure the fp32 model is cached
+    const realFetch = globalThis.fetch;
+    const onnxFetches: string[] = [];
+    vi.stubGlobal("fetch", (url: string | URL, init?: RequestInit) => {
+      if (String(url).includes(".onnx")) {
+        onnxFetches.push(String(url));
+        return Promise.reject(new TypeError("fetch failed")); // offline
+      }
+      return realFetch(url, init);
+    });
+    try {
+      const quantized = new Embedder(undefined, undefined, undefined, true);
+      await quantized.init();
+      expect((await quantized.embed("offline start")).length).toBe(quantized.getDimensions());
+      expect(onnxFetches).toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }, 120_000);
 });

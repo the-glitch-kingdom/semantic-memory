@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { glob } from "glob";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import { redactDeep } from "./redact.js";
 
 export class FrontmatterManager {
