@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { FrontmatterManager, TagManager } from "../../src/core/frontmatter.js";
 import { createTempVault, cleanupTempDir } from "../setup.js";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 describe("FrontmatterManager", () => {
@@ -47,6 +47,23 @@ describe("FrontmatterManager", () => {
     const raw = await readFile(join(tempDir, "project-overview.md"), "utf-8");
     expect(raw).toContain("Architecture");
     expect(raw).toContain("[[microservices]]");
+  });
+
+  // gray-matter's content cache returned a failed parse unparsed on the second call, so a retry wrote a second frontmatter block
+  it("refuses every update to a note with invalid frontmatter and leaves it untouched", async () => {
+    const original = "---\ntitle: Bad\npurpose: Use this: when it breaks\n---\n# Bad\n";
+    await writeFile(join(tempDir, "bad.md"), original);
+    await expect(fm.update("bad.md", { status: "active" })).rejects.toThrow();
+    await expect(fm.update("bad.md", { status: "active" })).rejects.toThrow();
+    expect(await readFile(join(tempDir, "bad.md"), "utf-8")).toBe(original);
+  });
+
+  it("does not leak one caller's edits into the next parse of the same content", async () => {
+    const same = "---\ntitle: Twin\n---\nbody\n";
+    await writeFile(join(tempDir, "a.md"), same);
+    await writeFile(join(tempDir, "b.md"), same);
+    await fm.update("a.md", { status: "active" });
+    expect(await fm.get("b.md")).toEqual({ title: "Twin" });
   });
 });
 

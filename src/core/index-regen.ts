@@ -1,7 +1,7 @@
 import { readdir, readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname, basename, sep } from "node:path";
-import matter from "gray-matter";
+import matter from "./matter.js";
 
 export const INDEX_FILE = "INDEX.md";
 export const INDEX_OVERFLOW_THRESHOLD = 100; // entries before we warn about splitting

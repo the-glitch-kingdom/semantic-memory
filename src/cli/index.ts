@@ -970,7 +970,7 @@ program
   .requiredOption("--notes <path>", "Path to markdown notes directory")
   .action(async (notePath: string, opts) => {
     const { loadDecayConfig, computeDecay, normalizeVerifiedDate } = await import("../core/decay.js");
-    const matter = (await import("gray-matter")).default;
+    const matter = (await import("../core/matter.js")).default;
     const abs = resolve(opts.notes, notePath);
     if (!existsSync(abs)) {
       console.error(`note not found: ${abs}`);

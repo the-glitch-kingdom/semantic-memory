@@ -2,7 +2,7 @@ import { readFile, writeFile, access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import { DEFAULT_SCHEMA_YAML } from "./schema-default.js";
 
 export interface VaultSchema {

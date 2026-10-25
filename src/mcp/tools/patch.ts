@@ -12,7 +12,7 @@ import { initDossier, listDossiers, appendIncident, setCurrentState, resolveDoss
 import { initSpeakerProfile, readSpeakerProfile, updateProfileSection, SPEAKER_PROFILE_PATH } from "../../core/profile.js";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import matter from "gray-matter";
+import matter from "../../core/matter.js";
 
 export function registerPatchTools(server: McpServer, ctx: ServerContext): void {
   if (ctx.options.readOnly) return;

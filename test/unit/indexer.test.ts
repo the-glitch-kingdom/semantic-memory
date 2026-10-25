@@ -114,6 +114,10 @@ describe("Indexer", () => {
         expect(bad!.content).toContain("zebra-crossing body text");
         expect(bad!.content).not.toContain("purpose:");
         expect(docs.length).toBeGreaterThan(1);
+        // the second index in the same process (startup rebuild, watcher, reindex) must strip it too
+        const again = (await new Indexer(dir).indexAll()).find((d) => d.path === "bad-frontmatter.md")!;
+        expect(again.content).not.toContain("purpose:");
+        expect(again.title).toBe("Bad frontmatter");
       } finally {
         await cleanupTempDir(dir);
       }

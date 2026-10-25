@@ -1,7 +1,7 @@
 import { readFile, writeFile, unlink, rename, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import type { UpdateNoteOptions } from "./types.js";
 import { NoteCrud } from "./crud.js";
 import { loadSchema, validateNote, type LintFinding, type VaultSchema } from "./schema.js";

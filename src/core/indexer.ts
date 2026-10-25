@@ -1,7 +1,7 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkWikiLink from "remark-wiki-link";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import { glob } from "glob";
 import { readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";

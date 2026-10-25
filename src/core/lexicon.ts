@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir, unlink } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { glob } from "glob";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import { redactDeep } from "./redact.js";
 import { deriveSessionDir } from "./session.js";
 import { listDossiers } from "./dossier.js";

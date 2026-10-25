@@ -2,7 +2,7 @@ import { readFile, writeFile, unlink, rename, mkdir } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { existsSync } from "node:fs";
 import { glob } from "glob";
-import matter from "gray-matter";
+import matter from "./matter.js";
 import type { UpdateNoteOptions } from "./types.js";
 import { redact, redactDeep } from "./redact.js";
 
