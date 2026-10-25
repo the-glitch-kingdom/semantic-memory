@@ -1167,6 +1167,24 @@ program
     process.exit(0);
   });
 
+skillsCmd
+  .command("lint")
+  .description("Lint the skill loop's learned skills this repo loads (v1.7): format, description, evidence, sections, cites, applies_to, secrets, name clashes.")
+  .option("--root <dir>", "Repo root (default: cwd)")
+  .option("--json", "JSON output")
+  .action(async (opts) => {
+    const { lintSkills } = await import("../core/skill-schema.js");
+    const root = resolve(opts.root ?? process.cwd());
+    const r = lintSkills(root);
+    if (opts.json) console.log(JSON.stringify(r, null, 2));
+    else {
+      for (const f of r.findings) console.log(`${f.severity === "error" ? "✗" : "!"} ${relative(root, f.path)}: ${f.rule}: ${f.message}`);
+      const errors = r.findings.filter((f) => f.severity === "error").length;
+      console.log(`${r.files} learned skill(s), ${errors} error(s), ${r.findings.length - errors} warning(s)`);
+    }
+    process.exit(r.findings.some((f) => f.severity === "error") ? 1 : 0);
+  });
+
 // --- v1.7 switches: skill loop and jev mode ---
 
 registerFeatureCommands(program, {

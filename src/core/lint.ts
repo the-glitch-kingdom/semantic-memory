@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { glob } from "glob";
 import matter from "./matter.js";
 import { loadSchema, validateNote, type LintFinding, type VaultSchema } from "./schema.js";
@@ -24,6 +24,8 @@ export interface LintReport {
     decoys: LintFinding[];
     /** only present when the opt-in secrets check ran */
     secrets?: LintFinding[];
+    /** only present when the opt-in skills check ran */
+    skills?: LintFinding[];
   };
   counts: {
     errors: number;
@@ -77,6 +79,8 @@ export async function lintVault(
      * git history if the note was ever committed.
      */
     checkSecrets?: boolean;
+    /** When true, lint the skill loop's learned skills this repo loads (v1.7): format, evidence, cites, clashes. Opt-in. */
+    checkSkills?: boolean;
   } = {}
 ): Promise<LintReport> {
   const schema = opts.schemaOverride ?? (await loadSchema(notesPath));
@@ -140,6 +144,16 @@ export async function lintVault(
     findings.push(...(await findDecoys(notesPath, rawByPath)));
   }
 
+  if (opts.checkSkills) {
+    const { lintSkills } = await import("./skill-schema.js");
+    // .claude/.vault → the repo; a docs corpus (.documentation) sits at the repo root too
+    const derived = deriveProjectRoot(notesPath);
+    const root = opts.projectRoot ?? (basename(derived) === ".documentation" ? dirname(derived) : derived);
+    for (const f of lintSkills(root).findings) {
+      findings.push({ path: relative(root, f.path), rule: "skills", severity: f.severity, message: `${f.rule}: ${f.message}` });
+    }
+  }
+
   const byRule = {
     schema_violations: findings.filter((f) => f.rule === "schema_violations"),
     missing_provenance: findings.filter((f) => f.rule === "missing_provenance"),
@@ -150,6 +164,7 @@ export async function lintVault(
     alias_conflicts: findings.filter((f) => f.rule === "alias_conflicts"),
     decoys: findings.filter((f) => f.rule === "decoys"),
     ...(opts.checkSecrets ? { secrets: findings.filter((f) => f.rule === "secrets") } : {}),
+    ...(opts.checkSkills ? { skills: findings.filter((f) => f.rule === "skills") } : {}),
   };
   const errors = findings.filter((f) => f.severity === "error").length;
   const warnings = findings.filter((f) => f.severity === "warn").length;
