@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+// Fake `claude` for tests (v1.7): never calls a model. Reads the prompt on stdin and answers per
+// FAKE_CLAUDE_RULES (JSON file: [{match, result?, skill?, sleepMs?, exit?}], first rule whose `match` is in the
+// prompt — or "*" — wins); logs every run to FAKE_CLAUDE_LOG as {args, cwd, pid, t0, t1, prompt, env}.
+// --output-format json → one result object; stream-json → init, an optional Skill tool_use, result.
+import fs from "node:fs";
+const args = process.argv.slice(2);
+const flag = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : undefined);
+const prompt = fs.readFileSync(0, "utf8");
+const t0 = Date.now();
+let rules = [];
+try { rules = JSON.parse(fs.readFileSync(process.env.FAKE_CLAUDE_RULES, "utf8")); } catch {}
+const rule = rules.find((r) => r.match === "*" || prompt.includes(r.match)) || {};
+const sleep = rule.sleepMs ?? Number(process.env.FAKE_CLAUDE_SLEEP_MS || 0);
+const finish = () => {
+  const result = rule.result ?? "ok";
+  const out = flag("--output-format") || "text";
+  if (out === "stream-json") {
+    const lines = [{ type: "system", subtype: "init", tools: (flag("--tools") || "").split(",").filter(Boolean), mcp_servers: [] }];
+    if (rule.skill) lines.push({ type: "assistant", message: { content: [{ type: "tool_use", name: "Skill", input: { skill: rule.skill } }] } });
+    lines.push({ type: "result", subtype: "success", is_error: false, result, num_turns: 1, total_cost_usd: 0.001 });
+    process.stdout.write(lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
+  } else if (out === "json") {
+    process.stdout.write(JSON.stringify({ type: "result", subtype: "success", is_error: false, result, num_turns: 1, total_cost_usd: 0.001 }) + "\n");
+  } else process.stdout.write(result + "\n");
+  if (process.env.FAKE_CLAUDE_LOG) {
+    fs.appendFileSync(process.env.FAKE_CLAUDE_LOG, JSON.stringify({ args, cwd: process.cwd(), pid: process.pid, t0, t1: Date.now(), prompt: prompt.slice(0, 2000), reviewer: process.env.SEMANTIC_MEMORY_REVIEWER }) + "\n");
+  }
+  process.exit(rule.exit ?? 0);
+};
+setTimeout(finish, sleep);
