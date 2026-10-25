@@ -57,6 +57,8 @@ export { failureQuery, errorSignal, commandVerbs } from "./failure-query.js";
 export { evaluateFailures, formatFailureEval, calibrateJudge, evaluateGate, formatGate, meetsBar } from "./failure-eval.js";
 export type { FailureCase, Judgment, CaseResult, FailureEvalReport, ThresholdRow, JevJudgment, JudgeCalibration, GateRow } from "./failure-eval.js";
 export { featureState, featureOn, jevAvailable, describeFeature } from "./features.js";
+export { reviewSession, buildBrief, listDrafts, draftsDir } from "./skill-review.js";
+export type { DraftRecord } from "./skill-review.js";
 export { parseSkill, renderSkill, lintSkill, lintSkills, findSkills, SKILL_SCOPES, SKILL_STATUSES, SKILL_SECTIONS } from "./skill-schema.js";
 export type { SkillLoopMeta, ParsedSkill, SkillFile, SkillFinding, SkillScope, SkillStatus } from "./skill-schema.js";
 export type { Feature, FeatureState } from "./features.js";

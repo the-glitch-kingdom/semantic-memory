@@ -19,6 +19,7 @@ import {
 } from "./skills.js";
 import { migrateState } from "./migrate-state.js";
 import { registerFeatureCommands } from "./features.js";
+import { registerSkillLoopCommands, skillLoopStatus } from "./skill-loop.js";
 import { featureState, describeFeature } from "../core/features.js";
 
 const require_ = createRequire(import.meta.url);
@@ -1188,6 +1189,7 @@ skillsCmd
 // --- v1.7 switches: skill loop and jev mode ---
 
 registerFeatureCommands(program, {
+  skill_loop: skillLoopStatus,
   jev: async () => {
     const { jevSpendToday } = await import("../core/jev.js");
     const { jevLoopDir } = await import("../core/features.js");
@@ -1196,5 +1198,6 @@ registerFeatureCommands(program, {
     return [`Jev today (semantic-memory callers): ${total.toLocaleString()} tokens${total ? ` — ${Object.entries(spend).map(([c, n]) => `${c} ${n.toLocaleString()}`).join(", ")}` : ""}`];
   },
 });
+registerSkillLoopCommands(program);
 
 program.parse();
