@@ -447,6 +447,7 @@ const STATE_FILES = {
   mode: { new: [".semantic-memory", "mode"], old: [".sidekick-mode"] },
   fingerprints: { new: [".semantic-memory", "fingerprints.json"], old: [".sidekick-fingerprints.json"] },
   "capture-pending": { new: [".semantic-memory", "capture-pending.json"], old: [".sidekick-capture-pending.json"] },
+  "failure-shown": { new: [".semantic-memory", "failure-shown.json"], old: [".sidekick-failure-shown.json"] },
 };
 
 /**
@@ -935,6 +936,85 @@ async function handleStop(projectRoot, sessionId) {
   emitStop(lines.join("\n"), true);
 }
 
+// --- PostToolUseFailure: look up a knowledge-base fact for a failed tool call (v1.6, opt-in) ---
+// Measured on 553 real failures (scripts/eval-failures): facts-only at score >= 0.50, about 6 in 10
+// injections were on target, firing on ~4% of failures. Below the plan's 95% bar, hence off by default.
+const FAILURE_HOOK_ON = () => process.env.SEMANTIC_MEMORY_FAILURE_HOOK === "1";
+const FAILURE_MIN_SCORE = Number(process.env.SEMANTIC_MEMORY_FAILURE_MIN_SCORE) || 0.5;
+const USER_DENIED = /^(The user doesn't want to proceed|Permission to use .* has been denied)/;
+const isFactPath = (p) => /(^|\/)facts\/[^/]+\.md$/.test(String(p));
+
+async function failureQueryFor(error, command) {
+  try {
+    const { failureQuery } = await import(new URL("../dist/core/failure-query.js", import.meta.url).href);
+    return failureQuery(error, command);
+  } catch (e) {
+    debug(`failure-query unavailable: ${e.message}`);
+    return `${command}: ${error}`.slice(0, 500);
+  }
+}
+
+// docs can hold real credentials: mask them before a snippet enters the conversation
+async function redactText(text) {
+  try {
+    const { redact } = await import(new URL("../dist/core/redact.js", import.meta.url).href);
+    return redact(text).text;
+  } catch {
+    return "";
+  }
+}
+
+async function handleFailure(projectRoot, sources, cliBin, input, sessionId) {
+  const name = String(input.tool_name || "");
+  const error = String(input.error || "");
+  if (!(name === "Bash" || name.startsWith("mcp__")) || input.is_interrupt || !error || USER_DENIED.test(error.trim())) {
+    emit("PostToolUseFailure", "");
+    return;
+  }
+  if (readMode(projectRoot) === "outage-silence") {
+    emit("PostToolUseFailure", "");
+    return;
+  }
+  const args = input.tool_input || {};
+  const command = typeof args.command === "string" ? args.command : `${name} ${JSON.stringify(args)}`.slice(0, 300);
+  const query = await failureQueryFor(error, command);
+  const hits = await searchSources(cliBin, sources, 8, query);
+  const fact = hits.find((h) => isFactPath(h.path) && typeof h.score === "number" && h.score >= FAILURE_MIN_SCORE);
+  if (!fact) {
+    emit("PostToolUseFailure", "");
+    return;
+  }
+
+  // the same fact at most once per session: a repeat failure the agent already saw the fact for adds only noise
+  const { resolvedRead, writePath } = statePath(projectRoot, "failure-shown");
+  let shown = {};
+  try { shown = JSON.parse(readFileSync(resolvedRead, "utf8")); } catch {}
+  const key = sessionId || "_";
+  const seen = new Set(Array.isArray(shown[key]) ? shown[key] : []);
+  const id = `${fact.source ?? ""}:${fact.path}`;
+  if (seen.has(id)) {
+    emit("PostToolUseFailure", "");
+    return;
+  }
+  seen.add(id);
+  try {
+    ensureStateDir(writePath);
+    // keep the file small: only the current session's list
+    writeFileSync(writePath, JSON.stringify({ [key]: [...seen] }));
+  } catch (e) {
+    debug(`failure-shown write failed: ${e.message}`);
+  }
+
+  const lines = [
+    `<vault-fact source="tool-failure" score="${fact.score.toFixed(2)}">`,
+    `A knowledge-base fact may explain this failure. Check it applies before acting on it (measured: about 6 in 10 of these are on target).`,
+    `- \`${fact.path}\`${fact.source ? ` (${fact.source})` : ""}`,
+  ];
+  if (fact.snippet) lines.push(`  > ${(await redactText(String(fact.snippet))).replace(/\s+/g, " ").slice(0, 240)}`);
+  lines.push(`</vault-fact>`);
+  emit("PostToolUseFailure", lines.join("\n"));
+}
+
 async function handlePrompt(projectRoot, sources, cliBin, input) {
   const prompt = typeof input.prompt === "string" ? input.prompt : "";
   if (!prompt || prompt.length < 8) {
@@ -986,6 +1066,11 @@ async function main() {
   const projectRoot = input.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const sessionId = typeof input.session_id === "string" ? input.session_id : undefined;
   debug(`event=${eventName} projectRoot=${projectRoot}`);
+  // opt-in, and registered for every failed tool call: leave before any lookup when off
+  if (eventName === "PostToolUseFailure" && !FAILURE_HOOK_ON()) {
+    emitNoop(eventName);
+    return;
+  }
 
   const sources = findNotesSources(projectRoot);
   const vaultPath = pickVaultPath(sources);
@@ -1005,6 +1090,8 @@ async function main() {
   try {
     if (eventName === "UserPromptSubmit") {
       await handlePrompt(projectRoot, sources, cliBin, input);
+    } else if (eventName === "PostToolUseFailure") {
+      await handleFailure(projectRoot, sources, cliBin, input, sessionId);
     } else if (eventName === "Stop") {
       await handleStop(projectRoot, sessionId);
     } else {

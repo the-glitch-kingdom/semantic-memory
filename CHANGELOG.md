@@ -2,6 +2,32 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.6.0] - 2026-10-24 — Failure-time fact lookup (opt-in) and the failure eval
+
+Issue #29's proposal: surface the right knowledge-base fact when a tool call fails, with the injection threshold *measured* rather than guessed. It was measured — and fell short of the 95%-precision bar — so the hook ships **off by default**.
+
+### Added
+
+- **`PostToolUseFailure` hook (opt-in: `SEMANTIC_MEMORY_FAILURE_HOOK=1`).** On a failed Bash or MCP call it searches every `semantic-*` notes path with a normalized query and injects the first knowledge-base fact (`facts/*.md`) scoring ≥ 0.50 (`SEMANTIC_MEMORY_FAILURE_MIN_SCORE`) as a `<vault-fact source="tool-failure">` block — one fact, at most once per session, snippet redacted. Skips interrupts, user denials, other tools and outage-silence mode. When off it exits before any lookup (~30 ms); when on ~0.6 s. Issue #29's `pkill -f` / exit-144 fact is found from the raw failure (score 0.77).
+- **`semantic-memory eval-failures --cases --judgments [--query raw|normalized]`** — replays failed tool calls through the hook's search and reports how often the right fact ranks first, precision and coverage per score threshold, the lowest threshold that holds a target precision, and the unlabelled top hits to judge next (`--unjudged-out`, `--hits-out`). Generic JSONL inputs; metrics in `src/core/failure-eval.ts`.
+- **`failureQuery(error, command)`** (`src/core/failure-query.ts`) — keeps the error lines, error class, exit code and program/subcommand; strips paths (to basename), ids, timestamps, hex, URLs (to host), long numbers, stack frames and ANSI.
+- `scripts/eval-failures/` — build a local labelled set from jev-loop failure logs and each repo's fact commit history (`build-set.mjs`), pack unjudged hits for judging (`judge-pack.mjs`), and turn judgments into eval inputs (`make-cases.mjs`). The data stays under `~/.semantic-memory/eval/`; it is never committed.
+
+### Measured (553 real failures across 14 repos, 1,214 judged pairs)
+
+- Normalizing the failure is the big win: the right fact ranked first for 32 of 38 failures with a known answer, vs 19 with the raw text.
+- Blending in keyword matches made ranking worse at every weight; not shipped.
+- No setting reached 95% precision: ~95% of failures have no relevant doc, and similarity barely separates "the answer" from "same topic". Best useful point: facts only, score ≥ 0.50 → ~61% of injections on target, firing on ~3.6% of failures.
+- `symptoms:` works: a prose fact scored 0.44 for its own error (not injected) and 0.75 with `symptoms: ["Exit code 144"]` (injected). None of the 341 facts measured had one — writing them is the main lever.
+
+### Changed
+
+- `src/cli/search.ts`: `openSearch()` loads a corpus once and searches it many times (same scoring as before); `runSearch()` is a one-shot wrapper. New standalone build entry `dist/core/failure-query.js` for the hook.
+
+### Deferred
+
+- Paging facts back in after compaction (`SessionStart` with `source: "compact"`): no data to measure it yet.
+
 ## [1.5.3] - 2026-10-24 — Secret redaction
 
 Patch release. Until now nothing stopped an API key, token or password that passed through the plugin from being written to disk in the clear — and vault notes are usually committed to git. Every write point now masks secrets first, and `lint_vault` can find the ones already there.

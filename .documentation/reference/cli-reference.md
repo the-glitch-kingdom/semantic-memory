@@ -36,6 +36,7 @@ Binary: `node node_modules/@theglitchking/semantic-memory/bin/semantic-memory` (
 | `lexicon <action>` (v1.4+) | Maintenance | Manage the learned human→artifact lexicon (list/compile/add) |
 | `dossier <action>` (v1.5+) | Maintenance | Manage entity dossiers — per-component living notes (init/list) |
 | `profile <action>` (v1.5+) | Maintenance | Manage the speaker profile — how this human communicates (init/show) |
+| `eval-failures` (v1.6+) | Measurement | Replay failed tool calls through the hook's search; precision/coverage per threshold |
 | `update` / `policy` | Plugin runtime | Inherited from `@theglitchking/claude-plugin-runtime` |
 
 All subcommands accept `--help`.
@@ -409,6 +410,21 @@ Prints the speaker profile's injection head — the capped, placeholder-stripped
 
 ---
 
+## `eval-failures` (v1.6+) — measure failure-time fact lookup
+
+```bash
+semantic-memory eval-failures --cases cases.jsonl --judgments judgments.jsonl \
+  [--query normalized|raw] [--limit 5] [--target 0.95] [--min-judged 20] \
+  [--unjudged-out next.jsonl] [--hits-out hits.jsonl] [--json]
+```
+
+- `cases.jsonl` — one failed tool call per line: `{id, notes, error, command}` (`notes` = the docs folder that repo searches, indexed).
+- `judgments.jsonl` — `{case, path, relevant}`; a positive label wins over a negative one for the same pair.
+- Loads each corpus once (`openSearch`) and searches with the same scoring the hooks use. `--query normalized` (default) uses `failureQuery()`; `raw` uses error + command as-is.
+- Prints: answer ranked first / anywhere in hits; for thresholds 0.20–1.00 the injected, judged, correct, precision and coverage of the top hit; the lowest threshold that holds `--target` from there up with ≥ `--min-judged` judged injections; and the count of unlabelled top hits (`--unjudged-out` writes them for labelling).
+
+Building the inputs from real failures: [failure-lookup-guide.md](../operational/failure-lookup-guide.md#measuring-it-on-your-own-failures).
+
 ## Plugin runtime commands
 
 `update`, `policy`, and related commands come from `@theglitchking/claude-plugin-runtime`. See that package's README for the auto-update policy contract.
@@ -423,6 +439,9 @@ In v1.1.1+, `update` re-runs the v1.2-aware skill linker after `npm update`, so 
 |---|---|
 | `SIDEKICK_DEBUG=1` | Hook logs decisions to stderr (visible under `ctrl+o` in Claude Code). Same name kept across rebrand. |
 | `SIDEKICK_VAULT_PATH=<path>` | Overrides vault discovery for hooks (used by test runners). Same name kept. |
+| `SEMANTIC_MEMORY_FAILURE_HOOK=1` | (v1.6+) Turns on the opt-in `PostToolUseFailure` fact lookup. Off by default. |
+| `SEMANTIC_MEMORY_FAILURE_MIN_SCORE=<n>` | (v1.6+) Score a fact needs to be injected on a failure (default `0.50`). |
+| `SEMANTIC_MEMORY_INJECT_MIN_SCORE=<n>` | Score gate for the prompt/SessionStart `<vault-context>` block (default `0.35`). |
 | `CLAUDE_STOP_HOOK_ACTIVE=1` | Set by Claude Code when re-entering after a Stop-hook block. Hook respects this as a loop-guard. |
 | `CLAUDE_PROJECT_DIR` | Set by Claude Code to the project root. Hooks default to this over `process.cwd()`. |
 | `CLAUDE_PLUGIN_ROOT` | Set by Claude Code to the plugin install dir. Used in `hooks.json` command resolution. |

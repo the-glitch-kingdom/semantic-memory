@@ -1,5 +1,5 @@
 {
-  "description": "semantic-sidekick activation + mode hooks. SessionStart reconciles .mcp.json + resets mode + preloads vault context. UserPromptSubmit injects vault search results (mode-aware, fingerprinted). Stop emits mode-specific transition-capture prompts (research→synthesis, outage→postmortem, vault-first→generic capture).",
+  "description": "semantic-sidekick activation + mode hooks. SessionStart reconciles .mcp.json + resets mode + preloads vault context. UserPromptSubmit injects vault search results (mode-aware, fingerprinted). Stop emits mode-specific transition-capture prompts (research\u2192synthesis, outage\u2192postmortem, vault-first\u2192generic capture). PostToolUseFailure (opt-in, SEMANTIC_MEMORY_FAILURE_HOOK=1) looks up a knowledge-base fact for a failed Bash/MCP call.",
   "hooks": {
     "SessionStart": [
       {
@@ -27,6 +27,17 @@
     ],
     "Stop": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/vault-context.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|mcp__.*",
         "hooks": [
           {
             "type": "command",

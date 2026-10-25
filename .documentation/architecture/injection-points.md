@@ -89,6 +89,14 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 
 **Loop guard:** `CLAUDE_STOP_HOOK_ACTIVE=1` env var short-circuits — Claude is already mid-response to our prior block; don't re-block.
 
+## 3b. PostToolUseFailure hook — `<vault-fact source="tool-failure">` (v1.6+, opt-in)
+
+**When:** a Bash or `mcp__*` tool call fails, **only** with `SEMANTIC_MEMORY_FAILURE_HOOK=1`. Registered in `hooks/hooks.json` (matcher `Bash|mcp__.*`); when off it exits before any lookup (~30 ms).
+**Source:** `hooks/vault-context.js` → `handleFailure`.
+**What it does:** builds a query with `failureQuery(error, command)` (`dist/core/failure-query.js`), searches every `semantic-*` notes path, and injects the first hit under `facts/*.md` scoring ≥ `SEMANTIC_MEMORY_FAILURE_MIN_SCORE` (default 0.50). One fact; the same fact at most once per session (`.claude/.semantic-memory/failure-shown.json`, current session only). The snippet is redacted.
+**Skips:** interrupts, user denials, other tools, `outage-silence` mode.
+**Why opt-in:** measured on 553 real failures it is right about 6 times in 10 — below the 95% bar. See [failure-lookup-guide.md](../operational/failure-lookup-guide.md).
+
 ## 4. Skill descriptions (always active, no hook involvement)
 
 **When:** Claude evaluates which skill to use on every turn. This is the LLM-level routing layer, not a hook.
@@ -129,6 +137,7 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 |---|---|
 | No vault context at session start | `SIDEKICK_DEBUG=1 claude` — look for `[vault-context] event=SessionStart` in stderr; verify `.mcp.json` points at a real vault path |
 | Vault context appears but seems stale | Since v1.5.2 the server rebuilds a stale cache at startup and the watcher reindexes edits; if it still looks stale, rebuild by hand — `semantic-memory --notes <vault> --reindex` — and check stderr for `Invalid frontmatter in …` / `Skipping …` |
+| No `<vault-fact>` after a failed command | The failure hook is opt-in: set `SEMANTIC_MEMORY_FAILURE_HOOK=1`. It injects facts only (`facts/*.md`), at score ≥ 0.50, once per session per fact — `SIDEKICK_DEBUG=1` shows the search |
 | Docs never appear in `<vault-context>` | Pre-1.5.2 hooks searched only the first `.mcp.json` entry. On 1.5.2+, check the docs entry has an existing `--notes` folder and a built index (`<docs>/.semantic-sidekick-index/`) |
 | No injection on a prompt that should trigger it | Fingerprint collision — `cat .claude/.sidekick-fingerprints.json` and check if your prompt's sha1 is there, or mode is outage-silence — `cat .claude/.sidekick-mode` |
 | Stop hook doesn't fire capture prompt | Check `.claude/.semantic-memory/capture-pending.json` — no items with this session's `session_id` = no cues matched this session's prompts |

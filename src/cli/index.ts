@@ -421,6 +421,48 @@ program
   });
 
 program
+  .command("eval-failures")
+  .description("Replay failed tool calls through search and measure how often the top hit answers them (v1.6 failure lookup)")
+  .requiredOption("--cases <file>", "JSONL of {id, notes, error, command}")
+  .requiredOption("--judgments <file>", "JSONL of {case, path, relevant}")
+  .option("--limit <n>", "Hits per search", (v) => parseInt(v, 10), 5)
+  .option("--query <mode>", "raw (error + command as-is) or normalized (failureQuery)", "normalized")
+  .option("--target <p>", "Target precision for the recommended threshold", (v) => parseFloat(v), 0.95)
+  .option("--min-judged <n>", "Judged injections needed before a threshold can be recommended", (v) => parseInt(v, 10), 20)
+  .option("--unjudged-out <file>", "Write unlabelled top hits here (JSONL) for labelling")
+  .option("--hits-out <file>", "Write every case's hits here (JSONL) for analysis")
+  .option("--json", "Print the report as JSON")
+  .action(async (opts) => {
+    const { openSearch } = await import("./search.js");
+    const { evaluateFailures, formatFailureEval } = await import("../core/failure-eval.js");
+    const { failureQuery } = await import("../core/failure-query.js");
+    const toQuery = (c: { error: string; command: string }) =>
+      opts.query === "raw" ? `${c.error}\n${c.command}` : failureQuery(c.error, c.command);
+    const readJsonl = (p: string) =>
+      readFileSync(resolve(p), "utf-8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    const cases = readJsonl(opts.cases) as import("../core/failure-eval.js").FailureCase[];
+    const judgments = readJsonl(opts.judgments) as import("../core/failure-eval.js").Judgment[];
+
+    // one searcher per corpus: the model loads once, not once per case
+    const searchers = new Map<string, Awaited<ReturnType<typeof openSearch>>>();
+    const results = [];
+    for (const c of cases) {
+      if (!searchers.has(c.notes)) searchers.set(c.notes, await openSearch(c.notes));
+      const hits = await searchers.get(c.notes)!.search(toQuery(c), opts.limit);
+      results.push({ case: c.id, hits: hits.map((h) => ({ path: h.path, score: h.score })) });
+    }
+    const report = evaluateFailures(results, judgments, { targetPrecision: opts.target, minJudged: opts.minJudged });
+    if (opts.hitsOut) {
+      writeFileSync(resolve(opts.hitsOut), results.map((r) => JSON.stringify(r)).join("\n") + "\n");
+    }
+    if (opts.unjudgedOut) {
+      writeFileSync(resolve(opts.unjudgedOut), report.unjudged.map((u) => JSON.stringify(u)).join("\n") + "\n");
+    }
+    console.log(opts.json ? JSON.stringify(report, null, 2) : formatFailureEval(report, `query: ${opts.query}`));
+    process.exit(0);
+  });
+
+program
   .command("lint")
   .description("Lint the vault against vault.schema.yml (schema violations + missing provenance + stale)")
   .requiredOption("--notes <path>", "Path to markdown notes directory")

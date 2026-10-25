@@ -1,6 +1,6 @@
 {
   "name": "@theglitchking/semantic-memory",
-  "version": "1.5.3",
+  "version": "1.6.0",
   "description": "Unified memory-layer plugin for Claude Code. One MCP server, multiple typed corpora (vault, code, plans, docs, research, project-map), unified cross-corpus knowledge graph, conditional tool registration, in-process drift detection, and human↔code translation. Rebrand of @theglitchking/semantic-sidekick at v1.0 — see CHANGELOG for migration.",
   "type": "module",
   "main": "./dist/core/index.js",

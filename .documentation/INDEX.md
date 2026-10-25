@@ -31,8 +31,8 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 14 | Release notes per version and phase |
-| [Operational](#operational) | 12 | Day-to-day operating guides for the plugin |
+| [Changelog](#changelog) | 15 | Release notes per version and phase |
+| [Operational](#operational) | 13 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 5 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
 | [Deployment](#deployment) | 1 | Publishing and offline packaging |
@@ -228,6 +228,7 @@ purpose: Navigation hub for all documentation
 | [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](changelog/v1-5-0-expert-character.md) | reference | active | 2026-07-11 |
 | [v1.5.2 — docs index freshness (issue](changelog/v1-5-2-docs-index-freshness.md) | reference | active | 2026-10-24 |
 | [v1.5.3 — secret redaction](changelog/v1-5-3-secret-redaction.md) | reference | active | 2026-10-24 |
+| [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](changelog/v1-6-0-failure-lookup.md) | reference | active | 2026-10-24 |
 
 ---
 
@@ -244,6 +245,7 @@ purpose: Navigation hub for all documentation
 | [Confidence Decay — Operating Guide](operational/decay-guide.md) | guide | active | 2026-07-10 |
 | [Entity Dossiers — Operating Guide](operational/dossiers-guide.md) | guide | active | 2026-07-11 |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](operational/drift-detection.md) | guide | active | 2026-07-10 |
+| [Failure-time fact lookup — enabling it, writing findable facts, measuring it](operational/failure-lookup-guide.md) | guide | active | 2026-10-24 |
 | [Lexicon & Query Expansion — Operating Guide](operational/lexicon-guide.md) | guide | active | 2026-07-10 |
 | [Logs and Events (log.md)](operational/logs-and-events.md) | reference | active | 2026-04-23 |
 | [Modes Guide](operational/modes-guide.md) | guide | active | 2026-04-23 |

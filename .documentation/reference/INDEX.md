@@ -25,7 +25,7 @@ purpose: Complete listing of reference documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [CLI Reference](cli-reference.md) | active | 2026-07-11 | 2,394 |
+| [CLI Reference](cli-reference.md) | active | 2026-07-11 | 2,610 |
 | [Configuration Reference](configuration-reference.md) | active | 2026-07-11 | 2,452 |
 | [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) | active | 2026-07-11 | 3,052 |
 | [Hooks Reference](hooks-reference.md) | active | 2026-04-23 | 797 |
