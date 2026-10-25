@@ -212,8 +212,17 @@ export function redactDeep<T>(value: T, mode: RedactMode = "broad"): { value: T;
       return r.text;
     }
     if (Array.isArray(v)) return v.map(walk);
-    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walkField(k, x)]));
     return v;
+  };
+  // a bare value under a secret-named key (frontmatter `api_key: ...`) needs the key as its context
+  const walkField = (k: string, x: unknown): unknown => {
+    const prefix = `${k}=`;
+    if (typeof x !== "string") return walk(x);
+    const r = redact(prefix + x, mode);
+    if (!r.text.startsWith(prefix)) return walk(x);
+    count += r.count;
+    return r.text.slice(prefix.length);
   };
   return { value: walk(value) as T, count };
 }
