@@ -110,32 +110,35 @@ export function buildBrief(job: ReviewJob, skills: SkillFile[] = findSkills(job.
   const failures = readEvidence(repo, "failures").filter((f) => f.session_id === job.session_id);
   const corrections = readEvidence(repo, "corrections").filter((c) => c.session_id === job.session_id);
   const used = new Set(job.evidence.skills_used);
+  // free text is redacted (broad); the ids the reviewer must cite back (session, failure ids) are not, or broad
+  // redaction would mask them too. The evidence logs were redacted when written.
+  const r = (t: string) => redact(t, "broad").text;
   const lines = [
     `# Session ${job.session_id}`,
     `Repository: ${basename(repo)} — top level: ${topLevel(repo).join(", ")}`,
     `Why reviewed: ${job.reason}`,
     "",
     "## Failures (from the evidence log)",
-    ...(failures.length ? failures.map((f) => `- id ${f.id}: \`${f.command}\`\n  error: ${String(f.error).slice(0, 500)}`) : ["(none)"]),
+    ...(failures.length ? failures.map((f) => `- id ${f.id}: \`${r(String(f.command))}\`\n  error: ${r(String(f.error).slice(0, 500))}`) : ["(none)"]),
     "",
     "## Corrections the user gave",
-    ...(corrections.length ? corrections.map((c, i) => `- correction ${i + 1} (${c.cue}): ${c.excerpt}`) : ["(none)"]),
+    ...(corrections.length ? corrections.map((c, i) => `- correction ${i + 1} (${c.cue}): ${r(String(c.excerpt))}`) : ["(none)"]),
     "",
     "## Skills this repository loads",
     ...(skills.length
-      ? skills.map((s) => `- ${s.skill.name || basename(s.dir)} (${s.scope}; learned: ${s.learned}${s.skill.meta?.pinned ? "; pinned" : ""}${used.has(s.skill.name) ? "; USED this session" : ""}): ${s.skill.description.slice(0, 200)}`)
+      ? skills.map((s) => `- ${s.skill.name || basename(s.dir)} (${s.scope}; learned: ${s.learned}${s.skill.meta?.pinned ? "; pinned" : ""}${used.has(s.skill.name) ? "; USED this session" : ""}): ${r(s.skill.description.slice(0, 200))}`)
       : ["(none)"]),
     ...skills
       .filter((s) => s.learned && used.has(s.skill.name))
-      .flatMap((s) => ["", `### Current text of the learned skill ${s.skill.name} (used this session)`, s.skill.body.slice(0, 4000)]),
+      .flatMap((s) => ["", `### Current text of the learned skill ${s.skill.name} (used this session)`, r(s.skill.body.slice(0, 4000))]),
     "",
     "## Knowledge-base fact ids (for cites)",
     [...factIds(repo)].slice(0, 200).join(", ") || "(none)",
     "",
     "## Timeline (prompts, tool calls, errors)",
-    ...transcriptTimeline(job.transcript_path),
+    ...transcriptTimeline(job.transcript_path).map(r),
   ];
-  let brief = redact(lines.join("\n"), "broad").text;
+  let brief = lines.join("\n");
   if (brief.length > BRIEF_MAX) brief = brief.slice(0, BRIEF_MAX) + "\n(brief cut at its size cap)";
   return brief;
 }
@@ -168,7 +171,8 @@ export function parseReviewerJson(text: string): { drafts: ReviewerDraft[]; none
   return null;
 }
 
-const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+// a placeholder the model copied from redacted text is not evidence
+const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && !x.includes("[REDACTED]")) : []);
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 export type ScopeResolver = (d: ReviewerDraft) => Promise<ScopeDecision>;

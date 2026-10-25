@@ -23,7 +23,7 @@ const draft = (over: Record<string, unknown> = {}) => ({
   scope: "project",
   applies_to: { paths: ["scripts"], commands: ["pgrep"] },
   triggers: ["Exit code 144"],
-  provenance: { sessions: ["s1"], failures: ["t1"], corrections: [] },
+  provenance: { sessions: ["s1", "[REDACTED]"], failures: ["t1"], corrections: [] },
   cites: [],
   body: BODY,
   ...over,
@@ -91,9 +91,13 @@ describe("skill-loop reviewer (v1.7, fake claude)", () => {
   });
 
   it("the brief is redacted and capped", () => {
-    const brief = buildBrief(job);
+    const real = { ...job, session_id: "3bdbcee7-0a96-4d16-b368-69a740692b7e" };
+    appendEvidence(repo, "failures", { session_id: real.session_id, id: "toolu_01T7NcCXdofyEoR7srF8xxAT", tool: "Bash", command: "x", error: "y" });
+    const brief = buildBrief(real);
     expect(brief).not.toContain(FAKE_SECRET);
-    expect(brief).toContain("id t1");
+    // the ids the reviewer cites back survive (broad redaction would mask uuid / tool-use ids)
+    expect(brief).toContain("# Session 3bdbcee7-0a96-4d16-b368-69a740692b7e");
+    expect(brief).toContain("id toolu_01T7NcCXdofyEoR7srF8xxAT");
     appendEvidence(repo, "failures", { session_id: "s1", id: "big", tool: "Bash", command: "x", error: "y".repeat(900) });
     const big = buildBrief({ ...job, transcript_path: null }, Array.from({ length: 400 }, (_, i) => ({ path: `p${i}`, dir: `d${i}`, scope: "project" as const, learned: false, skill: { name: `skill-${i}`, description: "d".repeat(150), meta: null, rawMeta: null, body: "", sections: [], frontmatter: {} } })));
     expect(big.length).toBeLessThanOrEqual(40_100);
@@ -104,6 +108,7 @@ describe("skill-loop reviewer (v1.7, fake claude)", () => {
     const before = treeHash(repo, draftsDir(repo));
     const out = await reviewSession(job, { env });
     expect(out).toMatchObject({ drafts: [expect.stringMatching(/^stop-vite-dev-server-[0-9a-f]{8}$/)], rejected: [] });
+    expect(await readFile(join(listDrafts(repo)[0].dir, "SKILL.md"), "utf8")).not.toContain("[REDACTED]");
     expect(treeHash(repo, draftsDir(repo))).toBe(before);
     const [d] = listDrafts(repo);
     expect(d.record).toMatchObject({ kind: "new", name: "stop-vite-dev-server", scope: "project", session_id: "s1" });
