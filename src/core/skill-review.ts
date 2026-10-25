@@ -27,7 +27,7 @@ const TIMELINE_MAX = 120;
 
 export interface DraftRecord {
   id: string;
-  kind: "new" | "patch";
+  kind: "new" | "patch" | "merge";
   name: string;
   scope: SkillScope;
   /** patch: the SKILL.md it replaces, and that file's sha256 when the draft was made */
@@ -43,6 +43,8 @@ export interface DraftRecord {
   global_candidate?: boolean;
   /** other repos with the same lesson: review offers one global skill replacing the copies */
   promotion?: { repo: string; path: string }[];
+  /** merge: the SKILL.md files the merged skill replaces (archived when it lands) */
+  supersedes?: string[];
   /** filled by skill evals (Phase 14) when they run at approval time */
   evals?: Record<string, unknown>;
 }
@@ -182,6 +184,7 @@ export async function materializeDraft(
   skills: SkillFile[],
   resolveScope: ScopeResolver = (x) => decideScope(repo, x),
   env = process.env,
+  merge?: { supersedes: string[] },
 ): Promise<{ id?: string; rejected?: string }> {
   if (!d || typeof d.name !== "string" || typeof d.body !== "string" || typeof d.description !== "string") return { rejected: "malformed draft" };
   let target: SkillFile | undefined;
@@ -216,7 +219,7 @@ export async function materializeDraft(
     applies_to: { paths, commands: strs(d.applies_to?.commands) },
     provenance: prov,
     cites: strs(d.cites),
-    supersedes: target?.skill.meta?.supersedes ?? [],
+    supersedes: merge ? merge.supersedes.map((p) => basename(join(p, ".."))) : (target?.skill.meta?.supersedes ?? []),
   };
   // precise: a skill is prose and code, broad would mangle ordinary identifiers
   const text = redact(renderSkill({ name, description: d.description, meta, body: d.body }), "precise").text;
@@ -229,7 +232,7 @@ export async function materializeDraft(
   writeFileSync(join(dir, "SKILL.md"), text);
   const record: DraftRecord = {
     id,
-    kind: d.kind === "patch" ? "patch" : "new",
+    kind: merge ? "merge" : d.kind === "patch" ? "patch" : "new",
     name,
     scope,
     ...(target ? { target: target.path, base_sha256: sha256(readFileSync(target.path, "utf8")) } : {}),
@@ -239,8 +242,9 @@ export async function materializeDraft(
     ...(decision.directory ? { directory: decision.directory } : {}),
     scope_why: decision.why,
     ...(decision.globalCandidate ? { global_candidate: true } : {}),
+    ...(merge ? { supersedes: merge.supersedes } : {}),
   };
-  if (!target) {
+  if (!target && !merge) {
     const peers = promotionPeers(repo, name, env);
     if (peers.length) record.promotion = peers.map((p) => ({ repo: p.repo, path: p.path }));
     indexSkill({ repo, name, path: join(dir, "SKILL.md"), status: "draft", ...(decision.globalCandidate ? { global_candidate: true } : {}) }, env);

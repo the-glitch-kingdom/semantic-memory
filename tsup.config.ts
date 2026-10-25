@@ -13,6 +13,7 @@ export default defineConfig({
     "core/skill-queue": "src/core/skill-queue.ts",
     "core/skill-worker": "src/core/skill-worker.ts",
     "core/skill-review": "src/core/skill-review.ts",
+    "core/skill-curator": "src/core/skill-curator.ts",
     "mcp/server": "src/mcp/server.ts",
     "cli/index": "src/cli/index.ts",
   },

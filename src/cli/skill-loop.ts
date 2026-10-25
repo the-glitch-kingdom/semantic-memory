@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 export function registerSkillLoopCommands(program: Command) {
   const cmd = program.commands.find((c) => c.name() === "skill-loop")!;
   registerReviewCommands(cmd);
+  registerCuratorCommands(cmd);
   cmd
     .command("worker")
     .description("Drain this repo's review queue (started detached by the SessionEnd hook; safe to run by hand).")
@@ -86,6 +87,58 @@ export function registerReviewCommands(cmd: Command) {
     });
 }
 
+export function registerCuratorCommands(cmd: Command) {
+  const repoOf = async () => (await import("../core/skill-evidence.js")).repoRoot(process.cwd());
+  cmd
+    .command("curate")
+    .description("Mark learned skills unused 14 days stale and archive those unused 30 days (pinned / cited / new ones skipped).")
+    .option("--dry-run", "Show what would change, change nothing")
+    .option("--merge", "Also propose merges of overlapping learned skills as review drafts (opt-in)")
+    .option("--auto", "Started by SessionStart: quiet, logs to skill-loop.log")
+    .action(async (opts) => {
+      const repo = await repoOf();
+      const { curate } = await import("../core/skill-curator.js");
+      const { log } = await import("../core/skill-queue.js");
+      const r = curate(repo, { dryRun: opts.dryRun });
+      const changes = r.actions.filter((a) => a.action !== "skip");
+      if (opts.auto) log(repo, `curator: ${changes.map((a) => `${a.action} ${a.skill} (${a.why})`).join(", ") || "nothing to do"}`);
+      else for (const a of r.actions) console.log(`${opts.dryRun ? "would " : ""}${a.action.padEnd(10)} ${a.skill} — ${a.why}`);
+      if (!opts.auto && !r.actions.length) console.log("no learned skills here");
+      const { consolidateOn, proposeMerges } = await import("../core/skill-merge.js");
+      if (!opts.dryRun && (opts.merge || consolidateOn(repo))) {
+        const m = await proposeMerges(repo);
+        const line = `merge: ${m.drafted.length} draft(s) for review${m.skipped.length ? `; ${m.skipped.join("; ")}` : ""}`;
+        if (opts.auto) log(repo, line);
+        else console.log(line);
+      }
+      process.exit(0);
+    });
+  cmd
+    .command("restore <name>")
+    .description("Bring an archived learned skill back, active.")
+    .action(async (name: string) => {
+      const { restore } = await import("../core/skill-curator.js");
+      try {
+        const e = restore(await repoOf(), name);
+        console.log(`✓ restored ${name} → ${e.files[0].path} (ledger ${e.id}). Pin it (skill_loop.pinned: true) to keep the curator away.`);
+      } catch (err) {
+        console.error(`✗ ${(err as Error).message}`);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+  cmd
+    .command("verify")
+    .description("Run each landed learned skill's ## Verify command here; failures are flagged, nothing is archived.")
+    .action(async () => {
+      const { verifySkills } = await import("../core/skill-curator.js");
+      const r = verifySkills(await repoOf());
+      for (const x of r) console.log(`${x.result === "pass" ? "✓" : x.result === "fail" ? "✗" : "·"} ${x.skill}: ${x.result} — ${x.detail}`);
+      if (!r.length) console.log("no learned skills here");
+      process.exit(r.some((x) => x.result === "fail") ? 1 : 0);
+    });
+}
+
 /** Extra `skill-loop status` lines: drafts waiting, today's review budget. */
 export async function skillLoopStatus(cwd: string): Promise<string[]> {
   const { repoRoot } = await import("../core/skill-evidence.js");
@@ -97,5 +150,9 @@ export async function skillLoopStatus(cwd: string): Promise<string[]> {
     `queued sessions for this repo: ${pendingJobs(repo).length}${lockHolder(repo) ? ` (worker running, pid ${lockHolder(repo)})` : ""}`,
     `reviews today (all repos): ${runsToday()} of ${dailyRunCap()} (SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS)`,
   ];
+  const { curatorState } = await import("../core/skill-curator.js");
+  const st = curatorState(repo);
+  lines.push(`curator: ${st.last_run ? `last run ${st.last_run.slice(0, 16)} — ${st.last_report}` : "not run yet (first run 7 days after the loop first sees a repo)"}`);
+  if (st.flagged?.length) lines.push(`verify failures flagged: ${st.flagged.map((f) => f.name).join(", ")}`);
   return lines;
 }

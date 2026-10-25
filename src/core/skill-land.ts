@@ -13,7 +13,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { applyChange, type LedgerEntry } from "./skill-ledger.js";
 import { listDrafts, transcriptTimeline, type DraftRecord } from "./skill-review.js";
 import { findSkills, lintSkill, parseSkill, renderSkill, type SkillLoopMeta } from "./skill-schema.js";
@@ -107,13 +107,21 @@ export function approveDraft(repo: string, id: string, opts: { promote?: boolean
   const others = findSkills(repo, { home: home(env) }).filter((s) => s.path !== dest);
   const errors = lintSkill(dest, text, { projectRoot: repo, others }, r.name).filter((f) => f.severity === "error");
   if (errors.length) throw new Error(`does not pass lint: ${errors.map((f) => `${f.rule}: ${f.message}`).join("; ")}`);
+  const replaced = r.kind === "merge" ? (r.supersedes ?? []) : [];
   if (r.kind === "patch") {
     if (!existsSync(dest) || sha256(readFileSync(dest)) !== r.base_sha256) throw new Error(`${dest} changed since this patch was drafted: reject it and let the next review redo it`);
-  } else if (existsSync(dest)) {
+  } else if (existsSync(dest) && !replaced.includes(dest)) {
     throw new Error(`${dest} already exists`);
   }
+  for (const p of replaced) if (!existsSync(p)) throw new Error(`${p}, which this merge replaces, is gone: reject the merge`);
   const why = `${r.kind}${opts.promote ? " promoted to global" : ""} from session ${r.session_id}`;
-  const entry = applyChange(repo, { action: opts.promote ? "promote" : r.kind === "patch" ? "patch" : "land", actor: "user", skill: r.name, why }, [{ path: dest, content: text }]);
+  // a merge lands the new skill and archives the ones it supersedes, in one ledger entry (one rollback)
+  const archived = replaced.filter((p) => p !== dest).flatMap((p) => [
+    { path: join(repo, ".claude", ".semantic-memory", "skills-archive", basename(dirname(p)), "SKILL.md"), content: readFileSync(p) as Buffer | string | null },
+    { path: p, content: null },
+  ]);
+  const entry = applyChange(repo, { action: opts.promote ? "promote" : r.kind === "patch" ? "patch" : r.kind === "merge" ? "merge" : "land", actor: "user", skill: r.name, why }, [{ path: dest, content: text }, ...archived]);
+  for (const p of replaced) if (p !== dest) indexSkill({ repo, name: basename(dirname(p)), path: p, status: "archived" }, env);
   if (opts.promote) {
     // the project copies the global skill replaces: only landed, learned ones, each ledgered in its own repo
     for (const p of r.promotion!) {

@@ -58,6 +58,11 @@ export { evaluateFailures, formatFailureEval, calibrateJudge, evaluateGate, form
 export type { FailureCase, Judgment, CaseResult, FailureEvalReport, ThresholdRow, JevJudgment, JudgeCalibration, GateRow } from "./failure-eval.js";
 export { featureState, featureOn, jevAvailable, describeFeature } from "./features.js";
 export { reviewSession, buildBrief, listDrafts, draftsDir } from "./skill-review.js";
+export { approveDraft, rejectDraft, describeDrafts, evalDraft } from "./skill-land.js";
+export { curate, restore, verifySkills } from "./skill-curator.js";
+export { rollback, readLedger } from "./skill-ledger.js";
+export { proposeMerges } from "./skill-merge.js";
+export { decideScope } from "./skill-scope.js";
 export type { DraftRecord } from "./skill-review.js";
 export { parseSkill, renderSkill, lintSkill, lintSkills, findSkills, SKILL_SCOPES, SKILL_STATUSES, SKILL_SECTIONS } from "./skill-schema.js";
 export type { SkillLoopMeta, ParsedSkill, SkillFile, SkillFinding, SkillScope, SkillStatus } from "./skill-schema.js";
