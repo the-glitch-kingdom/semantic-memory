@@ -8,6 +8,7 @@ export default defineConfig({
     "core/redact": "src/core/redact.ts",
     "core/failure-query": "src/core/failure-query.ts",
     "core/features": "src/core/features.ts",
+    "core/jev": "src/core/jev.ts",
     "mcp/server": "src/mcp/server.ts",
     "cli/index": "src/cli/index.ts",
   },

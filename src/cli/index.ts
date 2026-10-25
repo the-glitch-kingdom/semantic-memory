@@ -1127,6 +1127,14 @@ program
 
 // --- v1.7 switches: skill loop and jev mode ---
 
-registerFeatureCommands(program);
+registerFeatureCommands(program, {
+  jev: async () => {
+    const { jevSpendToday } = await import("../core/jev.js");
+    const { jevLoopDir } = await import("../core/features.js");
+    const spend = jevSpendToday(jevLoopDir());
+    const total = Object.values(spend).reduce((a, b) => a + b, 0);
+    return [`Jev today (semantic-memory callers): ${total.toLocaleString()} tokens${total ? ` — ${Object.entries(spend).map(([c, n]) => `${c} ${n.toLocaleString()}`).join(", ")}` : ""}`];
+  },
+});
 
 program.parse();
