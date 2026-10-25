@@ -74,6 +74,14 @@ describe("startup with a cached index", () => {
     expect((await readMeta(tempDir)).indexedAt).not.toBe(before.indexedAt);
   }, 120_000);
 
+  it("answers a search made while the cache is still loading with 'in progress', not 'run reindex'", async () => {
+    client = await connect(tempDir);
+    const res = await client.callTool({ name: "search_hybrid", arguments: { query: "architecture" } });
+    const text = (res.content as { text: string }[])[0].text;
+    expect(text).not.toMatch(/Run reindex first/);
+    await waitFor(async () => (await indexState(client!)) === "ready");
+  }, 120_000);
+
   it("does not reindex a fresh cache", async () => {
     const before = await readMeta(tempDir);
 
