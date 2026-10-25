@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 /** `skill-loop` subcommands beyond on / off / status (v1.7). The worker is what SessionEnd starts. */
 export function registerSkillLoopCommands(program: Command) {
   const cmd = program.commands.find((c) => c.name() === "skill-loop")!;
+  registerReviewCommands(cmd);
   cmd
     .command("worker")
     .description("Drain this repo's review queue (started detached by the SessionEnd hook; safe to run by hand).")
@@ -20,6 +21,67 @@ export function registerSkillLoopCommands(program: Command) {
       const { reviewSession } = await import("../core/skill-review.js");
       const r = await drain(repo, (job) => reviewSession(job));
       console.log(r.locked ? "another worker holds this repo's lock" : `reviewed ${r.reviewed} session(s)${r.capped ? "; daily cap reached" : ""}${r.failed ? `; ${r.failed} set aside` : ""}`);
+      process.exit(0);
+    });
+}
+
+export function registerReviewCommands(cmd: Command) {
+  cmd
+    .command("review")
+    .description("List skill drafts with their evidence (and diff, for patches); approve, reject or evaluate one.")
+    .option("--json", "JSON output")
+    .option("--approve <id>", "Land a draft (writes the skill and a ledger entry)")
+    .option("--promote", "With --approve: land it as a global skill replacing the project copies (needs a promotion)")
+    .option("--reject <id>", "Drop a draft (ledgered)")
+    .option("--eval <id>", "Run the trigger eval on a draft and record the scores and the gate's verdict")
+    .option("--task", "With --eval: also replay the task with and without the skill (runs the draft's Verify command)")
+    .action(async (opts) => {
+      const { repoRoot } = await import("../core/skill-evidence.js");
+      const land = await import("../core/skill-land.js");
+      const repo = repoRoot(process.cwd());
+      try {
+        if (opts.approve) {
+          const e = land.approveDraft(repo, opts.approve, { promote: opts.promote });
+          console.log(`✓ ${e.action}: ${e.files.map((f) => f.path).join(", ")} (ledger ${e.id}; undo: skill-loop rollback ${e.id})`);
+        } else if (opts.reject) {
+          const e = land.rejectDraft(repo, opts.reject);
+          console.log(`✓ rejected ${e.skill} (ledger ${e.id})`);
+        } else if (opts.eval) {
+          const ev = await land.evalDraft(repo, opts.eval, { task: opts.task });
+          console.log(opts.json ? JSON.stringify(ev, null, 2) : `gate: ${ev.gate.verdict} — ${ev.gate.reasons.join("; ")} (${ev.prompts} prompts, ${ev.runs} claude runs)`);
+        } else {
+          const drafts = land.describeDrafts(repo);
+          if (opts.json) console.log(JSON.stringify(drafts, null, 2));
+          else if (!drafts.length) console.log("no skill drafts waiting");
+          else
+            for (const d of drafts) {
+              console.log(`\n${d.id}  ${d.kind} ${d.name} → ${d.destination}`);
+              console.log(`  scope: ${d.scope}${d.scope_why ? ` (${d.scope_why})` : ""}${d.promotion?.length ? `; also in ${d.promotion.map((p) => p.repo).join(", ")}: --promote offers one global skill` : ""}`);
+              console.log(`  evidence: sessions ${d.provenance?.sessions.join(", ")}; failures ${d.provenance?.failures.join(", ") || "-"}; corrections ${d.provenance?.corrections.join(", ") || "-"}`);
+              if (d.verify.kind === "command") console.log(`  verify command (a --task eval runs it): ${d.verify.command}`);
+              if (d.evals) console.log(`  evals: ${JSON.stringify((d.evals as any).gate)}`);
+              for (const w of d.warnings) console.log(`  ! ${w}`);
+            }
+        }
+      } catch (e) {
+        console.error(`✗ ${(e as Error).message}`);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+  cmd
+    .command("rollback <ledger-id>")
+    .description("Undo one ledgered change exactly (refuses if a file changed since).")
+    .action(async (id: string) => {
+      const { repoRoot } = await import("../core/skill-evidence.js");
+      const { rollback } = await import("../core/skill-ledger.js");
+      try {
+        const e = rollback(repoRoot(process.cwd()), id);
+        console.log(`✓ ${e.why} (ledger ${e.id})`);
+      } catch (err) {
+        console.error(`✗ ${(err as Error).message}`);
+        process.exit(1);
+      }
       process.exit(0);
     });
 }
