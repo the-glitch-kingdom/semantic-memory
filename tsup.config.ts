@@ -10,6 +10,8 @@ export default defineConfig({
     "core/features": "src/core/features.ts",
     "core/jev": "src/core/jev.ts",
     "core/skill-evidence": "src/core/skill-evidence.ts",
+    "core/skill-queue": "src/core/skill-queue.ts",
+    "core/skill-worker": "src/core/skill-worker.ts",
     "mcp/server": "src/mcp/server.ts",
     "cli/index": "src/cli/index.ts",
   },

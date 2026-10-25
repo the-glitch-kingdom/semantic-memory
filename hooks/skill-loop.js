@@ -3,6 +3,9 @@
 // skill-loop claude run) every event leaves at once, writes nothing and spawns nothing.
 //
 //   PostToolUse (matcher Skill) → one usage line in .claude/.semantic-memory/skill-usage.jsonl
+//   SessionEnd                  → a review job when the session has signal (a failure, a correction or many
+//                                 tool calls), and the repo's worker started detached. Must finish well inside
+//                                 SessionEnd's 1.5 s: it only writes the job and spawns.
 //
 // Never blocks the session and never fails it: errors are swallowed (SIDEKICK_DEBUG=1 prints them).
 
@@ -34,6 +37,13 @@ export async function main(input = readStdinJson(), env = process.env) {
   if (input.hook_event_name === "PostToolUse" && input.tool_name === "Skill") {
     const skill = input.tool_input?.skill;
     if (typeof skill === "string" && skill) ev.appendEvidence(root, "usage", { session_id, skill, via: "tool" }, env);
+  } else if (input.hook_event_name === "SessionEnd") {
+    const q = await import(dist("skill-queue"));
+    const job = q.sessionJob(root, input, env);
+    if (!job) return;
+    q.enqueue(job, env);
+    const { spawnWorker } = await import(dist("skill-worker"));
+    spawnWorker(root, env);
   }
 }
 
