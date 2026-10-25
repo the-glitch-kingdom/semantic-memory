@@ -939,9 +939,11 @@ async function handleStop(projectRoot, sessionId) {
 // --- PostToolUseFailure: look up a knowledge-base fact for a failed tool call (v1.6, opt-in) ---
 // Measured on 553 real failures (scripts/eval-failures): facts-only at score >= 0.50, about 6 in 10
 // injections were on target, firing on ~4% of failures. Below the plan's 95% bar, hence off by default.
-// v1.7 jev mode: a candidate fact is injected only when Jev says it fits this failure (>= 0.95). The gate's
-// threshold and whether it turns the hook on by itself come from the Phase 8 replay (scripts/eval-failures).
-const JEV_GATE = { threshold: 0.35, adopted: false, budgetMs: Number(process.env.SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS) || 1500 };
+// v1.7 jev mode: Jev can veto the candidate fact. Measured on 1,171 Claude-labelled failure/doc pairs, Jev's
+// confident no's (<= 0.05) were 727 of 729 right, but it never said yes at >= 0.95 to a relevant pair (max 0.89):
+// a "yes" gate would inject nothing. So a confident no suppresses, anything else keeps the plain hook's choice.
+// Neither shape reaches the 95% bar on precision (veto: 29-42%), so jev mode does not turn the hook on by itself.
+const JEV_GATE = { adopted: false, budgetMs: Number(process.env.SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS) || 1500 };
 const FAILURE_HOOK_ENV = () => process.env.SEMANTIC_MEMORY_FAILURE_HOOK;
 const FAILURE_HOOK_ON = (projectRoot) =>
   FAILURE_HOOK_ENV() === "1" || (FAILURE_HOOK_ENV() !== "0" && JEV_GATE.adopted && jevOn(projectRoot));
@@ -986,9 +988,9 @@ async function redactText(text) {
   }
 }
 
-// One live Jev call for the candidate. Anything but a clear yes (no, unsure, error, timeout, ceiling) is no:
-// in jev mode the ungated path is never the fallback.
-async function jevSaysFits(projectRoot, command, error, fact, started) {
+// One live Jev call for the candidate: a confident no (<= 0.05) vetoes it, a yes or an unsure answer lets it
+// through. An error, a timeout or the daily ceiling injects nothing: in jev mode an unchecked fact is not shown.
+async function jevAllows(projectRoot, command, error, fact, started) {
   try {
     const jev = await import(new URL("../dist/core/jev.js", import.meta.url).href);
     const title = String(fact.title ?? fact.path);
@@ -1009,7 +1011,8 @@ async function jevSaysFits(projectRoot, command, error, fact, started) {
     );
     if (a.ceiling) process.stderr.write(`[semantic-memory] jev mode: ${a.error}; the failure hook injects nothing until tomorrow\n`);
     else if (a.error) debug(`jev gate: ${a.error}`);
-    return jev.jevVerdict(a.scores.fits) === true;
+    if (a.error || typeof a.scores.fits !== "number") return false;
+    return jev.jevVerdict(a.scores.fits) !== false;
   } catch (e) {
     debug(`jev gate failed: ${e.message}`);
     return false;
@@ -1059,14 +1062,12 @@ async function handleFailure(projectRoot, sources, cliBin, input, sessionId, sta
   const query = await failureQueryFor(error, command);
   const hits = await searchSources(cliBin, sources, 8, query);
   const gated = jevOn(projectRoot);
-  const fact = gated
-    ? hits.slice(0, 5).find((h) => isFactPath(h.path) && typeof h.score === "number" && h.score >= JEV_GATE.threshold)
-    : hits.find((h) => isFactPath(h.path) && typeof h.score === "number" && h.score >= FAILURE_MIN_SCORE);
+  const fact = hits.find((h) => isFactPath(h.path) && typeof h.score === "number" && h.score >= FAILURE_MIN_SCORE);
   if (!fact) {
     emit("PostToolUseFailure", "");
     return;
   }
-  if (gated && !(await jevSaysFits(projectRoot, command, error, fact, started))) {
+  if (gated && !(await jevAllows(projectRoot, command, error, fact, started))) {
     emit("PostToolUseFailure", "");
     return;
   }
@@ -1094,7 +1095,7 @@ async function handleFailure(projectRoot, sources, cliBin, input, sessionId, sta
   const lines = [
     `<vault-fact source="tool-failure" score="${fact.score.toFixed(2)}"${gated ? ` checked="jev"` : ""}>`,
     gated
-      ? `A knowledge-base fact that explains this failure (checked against it before showing). Confirm it applies before acting on it.`
+      ? `A knowledge-base fact may explain this failure (checked: not ruled out). Check it applies before acting on it.`
       : `A knowledge-base fact may explain this failure. Check it applies before acting on it (measured: about 6 in 10 of these are on target).`,
     `- \`${fact.path}\`${fact.source ? ` (${fact.source})` : ""}`,
   ];

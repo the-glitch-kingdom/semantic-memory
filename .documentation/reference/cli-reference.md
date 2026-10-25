@@ -439,7 +439,7 @@ semantic-memory eval-failures --cases cases.jsonl --judgments judgments.jsonl \
 v1.7 options:
 
 - `--hits-in <file>` — reuse the hits from an earlier `--hits-out` instead of searching.
-- `--gate jev` — also replay the failure hook's jev-mode gate on the same hits (candidate: first fact in the top 5 at >= 0.35; injected only at Jev's >= 0.95). Needs `--jev-scores`.
+- `--gate jev` — also replay two jev-mode gates on the same hits (candidate: the first fact in the top 5 at >= T): **confirm** (inject only at Jev >= 0.95) and **veto** (inject unless Jev <= 0.05), with precision, coverage and whether each meets the bar per T. Needs `--jev-scores`.
 - `--jev-scores <files...>` — JSONL of `{case, path, p}` from `scripts/eval-failures/judge-jev.mjs`.
 - `--gate-batch-out <file>` — with `--gate jev`: write the candidates Jev has not scored yet as a judge batch (set B format), ready for `judge-jev.mjs`.
 

@@ -231,15 +231,15 @@ SessionEnd's default timeout is 1.5 s. That is why the hook only **writes the jo
 
 ### Failure hook in jev mode (`SEMANTIC_MEMORY_JEV=1`)
 
-In jev mode `handleFailure` changes how it picks and gates a fact:
+In jev mode `handleFailure` adds a veto after picking the fact:
 
-1. Candidate: the first knowledge-base fact in the top 5 hits scoring at least **0.35** (not the 0.5 of the plain hook).
+1. Candidate: chosen as without jev mode (the first knowledge-base fact at >= `SEMANTIC_MEMORY_FAILURE_MIN_SCORE`, 0.50).
 2. One live Jev call through `hooks/jev-bridge.py` (jev-loop's `router.ask`): does this fact fit this failure?
-3. Inject only at **>= 0.95**. The block carries `checked="jev"`.
-4. Any error, timeout, unsure answer or daily-ceiling stop injects **nothing**. The ungated path is never the fallback.
+3. A confident **no (<= 0.05) suppresses** it. A yes or an unsure answer lets it through, marked `checked="jev"`.
+4. An error, a timeout or a daily-ceiling stop injects **nothing**.
 5. The whole lookup has a budget, `SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS` (default 1500). If the search leaves no time, the Jev call is skipped.
 
-`SEMANTIC_MEMORY_FAILURE_HOOK=0` always wins and turns the hook off. Whether jev mode turns the hook on by itself is decided by a measurement: see [the jev mode guide](../operational/jev-mode.md).
+Why a veto and not a yes-gate: on 1,171 labelled pairs Jev's confident no's were 99.7% right, but it never said yes at >= 0.95 to a relevant pair. Jev mode does **not** turn the hook on by itself (precision with the veto: 29–42%, below the 95% bar); `SEMANTIC_MEMORY_FAILURE_HOOK=1` still does, and `=0` always wins. See [the jev mode guide](../operational/jev-mode.md).
 
 ---
 

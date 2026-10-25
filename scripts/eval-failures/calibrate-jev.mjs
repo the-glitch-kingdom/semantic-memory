@@ -5,7 +5,9 @@
 //
 // Reads <dir>/judgments.jsonl (Claude labels) and every <dir>/judge/*.jev.out.jsonl (judge-jev.mjs output) and
 // prints, per label class, Jev's picks at >= 0.95 (yes) and <= 0.05 (no), its agreement with Claude and the
-// unsure rate. Verdict "jev" only if every pick together is right >= 95% over >= 40 picks with <= 2 wrong.
+// unsure rate. The bar (>= 95% right over >= 40 picks, <= 2 wrong) is applied to the yes picks and the no picks
+// separately: "jev" when both pass, "hybrid" (Jev filters out its confident no's, Claude judges the rest) when only
+// the no side does, "claude" otherwise.
 import { readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
@@ -31,5 +33,6 @@ for (const [name, s] of [["Claude: relevant", c.relevant], ["Claude: not relevan
   console.log(`  ${name.padEnd(22)} ${String(s.pairs).padStart(5)} pairs: Jev yes ${s.yes}, no ${s.no}, unsure ${s.unsure}`);
 }
 console.log(`  picks ${c.picks}, wrong ${c.wrong}, agreement ${pct(c.agreement)}, unsure ${pct(c.unsureRate)}`);
-console.log(`  yes picks ${c.yesPicks}, wrong ${c.yesWrong} (${pct(c.yesPicks ? (c.yesPicks - c.yesWrong) / c.yesPicks : null)} precision)`);
-console.log(`  verdict: ${c.verdict === "jev" ? "Jev may judge alone in jev mode" : "hybrid — Jev's confident picks, unsure pairs to Claude"}`);
+console.log(`  yes picks ${c.yesPicks}, wrong ${c.yesWrong} (${pct(c.yesPicks ? (c.yesPicks - c.yesWrong) / c.yesPicks : null)} right)`);
+console.log(`  no picks ${c.noPicks}, wrong ${c.noWrong} (${pct(c.noPicks ? (c.noPicks - c.noWrong) / c.noPicks : null)} right)`);
+console.log(`  verdict: ${{ jev: "Jev may judge alone", hybrid: "hybrid — Jev's confident no's are final, everything else goes to Claude", claude: "Claude judges; Jev's picks do not meet the bar" }[c.verdict]}`);

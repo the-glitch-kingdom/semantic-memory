@@ -97,7 +97,7 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 **Skips:** interrupts, user denials, other tools, `outage-silence` mode.
 **Why opt-in:** measured on 553 real failures it is right about 6 times in 10 — below the 95% bar. See [failure-lookup-guide.md](../operational/failure-lookup-guide.md).
 
-**In jev mode (v1.7, `SEMANTIC_MEMORY_JEV=1`):** the candidate is the first fact in the top 5 at score >= 0.35. One live Jev call (`hooks/jev-bridge.py` → jev-loop `router.ask`) asks whether the fact fits this failure. The block is injected only at >= 0.95 and carries `checked="jev"`. A "no", an unsure answer, an error, a timeout or the daily ceiling (`SEMANTIC_MEMORY_JEV_DAILY_TOKENS`) injects nothing; the ungated path is never the fallback. The whole lookup has a budget, `SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS` (1500). `SEMANTIC_MEMORY_FAILURE_HOOK=0` wins. See [jev-mode.md](../operational/jev-mode.md).
+**In jev mode (v1.7, `SEMANTIC_MEMORY_JEV=1`):** the candidate is chosen as without jev mode (first fact at >= 0.50). One live Jev call (`hooks/jev-bridge.py` → jev-loop `router.ask`) asks whether the fact fits this failure, and a confident no (<= 0.05) **vetoes** it; a yes or an unsure answer lets it through, marked `checked="jev"`. An error, a timeout or the daily ceiling (`SEMANTIC_MEMORY_JEV_DAILY_TOKENS`) injects nothing. Jev mode only ever makes the hook quieter: measured, Jev's no's are 99.7% right but it never says yes at >= 0.95. The whole lookup has a budget, `SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS` (1500). `SEMANTIC_MEMORY_FAILURE_HOOK=0` wins. See [jev-mode.md](../operational/jev-mode.md).
 
 ## 3c. SessionStart skill-loop note — `[skill loop] N skill drafts waiting` (v1.7, opt-in)
 

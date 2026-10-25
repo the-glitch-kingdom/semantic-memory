@@ -366,8 +366,8 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 - **`python3 not found`:** the bridge is a Python script.
 - While unavailable, jev mode is effectively off: the failure hook behaves as without jev mode, the skill loop uses its rule-based defaults.
 
-### The failure hook injects nothing in jev mode
-- That is the safe default: it injects only on a clear Jev yes (≥ 0.95). A no, an unsure answer, a timeout, an error or the daily ceiling all inject nothing. `SIDEKICK_DEBUG=1` prints the reason on stderr.
+### The failure hook injects less (or nothing) in jev mode
+- Jev mode only removes: a confident Jev no (≤ 0.05) suppresses the fact, and a timeout, an error or the daily ceiling inject nothing. Jev mode does not turn the hook on: it still needs `SEMANTIC_MEMORY_FAILURE_HOOK=1`. `SIDEKICK_DEBUG=1` prints the reason on stderr.
 - **Ceiling:** `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` (500,000) for the hook; the hook says so once on stderr.
 - **Slow search:** the gate's whole budget is 1.5 s (`SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS`); with less than 300 ms left after the search, Jev is not asked.
 

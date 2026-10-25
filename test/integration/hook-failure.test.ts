@@ -121,7 +121,7 @@ describe("PostToolUseFailure fact lookup (opt-in)", () => {
     expect(Object.keys(state)).toEqual(["s9"]);
   });
 
-  // v1.7 jev mode: the candidate fact is injected only on a clear Jev yes
+  // v1.7 jev mode: Jev's confident no vetoes the candidate; yes or unsure lets it through; errors inject nothing
   describe("jev mode gate", () => {
     let jev: { dir: string; env: NodeJS.ProcessEnv };
     const mode = (m: string) => writeFile(join(jev.dir, "mode"), m);
@@ -154,9 +154,11 @@ describe("PostToolUseFailure fact lookup (opt-in)", () => {
       expect(last.items).toHaveLength(1);
     });
 
-    it("Jev no → nothing", async () => {
+    it("Jev no → nothing; Jev unsure → the fact is shown", async () => {
       await mode("no");
       expect(runJev(failure({ session_id: "j2" })).ctx).toBe("");
+      await mode("maybe");
+      expect(runJev(failure({ session_id: "j2b" })).ctx).toContain('checked="jev"');
     });
 
     it("Jev error or hang → nothing, and the hook stays inside its budget", async () => {

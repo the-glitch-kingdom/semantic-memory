@@ -473,10 +473,12 @@ program
       const { evaluateGate, formatGate } = await import("../core/failure-eval.js");
       const jev = (opts.jevScores as string[]).flatMap((f) => readJsonl(f));
       const gate = evaluateGate(results, judgments, jev);
+      const veto = evaluateGate(results, judgments, jev, { mode: "veto", thresholds: [0.3, 0.35, 0.4, 0.45, 0.5] });
       if (opts.gateBatchOut) {
         const { default: matter } = await import("../core/matter.js");
         const byId = new Map(cases.map((c) => [c.id, c]));
-        const batch = gate.missing.map((m) => {
+        const missing = [...new Map([...gate.missing, ...veto.missing].map((m) => [`${m.case}\0${m.path}`, m])).values()];
+        const batch = missing.map((m) => {
           const c = byId.get(m.case)!;
           let title = m.path, excerpt = "";
           try {
@@ -490,12 +492,14 @@ program
         console.error(`${batch.length} unscored candidates → ${opts.gateBatchOut} (judge them with judge-jev.mjs, then re-run)`);
       }
       if (opts.json) {
-        console.log(JSON.stringify({ ...report, gate: gate.rows }, null, 2));
+        console.log(JSON.stringify({ ...report, gate: gate.rows, veto: veto.rows }, null, 2));
         process.exit(0);
       }
       console.log(formatFailureEval(report, `query: ${opts.query}`));
       console.log("");
       console.log(formatGate(gate.rows));
+      console.log("");
+      console.log(formatGate(veto.rows, "veto"));
       process.exit(0);
     }
     if (opts.hitsOut) {

@@ -42,8 +42,10 @@ semantic-memory can use Jev (TypeSafe's yes/no model) for closed-set decisions, 
 ceiling `SEMANTIC_MEMORY_JEV_DAILY_TOKENS`, default 500,000 a day), `semantic-memory-judge` and
 `semantic-memory-skill-loop` (batch).
 
-- **Failure hook gate.** In jev mode the failure hook injects a fact only when Jev says it fits the failure (>= 0.95),
-  inside the hook's 1.5 s budget; any error injects nothing.
+- **Failure hook veto.** In jev mode a fact the failure hook picked is suppressed when Jev is confident it does not
+  fit (<= 0.05), inside the hook's 1.5 s budget; an error injects nothing. Measured on 1,171 labelled pairs: Jev's
+  no's were 99.7% right, but it never said yes at >= 0.95, so a yes-gate would inject nothing. The veto lifts the
+  hook's precision from 28% to 29–42%, still below the 95% bar: jev mode does not turn the hook on by itself.
 - **Failure-eval judge.** `scripts/eval-failures/judge-jev.mjs`, `calibrate-jev.mjs`, and
   `eval-failures --gate jev`.
 - **Skill loop.** The scope question (could this be general?) and duplicate checks before a merge.

@@ -165,8 +165,15 @@ export interface JudgeCalibration {
   /** yes picks alone (the side that would inject) */
   yesPicks: number;
   yesWrong: number;
-  /** "jev": Jev alone may judge (meets the bar on all picks); "hybrid": Jev's picks, unsure pairs to Claude */
-  verdict: "jev" | "hybrid";
+  /** no picks alone (the side that would filter) */
+  noPicks: number;
+  noWrong: number;
+  /**
+   * "jev": Jev alone may judge (its yes picks and its no picks each meet the bar);
+   * "hybrid": its no picks meet the bar — Jev filters, the rest (yes and unsure) go to Claude;
+   * "claude": neither side does.
+   */
+  verdict: "jev" | "hybrid" | "claude";
 }
 
 export function calibrateJudge(labels: Judgment[], jev: JevJudgment[], bar = 0.95): JudgeCalibration {
@@ -199,7 +206,15 @@ export function calibrateJudge(labels: Judgment[], jev: JevJudgment[], bar = 0.9
     unsureRate: pairs ? (relevant.unsure + notRelevant.unsure) / pairs : 0,
     yesPicks: relevant.yes + notRelevant.yes,
     yesWrong: notRelevant.yes,
-    verdict: meetsBar(picks, wrong) ? "jev" : "hybrid",
+    noPicks: relevant.no + notRelevant.no,
+    noWrong: relevant.no,
+    // both sides separately: a judge that only ever says no would pass a pooled check and still find nothing
+    verdict:
+      meetsBar(relevant.yes + notRelevant.yes, notRelevant.yes) && meetsBar(relevant.no + notRelevant.no, relevant.no)
+        ? "jev"
+        : meetsBar(relevant.no + notRelevant.no, relevant.no)
+          ? "hybrid"
+          : "claude",
   };
 }
 
@@ -220,15 +235,16 @@ export interface GateRow {
 
 /**
  * The failure hook's Jev gate, replayed: per threshold T, the candidate is the first fact among the top
- * `topK` hits scoring >= T; it is injected only when Jev scores it >= the bar. Precision is measured on
- * the injected candidates that carry a label.
+ * `topK` hits scoring >= T. `confirm` injects it only when Jev scores it >= the bar; `veto` injects it unless
+ * Jev scores it <= 1 - bar (a confident no). Precision is measured on the injected candidates that carry a label.
  */
 export function evaluateGate(
   results: CaseResult[],
   judgments: Judgment[],
   jev: JevJudgment[],
-  opts: { thresholds?: number[]; topK?: number; bar?: number; isCandidate?: (path: string) => boolean } = {},
+  opts: { thresholds?: number[]; topK?: number; bar?: number; isCandidate?: (path: string) => boolean; mode?: "confirm" | "veto" } = {},
 ): { rows: GateRow[]; missing: { case: string; path: string }[] } {
+  const mode = opts.mode ?? "confirm";
   const thresholds = opts.thresholds ?? [0.3, 0.35, 0.4, 0.5];
   const topK = opts.topK ?? 5;
   const bar = opts.bar ?? 0.95;
@@ -251,7 +267,8 @@ export function evaluateGate(
         continue;
       }
       const p = score.get(k);
-      if (p === null || p === undefined || p < bar) continue;
+      const inject = mode === "confirm" ? p !== null && p !== undefined && p >= bar : !(p !== null && p !== undefined && p <= 1 - bar + 1e-9);
+      if (!inject) continue;
       injected++;
       const l = label.get(k);
       if (l === undefined) continue;
@@ -273,9 +290,10 @@ export function evaluateGate(
   return { rows, missing: [...missing.values()] };
 }
 
-export function formatGate(rows: GateRow[]): string {
+export function formatGate(rows: GateRow[], mode: "confirm" | "veto" = "confirm"): string {
   const pct = (n: number | null) => (n === null ? "  -  " : `${(n * 100).toFixed(1)}%`);
-  const lines = ["Jev gate (inject the first fact >= T only when Jev says yes at >= 0.95)", "", "     T  candidates  missing  injected  judged  correct  precision  coverage  bar"];
+  const what = mode === "confirm" ? "only when Jev says yes at >= 0.95" : "unless Jev says no at <= 0.05";
+  const lines = [`Jev gate, ${mode} (inject the first fact >= T ${what})`, "", "     T  candidates  missing  injected  judged  correct  precision  coverage  bar"];
   for (const r of rows) {
     lines.push(
       `  ${r.threshold.toFixed(2)}  ${String(r.candidates).padStart(10)}  ${String(r.missing).padStart(7)}  ${String(r.injected).padStart(8)}  ${String(r.judged).padStart(6)}  ${String(r.correct).padStart(7)}  ${pct(r.precision).padStart(9)}  ${pct(r.coverage).padStart(8)}  ${r.meetsBar ? "yes" : "no"}`,
