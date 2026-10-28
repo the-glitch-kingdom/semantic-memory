@@ -41,15 +41,21 @@ function emit(eventName, additionalContext) {
   process.stdout.write(JSON.stringify(out) + "\n");
 }
 
+// A server the hooks can search: any semantic-* entry with --notes (semantic-vault, semantic-sidekick,
+// semantic-memory, semantic-memory-docs, …). The drift checks only need the semantic-* name.
+export const isSemanticServer = (name, entry) =>
+  /^semantic-/.test(name) && Array.isArray(entry?.args) && entry.args.includes("--notes");
+
 // Every notes path the hook searches: [{ name, path, readOnly }], in .mcp.json order.
 // The standard setup has two (semantic-vault → .claude/.vault, semantic-sidekick → .documentation --read-only).
-function findNotesSources(projectRoot) {
+// { configuredOnly } leaves out the .claude/.vault default, which has no server behind it.
+export function findNotesSources(projectRoot, { configuredOnly = false } = {}) {
   // 1. Explicit env override (useful for tests) — a single path, replaces the lookup
   if (process.env.SIDEKICK_VAULT_PATH) {
     const p = resolve(process.env.SIDEKICK_VAULT_PATH);
     return existsSync(p) ? [{ name: "vault", path: p, readOnly: false }] : [];
   }
-  // 2. Read .mcp.json → mcpServers.semantic-{vault,sidekick,memory}.args[--notes ...]
+  // 2. Read .mcp.json → mcpServers.semantic-*.args[--notes ...]
   const sources = [];
   const mcpPath = join(projectRoot, ".mcp.json");
   if (existsSync(mcpPath)) {
@@ -57,11 +63,10 @@ function findNotesSources(projectRoot) {
       const data = JSON.parse(readFileSync(mcpPath, "utf8"));
       const entries = data?.mcpServers || {};
       for (const [name, entry] of Object.entries(entries)) {
-        if (!entry || typeof entry !== "object") continue;
-        if (name !== "semantic-vault" && name !== "semantic-sidekick" && name !== "semantic-memory") continue;
-        const args = Array.isArray(entry.args) ? entry.args : [];
+        if (!isSemanticServer(name, entry)) continue;
+        const args = entry.args;
         const i = args.indexOf("--notes");
-        if (i >= 0 && i + 1 < args.length) {
+        if (i + 1 < args.length) {
           const p = resolve(projectRoot, args[i + 1]);
           if (existsSync(p) && !sources.some((s) => s.path === p)) {
             sources.push({ name, path: p, readOnly: args.includes("--read-only") });
@@ -72,7 +77,7 @@ function findNotesSources(projectRoot) {
       debug(`.mcp.json parse failed: ${e.message}`);
     }
   }
-  if (sources.length > 0) return sources;
+  if (sources.length > 0 || configuredOnly) return sources;
   // 3. Default
   const def = join(projectRoot, ".claude", ".vault");
   return existsSync(def) ? [{ name: "vault", path: def, readOnly: false }] : [];
@@ -178,8 +183,13 @@ function dedupeByBasename(hits) {
   return out;
 }
 
+// Anything under an archive/ folder is history (hit-em-with-the-docs), never current behaviour: 83 of 141
+// injected blocks on real RE-InvestorHub prompts carried one (v1.7.2).
+const isArchived = (p) => /(^|\/)archive\//.test(String(p || ""));
+
 export function formatContextBlock(source, query, hits) {
-  if (!hits || hits.length === 0) return "";
+  hits = (hits || []).filter((h) => !isArchived(h.path));
+  if (hits.length === 0) return "";
   // Score gate: skip injection entirely when nothing is strongly relevant.
   const topScore = Math.max(...hits.map((h) => (typeof h.score === "number" ? h.score : 0)));
   if (topScore < INJECT_MIN_SCORE) return "";
@@ -496,7 +506,7 @@ function modePath(projectRoot) {
   return statePath(projectRoot, "mode").writePath;
 }
 
-function readMode(projectRoot) {
+export function readMode(projectRoot) {
   try {
     const m = readFileSync(statePath(projectRoot, "mode").resolvedRead, "utf8").trim();
     if (VALID_MODES.has(m)) return m;
@@ -735,7 +745,7 @@ async function fastDriftCheck(projectRoot) {
     if (existsSync(mcpPath)) {
       const data = JSON.parse(readFileSync(mcpPath, "utf8"));
       const servers = (data && data.mcpServers) || {};
-      const hasEntry = Object.keys(servers).some((k) => k === "semantic-vault" || k === "semantic-sidekick" || k === "semantic-memory");
+      const hasEntry = Object.keys(servers).some((k) => /^semantic-/.test(k));
       if (!hasEntry) findings.push({ check: "mcp_json_entry", summary: ".mcp.json has no semantic-* server entry" });
     }
   } catch (e) { debug(`mcp check threw: ${e.message}`); }
@@ -1105,9 +1115,13 @@ async function handleFailure(projectRoot, sources, cliBin, input, sessionId, sta
   emit("PostToolUseFailure", lines.join("\n"));
 }
 
+// UserPromptSubmit also fires for background-task notifications and subagent hand-backs; searching their XML
+// injects noise (161 + 49 such searches in real transcripts, up to 0.57-score hits).
+export const isNonHumanPrompt = (prompt) => /^\s*<(task-notification|agent-message)[\s>]/.test(prompt);
+
 async function handlePrompt(projectRoot, sources, cliBin, input) {
   const prompt = typeof input.prompt === "string" ? input.prompt : "";
-  if (!prompt || prompt.length < 8) {
+  if (!prompt || prompt.length < 8 || isNonHumanPrompt(prompt)) {
     emit("UserPromptSubmit", "");
     return;
   }

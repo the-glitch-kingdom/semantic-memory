@@ -59,6 +59,14 @@ describe("runHealthcheck — fast tier", () => {
     expect(drift.find((d) => d.check === "mcp_json_entry")?.fixable_via).toBe("mcp-reconcile");
   });
 
+  it("accepts any semantic-* server name, e.g. semantic-memory-docs (v1.7.2)", async () => {
+    await writeFile(join(dir, ".mcp.json"), JSON.stringify({
+      mcpServers: { "semantic-memory-docs": { command: "node", args: ["x.mjs", "--notes", "./.documentation", "--read-only"] } },
+    }), "utf-8");
+    const r = await runHealthcheck({ projectRoot: dir, tier: "fast", force: true });
+    expect(filterToDrift(r).some((d) => d.check === "mcp_json_entry")).toBe(false);
+  });
+
   it("flags hook registration missing one or more required events", async () => {
     await mkdir(join(dir, ".claude"), { recursive: true });
     await writeFile(join(dir, ".claude", "settings.json"), JSON.stringify({

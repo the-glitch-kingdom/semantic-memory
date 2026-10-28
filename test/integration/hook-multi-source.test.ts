@@ -76,6 +76,25 @@ describe("prompt + SessionStart hooks search every semantic-* notes path", () =>
     expect(ctx).toMatch(/rotate-zephyr-key\.md` \(semantic-sidekick, score: /);
   }, 120_000);
 
+  it("searches a docs server named semantic-memory-docs (RE-InvestorHub's names, v1.7.2)", async () => {
+    await writeMcp(project, {
+      "semantic-memory": ["--notes", "./.claude/.vault"],
+      "semantic-memory-docs": ["--notes", "./.documentation", "--read-only"],
+    });
+    const ctx = runHook(project, { hook_event_name: "UserPromptSubmit", cwd: project, prompt: `${PROMPT} (renamed)` });
+    expect(ctx).toMatch(/rotate-zephyr-key\.md` \(semantic-memory-docs, score: /);
+  }, 120_000);
+
+  it("does not search a task notification or a subagent hand-back (v1.7.2)", async () => {
+    await writeMcp(project, { "semantic-memory-docs": ["--notes", "./.documentation", "--read-only"] });
+    for (const prompt of [
+      `<task-notification>\n<task-id>b1</task-id>\n<summary>${PROMPT}</summary>`,
+      `<agent-message from="a1">\n[Subagent hand-back] ${PROMPT}`,
+    ]) {
+      expect(runHook(project, { hook_event_name: "UserPromptSubmit", cwd: project, prompt })).toBe("");
+    }
+  }, 120_000);
+
   it("keeps the single-corpus format unchanged (no source label)", async () => {
     await writeMcp(project, { "semantic-sidekick": ["--notes", "./.documentation", "--read-only"] });
     const ctx = runHook(project, { hook_event_name: "UserPromptSubmit", cwd: project, prompt: `${PROMPT} (single)` });

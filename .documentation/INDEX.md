@@ -31,7 +31,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 18 | Release notes per version and phase |
+| [Changelog](#changelog) | 19 | Release notes per version and phase |
 | [Operational](#operational) | 15 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 6 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -69,7 +69,7 @@ purpose: Navigation hub for all documentation
 |----------|------|--------|----------|
 | [Architecture — the Five Layers](architecture/architecture-layers.md) | reference | active | 2026-10-25 |
 | [Indices and storage — every file semantic-memory writes](architecture/indices-and-storage.md) | reference | active | 2026-10-25 |
-| [Injection Points](architecture/injection-points.md) | reference | active | 2026-10-25 |
+| [Injection Points](architecture/injection-points.md) | reference | active | 2026-10-28 |
 | [MCP server internals — composition, context, per-domain tool modules](architecture/mcp-internals.md) | reference | active | 2026-10-24 |
 | [Schema and Provenance](architecture/schema-and-provenance.md) | reference | active | 2026-04-23 |
 | [v1 stack overview — what v1.0 / v1.1 / v1.2 added](architecture/v1-stack-overview.md) | reference | active | 2026-10-24 |
@@ -145,7 +145,7 @@ purpose: Navigation hub for all documentation
 
 | Document | Tier | Status | Updated |
 |----------|------|--------|----------|
-| [Installation Guide](quickstart/installation-guide.md) | guide | active | 2026-10-24 |
+| [Installation Guide](quickstart/installation-guide.md) | guide | active | 2026-10-28 |
 | [semantic-sidekick — Overview](quickstart/sidekick-overview.md) | guide | active | 2026-10-24 |
 
 ---
@@ -192,7 +192,7 @@ purpose: Navigation hub for all documentation
 
 | Document | Tier | Status | Updated |
 |----------|------|--------|----------|
-| [Troubleshooting](troubleshooting/troubleshooting.md) | guide | active | 2026-10-25 |
+| [Troubleshooting](troubleshooting/troubleshooting.md) | guide | active | 2026-10-28 |
 
 ---
 
@@ -232,6 +232,7 @@ purpose: Navigation hub for all documentation
 | [v1.6.1 — release audit of 1.5.2 → 1.6.0](changelog/v1-6-1-release-audit.md) | reference | active | 2026-10-24 |
 | [v1.7.0 — the skill loop and jev mode](changelog/v1-7-0-skill-loop-and-jev-mode.md) | reference | active | 2026-10-25 |
 | [v1.7.1 — skill loop queue fixes](changelog/v1-7-1-skill-loop-queue-fixes.md) | reference | active | 2026-10-28 |
+| [v1.7.2 — sessions use the indexed docs](changelog/v1-7-2-vault-context-sources.md) | reference | active | 2026-10-28 |
 
 ---
 
@@ -247,12 +248,12 @@ purpose: Navigation hub for all documentation
 | [AGENTS.md contract guide](operational/contract-guide.md) | guide | active | 2026-05-09 |
 | [Confidence Decay — Operating Guide](operational/decay-guide.md) | guide | active | 2026-07-10 |
 | [Entity Dossiers — Operating Guide](operational/dossiers-guide.md) | guide | active | 2026-07-11 |
-| [Drift detection — SessionStart auto-check + /healthcheck deep audit](operational/drift-detection.md) | guide | active | 2026-10-24 |
+| [Drift detection — SessionStart auto-check + /healthcheck deep audit](operational/drift-detection.md) | guide | active | 2026-10-28 |
 | [Failure-time fact lookup — enabling it, writing findable facts, measuring it](operational/failure-lookup-guide.md) | guide | active | 2026-10-25 |
 | [Jev mode — closed-set decisions through jev-loop](operational/jev-mode.md) | guide | active | 2026-10-25 |
 | [Lexicon & Query Expansion — Operating Guide](operational/lexicon-guide.md) | guide | active | 2026-07-10 |
 | [Logs and Events (log.md)](operational/logs-and-events.md) | reference | active | 2026-04-23 |
-| [Modes Guide](operational/modes-guide.md) | guide | active | 2026-10-24 |
+| [Modes Guide](operational/modes-guide.md) | guide | active | 2026-10-28 |
 | [Session Paging & Speaker Profile — Operating Guide](operational/session-paging-guide.md) | guide | active | 2026-07-11 |
 | [Sessions guide — verification-gated work units](operational/sessions-guide.md) | guide | active | 2026-05-09 |
 | [The skill loop — learned skills between sessions](operational/skill-loop.md) | guide | active | 2026-10-25 |
@@ -270,10 +271,10 @@ purpose: Navigation hub for all documentation
 | Document | Tier | Status | Updated |
 |----------|------|--------|----------|
 | [CLI Reference](reference/cli-reference.md) | reference | active | 2026-10-25 |
-| [Configuration Reference](reference/configuration-reference.md) | reference | active | 2026-10-25 |
+| [Configuration Reference](reference/configuration-reference.md) | reference | active | 2026-10-28 |
 | [Frontmatter spec — every field, what it does, who reads it](reference/frontmatter-spec.md) | reference | active | 2026-10-24 |
 | [Hooks Reference](reference/hooks-reference.md) | reference | active | 2026-10-25 |
-| [MCP Tools Reference (44 tools)](reference/mcp-tools-reference.md) | reference | active | 2026-10-25 |
+| [MCP Tools Reference (44 tools)](reference/mcp-tools-reference.md) | reference | active | 2026-10-28 |
 | [Learned skill format — the skill_loop frontmatter block and its lint rules](reference/skill-format.md) | reference | active | 2026-10-25 |
 
 ---

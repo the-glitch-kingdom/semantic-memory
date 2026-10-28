@@ -99,7 +99,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
     }
   );
 
-  server.tool(
+  const hybridTool = server.tool(
     "search_hybrid",
     "Combined semantic + graph search — vector results re-ranked by graph proximity and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block.",
     {
@@ -146,4 +146,6 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       return ctx.textResponse(JSON.stringify(enriched, null, 2));
     }
   );
+  // the one tool kept out of Claude Code's tool search, so a session can call it without looking it up first (v1.7.2)
+  hybridTool.update({ _meta: { "anthropic/alwaysLoad": true } });
 }

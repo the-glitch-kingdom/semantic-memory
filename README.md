@@ -11,10 +11,12 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 ## Status
 
-**v1.7.0** (2026-10-26), on npm as `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
+**v1.7.2** (2026-10-28), on npm as `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
 
 | Version | What it adds |
 |---|---|
+| **1.7.2** | Sessions use the indexed docs: the prompt hook searches any `semantic-*` server and skips notifications and archived docs, a grep of an indexed folder is redirected once to the MCP search, `search_hybrid` skips tool search |
+| **1.7.1** | Skill-loop queue fixes: temp-directory sessions skipped, `claude` found from cron, resumed sessions re-reviewed |
 | **1.7.0** | The skill loop (learned skills between sessions) and jev mode, both opt-in |
 | **1.6.1** | Release-audit fixes: invalid frontmatter stays body-only on every reindex, frontmatter `api_key:` values are masked, `--read-only` servers no longer expose `log_event` |
 | **1.6.0** | Opt-in fact lookup on failed commands (`PostToolUseFailure`), `eval-failures` |
@@ -34,7 +36,7 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 On install:
 - `.mcp.json` is reconciled at every session start: `semantic-vault` points at `.claude/.vault`. When hit-em-with-the-docs is installed and `.documentation/` exists, `semantic-sidekick` serves that folder `--read-only`.
 - Skills (`vault-first`, `research-mode`, `outage-silence`, `semantic-first`) and commands (`/mode`, `/vault`, `/healthcheck`, `/contract`, `/status`, `/update`, `/policy`, `/relink`, `/normalize-config`) become available.
-- Hooks register from `hooks/hooks.json`: `SessionStart`, `UserPromptSubmit` and `Stop`, plus `PostToolUseFailure`, which does nothing unless `SEMANTIC_MEMORY_FAILURE_HOOK=1`.
+- Hooks register from `hooks/hooks.json`: `SessionStart`, `UserPromptSubmit` and `Stop`, plus `PostToolUseFailure`, which does nothing unless `SEMANTIC_MEMORY_FAILURE_HOOK=1`, and `PreToolUse` (Grep, Bash), which redirects a grep of an indexed docs folder to the MCP search once (`SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0` turns it off).
 
 The first server start builds the vector index (`.semantic-sidekick-index/` in each notes folder). To build it ahead of time, run `semantic-memory --notes <folder> --reindex`. After that, the hooks read the cache in under a second, and a running server reindexes when a note changes.
 

@@ -3,11 +3,11 @@ title: MCP Tools Reference (44 tools)
 tier: reference
 domains: [reference]
 audience: [developers]
-tags: [mcp, tools, api, reference, tools-catalog, v1.7.0]
+tags: [mcp, tools, api, reference, tools-catalog, v1.7.0, v1.7.2]
 status: active
-last_updated: '2026-10-25'
-version: '1.7.0'
-purpose: All 44 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check, and the v1.7 opt-in `skills` lint check.
+last_updated: '2026-10-28'
+version: '1.7.2'
+purpose: All 44 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check, the v1.7 opt-in `skills` lint check, and the v1.7.2 server instructions and always-loaded `search_hybrid`.
 load_priority: 9
 ---
 
@@ -42,6 +42,11 @@ v1.5.0 added 2 tools: `manage_dossier` (Phase 8 — entity dossiers: per-compone
 
 v1.7.0 added no tools. It extended `lint_vault` with one more opt-in check, `skills` (see below). The skill loop itself has no MCP tools: it runs through hooks and the `skill-loop` CLI ([skill-loop.md](../operational/skill-loop.md)).
 
+v1.7.2 added no tools. The server now returns MCP `instructions` (what folder it indexes, read-only or not, search
+here before grepping it), which Claude Code loads at session start even while tools are deferred, and
+`search_hybrid` carries `_meta: {"anthropic/alwaysLoad": true}` so it is callable without a tool lookup. See
+[injection-points.md](../architecture/injection-points.md#7-mcp-server-instructions-and-the-always-loaded-search-tool-v172).
+
 ---
 
 ## Search (4) — always available
@@ -67,7 +72,8 @@ Wikilink + `related_docs` traversal around a concept.
 ### `search_hybrid` ⭐
 Semantic + graph rerank. **The default for most queries.**
 **Args:** `{ query, limit?=10, [date/status/tier/domain filters] }`
-**Notes:** SessionStart vault-context hook calls this.
+**Notes:** SessionStart vault-context hook calls this. **v1.7.2:** the one tool kept out of Claude Code's tool
+search (`_meta` `anthropic/alwaysLoad`); the doc-search redirect names it when it denies a grep of an indexed folder.
 **v1.3+ confidence decay:** same decay down-weighting and `decay` block as `search_semantic`. `search_text`/`search_graph` are unaffected — decay only applies to the two ranked/semantic tools.
 **v1.5+ usage-feedback ranking:** same `usage` block and boost behavior as `search_semantic`, applied at the same shared rank site.
 

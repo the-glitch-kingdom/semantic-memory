@@ -1,5 +1,5 @@
 {
-  "description": "semantic-sidekick activation + mode hooks. SessionStart reconciles .mcp.json + resets mode + preloads vault context. UserPromptSubmit injects vault search results (mode-aware, fingerprinted). Stop emits mode-specific transition-capture prompts (research\u2192synthesis, outage\u2192postmortem, vault-first\u2192generic capture). PostToolUseFailure (opt-in, SEMANTIC_MEMORY_FAILURE_HOOK=1) looks up a knowledge-base fact for a failed Bash/MCP call. PostToolUse (Skill) and SessionEnd feed the skill loop (v1.7, off by default: SEMANTIC_MEMORY_SKILL_LOOP=1).",
+  "description": "semantic-sidekick activation + mode hooks. SessionStart reconciles .mcp.json + resets mode + preloads vault context. UserPromptSubmit injects vault search results (mode-aware, fingerprinted). Stop emits mode-specific transition-capture prompts (research\u2192synthesis, outage\u2192postmortem, vault-first\u2192generic capture). PreToolUse (Grep|Bash) redirects a search of an indexed docs folder to the MCP search once per call (v1.7.2; off: SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0). PostToolUseFailure (opt-in, SEMANTIC_MEMORY_FAILURE_HOOK=1) looks up a knowledge-base fact for a failed Bash/MCP call. PostToolUse (Skill) and SessionEnd feed the skill loop (v1.7, off by default: SEMANTIC_MEMORY_SKILL_LOOP=1).",
   "hooks": {
     "SessionStart": [
       {
@@ -35,6 +35,17 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/vault-context.js\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/doc-search-redirect.js\""
           }
         ]
       }

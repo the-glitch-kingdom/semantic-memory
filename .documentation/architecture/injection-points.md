@@ -3,17 +3,17 @@ title: Injection Points
 tier: reference
 domains: [architecture]
 audience: [developers]
-tags: [hooks, skills, injection, context, debugging, v1.7.0]
+tags: [hooks, skills, injection, context, debugging, v1.7.0, v1.7.2]
 status: active
-last_updated: '2026-10-25'
-version: '1.7.0'
+last_updated: '2026-10-28'
+version: '1.7.2'
 purpose: Every place semantic-sidekick touches Claude's context — symptom→check table
 load_priority: 8
 ---
 
 # Injection points — everywhere sidekick touches Claude's context
 
-> Four mechanisms put vault-derived content into Claude's working memory. Understanding which one is firing for a given symptom is 80% of troubleshooting. v1.7 adds one opt-in line to SessionStart (the skill-loop drafts note, 3c) and an opt-in gate on the failure hook (jev mode, 3b).
+> Four mechanisms put vault-derived content into Claude's working memory. Understanding which one is firing for a given symptom is 80% of troubleshooting. v1.7 adds one opt-in line to SessionStart (the skill-loop drafts note, 3c) and an opt-in gate on the failure hook (jev mode, 3b). v1.7.2 adds a PreToolUse redirect (3d) and the MCP server's own instructions (7).
 
 ## 1. SessionStart hook — `<vault-state-since>` + `<vault-context>` blocks
 
@@ -48,6 +48,12 @@ load_priority: 8
 - Mode is `outage-silence` (hard-suppressed — see Layer 5 contract).
 - Prompt is <8 characters.
 - The prompt's normalized sha1 is in the fingerprint ring (last 10 prompts) — avoids re-injecting the same context for rephrased questions.
+- The prompt is a background-task notification (`<task-notification>…`) or a subagent hand-back (`<agent-message …>`) (v1.7.2). Claude Code runs UserPromptSubmit for those turns too; before 1.7.2 the hook searched their XML (210 times in real transcripts).
+
+**Which servers:** every `.mcp.json` entry named `semantic-*` with a `--notes` folder, e.g. `semantic-memory` +
+`semantic-memory-docs` (v1.7.2; before, only `semantic-vault`, `semantic-sidekick` and `semantic-memory`).
+**Filtering:** hits under an `archive/` folder at any depth are dropped (v1.7.2: they were in 83 of 141 injected
+blocks on real prompts), then the score gate (`SEMANTIC_MEMORY_INJECT_MIN_SCORE`, 0.35) and the top 3.
 
 **Source:** `hooks/vault-context.js` → `handlePrompt`.
 **Output shape:** identical to SessionStart but with `source="prompt"` and `query="<user prompt>"`. Searches the same corpora as SessionStart (above).
@@ -107,6 +113,23 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 **Side effect:** starts the curator detached (`skill-loop curate --auto`) when due. It injects nothing.
 **Off:** returns at once. Also returns at once under `SEMANTIC_MEMORY_REVIEWER=1`. See [skill-loop.md](../operational/skill-loop.md).
 
+## 3d. PreToolUse doc-search redirect (v1.7.2, on by default)
+
+**When:** a `Grep` or a Bash `grep`/`egrep`/`fgrep`/`rg`/`ag`/`ack`/`git grep` whose path is a **folder** inside a
+corpus that an `.mcp.json` `semantic-*` server indexes (its `--notes` folder, or a glob under it).
+**Source:** `hooks/doc-search-redirect.js`, matcher `Grep|Bash`.
+**What it does:** denies the call once. The reason Claude sees names that server's tools:
+`.documentation is indexed by semantic-memory. Search it with mcp__semantic-memory-docs__search_hybrid (by meaning) or mcp__semantic-memory-docs__search_text (exact text), then read the hits. If you need this exact search (every literal match), run the same command again and it will go through.`
+The identical call retried in the same session is let through (`doc-search-redirect.json`), because semantic
+search cannot prove a string is absent.
+**Never blocks:** Read, Glob, `find`, a search of one named file, a search with no corpus path (the whole repo),
+outage-silence mode, a skill-loop reviewer run, or a repo whose `.mcp.json` has no `semantic-*` server (the advice
+would name a tool that does not exist).
+**Cost:** about 25 ms per Grep/Bash call; it reads `.mcp.json` only when the command is a search.
+**Off:** `SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0`, or `doc_search_redirect: off` in `.claude/.semantic-memory/config`.
+**Measured (RE-InvestorHub, 2026-10-28):** a grep of `.documentation` was denied and the session called
+`search_hybrid` next, without a tool lookup.
+
 ## 4. Skill descriptions (always active, no hook involvement)
 
 **When:** Claude evaluates which skill to use on every turn. This is the LLM-level routing layer, not a hook.
@@ -141,6 +164,17 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 - `/mode` — writes `.claude/.sidekick-mode`, emits transition-capture prompts on research/outage exit, reports transition visibly.
 - `/vault` — runs `search_hybrid` + `read_note`, works in any mode including outage-silence.
 
+## 7. MCP server instructions and the always-loaded search tool (v1.7.2)
+
+**When:** session start. Claude Code loads each MCP server's `instructions` even while its tools are deferred behind
+tool search.
+**Source:** `src/mcp/server.ts` `serverInstructions`. The text names the indexed folder (relative to the server's
+working directory), says whether it is read-only, and says to call `search_hybrid` there before grepping it
+(writable vaults also point at `synthesize_note`). Under Claude Code's 4,096-character limit.
+**Always-loaded tool:** `search_hybrid` carries `_meta: {"anthropic/alwaysLoad": true}` in `tools/list`, so Claude
+can call it without a `ToolSearch` first (Claude Code 2.1.285+; checked on 2.1.312 with a project `.mcp.json`).
+The other tools stay deferred. To load every tool of one server, set `"alwaysLoad": true` on its `.mcp.json` entry.
+
 ## Summary — debugging "why didn't X happen?"
 
 | Symptom | First check |
@@ -150,7 +184,9 @@ Stop hook **does NOT use** `hookSpecificOutput` — Claude Code's schema rejects
 | No `<vault-fact>` after a failed command | The failure hook is opt-in: set `SEMANTIC_MEMORY_FAILURE_HOOK=1`. It injects facts only (`facts/*.md`), at score ≥ 0.50, once per session per fact — `SIDEKICK_DEBUG=1` shows the search |
 | No `<vault-fact>` after a failed command in jev mode | Jev said no or unsure, or the call failed, timed out or hit `SEMANTIC_MEMORY_JEV_DAILY_TOKENS`: each injects nothing by design. `SIDEKICK_DEBUG=1` prints the reason. `jev-mode status` says whether jev-loop and the key are reachable. Is `SEMANTIC_MEMORY_FAILURE_HOOK=0` set? |
 | No "skill drafts waiting" note | The skill loop is off (`skill-loop status`), there are no drafts (`skill-loop review`), or the event was `clear`/`compact`. |
-| Docs never appear in `<vault-context>` | Pre-1.5.2 hooks searched only the first `.mcp.json` entry. On 1.5.2+, check the docs entry has an existing `--notes` folder and a built index (`<docs>/.semantic-sidekick-index/`) |
+| Docs never appear in `<vault-context>` | Pre-1.5.2 hooks searched only the first `.mcp.json` entry. Pre-1.7.2 hooks skipped a docs server not named `semantic-vault`/`semantic-sidekick`/`semantic-memory` (e.g. `semantic-memory-docs`). On 1.7.2+, check the entry's name starts with `semantic-`, it has an existing `--notes` folder, and a built index (`<docs>/.semantic-sidekick-index/`). `SIDEKICK_DEBUG=1` prints `search=` with every folder searched |
+| Only archived docs would match | Hits under `archive/` are never injected (v1.7.2); search them with the MCP tools |
+| A grep was denied with "is indexed by semantic-memory" | The doc-search redirect (3d). Use the named MCP search, or run the same command again to let it through; turn it off with `SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0` |
 | No injection on a prompt that should trigger it | Fingerprint collision — `cat .claude/.sidekick-fingerprints.json` and check if your prompt's sha1 is there, or mode is outage-silence — `cat .claude/.sidekick-mode` |
 | Stop hook doesn't fire capture prompt | Check `.claude/.semantic-memory/capture-pending.json` — no items with this session's `session_id` = no cues matched this session's prompts |
 | Claude doesn't cite notes | vault-first skill didn't fire — check `ls .claude/skills/vault-first` (should be symlink to `skills/vault-first`); CLAUDE.md rule may also be missing |
