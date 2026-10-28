@@ -8,5 +8,7 @@ export default defineConfig({
     // Pre-download the ONNX model once so parallel test files don't race
     // on the same destination path. See test/global-setup.ts.
     globalSetup: ["./test/global-setup.ts"],
+    // the developer's own feature switches and Jev key never reach a test
+    setupFiles: ["./test/clean-env.ts"],
   },
 });
