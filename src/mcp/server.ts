@@ -1,3 +1,4 @@
+import { relative } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Watcher } from "../core/watcher.js";
@@ -20,10 +21,13 @@ export type { ServerOptions } from "./context.js";
 export async function createServer(notesPath: string, options: ServerOptions = {}) {
   const ctx = await buildContext(notesPath, options);
 
-  const server = new McpServer({
-    name: "semantic-memory",
-    version: "1.0.0",
-  });
+  const server = new McpServer(
+    {
+      name: "semantic-memory",
+      version: "1.0.0",
+    },
+    { instructions: serverInstructions(notesPath, options.readOnly) }
+  );
 
   // Conditional tool registration (v1.4 Phase 7, DEFAULT OFF). When enabled via
   // tools.conditional AND the active mode is outage-silence, register only the
@@ -68,6 +72,17 @@ export async function createServer(notesPath: string, options: ServerOptions = {
   }
 
   return server;
+}
+
+// Claude Code loads server instructions at session start even while the tools are deferred (v1.7.2)
+export function serverInstructions(notesPath: string, readOnly = false): string {
+  const where = relative(process.cwd(), notesPath) || notesPath;
+  return (
+    `This server indexes ${where} (markdown${readOnly ? ", read-only" : ""}) for semantic search. ` +
+    `For a question about what ${where} says, call search_hybrid here before grepping or opening files there, ` +
+    `then read_note the hits; search_text finds exact strings.` +
+    (readOnly ? "" : " Write research, decisions and gotchas here with synthesize_note.")
+  );
 }
 
 export async function startServer(notesPath: string, options: ServerOptions = {}) {
