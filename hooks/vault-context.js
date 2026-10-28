@@ -41,8 +41,8 @@ function emit(eventName, additionalContext) {
   process.stdout.write(JSON.stringify(out) + "\n");
 }
 
-// Our server: any semantic-* entry with --notes (semantic-vault, semantic-sidekick, semantic-memory,
-// semantic-memory-docs, …). Same rule in src/core/healthcheck.ts.
+// A server the hooks can search: any semantic-* entry with --notes (semantic-vault, semantic-sidekick,
+// semantic-memory, semantic-memory-docs, …). The drift checks only need the semantic-* name.
 export const isSemanticServer = (name, entry) =>
   /^semantic-/.test(name) && Array.isArray(entry?.args) && entry.args.includes("--notes");
 
@@ -745,7 +745,7 @@ async function fastDriftCheck(projectRoot) {
     if (existsSync(mcpPath)) {
       const data = JSON.parse(readFileSync(mcpPath, "utf8"));
       const servers = (data && data.mcpServers) || {};
-      const hasEntry = Object.entries(servers).some(([k, v]) => isSemanticServer(k, v));
+      const hasEntry = Object.keys(servers).some((k) => /^semantic-/.test(k));
       if (!hasEntry) findings.push({ check: "mcp_json_entry", summary: ".mcp.json has no semantic-* server entry" });
     }
   } catch (e) { debug(`mcp check threw: ${e.message}`); }
