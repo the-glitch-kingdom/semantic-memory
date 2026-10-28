@@ -27,7 +27,7 @@ purpose: Quick reference for quickstart documentation
 
 ## Recently Updated
 
-- [Installation Guide](installation-guide.md) - 2026-10-24
+- [Installation Guide](installation-guide.md) - 2026-10-28
 - [semantic-sidekick — Overview](sidekick-overview.md) - 2026-10-24
 
 ## By Status

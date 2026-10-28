@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 18
+- **Total Documents:** 19
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -43,6 +43,7 @@ purpose: Complete listing of changelog documentation
 | [v1.6.1 — release audit of 1.5.2 → 1.6.0](v1-6-1-release-audit.md) | active | 2026-10-24 | 717 |
 | [v1.7.0 — the skill loop and jev mode](v1-7-0-skill-loop-and-jev-mode.md) | active | 2026-10-25 | 691 |
 | [v1.7.1 — skill loop queue fixes](v1-7-1-skill-loop-queue-fixes.md) | active | 2026-10-28 | 317 |
+| [v1.7.2 — sessions use the indexed docs](v1-7-2-vault-context-sources.md) | active | 2026-10-28 | 485 |
 
 ## Keywords
 

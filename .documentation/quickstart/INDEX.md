@@ -25,7 +25,7 @@ purpose: Complete listing of quickstart documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [Installation Guide](installation-guide.md) | active | 2026-10-24 | 911 |
+| [Installation Guide](installation-guide.md) | active | 2026-10-28 | 957 |
 | [semantic-sidekick — Overview](sidekick-overview.md) | active | 2026-10-24 | 768 |
 
 ## Keywords

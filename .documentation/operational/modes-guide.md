@@ -5,8 +5,8 @@ domains: [operational]
 audience: [developers]
 tags: [modes, routing, vault-first, research, outage-silence]
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
+last_updated: '2026-10-28'
+version: '1.7.2'
 purpose: vault-first / research / outage-silence entry signals, behavior, misroute recovery
 load_priority: 9
 ---
@@ -104,6 +104,7 @@ Works in any mode, including outage-silence. The one sanctioned way to read the 
 4. **`/vault` escape hatch remains active.** If the user needs the vault, they ask explicitly.
 5. **No capture-cue chatter mid-session.** The Stop hook accumulates pending, but Claude doesn't surface it until exit.
 6. **No failure-time fact lookup.** Even with `SEMANTIC_MEMORY_FAILURE_HOOK=1`, the `PostToolUseFailure` hook injects nothing in outage-silence (v1.6+).
+7. **No doc-search redirect.** A grep of an indexed docs folder goes straight through: no extra step during an incident (v1.7.2).
 
 **Stop-hook behavior:**
 - **Always** fires `<vault-transition-capture mode="outage-silence">` regardless of capture-pending. `decision: "block"` with instruction to draft a postmortem as `synthesize_note({ type: "gotcha" | "decision", ... })`.

@@ -35,11 +35,11 @@ purpose: Quick reference for operational documentation
 
 ## Recently Updated
 
+- [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) - 2026-10-28
+- [Modes Guide](modes-guide.md) - 2026-10-28
 - [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) - 2026-10-25
 - [Jev mode — closed-set decisions through jev-loop](jev-mode.md) - 2026-10-25
 - [The skill loop — learned skills between sessions](skill-loop.md) - 2026-10-25
-- [Capture Workflows](capture-workflows.md) - 2026-10-24
-- [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) - 2026-10-24
 
 ## By Status
 

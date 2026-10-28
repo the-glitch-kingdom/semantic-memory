@@ -5,8 +5,8 @@ domains: [quickstart]
 audience: [developers]
 tags: [install, setup, plugin, npm, update]
 status: active
-last_updated: '2026-10-24'
-version: '1.6.1'
+last_updated: '2026-10-28'
+version: '1.7.2'
 purpose: Three install routes (plugin / npm / dev), what a fresh install gets, updating, post-install housekeeping, uninstall
 load_priority: 10
 ---
@@ -60,6 +60,12 @@ Edit the `semantic-vault` entry's `--notes` argument in `.mcp.json`:
 ```
 
 The hooks search every `semantic-*` entry's folder and write state to the first one without `--read-only` (v1.5.2+).
+Any name that starts with `semantic-` and has `--notes` works, e.g. `semantic-memory` + `semantic-memory-docs`
+(v1.7.2; before, only `semantic-vault`, `semantic-sidekick` and `semantic-memory` were searched).
+
+A grep of a folder these entries index is redirected once to the MCP search (v1.7.2). See
+[injection-points.md](../architecture/injection-points.md#3d-pretooluse-doc-search-redirect-v172); turn it off
+with `SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0`.
 
 ### 4. Install the schema (optional but recommended)
 

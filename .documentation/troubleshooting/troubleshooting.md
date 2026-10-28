@@ -5,8 +5,8 @@ domains: [troubleshooting]
 audience: [developers]
 tags: [troubleshooting, debugging, failure-modes, diagnostics, v1.7.0, skill-loop, jev-mode]
 status: active
-last_updated: '2026-10-25'
-version: '1.7.0'
+last_updated: '2026-10-28'
+version: '1.7.2'
 purpose: Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command.
 load_priority: 9
 ---
@@ -371,6 +371,30 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 - Jev mode only removes: a confident Jev no (≤ 0.05) suppresses the fact, and a timeout, an error or the daily ceiling inject nothing. Jev mode does not turn the hook on: it still needs `SEMANTIC_MEMORY_FAILURE_HOOK=1`. `SIDEKICK_DEBUG=1` prints the reason on stderr.
 - **Ceiling:** `SEMANTIC_MEMORY_JEV_DAILY_TOKENS` (500,000) for the hook; the hook says so once on stderr.
 - **Slow search:** the gate's whole budget is 1.5 s (`SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS`); with less than 300 ms left after the search, Jev is not asked.
+
+## Docs search (v1.7.2)
+
+### The docs stopped appearing in `<vault-context>` after renaming a server
+- **Before 1.7.2** the hooks searched only entries named `semantic-vault`, `semantic-sidekick` or `semantic-memory`.
+  A docs server named anything else (RE-InvestorHub's `semantic-memory-docs`) was skipped, and only the vault was
+  searched. Update to 1.7.2: any `semantic-*` entry with `--notes` counts.
+- **Check:** `echo '{"hook_event_name":"UserPromptSubmit","cwd":"'$PWD'","prompt":"how does login work"}' | SIDEKICK_DEBUG=1 node <plugin>/hooks/vault-context.js`
+  prints `search=` with every folder searched.
+
+### Only old docs would match, and nothing is injected
+- Hits under an `archive/` folder are never injected (1.7.2). They are history, not how things work now. Search
+  them with the MCP tools (`search_hybrid`), which still return them.
+
+### A grep was denied: "… is indexed by semantic-memory"
+- The doc-search redirect: a grep of a folder an `.mcp.json` `semantic-*` server indexes is denied once, naming that
+  server's `search_hybrid` and `search_text`. Use them, or run the same command again; the identical call goes
+  through (an exhaustive literal search stays possible).
+- **Off:** `SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0` (all repos), or `doc_search_redirect: off` in
+  `.claude/.semantic-memory/config` (one repo). It never fires in outage-silence or in a repo without a server.
+
+### The first docs search of a session says "Indexing in progress… Try again shortly"
+- The server loads its index after it starts: about 10 s for RE-InvestorHub's 986 docs (41 MB of embeddings).
+  Searches before that get this answer. Retry; it is not a rebuild.
 
 ---
 
