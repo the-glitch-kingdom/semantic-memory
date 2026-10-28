@@ -2,6 +2,34 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.7.2] - 2026-10-28 — Sessions use the indexed docs
+
+A check of real sessions found the semantic search was rarely used. In RE-InvestorHub, 1 of 6 sessions in two weeks
+called it, never on the docs server, and its prompt hook had stopped searching the docs at all.
+
+### Fixed
+
+- **The prompt hook searches every `semantic-*` server.** It matched only `semantic-vault`, `semantic-sidekick`
+  and `semantic-memory`, so a docs server named `semantic-memory-docs` was skipped. Any `semantic-*` entry with
+  `--notes` now counts, in the hook and in the healthcheck's `mcp_json_entry` check.
+- **Task notifications and subagent hand-backs are no longer searched.** `UserPromptSubmit` fires for them too, and
+  searching their XML injected noise (210 times in real transcripts).
+- **Archived docs are no longer injected.** Hits under an `archive/` folder (history, by hit-em-with-the-docs'
+  rule) are dropped. They were in 83 of 141 injected blocks on real prompts. The score floor stays 0.35: on those
+  prompts no floor separated lookups from directives.
+
+### Added
+
+- **A grep of an indexed docs folder is redirected once.** A new `PreToolUse` hook (Grep, Bash) denies a
+  `grep`/`rg`/`ag`/`ack`/`git grep` whose path is a folder an `.mcp.json` server indexes, and names that server's
+  `search_hybrid` and `search_text`. The identical call retried goes through. Read, Glob, `find`, single files,
+  outage-silence mode and repos without a server are never blocked. Off: `SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0`,
+  or `doc_search_redirect: off` in `.claude/.semantic-memory/config`.
+- **The server says what it indexes.** Its MCP `instructions` name the folder and say to search there first;
+  Claude Code loads them at session start even while the tools are deferred.
+- **`search_hybrid` skips tool search.** It carries `_meta` `anthropic/alwaysLoad`, so Claude can call it without
+  looking it up first (Claude Code 2.1.285 or later).
+
 ## [1.7.1] - 2026-10-28 — Skill loop queue fixes
 
 These three fixes come from the skill loop's first days of real use.
