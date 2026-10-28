@@ -255,11 +255,12 @@ Set them in `~/.claude/settings.json` → `env` (the `skill-loop` and `jev-mode`
 | `SEMANTIC_MEMORY_SKILL_LOOP_CONCURRENCY` | `5` | Skill-loop `claude` processes at once on the machine. Clamped to 1-5. |
 | `SEMANTIC_MEMORY_SKILL_LOOP_MODEL` | `sonnet` | Model for reviews and evals (passed to `claude --model`). |
 | `SEMANTIC_MEMORY_SKILL_LOOP_MIN_TOOL_CALLS` | `20` | A session with no failure and no correction is reviewed only past this many tool calls. |
+| `SEMANTIC_MEMORY_SKILL_LOOP_ALLOW_TMP` | unset | `1` also reviews sessions whose repo is under the temp directory (`os.tmpdir()`, `/tmp`, `/var/tmp`), which are otherwise skipped. For tests and scratch repos. |
 | `SEMANTIC_MEMORY_SKILL_LOOP_EVIDENCE_MB` | `5` | Size at which an evidence file rotates to `<file>.1`. |
 | `SEMANTIC_MEMORY_PRIVATE_PATHS` | `~/workspace/kentro` | Path-delimited list of private repos. Their skills stay project scope and are never indexed. |
 | `SEMANTIC_MEMORY_REVIEWER` | unset | Set to `1` by semantic-memory on every skill-loop `claude` run. Every semantic-memory hook exits at once. Do not set it yourself. |
 | `SEMANTIC_MEMORY_STATE_HOME` | `~/.semantic-memory` | Base for the machine-wide state above. |
-| `SEMANTIC_MEMORY_CLAUDE_BIN` | `claude` | The `claude` binary the reviewer and evals run. |
+| `SEMANTIC_MEMORY_CLAUDE_BIN` | `claude` on PATH, else `~/.local/bin/claude`, else `~/.claude/local/claude` | The `claude` binary the reviewer and evals run. |
 | `SEMANTIC_MEMORY_CLAUDE_SLOTS_DIR` | `~/.semantic-memory/claude-slots` | Where the concurrency slot files live. |
 | `SEMANTIC_MEMORY_SKILL_EVAL_CACHE` | `~/.semantic-memory/skill-eval-cache.jsonl` | Trigger-eval cache file. |
 | `SEMANTIC_MEMORY_CLAUDE_SETTINGS` | `~/.claude/settings.json` | The settings file `skill-loop`/`jev-mode` edit, and where jev mode looks for `TYPESAFE_API_KEY`. |

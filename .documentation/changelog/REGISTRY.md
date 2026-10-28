@@ -3,7 +3,7 @@ title: Changelog Registry
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-10-25'
+last_updated: '2026-10-28'
 version: '1.0.0'
 purpose: Quick reference for changelog documentation
 ---
@@ -16,7 +16,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 17 |
+| Documents | 18 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -35,17 +35,17 @@ purpose: Quick reference for changelog documentation
 
 ## Recently Updated
 
+- [v1.7.1 — skill loop queue fixes](v1-7-1-skill-loop-queue-fixes.md) - 2026-10-28
 - [v1.7.0 — the skill loop and jev mode](v1-7-0-skill-loop-and-jev-mode.md) - 2026-10-25
 - [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) - 2026-10-24
 - [v1.5.3 — secret redaction](v1-5-3-secret-redaction.md) - 2026-10-24
 - [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](v1-6-0-failure-lookup.md) - 2026-10-24
-- [v1.6.1 — release audit of 1.5.2 → 1.6.0](v1-6-1-release-audit.md) - 2026-10-24
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 17 |
+| active | 18 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
@@ -61,4 +61,4 @@ purpose: Quick reference for changelog documentation
 
 ---
 
-*Last updated: 2026-10-25*
+*Last updated: 2026-10-28*

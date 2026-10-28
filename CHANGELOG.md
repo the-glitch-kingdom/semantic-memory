@@ -2,6 +2,26 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.7.1] - 2026-10-28 — Skill loop queue fixes
+
+These three fixes come from the skill loop's first days of real use.
+
+### Fixed
+
+- **Sessions in temporary directories are no longer reviewed.** Benchmark and test runs that start real `claude`
+  sessions in `mkdtemp` directories (jev-loop's speed checks) were queued like real work. On 2026-10-27 they used
+  all 10 of the day's reviews, so real sessions waited a day. A repo under the system temp directory (`os.tmpdir()`,
+  `/tmp`, `/var/tmp`) now gets no job. `SEMANTIC_MEMORY_SKILL_LOOP_ALLOW_TMP=1` turns this back on for scratch repos
+  and tests.
+- **A worker started from a cron session now finds `claude`.** The detached worker inherits the session's PATH. Under
+  cron that PATH has no `~/.local/bin`, so the review failed with `spawn claude ENOENT` and the job stayed queued. The
+  worker now looks for `claude` on PATH, then in `~/.local/bin/claude` and `~/.claude/local/claude`.
+  `SEMANTIC_MEMORY_CLAUDE_BIN` still wins over all of these.
+- **A resumed session's new evidence is reviewed.** A session was reviewed once, when it first ended, and never
+  again, so a correction given after a `--resume` was lost. When a reviewed session ends again with failures or
+  corrections recorded after its review, it gets one follow-up review. That review sees only the evidence and the
+  part of the transcript after the last review. Tool-call volume alone never re-queues a session.
+
 ## [1.7.0] - 2026-10-26 — The skill loop and jev mode
 
 Two new features, **both off by default**, each with its own switch. With both off, 1.7.0 behaves like 1.6.1.

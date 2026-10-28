@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { appendEvidence } from "../../src/core/skill-evidence.js";
-import { sessionJob, enqueue, pendingJobs, recordRun, runsToday, takeLock, queueDir, logPath } from "../../src/core/skill-queue.js";
+import { sessionJob, enqueue, pendingJobs, recordRun, runsToday, takeLock, queueDir, logPath, inTempDir } from "../../src/core/skill-queue.js";
+import { buildBrief } from "../../src/core/skill-review.js";
 import { drain } from "../../src/core/skill-worker.js";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
@@ -20,7 +21,8 @@ describe("skill-loop queue and worker (v1.7)", () => {
     repo = await mkdtemp(join(tmpdir(), "sm-queue-repo-"));
     home = await mkdtemp(join(tmpdir(), "sm-queue-home-"));
     await mkdir(join(repo, ".git"));
-    env = { ...process.env, SEMANTIC_MEMORY_STATE_HOME: home, SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS: "10" };
+    // test repos live in the temp dir, which the loop otherwise skips (1.7.1)
+    env = { ...process.env, SEMANTIC_MEMORY_STATE_HOME: home, SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS: "10", SEMANTIC_MEMORY_SKILL_LOOP_ALLOW_TMP: "1" };
   });
   afterEach(async () => {
     await rm(repo, { recursive: true, force: true });
@@ -45,14 +47,16 @@ describe("skill-loop queue and worker (v1.7)", () => {
 
   it("drains oldest first, marks each done, and never re-reviews a done job", async () => {
     enqueue({ ...job("b"), ts: "2026-10-25T02:00:00Z" }, env);
-    enqueue({ ...job("a"), ts: "2026-10-25T01:00:00Z" }, env);
+    const a = { ...job("a"), ts: "2026-10-25T01:00:00Z" };
+    enqueue(a, env);
     const seen: string[] = [];
     const r = await drain(repo, async (j) => (seen.push(j.session_id), ok()), env);
     expect(r).toMatchObject({ reviewed: 2, capped: false });
     expect(seen).toEqual(["a", "b"]);
     expect(pendingJobs(repo, env)).toEqual([]);
     expect((await readdir(join(queueDir(env), "done"))).sort()).toEqual(["a.json", "b.json"]);
-    enqueue(job("a"), env); // the same session ending again
+    expect(sessionJob(repo, { session_id: "a" }, env)).toBeNull(); // ended again with nothing new
+    enqueue(a, env); // and its old job is not queued twice
     expect(pendingJobs(repo, env)).toEqual([]);
     expect(await readFile(logPath(repo), "utf8")).toContain("reviewed a");
   });
@@ -125,5 +129,71 @@ describe("skill-loop queue and worker (v1.7)", () => {
     await main(end, { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "1" });
     expect(performance.now() - t).toBeLessThan(100);
     expect(JSON.parse(await readFile(join(queueDir(env), "h1.json"), "utf8"))).toMatchObject({ session_id: "h1", repo, reason: expect.stringContaining("prompt_input_exit") });
+  });
+  it("1.7.1: a repo in the temp directory gets no job, even with failures; ALLOW_TMP=1 or a real repo does", async () => {
+    appendEvidence(repo, "failures", { session_id: "tmp1", id: "f1", tool: "Bash", command: "x", error: "Exit code 1" });
+    const strict = { ...env, SEMANTIC_MEMORY_SKILL_LOOP_ALLOW_TMP: "" };
+    expect(inTempDir(repo, strict)).toBe(true);
+    expect(sessionJob(repo, { session_id: "tmp1" }, strict)).toBeNull();
+    expect(sessionJob(repo, { session_id: "tmp1" }, env)).not.toBeNull();
+    const real = await mkdtemp(join(ROOT, ".sm-queue-real-"));
+    try {
+      expect(inTempDir(real, strict)).toBe(false);
+      appendEvidence(real, "failures", { session_id: "r1", id: "f2", tool: "Bash", command: "x", error: "Exit code 1" });
+      expect(sessionJob(real, { session_id: "r1" }, strict)).not.toBeNull();
+    } finally {
+      await rm(real, { recursive: true, force: true });
+    }
+  });
+
+  it("1.7.1: a resumed session is reviewed again only for evidence after its review", async () => {
+    enqueue(job("re"), env);
+    await drain(repo, ok, env);
+    const first = JSON.parse(await readFile(join(queueDir(env), "done", "re.json"), "utf8"));
+    // ended again with nothing new: no job, even with many tool calls in the transcript
+    const transcript = join(repo, "t.jsonl");
+    await writeFile(transcript, Array.from({ length: 25 }, () => '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read"}]}}').join("\n"));
+    expect(sessionJob(repo, { session_id: "re", transcript_path: transcript }, env)).toBeNull();
+    await new Promise((r) => setTimeout(r, 5));
+    appendEvidence(repo, "corrections", { session_id: "re", cue: "no", excerpt: "no, use pnpm" });
+    const again = sessionJob(repo, { session_id: "re", reason: "prompt_input_exit" }, env)!;
+    expect(again).toMatchObject({ since: first.finished, evidence: { failures: [], corrections: 1 } });
+    expect(again.reason).toContain("resumed since its review");
+    enqueue(again, env);
+    expect(pendingJobs(repo, env)).toHaveLength(1);
+    const seen: (string | undefined)[] = [];
+    await drain(repo, async (j) => (seen.push(j.since), ok()), env);
+    expect(seen).toEqual([first.finished]);
+    const second = JSON.parse(await readFile(join(queueDir(env), "done", "re.json"), "utf8"));
+    expect(second.finished > first.finished).toBe(true);
+    expect(sessionJob(repo, { session_id: "re" }, env)).toBeNull(); // that correction is reviewed now
+    enqueue({ ...again, since: "2000-01-01T00:00:00Z" }, env); // a stale follow-up job is not queued
+    expect(pendingJobs(repo, env)).toEqual([]);
+  });
+
+  it("1.7.1: a follow-up brief holds only the evidence and timeline after `since`", async () => {
+    const since = "2026-10-28T12:00:00.000Z";
+    const ev = (kind: "failures" | "corrections", rec: object) =>
+      appendEvidence(repo, kind, { session_id: "b1", ...rec }, env);
+    const old = "2026-10-28T11:00:00.000Z"; // a record's own ts wins over the write time
+    ev("failures", { ts: old, id: "old-f", tool: "Bash", command: "old-cmd", error: "old error" });
+    ev("corrections", { ts: old, cue: "no", excerpt: "old correction" });
+    ev("failures", { id: "new-f", tool: "Bash", command: "new-cmd", error: "new error" });
+    const transcript = join(repo, "b1.jsonl");
+    await writeFile(
+      transcript,
+      [
+        { type: "user", timestamp: "2026-10-28T10:00:00.000Z", message: { content: "old prompt" } },
+        { type: "assistant", timestamp: "2026-10-28T13:00:00.000Z", message: { content: [{ type: "tool_use", id: "c1", name: "Bash", input: { command: "new-cmd" } }] } },
+        { type: "user", timestamp: "2026-10-28T13:00:01.000Z", message: { content: [{ type: "tool_result", tool_use_id: "c1", is_error: true, content: "new error" }] } },
+        { type: "user", timestamp: "2026-10-28T13:01:00.000Z", message: { content: "new prompt" } },
+      ].map((l) => JSON.stringify(l)).join("\n"),
+    );
+    const brief = buildBrief({ session_id: "b1", repo, transcript_path: transcript, reason: "1 failure(s)", ts: since, since, evidence: { failures: ["new-f"], corrections: 0, skills_used: [], tool_calls: 0 } }, []);
+    expect(brief).toContain("Follow-up review");
+    expect(brief).toContain("new-f");
+    expect(brief).toContain("USER: new prompt");
+    expect(brief).toContain("TOOL Bash: new-cmd");
+    for (const old of ["old-f", "old correction", "old prompt"]) expect(brief).not.toContain(old);
   });
 });

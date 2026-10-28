@@ -11,9 +11,9 @@
  *    Verified flag by flag on Claude Code 2.1.310 (.planning/v17-skill-loop-and-jev-mode/notes.md, Phase 2).
  */
 import { spawn } from "node:child_process";
-import { openSync, writeSync, closeSync, readFileSync, unlinkSync, mkdirSync } from "node:fs";
+import { accessSync, constants, openSync, writeSync, closeSync, readFileSync, unlinkSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 
 export const MAX_CLAUDE = 5;
 
@@ -99,7 +99,21 @@ export interface ClaudeRunResult {
   error?: string;
 }
 
-export const claudeBin = (env = process.env) => env.SEMANTIC_MEMORY_CLAUDE_BIN || "claude";
+const executable = (p: string) => {
+  try {
+    accessSync(p, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};
+/** `claude` from PATH, else its usual install places: a worker started from a cron session has cron's PATH. */
+export function claudeBin(env = process.env): string {
+  if (env.SEMANTIC_MEMORY_CLAUDE_BIN) return env.SEMANTIC_MEMORY_CLAUDE_BIN;
+  if ((env.PATH ?? "").split(delimiter).some((d) => d && executable(join(d, "claude")))) return "claude";
+  const home = env.HOME || homedir();
+  return [join(home, ".local", "bin", "claude"), join(home, ".claude", "local", "claude")].find(executable) ?? "claude";
+}
 export const skillLoopModel = (env = process.env) => env.SEMANTIC_MEMORY_SKILL_LOOP_MODEL || "sonnet";
 
 /** The fenced argument list (exported for tests: these flags are the security boundary). */

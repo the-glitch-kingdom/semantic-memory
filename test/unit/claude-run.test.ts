@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, readFile, writeFile, mkdir } from "node:fs/promises";
+import { mkdtemp, rm, readFile, writeFile, mkdir, chmod } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runClaude, fencedArgs, acquireSlot, claudeConcurrency, skillsCalled } from "../../src/core/claude-run.js";
+import { runClaude, fencedArgs, acquireSlot, claudeConcurrency, skillsCalled, claudeBin } from "../../src/core/claude-run.js";
 
 export const FAKE_CLAUDE = join(resolve(fileURLToPath(new URL(".", import.meta.url)), ".."), "bin", "claude");
 
@@ -97,5 +97,20 @@ describe("fenced claude runs (v1.7)", () => {
     await expect(acquireSlot({ env: one, timeoutMs: 300, pollMs: 50 })).rejects.toThrow(/no claude slot free/);
     release();
     (await acquireSlot({ env: one, timeoutMs: 300 }))();
+  });
+  it("1.7.1: claude is found without PATH (a worker started from cron): override, PATH, ~/.local/bin, ~/.claude/local", async () => {
+    const home = join(dir, "home");
+    const bin = join(dir, "bin");
+    await mkdir(bin, { recursive: true });
+    const exe = async (p: string) => (await mkdir(join(p, ".."), { recursive: true }), await writeFile(p, "#!/bin/sh\n"), await chmod(p, 0o755));
+    const base = { HOME: home, PATH: "/nonexistent" };
+    expect(claudeBin(base)).toBe("claude"); // nothing anywhere: unchanged, fails as before
+    await exe(join(home, ".claude", "local", "claude"));
+    expect(claudeBin(base)).toBe(join(home, ".claude", "local", "claude"));
+    await exe(join(home, ".local", "bin", "claude"));
+    expect(claudeBin(base)).toBe(join(home, ".local", "bin", "claude"));
+    await exe(join(bin, "claude"));
+    expect(claudeBin({ ...base, PATH: `/nonexistent:${bin}` })).toBe("claude");
+    expect(claudeBin({ ...base, SEMANTIC_MEMORY_CLAUDE_BIN: "/opt/x/claude" })).toBe("/opt/x/claude");
   });
 });

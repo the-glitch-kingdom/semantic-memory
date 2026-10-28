@@ -3,7 +3,7 @@ title: Documentation Index
 tier: reference
 domains: [root]
 status: active
-last_updated: '2026-10-25'
+last_updated: '2026-10-28'
 version: '1.0.0'
 purpose: Navigation hub for all documentation
 ---
@@ -31,7 +31,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 17 | Release notes per version and phase |
+| [Changelog](#changelog) | 18 | Release notes per version and phase |
 | [Operational](#operational) | 15 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 6 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -231,6 +231,7 @@ purpose: Navigation hub for all documentation
 | [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](changelog/v1-6-0-failure-lookup.md) | reference | active | 2026-10-24 |
 | [v1.6.1 — release audit of 1.5.2 → 1.6.0](changelog/v1-6-1-release-audit.md) | reference | active | 2026-10-24 |
 | [v1.7.0 — the skill loop and jev mode](changelog/v1-7-0-skill-loop-and-jev-mode.md) | reference | active | 2026-10-25 |
+| [v1.7.1 — skill loop queue fixes](changelog/v1-7-1-skill-loop-queue-fixes.md) | reference | active | 2026-10-28 |
 
 ---
 
@@ -307,6 +308,6 @@ purpose: Navigation hub for all documentation
 
 ## Maintenance
 
-- **Last generated:** 2026-10-25
+- **Last generated:** 2026-10-28
 - **Run maintenance:** `npx hit-em-with-the-docs maintain`
 - **Regenerate index:** `npx hit-em-with-the-docs index`

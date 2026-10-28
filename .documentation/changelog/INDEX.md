@@ -3,7 +3,7 @@ title: Changelog Documentation Index
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-10-25'
+last_updated: '2026-10-28'
 version: '1.0.0'
 purpose: Complete listing of changelog documentation
 ---
@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 17
+- **Total Documents:** 18
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -42,6 +42,7 @@ purpose: Complete listing of changelog documentation
 | [v1.6.0 — failure-time fact lookup (opt-in) and the failure eval](v1-6-0-failure-lookup.md) | active | 2026-10-24 | 387 |
 | [v1.6.1 — release audit of 1.5.2 → 1.6.0](v1-6-1-release-audit.md) | active | 2026-10-24 | 717 |
 | [v1.7.0 — the skill loop and jev mode](v1-7-0-skill-loop-and-jev-mode.md) | active | 2026-10-25 | 691 |
+| [v1.7.1 — skill loop queue fixes](v1-7-1-skill-loop-queue-fixes.md) | active | 2026-10-28 | 317 |
 
 ## Keywords
 
@@ -55,4 +56,4 @@ This domain covers: changelog, release, version, shipped
 
 ---
 
-*Last updated: 2026-10-25*
+*Last updated: 2026-10-28*
