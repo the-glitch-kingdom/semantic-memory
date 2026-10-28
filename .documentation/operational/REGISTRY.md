@@ -3,7 +3,7 @@ title: Operational Registry
 tier: reference
 domains: [operational]
 status: active
-last_updated: '2026-10-25'
+last_updated: '2026-10-28'
 version: '1.0.0'
 purpose: Quick reference for operational documentation
 ---
@@ -61,4 +61,4 @@ purpose: Quick reference for operational documentation
 
 ---
 
-*Last updated: 2026-10-25*
+*Last updated: 2026-10-28*

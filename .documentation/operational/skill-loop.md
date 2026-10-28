@@ -62,6 +62,8 @@ landed stay in `.claude/skills/` as ordinary files and keep working; drafts and 
 2. **Enqueue.** At `SessionEnd`, a session with signal — a failure, a correction, or 20+ tool calls
    (`SEMANTIC_MEMORY_SKILL_LOOP_MIN_TOOL_CALLS`) — becomes a job in `~/.semantic-memory/review-queue/`, and the
    repo's worker starts detached. The hook only writes and spawns: SessionEnd hooks get 1.5 s.
+   A repo under the system temp directory (`os.tmpdir()`, `/tmp`, `/var/tmp`) is never queued, because benchmark
+   and test runs would use the daily cap. `SEMANTIC_MEMORY_SKILL_LOOP_ALLOW_TMP=1` turns this off for a scratch repo.
 3. **Review.** The worker builds a brief (the session's prompts, tool calls and errors, the evidence, the skills
    this repo loads, its knowledge-base fact ids), redacted and capped at 40k characters, and runs **one fenced
    `claude -p`** on it. It drafts at most two skills, or patches a learned skill that was used and then failed.
@@ -72,8 +74,13 @@ landed stay in `.claude/skills/` as ordinary files and keep working; drafts and 
 The worker drains this repo's jobs oldest first, one worker per repo (`skill-loop.lock`), and stops at **10
 reviews a day across all repos** (`SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS`); the rest wait for tomorrow. A job is
 marked done only after its review returns, so a crash leaves it queued; after 3 failed attempts it is set aside
-in `review-queue/failed/`. A session is never reviewed twice. Everything is logged in
+in `review-queue/failed/`. A session gets one review, plus a **follow-up review** if it is resumed and records new
+failures or corrections after that review. The follow-up brief holds only the evidence and the transcript entries
+after the last review. Tool calls alone never re-queue a reviewed session. Everything is logged in
 `.claude/.semantic-memory/skill-loop.log`.
+
+The worker runs `claude` from PATH, or from `~/.local/bin/claude` or `~/.claude/local/claude` when PATH lacks it,
+for example in a session started from cron. `SEMANTIC_MEMORY_CLAUDE_BIN` overrides this.
 
 ## What the reviewer can and cannot touch
 

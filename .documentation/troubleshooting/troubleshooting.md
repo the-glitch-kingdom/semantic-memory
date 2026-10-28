@@ -341,11 +341,12 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 ### The worker isn't running
 - **Check:** `semantic-memory skill-loop status` shows the queue and the worker's pid; `.claude/.semantic-memory/skill-loop.log` shows what it did.
 - **Lock left by a dead worker:** the next worker reclaims it (the pid is checked). Run one by hand: `semantic-memory skill-loop worker`.
-- **`claude` not on PATH for hooks:** the reviewer runs `claude` (or `SEMANTIC_MEMORY_CLAUDE_BIN`); the log says `could not start claude`.
+- **`could not start claude: spawn claude ENOENT`** (often a session started from cron, whose PATH has no `~/.local/bin`): since 1.7.1 the worker also looks in `~/.local/bin/claude` and `~/.claude/local/claude`. If claude is elsewhere, set `SEMANTIC_MEMORY_CLAUDE_BIN` to its full path. A job that failed this way stays queued and runs at that repo's next worker start; to run it now, go to the repo and run `semantic-memory skill-loop worker`. See [the fact](../knowledge-base/facts/cron-sessions-start-workers-without-local-bin.md).
 - **A job that keeps failing** is retried at the next worker start and set aside after 3 attempts in `~/.semantic-memory/review-queue/failed/` with the reason.
 
 ### "daily cap reached"
 - At most `SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS` (10) reviews a day across all repos; the rest wait in the queue and run on the next worker start after midnight. Raise the variable if you want more.
+- **The cap is used by sessions you did not run by hand:** `~/.semantic-memory/skill-loop-runs.jsonl` lists every review with its repo. Before 1.7.1, benchmark and test runs in temp directories (`/tmp/tmp…/work-on`) were reviewed too; 1.7.1 skips them. Sessions started by cron jobs in real repos are still reviewed.
 
 ### A skill I wanted was archived
 - The curator archives learned skills unused for 30 days. `semantic-memory skill-loop restore <name>` brings it back; set `skill_loop.pinned: true` in its frontmatter so the curator leaves it alone. `skill-loop rollback <ledger-id>` undoes any single change exactly (`.claude/.semantic-memory/skill-ledger.jsonl` lists them).
