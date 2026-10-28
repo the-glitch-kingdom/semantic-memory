@@ -182,12 +182,15 @@ async function checkMcpJsonEntry(projectRoot: string): Promise<DriftFinding | nu
   if (!existsSync(mcpPath)) return null; // no .mcp.json — fine for dev
   const data = JSON.parse(await readFile(mcpPath, "utf-8"));
   const servers = data?.mcpServers ?? {};
-  const hasEntry = Object.keys(servers).some((k) => k === "semantic-vault" || k === "semantic-sidekick" || k === "semantic-memory");
+  // any semantic-* entry with --notes (same rule as hooks/vault-context.js isSemanticServer)
+  const hasEntry = Object.entries(servers).some(
+    ([k, v]) => /^semantic-/.test(k) && Array.isArray((v as { args?: unknown })?.args) && (v as { args: unknown[] }).args.includes("--notes")
+  );
   if (!hasEntry) {
     return {
       check: "mcp_json_entry",
       severity: "warn",
-      summary: ".mcp.json present but no semantic-memory/sidekick/vault server entry",
+      summary: ".mcp.json present but no semantic-* server entry with --notes",
       fixable_via: "mcp-reconcile",
     };
   }
