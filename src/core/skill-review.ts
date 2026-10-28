@@ -51,8 +51,11 @@ export interface DraftRecord {
 
 // --- the brief ---
 
-/** The session's timeline from its transcript: prompts, tool calls, and the errors they returned. Fail-soft. */
-export function transcriptTimeline(path: string | null, max = TIMELINE_MAX): string[] {
+/**
+ * The session's timeline from its transcript: prompts, tool calls, and the errors they returned. Fail-soft.
+ * `since`: only entries after it (a follow-up review of a resumed session).
+ */
+export function transcriptTimeline(path: string | null, max = TIMELINE_MAX, since?: string): string[] {
   if (!path) return [];
   let raw = "";
   try {
@@ -71,6 +74,9 @@ export function transcriptTimeline(path: string | null, max = TIMELINE_MAX): str
       continue;
     }
     const content = e?.message?.content;
+    // calls are remembered from the whole transcript so a result after `since` still names its call
+    const shown = !since || String(e?.timestamp ?? "") > since;
+    if (!shown && e?.type !== "assistant") continue;
     if (e?.type === "user" && typeof content === "string" && !e.isMeta) {
       // wrappers (slash-command echoes, task notifications, local command output) are not the user talking
       if (!content.trimStart().startsWith("<")) out.push(`USER: ${content.slice(0, 600)}`);
@@ -107,8 +113,9 @@ function topLevel(repo: string): string[] {
 
 export function buildBrief(job: ReviewJob, skills: SkillFile[] = findSkills(job.repo)): string {
   const repo = job.repo;
-  const failures = readEvidence(repo, "failures").filter((f) => f.session_id === job.session_id);
-  const corrections = readEvidence(repo, "corrections").filter((c) => c.session_id === job.session_id);
+  const mine = (r: Record<string, any>) => r.session_id === job.session_id && (!job.since || String(r.ts ?? "") > job.since);
+  const failures = readEvidence(repo, "failures").filter(mine);
+  const corrections = readEvidence(repo, "corrections").filter(mine);
   const used = new Set(job.evidence.skills_used);
   // free text is redacted (broad); the ids the reviewer must cite back (session, failure ids) are not, or broad
   // redaction would mask them too. The evidence logs were redacted when written.
@@ -117,6 +124,7 @@ export function buildBrief(job: ReviewJob, skills: SkillFile[] = findSkills(job.
     `# Session ${job.session_id}`,
     `Repository: ${basename(repo)} — top level: ${topLevel(repo).join(", ")}`,
     `Why reviewed: ${job.reason}`,
+    ...(job.since ? [`Follow-up review: this session was reviewed at ${job.since} and then resumed. Below is only what happened after that; judge the new evidence.`] : []),
     "",
     "## Failures (from the evidence log)",
     ...(failures.length ? failures.map((f) => `- id ${f.id}: \`${r(String(f.command))}\`\n  error: ${r(String(f.error).slice(0, 500))}`) : ["(none)"]),
@@ -136,7 +144,7 @@ export function buildBrief(job: ReviewJob, skills: SkillFile[] = findSkills(job.
     [...factIds(repo)].slice(0, 200).join(", ") || "(none)",
     "",
     "## Timeline (prompts, tool calls, errors)",
-    ...transcriptTimeline(job.transcript_path).map(r),
+    ...transcriptTimeline(job.transcript_path, TIMELINE_MAX, job.since).map(r),
   ];
   let brief = lines.join("\n");
   if (brief.length > BRIEF_MAX) brief = brief.slice(0, BRIEF_MAX) + "\n(brief cut at its size cap)";

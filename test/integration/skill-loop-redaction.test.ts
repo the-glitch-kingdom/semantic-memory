@@ -41,6 +41,7 @@ describe("skill loop: no fake secret reaches disk (v1.7)", () => {
       HOME: state,
       SEMANTIC_MEMORY_STATE_HOME: join(state, ".semantic-memory"),
       SEMANTIC_MEMORY_SKILL_LOOP: "1",
+      SEMANTIC_MEMORY_SKILL_LOOP_ALLOW_TMP: "1",
       SEMANTIC_MEMORY_JEV: "",
       SEMANTIC_MEMORY_CLAUDE_BIN: join(ROOT, "test", "bin", "claude"),
       SEMANTIC_MEMORY_CLAUDE_SLOTS_DIR: join(tmp, "slots"),
