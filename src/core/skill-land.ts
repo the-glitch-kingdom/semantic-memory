@@ -14,11 +14,13 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { applyChange, type LedgerEntry } from "./skill-ledger.js";
-import { listDrafts, transcriptTimeline, type DraftRecord } from "./skill-review.js";
+import { applyChange, archiveDir, type LedgerEntry } from "./skill-ledger.js";
+import { listDrafts, reviewSession, transcriptTimeline, type DraftRecord, type ReviewOptions } from "./skill-review.js";
 import { findSkills, lintSkill, parseSkill, renderSkill, type SkillLoopMeta } from "./skill-schema.js";
 import { indexSkill } from "./skill-scope.js";
-import { queueDir } from "./skill-queue.js";
+import { log, queueDir, type ReviewJob } from "./skill-queue.js";
+import type { ReviewOutcome } from "./skill-worker.js";
+import { autoOn } from "./features.js";
 import { buildEvalSet, type CandidatePrompt } from "./skill-eval/sets.js";
 import { runTrigger } from "./skill-eval/trigger.js";
 import { runTaskEval, parseVerify } from "./skill-eval/task.js";
@@ -29,7 +31,8 @@ const home = (env = process.env) => env.HOME || homedir();
 
 export function destinationFor(repo: string, r: DraftRecord, opts: { global?: boolean; env?: NodeJS.ProcessEnv } = {}): string {
   if (opts.global) return join(home(opts.env), ".claude", "skills", r.name, "SKILL.md");
-  if (r.kind === "patch" && r.target) return r.target;
+  if ((r.kind === "patch" || (r.kind === "suggest" && r.action === "patch")) && r.target) return r.target;
+  if ((r.kind === "archive" || r.kind === "suggest") && r.target) return join(archiveDir(repo), r.name, "SKILL.md");
   return r.scope === "directory" && r.directory ? join(repo, r.directory, ".claude", "skills", r.name, "SKILL.md") : join(repo, ".claude", "skills", r.name, "SKILL.md");
 }
 
@@ -60,6 +63,10 @@ export interface DraftView {
   verify: ReturnType<typeof parseVerify>;
   text: string;
   diff?: string;
+  /** v1.8: archive / suggest */
+  action?: DraftRecord["action"];
+  why?: string;
+  real_path?: string;
 }
 
 export function describeDrafts(repo: string, env = process.env): DraftView[] {
@@ -81,7 +88,10 @@ export function describeDrafts(repo: string, env = process.env): DraftView[] {
       global_candidate: record.global_candidate,
       verify: parseVerify(s.body),
       text,
-      ...(record.kind === "patch" && record.target && existsSync(record.target) ? { diff: diff(record.target, file) } : {}),
+      ...(record.action ? { action: record.action } : {}),
+      ...(record.why ? { why: record.why } : {}),
+      ...(record.real_path ? { real_path: record.real_path } : {}),
+      ...((record.kind === "patch" || (record.kind === "suggest" && record.action === "patch")) && record.target && existsSync(record.target) ? { diff: diff(record.target, file) } : {}),
     };
   });
 }
@@ -97,10 +107,42 @@ function landedText(text: string, global: boolean): string {
   return renderSkill({ name: s.name, description: s.description, meta, body: s.body });
 }
 
-export function approveDraft(repo: string, id: string, opts: { promote?: boolean; override?: string; env?: NodeJS.ProcessEnv } = {}): LedgerEntry {
+/**
+ * Archive a skill, or apply a suggestion to a hand-written one (v1.8). Both land only onto the exact bytes they
+ * were drafted from. A suggestion is never applied by the loop, and not through a link: the user applies it at
+ * the real file (often a package, where an update would undo it).
+ */
+function approveRetireOrSuggestion(repo: string, d: ReturnType<typeof getDraft>, actor: LedgerEntry["actor"], env: NodeJS.ProcessEnv): LedgerEntry {
+  const r = d.record;
+  if (r.kind === "suggest" && actor !== "user") throw new Error(`${r.id} is a suggestion for a hand-written skill: only a person applies it`);
+  if (r.kind === "suggest" && r.real_path) throw new Error(`${r.target} is a link to ${r.real_path}: apply this suggestion there by hand (skill-loop review shows the diff), then reject it`);
+  const target = r.target!;
+  if (!existsSync(target) || sha256(readFileSync(target)) !== r.base_sha256) throw new Error(`${target} changed since this draft was made: reject it and let the next review redo it`);
+  const why = `${r.kind === "suggest" ? `suggestion (${r.action})` : "archive"} from ${r.session_id}${r.why ? `: ${r.why}` : ""}`;
+  let entry: LedgerEntry;
+  if (r.kind === "suggest" && r.action === "patch") {
+    entry = applyChange(repo, { action: "patch", actor, skill: r.name, why }, [{ path: target, content: d.text }]);
+  } else {
+    const raw = readFileSync(target, "utf8");
+    const s = parseSkill(raw);
+    // a learned skill is marked archived; a hand-written one is moved as it is
+    const archived = s.meta ? renderSkill({ name: s.name, description: s.description, meta: { ...s.meta, status: "archived" }, body: s.body }) : raw;
+    entry = applyChange(repo, { action: "archive", actor, skill: r.name, why }, [
+      { path: join(archiveDir(repo), r.name, "SKILL.md"), content: archived },
+      { path: target, content: null },
+    ]);
+    indexSkill({ repo, name: r.name, path: target, status: "archived" }, env);
+  }
+  rmSync(d.dir, { recursive: true, force: true });
+  return entry;
+}
+
+export function approveDraft(repo: string, id: string, opts: { promote?: boolean; override?: string; env?: NodeJS.ProcessEnv; actor?: LedgerEntry["actor"] } = {}): LedgerEntry {
   const env = opts.env ?? process.env;
+  const actor = opts.actor ?? "user";
   const d = getDraft(repo, id);
   const r = d.record;
+  if (r.kind === "archive" || r.kind === "suggest") return approveRetireOrSuggestion(repo, d, actor, env);
   // evals are optional, but once they ran a failing draft stays a draft unless a person overrides (ledgered)
   const gate = (r.evals as { gate?: { verdict: string; reasons: string[] } } | undefined)?.gate;
   if (gate && gate.verdict !== "adopt" && !opts.override) {
@@ -125,7 +167,7 @@ export function approveDraft(repo: string, id: string, opts: { promote?: boolean
     { path: join(repo, ".claude", ".semantic-memory", "skills-archive", basename(dirname(p)), "SKILL.md"), content: readFileSync(p) as Buffer | string | null },
     { path: p, content: null },
   ]);
-  const entry = applyChange(repo, { action: opts.promote ? "promote" : r.kind === "patch" ? "patch" : r.kind === "merge" ? "merge" : "land", actor: "user", skill: r.name, why }, [{ path: dest, content: text }, ...archived]);
+  const entry = applyChange(repo, { action: opts.promote ? "promote" : r.kind === "patch" ? "patch" : r.kind === "merge" ? "merge" : "land", actor, skill: r.name, why }, [{ path: dest, content: text }, ...archived]);
   for (const p of replaced) if (p !== dest) indexSkill({ repo, name: basename(dirname(p)), path: p, status: "archived" }, env);
   if (opts.promote) {
     // the project copies the global skill replaces: only landed, learned ones, each ledgered in its own repo
@@ -194,4 +236,32 @@ export async function evalDraft(repo: string, id: string, opts: { task?: boolean
   const evals = { at: new Date().toISOString(), prompts: set.length, runs: trigger.runs, heldout: trigger.heldout, train: trigger.train, task, gate };
   writeFileSync(join(d.dir, "draft.json"), JSON.stringify({ ...d.record, evals }, null, 1));
   return evals;
+}
+
+/**
+ * The worker's review (v1.8): review the session, then, in auto mode, apply what the reviewer drafted for learned
+ * skills (new, patch, archive) as actor `reviewer`, each one ledgered so `rollback` undoes it. Suggestions for
+ * hand-written skills, and any draft that fails to land (lint, a changed target, an existing folder), stay drafts.
+ */
+export async function reviewAndApply(job: ReviewJob, opts: ReviewOptions = {}): Promise<ReviewOutcome> {
+  const env = opts.env ?? process.env;
+  const out = await reviewSession(job, opts);
+  if (!autoOn(job.repo, env) || !out.drafts.length) return out;
+  const applied: string[] = [];
+  const kept: string[] = [];
+  for (const id of out.drafts) {
+    const d = listDrafts(job.repo).find((x) => x.record.id === id);
+    if (!d || d.record.kind === "suggest") {
+      kept.push(id);
+      continue;
+    }
+    try {
+      const e = approveDraft(job.repo, id, { actor: "reviewer", env });
+      applied.push(`${e.action} ${e.skill} (${e.id})`);
+    } catch (err) {
+      kept.push(id);
+      log(job.repo, `auto: ${id} left for review — ${(err as Error).message}`);
+    }
+  }
+  return { ...out, drafts: kept, applied };
 }

@@ -19,8 +19,8 @@ export function registerSkillLoopCommands(program: Command) {
         process.exit(0);
       }
       const { drain } = await import("../core/skill-worker.js");
-      const { reviewSession } = await import("../core/skill-review.js");
-      const r = await drain(repo, (job) => reviewSession(job));
+      const { reviewAndApply } = await import("../core/skill-land.js");
+      const r = await drain(repo, (job) => reviewAndApply(job));
       console.log(r.locked ? "another worker holds this repo's lock" : `reviewed ${r.reviewed} session(s)${r.capped ? "; daily cap reached" : ""}${r.failed ? `; ${r.failed} set aside` : ""}`);
       process.exit(0);
     });
@@ -57,7 +57,10 @@ export function registerReviewCommands(cmd: Command) {
           else if (!drafts.length) console.log("no skill drafts waiting");
           else
             for (const d of drafts) {
-              console.log(`\n${d.id}  ${d.kind} ${d.name} → ${d.destination}`);
+              console.log(`\n${d.id}  ${d.kind}${d.action ? ` (${d.action})` : ""} ${d.name} → ${d.destination}`);
+              if (d.kind === "suggest") console.log(`  a suggested change to a hand-written skill: the loop never applies it${d.real_path ? `; the file is ${d.real_path}, apply it there by hand` : "; --approve applies it"}`);
+              if (d.why) console.log(`  why: ${d.why}`);
+              if (d.diff) console.log(d.diff.split("\n").map((l) => `    ${l}`).join("\n"));
               console.log(`  scope: ${d.scope}${d.scope_why ? ` (${d.scope_why})` : ""}${d.promotion?.length ? `; also in ${d.promotion.map((p) => p.repo).join(", ")}: --promote offers one global skill` : ""}`);
               console.log(`  evidence: sessions ${d.provenance?.sessions.join(", ")}; failures ${d.provenance?.failures.join(", ") || "-"}; corrections ${d.provenance?.corrections.join(", ") || "-"}`);
               if (d.verify.kind === "command") console.log(`  verify command (a --task eval runs it): ${d.verify.command}`);

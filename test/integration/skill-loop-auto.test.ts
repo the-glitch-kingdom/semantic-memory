@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 import { appendEvidence } from "../../src/core/skill-evidence.js";
 import { buildBrief, reviewSession, listDrafts, materializeDraft } from "../../src/core/skill-review.js";
 import { findSkills, renderSkill, type SkillLoopMeta } from "../../src/core/skill-schema.js";
+import { approveDraft, reviewAndApply } from "../../src/core/skill-land.js";
+import { readLedger, rollback } from "../../src/core/skill-ledger.js";
 import type { ReviewJob } from "../../src/core/skill-queue.js";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
@@ -133,5 +135,79 @@ describe("skill loop v1.8: the reviewer judges the skills too (fake claude)", ()
     const r = await materializeDraft(repo, { ...quiet, kind: "maintenance", session_id: "maintenance-1" }, patch, skills, undefined, env);
     expect(r.id).toBeTruthy();
     expect(existsSync(join(repo, ".claude", ".semantic-memory", "skill-drafts", r.id!, "SKILL.md"))).toBe(true);
+  });
+
+  describe("auto mode", () => {
+    const AUTO = { SEMANTIC_MEMORY_SKILL_LOOP: "1", SEMANTIC_MEMORY_SKILL_LOOP_AUTO: "1" };
+    const vite = () => join(repo, ".claude", "skills", "stop-vite-dev-server", "SKILL.md");
+    const trimmed = BODY.replace("2. Then `scripts/old-stop.sh`.\n", "");
+
+    it("on: new, patch and archive land by themselves, as the reviewer, and each rolls back exactly", async () => {
+      await learned("stop-vite-dev-server");
+      await learned("old-deploy", {}, "Deploy with the retired deploy script. Use when deploying the legacy site.");
+      const before = { vite: readFileSync(vite(), "utf8") };
+      await answer({
+        drafts: [
+          draft(),
+          { kind: "patch", target: "stop-vite-dev-server", name: "stop-vite-dev-server", description: "Stop the Vite dev server without killing your shell. Use when pkill -f exits 144.", scope: "project", applies_to: { paths: ["scripts"], commands: ["pgrep"] }, provenance: { failures: ["t1"] }, body: trimmed },
+          { kind: "archive", target: "old-deploy", why: "the deploy script is gone" },
+        ],
+      });
+      const out = await reviewAndApply(job, { env: { ...env, ...AUTO } });
+      expect(out.drafts).toEqual([]);
+      expect(out.applied).toHaveLength(3);
+      expect(listDrafts(repo)).toEqual([]);
+      expect(existsSync(join(repo, ".claude", "skills", "rotate-npm-token", "SKILL.md"))).toBe(true);
+      expect(readFileSync(vite(), "utf8")).not.toContain("old-stop.sh");
+      expect(existsSync(join(repo, ".claude", "skills", "old-deploy"))).toBe(false);
+      expect(readFileSync(join(repo, ".claude", ".semantic-memory", "skills-archive", "old-deploy", "SKILL.md"), "utf8")).toContain("status: archived");
+      const ledger = readLedger(repo);
+      expect(ledger.map((e) => `${e.actor} ${e.action} ${e.skill}`)).toEqual(["reviewer land rotate-npm-token", "reviewer patch stop-vite-dev-server", "reviewer archive old-deploy"]);
+      for (const e of [...ledger].reverse()) rollback(repo, e.id);
+      expect(readFileSync(vite(), "utf8")).toBe(before.vite);
+      expect(existsSync(join(repo, ".claude", "skills", "old-deploy", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(repo, ".claude", "skills", "rotate-npm-token"))).toBe(false);
+    });
+
+    it("off: the same answer leaves drafts only (1.7 behavior)", async () => {
+      await learned("stop-vite-dev-server");
+      await answer({ drafts: [draft(), { kind: "archive", target: "stop-vite-dev-server", why: "x" }] });
+      const out = await reviewAndApply(job, { env: { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "1" } });
+      expect(out.drafts).toHaveLength(2);
+      expect(out.applied).toBeUndefined();
+      expect(readLedger(repo)).toEqual([]);
+      expect(existsSync(vite())).toBe(true);
+    });
+
+    it("a suggestion is never applied by the loop; a person applies it, body only, onto unchanged bytes", async () => {
+      const mine = join(repo, ".claude", "skills", "mine", "SKILL.md");
+      await put("mine", "---\nname: mine\ndescription: the user's own\n---\nold steps `scripts/gone.sh`\n");
+      await answer({ drafts: [{ kind: "patch", target: "mine", name: "mine", description: "x", body: "new steps" }] });
+      const out = await reviewAndApply(job, { env: { ...env, ...AUTO } });
+      expect(out.applied).toEqual([]);
+      const [s] = listDrafts(repo);
+      expect(s.record.kind).toBe("suggest");
+      expect(() => approveDraft(repo, s.record.id, { actor: "reviewer", env })).toThrow(/only a person/);
+      expect(readFileSync(mine, "utf8")).toContain("old steps");
+      await writeFile(mine, readFileSync(mine, "utf8") + "edited\n");
+      expect(() => approveDraft(repo, s.record.id, { env })).toThrow(/changed since/);
+      await writeFile(mine, "---\nname: mine\ndescription: the user's own\n---\nold steps `scripts/gone.sh`\n");
+      const e = approveDraft(repo, s.record.id, { env });
+      expect(e).toMatchObject({ actor: "user", action: "patch" });
+      expect(readFileSync(mine, "utf8")).toBe("---\nname: mine\ndescription: the user's own\n---\n\nnew steps\n");
+    });
+
+    it("a suggestion for a linked skill is refused at approval: apply it at the real file", async () => {
+      await mkdir(join(tmp, "real", "theirs"), { recursive: true });
+      await writeFile(join(tmp, "real", "theirs", "SKILL.md"), "---\nname: theirs\ndescription: d\n---\nold\n");
+      await mkdir(join(repo, ".claude", "skills"), { recursive: true });
+      await symlink(join(tmp, "real", "theirs"), join(repo, ".claude", "skills", "theirs"));
+      await answer({ drafts: [{ kind: "archive", target: "theirs", why: "gone" }] });
+      await reviewAndApply(job, { env: { ...env, ...AUTO } });
+      const [s] = listDrafts(repo);
+      expect(s.record).toMatchObject({ kind: "suggest", action: "archive" });
+      expect(() => approveDraft(repo, s.record.id, { env })).toThrow(/apply this suggestion there by hand/);
+      expect(existsSync(join(tmp, "real", "theirs", "SKILL.md"))).toBe(true);
+    });
   });
 });
