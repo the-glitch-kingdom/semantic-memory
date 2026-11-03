@@ -309,8 +309,9 @@ function suggestDraft(repo: string, job: ReviewJob, d: ReviewerDraft, target: Sk
   const name = target.skill.name || basename(target.dir);
   const real = realPath(target.path);
   const warnings = real !== target.path ? [`the skill folder is a link: the file is ${real}${real.includes(`${join("node_modules", "")}`) ? " (inside a package: an update would undo it; change it upstream)" : ""}`] : [];
-  return writeDraft(repo, `suggest-${name}-${sha256(text + action).slice(0, 8)}`, text, {
-    id: `suggest-${name}-${sha256(text + action).slice(0, 8)}`,
+  const id = `suggest-${name}-${sha256(text + action).slice(0, 8)}`;
+  return writeDraft(repo, id, text, {
+    id,
     kind: "suggest",
     action,
     name,
