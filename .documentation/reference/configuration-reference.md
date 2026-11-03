@@ -153,11 +153,12 @@ YAML. Missing or unparseable means `{}`.
 
 ```yaml
 skill_loop: on              # on | off. Beats the SEMANTIC_MEMORY_SKILL_LOOP env for this repo.
+skill_loop_auto: on         # v1.8: on | off. Auto mode; beats SEMANTIC_MEMORY_SKILL_LOOP_AUTO for this repo.
 skill_loop_consolidate: true  # turn on merging of overlapping learned skills (opt-in)
 doc_search_redirect: off    # v1.7.2: turn off the PreToolUse doc-search redirect for this repo (on by default)
 ```
 
-`semantic-memory skill-loop on|off --repo` writes `skill_loop`; `--clear` removes it so the global switch applies. Jev mode has no repo override (env only).
+`semantic-memory skill-loop on|off --repo` writes `skill_loop`; `skill-loop auto on|off --repo` writes `skill_loop_auto`; `--clear` removes either so the global switch applies. Jev mode has no repo override (env only).
 
 ### Legacy paths — `<project>/.claude/.sidekick-*` (v1.x readable, v2.0 removed)
 
@@ -260,6 +261,7 @@ Set them in `~/.claude/settings.json` → `env` (the `skill-loop` and `jev-mode`
 | Variable | Default | Effect |
 |---|---|---|
 | `SEMANTIC_MEMORY_SKILL_LOOP` | off | `1` turns the skill loop on. A repo's `skill_loop:` config beats it. See [the skill loop guide](../operational/skill-loop.md). |
+| `SEMANTIC_MEMORY_SKILL_LOOP_AUTO` | off | v1.8: `1` turns on auto mode: the worker applies create / update / archive to learned skills itself (ledgered; `skill-loop rollback`). Hand-written skills only get suggestions. A repo's `skill_loop_auto:` beats it. No effect while the skill loop is off. |
 | `SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS` | `10` | Reviews per day across all repos. Jobs over the cap wait for tomorrow. `0` stops reviews. |
 | `SEMANTIC_MEMORY_SKILL_LOOP_CONCURRENCY` | `5` | Skill-loop `claude` processes at once on the machine. Clamped to 1-5. |
 | `SEMANTIC_MEMORY_SKILL_LOOP_MODEL` | `sonnet` | Model for reviews and evals (passed to `claude --model`). |

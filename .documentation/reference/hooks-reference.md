@@ -223,7 +223,7 @@ Off, or under the recursion guard, every event leaves at once: no writes, no spa
 
 | Event | What it does |
 |---|---|
-| `SessionStart` (`startup` / `resume` only; not `clear` or `compact`) | Emits a one-line note when drafts wait: `[skill loop] N skill drafts waiting for review (/skill-loop review).` Starts the curator detached (`skill-loop curate --auto`) when it is due: every 7 days, repo quiet for 2 hours. |
+| `SessionStart` (`startup` / `resume` only; not `clear` or `compact`) | Emits up to three lines (v1.8): what auto mode changed since the last report, once, with ledger ids (`[skill loop] auto mode changed learned skills since you last looked: patch X (ledger …)`); `[skill loop] N skill drafts waiting for review (/skill-loop review).`; and `[skill loop] N suggested changes to hand-written skills waiting for you`. Starts the curator detached (`skill-loop curate --auto`) when it is due: every 7 days, repo quiet for 2 hours. |
 | `PostToolUse`, matcher `Skill` | Appends one usage line (`via: tool`) to `skill-usage.jsonl`. |
 | `SessionEnd` | If the session has signal (a failure, a correction, or at least `SEMANTIC_MEMORY_SKILL_LOOP_MIN_TOOL_CALLS` tool calls), writes a review job to `~/.semantic-memory/review-queue/` and starts the repo's worker detached. |
 

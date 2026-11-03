@@ -3,7 +3,7 @@ title: Troubleshooting
 tier: guide
 domains: [troubleshooting]
 audience: [developers]
-tags: [troubleshooting, debugging, failure-modes, diagnostics, v1.7.0, skill-loop, jev-mode]
+tags: [troubleshooting, debugging, failure-modes, diagnostics, v1.7.0, v1.8.0, skill-loop, auto-mode, jev-mode]
 status: active
 last_updated: '2026-10-28'
 version: '1.7.2'
@@ -351,7 +351,18 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 ### A skill I wanted was archived
 - The curator archives learned skills unused for 30 days. `semantic-memory skill-loop restore <name>` brings it back; set `skill_loop.pinned: true` in its frontmatter so the curator leaves it alone. `skill-loop rollback <ledger-id>` undoes any single change exactly (`.claude/.semantic-memory/skill-ledger.jsonl` lists them).
 
+### A learned skill changed or disappeared by itself
+- **Auto mode** (v1.8, `skill-loop status` shows it) applies the reviewer's new, patch and archive drafts for learned skills. Each change is listed once at the next SessionStart with its ledger id, and in `.claude/.semantic-memory/skill-loop.log` (`applied …`). Undo one exactly with `semantic-memory skill-loop rollback <ledger id>`. Undo them in reverse order: a rollback refuses if the file changed since. Pin a skill (`skill_loop.pinned: true`) to keep auto mode away from it, or turn auto mode off: `skill-loop auto off` (or `--repo`).
+
+### A draft I expected was rejected as a duplicate
+- `duplicate of "<name>"` in the log: the new skill's name matches, or its words overlap ≥ 0.5 with, a skill this repo loads or a waiting draft. The reviewer saw that skill in full and should have patched it. Approve or reject the waiting draft first, or patch the existing skill by hand.
+
+### Suggestions for hand-written skills keep coming back
+- A maintenance review is queued once per set of dead references. The same unchanged ones are not queued again, and a skill with a waiting suggestion is skipped. `skill-loop curate --dry-run` lists what would be queued and why (`<dead paths>|<Verify failure>`). A path the check mistakes for a dead reference stops being queued once it is in the curator's `maintained` state. To end it, fix or remove the path in the skill. Do not add a `skill_loop:` block to a hand-written skill to pin it: that block marks it as learned, and once unpinned, auto mode could change it.
+
 ### `--approve` refuses
+- **"is a link to … apply this suggestion there by hand":** the hand-written skill's folder is a link (often into `node_modules`, where an update would undo the edit). Make the change at the real file the review shows, then `--reject` the suggestion.
+- **"only a person applies it":** suggestions are never applied by the loop; approve them yourself.
 - **"the eval gate said keep-draft":** evals ran and the draft did not beat the bar (with one or two sessions there is no held-out set yet). Land it anyway with `--override "<why>"`, which is recorded.
 - **"changed since this patch was drafted":** the skill was edited after the patch was made. Reject the patch; the next review will redo it against the current text.
 - **lint `name_clash`:** a skill the loop did not write has that name. Rename the draft (edit its SKILL.md and folder) or reject it.

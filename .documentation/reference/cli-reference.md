@@ -456,6 +456,7 @@ Off by default. Guide: [skill-loop.md](../operational/skill-loop.md).
 
 ```bash
 semantic-memory skill-loop on|off [--repo] [--clear]
+semantic-memory skill-loop auto on|off [--repo] [--clear]      # v1.8
 semantic-memory skill-loop status [--json]
 semantic-memory skill-loop worker [--repo <dir>]
 semantic-memory skill-loop review [--json] [--approve <id> [--promote] [--override <why>]] [--reject <id>] [--eval <id> [--task]]
@@ -468,11 +469,12 @@ semantic-memory skill-loop verify
 | Command | What it does |
 |---|---|
 | `on` / `off` | Set or remove `SEMANTIC_MEMORY_SKILL_LOOP=1` in `~/.claude/settings.json` `env` (a `.bak` is kept; invalid JSON is never overwritten). `--repo` writes `skill_loop: on|off` in `.claude/.semantic-memory/config` instead, which beats the global switch. `--clear` (with `--repo`) removes that override so the global switch applies. |
-| `status` | On or off, and why (default, env, or repo override); reviews used today against `SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS`. |
+| `auto on|off` (v1.8) | Auto mode: the worker applies its own `new`, `patch` and `archive` drafts for learned skills, ledgered as actor `reviewer`. Sets or removes `SEMANTIC_MEMORY_SKILL_LOOP_AUTO=1` in `~/.claude/settings.json` `env`; `--repo` writes `skill_loop_auto: on|off` in `.claude/.semantic-memory/config` instead (beats the env switch); `--clear` removes that override. No effect while the skill loop is off. |
+| `status` | On or off, and why (default, env, or repo override); auto mode and why; drafts waiting; reviews used today against `SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS`. |
 | `worker` | Drain this repo's review queue. The SessionEnd hook starts it detached; safe to run by hand. `--repo <dir>` sets the repo (default cwd). |
-| `review` | With no flag, list drafts with evidence, scope, Verify command and (for patches) a diff. `--approve <id>` lands a draft and writes a ledger entry. `--promote` (with `--approve`) lands it as a global skill replacing the project copies; it needs a promotion. `--override <why>` (with `--approve`) lands it although its eval gate did not adopt it, and ledgers the reason. `--reject <id>` drops a draft (ledgered). `--eval <id>` runs the trigger eval and records scores and the gate's verdict; `--task` (with `--eval`) also replays the task with and without the skill. |
+| `review` | With no flag, list drafts with evidence, scope, Verify command, the `why` of archives, and a diff for patches and suggestions. Kinds: `new`, `patch`, `merge`, `archive` (v1.8: retire a learned skill) and `suggest` (v1.8: a change to a hand-written skill, never applied by the loop). `--approve <id>` lands a draft and writes a ledger entry; a suggestion for a skill whose folder is a link is refused (apply it at the real file the review shows, then `--reject` it). `--promote` (with `--approve`) lands it as a global skill replacing the project copies; it needs a promotion. `--override <why>` (with `--approve`) lands it although its eval gate did not adopt it, and ledgers the reason. `--reject <id>` drops a draft (ledgered). `--eval <id>` runs the trigger eval and records scores and the gate's verdict; `--task` (with `--eval`) also replays the task with and without the skill. |
 | `rollback <ledger-id>` | Undo one ledgered change exactly. Refuses if a file changed since. |
-| `curate` | Mark learned skills unused 14 days stale; archive those unused 30 days. Pinned, cited and new skills are skipped. `--dry-run` changes nothing. `--merge` also proposes merges of overlapping skills as review drafts (opt-in). `--auto` is the quiet form the SessionStart hook starts; it logs to `skill-loop.log`. |
+| `curate` | Mark learned skills unused 14 days stale; archive those unused 30 days. Pinned, cited and new skills are skipped. v1.8: with the skill loop on, also queues one maintenance review for skills that name paths that no longer exist or failed `verify` (once per problem; skipped when a draft already targets the skill). `--dry-run` changes nothing and lists what it would queue. `--merge` also proposes merges of overlapping skills as review drafts (opt-in). `--auto` is the quiet form the SessionStart hook starts; it logs to `skill-loop.log`. |
 | `restore <name>` | Bring an archived learned skill back, active. |
 | `verify` | Run each landed learned skill's `## Verify` command here. Failures are flagged; nothing is archived. |
 

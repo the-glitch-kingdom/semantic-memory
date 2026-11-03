@@ -13,13 +13,16 @@ tags:
   - SessionEnd
   - curator
   - skill-eval
+  - v1.8.0
+  - auto-mode
 status: active
-last_updated: '2026-10-25'
-version: 1.7.0
+last_updated: '2026-11-03'
+version: 1.8.0
 purpose: What the skill loop does, how to turn it on and off, how drafts are
-  made, scoped, reviewed, landed, evaluated and retired, what the background
-  reviewer can and cannot touch, what it costs, and what turning it off leaves
-  behind.
+  made, deduplicated, scoped, reviewed, landed, evaluated and retired, what auto
+  mode applies by itself, how hand-written skills get suggestions, what the
+  background reviewer can and cannot touch, what it costs, and what turning it
+  off leaves behind.
 load_priority: 7
 estimated_read_time: 8 minutes
 word_count: 1427
@@ -31,9 +34,11 @@ backlinks: []
 
 The vault holds what is *true* about a project; the skill loop learns what to *do*. When a session fails a
 command and then finds the fix, or the user corrects the agent, a background review drafts a skill — a short
-playbook Claude Code loads when the same situation comes back. Nothing lands until a person approves it.
+playbook Claude Code loads when the same situation comes back, updates a skill it already has, or retires one.
+Nothing lands until a person approves it, unless you turn on [auto mode](#auto-mode-v180).
 
-It is **off by default**. Off, 1.7.0 behaves exactly like 1.6.1.
+It is **off by default**. Off, 1.7.0 behaves exactly like 1.6.1. Auto mode is a second switch, also off by
+default; without it 1.8.0 behaves like 1.7.
 
 ## Turning it on and off
 
@@ -66,10 +71,23 @@ landed stay in `.claude/skills/` as ordinary files and keep working; drafts and 
    and test runs would use the daily cap. `SEMANTIC_MEMORY_SKILL_LOOP_ALLOW_TMP=1` turns this off for a scratch repo.
 3. **Review.** The worker builds a brief (the session's prompts, tool calls and errors, the evidence, the skills
    this repo loads, its knowledge-base fact ids), redacted and capped at 40k characters, and runs **one fenced
-   `claude -p`** on it. It drafts at most two skills, or patches a learned skill that was used and then failed.
+   `claude -p`** on it. Since 1.8 the brief also holds, **in full**, up to 4 skills the session touches: the ones
+   it used, then the ones whose words the session shares most. Each comes with its **dead references** (paths it
+   names that no longer exist) and a failed `## Verify`, if `skill-loop verify` flagged one. The reviewer is told
+   to prefer updating to creating, and answers with up to 3 drafts, at most one per skill:
+   - `new`: a procedure no skill covers
+   - `patch`: the full revised body of an existing skill. It fixes what failed or was corrected, adds what the
+     session taught, and **retires entries**: steps, pitfalls or tools that a dead reference or the session shows
+     are gone
+   - `archive`: retire a whole skill, with a one-line `why`, when nothing in it applies here any more
 4. **Draft.** Each answer is rendered, redacted, and linted (see [the skill format](../reference/skill-format.md)).
-   Drafts without a failure or correction behind them, failing lint, or patching a pinned or hand-written skill
-   are rejected and logged. The rest go to `.claude/.semantic-memory/skill-drafts/<id>/`.
+   Rejected and logged: drafts without a failure or correction behind them (except in maintenance reviews),
+   failing lint, touching a pinned skill, an archive without a `why`, and **duplicates**. A `new` skill whose name
+   matches, or whose words overlap ≥ 0.5 (Jaccard over name, description, triggers and `applies_to`) with, any
+   skill this repo loads or any draft still waiting is rejected with the name it duplicates: patch that one
+   instead. A patch keeps the provenance its skill already had. A `patch` or `archive` of a **hand-written**
+   skill becomes a [suggestion](#suggestions-for-hand-written-skills). The rest go to
+   `.claude/.semantic-memory/skill-drafts/<id>/`.
 
 The worker drains this repo's jobs oldest first, one worker per repo (`skill-loop.lock`), and stops at **10
 reviews a day across all repos** (`SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS`); the rest wait for tomorrow. A job is
@@ -128,13 +146,64 @@ semantic-memory skill-loop review --reject <id>
 semantic-memory skill-loop rollback <ledger-id>
 ```
 
-`/skill-loop review` walks the drafts one at a time and asks you. SessionStart says once per session how many
-drafts wait. A patch lands only onto the exact bytes it was drafted from. Once evals ran on a draft, it lands
+`/skill-loop review` walks the drafts one at a time and asks you, showing the diff for patches and suggestions
+and the `why` for archives. SessionStart says once per session how many drafts and suggestions wait. A patch,
+archive or suggestion lands only onto the exact bytes it was drafted from. Once evals ran on a draft, it lands
 only if the gate adopted it, or with `--override` (the reason goes in the ledger).
 
 Every change — land, patch, promote, merge, stale, archive, restore, reject — is a line in
 `.claude/.semantic-memory/skill-ledger.jsonl` with the bytes of every file before and after
 (`skill-ledger-blobs/`), so `rollback <id>` restores exactly one change, and refuses if the file changed since.
+
+## Auto mode (v1.8.0)
+
+```bash
+semantic-memory skill-loop auto on          # SEMANTIC_MEMORY_SKILL_LOOP_AUTO=1 in ~/.claude/settings.json env
+semantic-memory skill-loop auto off
+semantic-memory skill-loop auto on --repo   # this repo only: skill_loop_auto: on in .claude/.semantic-memory/config
+semantic-memory skill-loop auto off --repo  # this repo never; --clear drops the override
+```
+
+With auto mode on, the worker approves its own `new`, `patch` and `archive` drafts for **learned** skills right
+after the review, as actor `reviewer` in the ledger. The guard is the same as for drafts: lint and dedup. Evals
+do not run (`review --eval` is still there by hand). Every change is one ledger entry with the bytes before and
+after, so `semantic-memory skill-loop rollback <ledger id>` undoes exactly that change.
+
+- **What it never does:** change a hand-written or pinned skill, apply a suggestion, promote a skill to global
+  scope, or merge.
+- **A draft that fails to land stays a draft.** Lint, a target that changed since, or a folder that exists
+  already all leave it for `skill-loop review`. The log says why (`auto: <id> left for review — …`).
+- **You hear about it.** The next SessionStart lists each change once, with its ledger id:
+  `[skill loop] auto mode changed learned skills since you last looked: patch stop-vite-dev-server (ledger …)`.
+- Auto mode does nothing while the skill loop itself is off. `skill-loop status` shows both switches.
+
+## Suggestions for hand-written skills
+
+Skills the loop did not write are never changed by it. When the reviewer patches or archives one, the draft is a
+**suggestion** (`kind: suggest`, `action: patch | archive`). A patch suggestion keeps the skill's own
+frontmatter byte for byte and replaces only the body. Suggestions are listed at SessionStart
+(`N suggested changes to hand-written skills`) and in `skill-loop review` with their diff.
+
+- `--approve <id>` applies one (actor `user`, ledgered, rollback works), but only onto unchanged bytes.
+- **Linked skills are refused.** Most hand-written skills in `.claude/skills/` are links, often into
+  `node_modules` (`relink` makes them), where a package update would undo the edit. Review shows the real file:
+  apply the change there by hand, then `--reject` the suggestion.
+- `--reject <id>` drops it.
+
+## Maintenance reviews: skills with dead references
+
+When the curator runs (weekly, or `skill-loop curate`), it looks for this repo's skills, learned or hand-written,
+that name paths that no longer exist or whose `## Verify` failed (`skill-loop verify`). If any are new since the
+last run, it queues **one skill-only review** (`maintenance-<repo hash>-<date>`, no session). The worker reviews
+it like a session, and it counts toward the daily cap. The reviewer patches out the dead entries, archives a
+skill with nothing left, or leaves it alone. Learned skills follow auto mode; hand-written ones get suggestions.
+
+- A skill is queued once per problem: the same dead references are not queued again. A new one queues it again.
+- A skill that already has a draft waiting is skipped.
+- `curate --dry-run` lists what it would queue.
+- **Dead references are paths only.** These are `applies_to.paths`, and repo-relative paths in code spans and
+  fenced blocks whose first segment exists here (so `origin/main` or `owner/repo` are not mistaken for paths).
+  Commands are not checked against PATH: the worker's PATH is not the session's.
 
 ## Evals
 
@@ -166,7 +235,8 @@ Each `claude` run is fenced exactly like the reviewer, and counts toward the 5-p
 ## The curator
 
 Every 7 days, when the repo has been quiet for 2 hours, SessionStart starts it detached (never in the first 7
-days after the loop first sees a repo). It is deterministic — no model call:
+days after the loop first sees a repo). It is deterministic (no model call), apart from queueing a
+[maintenance review](#maintenance-reviews-skills-with-dead-references):
 
 - a learned skill unused for **14 days** becomes `stale`; used again, it is `active` again
 - unused for **30 days**, it moves to `.claude/.semantic-memory/skills-archive/<name>/` — out of
@@ -192,11 +262,12 @@ archives the old ones in the same ledger entry.
 | Where | What |
 |---|---|
 | `.claude/skills/`, `<dir>/.claude/skills/`, `~/.claude/skills/` | landed skills (ordinary SKILL.md files; commit project ones) |
-| `.claude/.semantic-memory/skill-drafts/` | drafts waiting for review |
+| `.claude/.semantic-memory/skill-drafts/` | drafts and suggestions waiting for review |
 | `.claude/.semantic-memory/skills-archive/` | archived learned skills |
 | `.claude/.semantic-memory/skill-ledger.jsonl`, `skill-ledger-blobs/` | every change, with bytes |
 | `.claude/.semantic-memory/{failures,corrections,skill-usage}.jsonl` | evidence (redacted; rotated at 5 MB) |
-| `.claude/.semantic-memory/{skill-loop.log, skill-loop.lock, curator.json}` | worker log, worker lock, curator state |
+| `.claude/.semantic-memory/{skill-loop.log, skill-loop.lock, curator.json}` | worker log, worker lock, curator state (incl. `maintained`: what was last queued per skill) |
+| `.claude/.semantic-memory/auto-reported.json` | up to which ledger time SessionStart has reported auto-mode changes |
 | `~/.semantic-memory/review-queue/` (`done/`, `failed/`) | jobs |
 | `~/.semantic-memory/{skill-loop-runs.jsonl, skill-index.jsonl, claude-slots/, skill-eval-cache.jsonl}` | daily cap, cross-repo index, process slots, eval cache |
 

@@ -3,7 +3,7 @@ title: Legacy Registry
 tier: reference
 domains: [legacy]
 status: active
-last_updated: '2026-10-28'
+last_updated: '2026-11-03'
 version: '1.0.0'
 purpose: Quick reference for legacy documentation
 ---
@@ -56,4 +56,4 @@ purpose: Quick reference for legacy documentation
 
 ---
 
-*Last updated: 2026-10-28*
+*Last updated: 2026-11-03*

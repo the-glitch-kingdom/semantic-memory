@@ -3,7 +3,7 @@ title: Operational Documentation Index
 tier: reference
 domains: [operational]
 status: active
-last_updated: '2026-10-28'
+last_updated: '2026-11-03'
 version: '1.0.0'
 purpose: Complete listing of operational documentation
 ---
@@ -36,7 +36,7 @@ purpose: Complete listing of operational documentation
 | [Modes Guide](modes-guide.md) | active | 2026-10-28 | 1,113 |
 | [Session Paging & Speaker Profile — Operating Guide](session-paging-guide.md) | active | 2026-07-11 | 1,110 |
 | [Sessions guide — verification-gated work units](sessions-guide.md) | active | 2026-05-09 | 1,375 |
-| [The skill loop — learned skills between sessions](skill-loop.md) | active | 2026-10-25 | 1,427 |
+| [The skill loop — learned skills between sessions](skill-loop.md) | active | 2026-11-03 | 1,427 |
 | [State migration — moving legacy .sidekick-* files to .semantic-memory/](state-migration.md) | active | 2026-10-24 | 1,443 |
 | [Usage-Feedback Ranking & Decoys — Operating Guide](usage-feedback-guide.md) | active | 2026-07-11 | 938 |
 
@@ -58,4 +58,4 @@ This domain covers: operational, guide, operate, sessions, dossier
 
 ---
 
-*Last updated: 2026-10-28*
+*Last updated: 2026-11-03*
