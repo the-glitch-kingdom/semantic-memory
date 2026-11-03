@@ -27,6 +27,9 @@ export interface ReviewJob {
   attempts?: number;
   /** a follow-up review of a resumed session: only evidence recorded after this time (the last review's end) */
   since?: string;
+  /** v1.8: a skill-only review the curator queues (no session): `skills` are the SKILL.md paths to judge */
+  kind?: "maintenance";
+  skills?: string[];
 }
 
 export const smHome = (env = process.env) => env.SEMANTIC_MEMORY_STATE_HOME || join(env.HOME || homedir(), ".semantic-memory");
