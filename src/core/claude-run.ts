@@ -11,11 +11,13 @@
  *    Verified flag by flag on Claude Code 2.1.310 (.planning/v17-skill-loop-and-jev-mode/notes.md, Phase 2).
  */
 import { spawn } from "node:child_process";
-import { accessSync, constants, openSync, writeSync, closeSync, readFileSync, unlinkSync, mkdirSync } from "node:fs";
+import { accessSync, constants, linkSync, readFileSync, statSync, unlinkSync, mkdirSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
 
 export const MAX_CLAUDE = 5;
+const STALE_EMPTY_SLOT_MS = 60_000;
 
 export function claudeConcurrency(env = process.env): number {
   const n = Number(env.SEMANTIC_MEMORY_SKILL_LOOP_CONCURRENCY);
@@ -44,10 +46,16 @@ export async function acquireSlot(opts: { env?: NodeJS.ProcessEnv; timeoutMs?: n
   for (;;) {
     for (let i = 0; i < max; i++) {
       const path = join(dir, `slot-${i}`);
+      // the slot appears with its pid already in it (a hard link fails if the slot exists): a reader never
+      // sees an empty slot file and takes its holder for dead
+      const tmp = `${path}.${process.pid}.${randomBytes(4).toString("hex")}`;
+      writeFileSync(tmp, `${process.pid}\n`);
       try {
-        const fd = openSync(path, "wx");
-        writeSync(fd, `${process.pid}\n`);
-        closeSync(fd);
+        try {
+          linkSync(tmp, path);
+        } finally {
+          unlinkSync(tmp);
+        }
         let released = false;
         return () => {
           if (released) return;
@@ -61,7 +69,8 @@ export async function acquireSlot(opts: { env?: NodeJS.ProcessEnv; timeoutMs?: n
         // held: reclaim it when its holder is gone (crashed worker, killed run)
         try {
           const pid = Number(readFileSync(path, "utf8").trim());
-          if (!pid || !alive(pid)) unlinkSync(path);
+          // no pid: left by a version that wrote it after creating the file; reclaim once clearly abandoned
+          if (pid ? !alive(pid) : Date.now() - statSync(path).mtimeMs > STALE_EMPTY_SLOT_MS) unlinkSync(path);
         } catch {}
       }
     }

@@ -58,7 +58,7 @@ export { evaluateFailures, formatFailureEval, calibrateJudge, evaluateGate, form
 export type { FailureCase, Judgment, CaseResult, FailureEvalReport, ThresholdRow, JevJudgment, JudgeCalibration, GateRow } from "./failure-eval.js";
 export { featureState, featureOn, jevAvailable, describeFeature } from "./features.js";
 export { reviewSession, buildBrief, listDrafts, draftsDir } from "./skill-review.js";
-export { approveDraft, rejectDraft, describeDrafts, evalDraft } from "./skill-land.js";
+export { approveDraft, rejectDraft, describeDrafts, evalDraft, reviewAndApply } from "./skill-land.js";
 export { curate, restore, verifySkills } from "./skill-curator.js";
 export { rollback, readLedger } from "./skill-ledger.js";
 export { proposeMerges } from "./skill-merge.js";

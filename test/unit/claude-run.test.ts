@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, rm, readFile, writeFile, mkdir, chmod } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { mkdtemp, rm, readFile, writeFile, mkdir, chmod, utimes } from "node:fs/promises";
+import { existsSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -89,6 +89,20 @@ describe("fenced claude runs (v1.7)", () => {
     expect(Number(await readFile(join(dir, "slots", "slot-0"), "utf8"))).toBe(process.pid);
     release();
     expect(existsSync(join(dir, "slots", "slot-0"))).toBe(false);
+  });
+
+  it("1.8: a slot file with no pid yet is not taken for dead (the race that let 7 of 5 run); reclaimed once stale", async () => {
+    const one = { ...env, SEMANTIC_MEMORY_SKILL_LOOP_CONCURRENCY: "1" };
+    await mkdir(join(dir, "slots"), { recursive: true });
+    const slot = join(dir, "slots", "slot-0");
+    await writeFile(slot, "");
+    await expect(acquireSlot({ env: one, timeoutMs: 300, pollMs: 50 })).rejects.toThrow(/no claude slot free/);
+    const old = new Date(Date.now() - 120_000);
+    await utimes(slot, old, old);
+    const release = await acquireSlot({ env: one, timeoutMs: 2000, pollMs: 50 });
+    expect(Number(await readFile(slot, "utf8"))).toBe(process.pid);
+    release();
+    expect(readdirSync(join(dir, "slots"))).toEqual([]);
   });
 
   it("a slot held by a live process makes the next caller wait", async () => {
