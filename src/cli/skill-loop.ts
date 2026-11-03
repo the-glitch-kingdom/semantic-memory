@@ -146,7 +146,9 @@ export async function skillLoopStatus(cwd: string): Promise<string[]> {
   const { listDrafts } = await import("../core/skill-review.js");
   const { runsToday, dailyRunCap, pendingJobs, lockHolder } = await import("../core/skill-queue.js");
   const repo = repoRoot(cwd);
+  const { describeAuto } = await import("./features.js");
   const lines = [
+    describeAuto(cwd),
     `drafts waiting: ${listDrafts(repo).length}${listDrafts(repo).length ? " (/skill-loop review)" : ""}`,
     `queued sessions for this repo: ${pendingJobs(repo).length}${lockHolder(repo) ? ` (worker running, pid ${lockHolder(repo)})` : ""}`,
     `reviews today (all repos): ${runsToday()} of ${dailyRunCap()} (SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS)`,

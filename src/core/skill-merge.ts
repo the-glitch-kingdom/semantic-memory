@@ -8,28 +8,17 @@
 import { featureOn, readRepoConfig } from "./features.js";
 import { askJev, jevVerdict } from "./jev.js";
 import { runClaude } from "./claude-run.js";
-import { findSkills, type SkillFile } from "./skill-schema.js";
+import { DUPLICATE_OVERLAP, findSkills, overlap as jaccard, skillWords, type SkillFile } from "./skill-schema.js";
 import { materializeDraft, parseReviewerJson } from "./skill-review.js";
 
-export const MERGE_MIN_OVERLAP = 0.5;
-
-const words = (s: SkillFile) =>
-  new Set(
-    [s.skill.name, s.skill.description, ...(s.skill.meta?.triggers ?? []), ...(s.skill.meta?.applies_to.paths ?? []), ...(s.skill.meta?.applies_to.commands ?? [])]
-      .join(" ")
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 2),
-  );
+export const MERGE_MIN_OVERLAP = DUPLICATE_OVERLAP;
 
 export function mergeCandidates(repo: string, env = process.env): { a: SkillFile; b: SkillFile; overlap: number }[] {
   const learned = findSkills(repo, { home: env.HOME, global: false }).filter((s) => s.learned && s.skill.meta && !s.skill.meta.pinned);
   const out: { a: SkillFile; b: SkillFile; overlap: number }[] = [];
   for (let i = 0; i < learned.length; i++) {
     for (let j = i + 1; j < learned.length; j++) {
-      const x = words(learned[i]), y = words(learned[j]);
-      const shared = [...x].filter((w) => y.has(w)).length;
-      const overlap = shared / (x.size + y.size - shared || 1);
+      const overlap = jaccard(skillWords(learned[i].skill), skillWords(learned[j].skill));
       if (overlap >= MERGE_MIN_OVERLAP) out.push({ a: learned[i], b: learned[j], overlap });
     }
   }
