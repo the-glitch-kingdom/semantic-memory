@@ -108,6 +108,21 @@ export function registerCuratorCommands(cmd: Command) {
       if (opts.auto) log(repo, `curator: ${changes.map((a) => `${a.action} ${a.skill} (${a.why})`).join(", ") || "nothing to do"}`);
       else for (const a of r.actions) console.log(`${opts.dryRun ? "would " : ""}${a.action.padEnd(10)} ${a.skill} — ${a.why}`);
       if (!opts.auto && !r.actions.length) console.log("no learned skills here");
+      // v1.8: skills that name paths that are gone, or failed their Verify, get one skill-only review
+      const { maintenanceTargets, queueMaintenance } = await import("../core/skill-curator.js");
+      const { listDrafts } = await import("../core/skill-review.js");
+      const pending = new Set(listDrafts(repo).map((d) => d.record.target).filter((t): t is string => !!t));
+      if (opts.dryRun) {
+        for (const t of maintenanceTargets(repo, process.env, pending)) console.log(`would queue maintenance review: ${t.path} (${t.key})`);
+      } else if ((await import("../core/features.js")).featureOn("skill_loop", repo)) {
+        const job = queueMaintenance(repo, process.env, pending);
+        if (job) {
+          const line = `maintenance: queued a review of ${job.skills!.length} skill(s) — ${job.reason}`;
+          if (opts.auto) log(repo, line);
+          else console.log(line);
+          (await import("../core/skill-worker.js")).spawnWorker(repo);
+        }
+      }
       const { consolidateOn, proposeMerges } = await import("../core/skill-merge.js");
       if (!opts.dryRun && (opts.merge || consolidateOn(repo))) {
         const m = await proposeMerges(repo);

@@ -98,3 +98,18 @@ export function rollback(repo: string, id: string): LedgerEntry {
   const ops = entry.files.map((f) => ({ path: f.path, content: f.before ? readFileSync(join(blobDir(repo), f.before)) : null }));
   return applyChange(repo, { action: "rollback", actor: "user", skill: entry.skill, why: `rollback of ${entry.action} ${id}`, reverts: id }, ops);
 }
+
+/**
+ * Auto-mode changes (actor `reviewer`, v1.8) not yet reported at SessionStart, oldest first; marks them reported.
+ * Rollbacks a person made are not reported: they know.
+ */
+export function unreportedAutoChanges(repo: string): LedgerEntry[] {
+  const p = join(stateDir(repo), "auto-reported.json");
+  let until = "";
+  try {
+    until = String(JSON.parse(readFileSync(p, "utf8")).until ?? "");
+  } catch {}
+  const fresh = readLedger(repo).filter((e) => e.actor === "reviewer" && e.ts > until);
+  if (fresh.length) writeFileSync(p, JSON.stringify({ until: fresh[fresh.length - 1].ts }));
+  return fresh;
+}

@@ -9,6 +9,8 @@ import { buildBrief, reviewSession, listDrafts, materializeDraft } from "../../s
 import { findSkills, renderSkill, type SkillLoopMeta } from "../../src/core/skill-schema.js";
 import { approveDraft, reviewAndApply } from "../../src/core/skill-land.js";
 import { readLedger, rollback } from "../../src/core/skill-ledger.js";
+import { maintenanceTargets, queueMaintenance } from "../../src/core/skill-curator.js";
+import { pendingJobs } from "../../src/core/skill-queue.js";
 import type { ReviewJob } from "../../src/core/skill-queue.js";
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
@@ -208,6 +210,65 @@ describe("skill loop v1.8: the reviewer judges the skills too (fake claude)", ()
       expect(s.record).toMatchObject({ kind: "suggest", action: "archive" });
       expect(() => approveDraft(repo, s.record.id, { env })).toThrow(/apply this suggestion there by hand/);
       expect(existsSync(join(tmp, "real", "theirs", "SKILL.md"))).toBe(true);
+    });
+  });
+
+  describe("maintenance and the SessionStart report", () => {
+    const AUTO = { SEMANTIC_MEMORY_SKILL_LOOP: "1", SEMANTIC_MEMORY_SKILL_LOOP_AUTO: "1" };
+    const vite = () => join(repo, ".claude", "skills", "stop-vite-dev-server", "SKILL.md");
+
+    it("the curator queues one skill-only review for dead references; the worker trims the dead entry", async () => {
+      await learned("stop-vite-dev-server");
+      await put("healthy", "---\nname: healthy\ndescription: d\n---\nrun `scripts/dev.sh`\n");
+      expect(maintenanceTargets(repo, env).map((t) => t.path)).toEqual([vite()]);
+      const job = queueMaintenance(repo, env)!;
+      expect(job).toMatchObject({ kind: "maintenance", skills: [vite()], transcript_path: null });
+      expect(pendingJobs(repo, env).map((j) => j.job.session_id)).toEqual([job.session_id]);
+      // unchanged problem: not queued again; a draft already aimed at it: not queued either
+      expect(maintenanceTargets(repo, env)).toEqual([]);
+      await answer({ drafts: [{ kind: "patch", target: "stop-vite-dev-server", name: "stop-vite-dev-server", description: "Stop the Vite dev server without killing your shell. Use when pkill -f exits 144.", scope: "project", applies_to: { paths: ["scripts"], commands: ["pgrep"] }, body: BODY.replace("2. Then `scripts/old-stop.sh`.\n", "") }] });
+      const out = await reviewAndApply(job, { env: { ...env, ...AUTO } });
+      expect(out.applied?.[0]).toMatch(/^patch stop-vite-dev-server/);
+      expect(readFileSync(vite(), "utf8")).not.toContain("old-stop.sh");
+      expect(readFileSync(vite(), "utf8")).toMatch(/failures:\n\s+- t0/);
+      expect(maintenanceTargets(repo, env)).toEqual([]);
+    });
+
+    it("a skill with a waiting draft is not queued; a new dead reference queues it again", async () => {
+      await learned("stop-vite-dev-server");
+      expect(maintenanceTargets(repo, env, new Set([vite()]))).toEqual([]);
+      queueMaintenance(repo, env);
+      await writeFile(vite(), readFileSync(vite(), "utf8") + "\nAlso `scripts/second-gone.sh`.\n");
+      expect(maintenanceTargets(repo, env).map((t) => t.key)).toEqual(["scripts/old-stop.sh,scripts/second-gone.sh|"]);
+    });
+
+    it("SessionStart reports auto changes once, then drafts and suggestions apart", async () => {
+      const { main } = await import(join(ROOT, "hooks", "skill-loop.js"));
+      await learned("old-deploy", {}, "Deploy with the retired deploy script. Use when deploying the legacy site.");
+      await put("mine", "---\nname: mine\ndescription: the user's own\n---\nold\n");
+      await answer({ drafts: [{ kind: "archive", target: "old-deploy", why: "gone" }, { kind: "patch", target: "mine", name: "mine", description: "x", body: "new" }, draft()] });
+      await reviewAndApply(job, { env: { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "1", SEMANTIC_MEMORY_SKILL_LOOP_AUTO: "1" } });
+      // the new skill landed too; leave one ordinary draft waiting
+      await answer({ drafts: [draft({ name: "fix-yarn-lockfile", description: "Regenerate yarn.lock after a merge conflict. Use when yarn install fails with a lockfile conflict.", triggers: ["lockfile conflict"], applies_to: { paths: [], commands: ["yarn"] } })] });
+      await reviewAndApply(job, { env: { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "1" } });
+      const out: string[] = [];
+      const write = process.stdout.write.bind(process.stdout);
+      (process.stdout as any).write = (x: string) => (out.push(String(x)), true);
+      try {
+        await main({ cwd: repo, hook_event_name: "SessionStart", source: "startup" }, { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "1" });
+        await main({ cwd: repo, hook_event_name: "SessionStart", source: "startup" }, { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "1" });
+        await main({ cwd: repo, hook_event_name: "SessionStart", source: "startup" }, { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "" });
+      } finally {
+        (process.stdout as any).write = write;
+      }
+      expect(out).toHaveLength(2);
+      const first = JSON.parse(out[0]).hookSpecificOutput.additionalContext;
+      expect(first).toMatch(/auto mode changed learned skills since you last looked: archive old-deploy \(ledger [^)]+\), land rotate-npm-token/);
+      expect(first).toContain("1 skill draft waiting");
+      expect(first).toContain("1 suggested change to hand-written skills");
+      const second = JSON.parse(out[1]).hookSpecificOutput.additionalContext;
+      expect(second).not.toContain("auto mode changed");
+      expect(second).toContain("1 skill draft waiting");
     });
   });
 });

@@ -16,7 +16,9 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { readEvidence, stateDir } from "./skill-evidence.js";
 import { applyChange, archiveDir, readLedger, type LedgerEntry } from "./skill-ledger.js";
-import { findSkills, parseSkill, renderSkill, type SkillFile } from "./skill-schema.js";
+import { deadRefs, findSkills, parseSkill, refRoots, renderSkill, type SkillFile } from "./skill-schema.js";
+import { enqueue, type ReviewJob } from "./skill-queue.js";
+import { createHash } from "node:crypto";
 import { indexSkill } from "./skill-scope.js";
 import { parseVerify } from "./skill-eval/task.js";
 
@@ -33,6 +35,8 @@ interface CuratorState {
   last_run?: string;
   last_report?: string;
   flagged?: { name: string; reason: string; at: string }[];
+  /** v1.8: per SKILL.md path, the dead references / Verify failure last queued for maintenance */
+  maintained?: Record<string, string>;
 }
 
 function readState(repo: string): CuratorState {
@@ -189,3 +193,44 @@ export function verifySkills(repo: string, opts: { timeoutMs?: number; env?: Nod
 }
 
 export const curatorState = readState;
+
+/**
+ * Skills (learned or hand-written, this repo's only) that name paths that no longer exist or failed their Verify,
+ * whose problem changed since it was last queued, and that no waiting draft already targets.
+ */
+export function maintenanceTargets(repo: string, env = process.env, pendingTargets: Set<string> = new Set()): { path: string; key: string }[] {
+  const st = readState(repo);
+  const flagged = new Map((st.flagged ?? []).map((f) => [f.name, f.reason]));
+  const out: { path: string; key: string }[] = [];
+  for (const s of findSkills(repo, { home: env.HOME, global: false })) {
+    if (s.skill.meta?.pinned || pendingTargets.has(s.path)) continue;
+    const dead = deadRefs(s.skill, refRoots(repo, s));
+    const failed = flagged.get(s.skill.name);
+    if (!dead.length && !failed) continue;
+    const key = `${dead.sort().join(",")}|${failed ?? ""}`;
+    if (st.maintained?.[s.path] !== key) out.push({ path: s.path, key });
+  }
+  return out;
+}
+
+/** Queue one skill-only review (v1.8) when maintenanceTargets finds any. Returns the job, or null. */
+export function queueMaintenance(repo: string, env = process.env, pendingTargets?: Set<string>, now = new Date()): ReviewJob | null {
+  const targets = maintenanceTargets(repo, env, pendingTargets);
+  if (!targets.length) return null;
+  // queue file names are global: the repo's hash keeps two repos' jobs apart
+  const id = `maintenance-${createHash("sha256").update(repo).digest("hex").slice(0, 8)}-${now.toISOString().slice(0, 10)}`;
+  const job: ReviewJob = {
+    session_id: id,
+    repo,
+    transcript_path: null,
+    reason: `${targets.length} skill(s) name paths that no longer exist or failed their Verify`,
+    ts: now.toISOString(),
+    evidence: { failures: [], corrections: 0, skills_used: [], tool_calls: 0 },
+    kind: "maintenance",
+    skills: targets.map((t) => t.path),
+  };
+  enqueue(job, env);
+  const st = readState(repo);
+  writeState(repo, { ...st, maintained: { ...(st.maintained ?? {}), ...Object.fromEntries(targets.map((t) => [t.path, t.key])) } });
+  return job;
+}
