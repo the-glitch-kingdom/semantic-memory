@@ -2,6 +2,37 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.8.0] - 2026-11-03 — The skill loop judges existing skills, and can apply its own changes
+
+1.7's reviewer could draft a new skill, or patch a learned skill that was used and then failed; duplicates were only
+discouraged by the prompt, dead steps were never retired, and every change waited for a person.
+
+### Added
+
+- **The reviewer sees the skills a session touches.** Up to 4 skills it used or shares words with are in the brief
+  in full, with their dead references (paths they name that no longer exist) and a failed `## Verify`. The prompt
+  prefers patching to creating; up to 3 drafts per review.
+- **`archive` drafts** retire a whole skill, with a one-line `why`.
+- **Dedup in code.** A new skill whose name matches, or whose words overlap ≥ 0.5 (Jaccard), with any loaded skill
+  or waiting draft is rejected, naming the one it duplicates.
+- **Retiring dead entries.** A patch may drop or correct steps a dead reference shows are gone. The curator queues
+  one skill-only maintenance review when skills have new dead references or a failed Verify.
+- **Auto mode** (`skill-loop auto on|off [--repo]`, `SEMANTIC_MEMORY_SKILL_LOOP_AUTO`, `skill_loop_auto`), off by
+  default: the worker applies its own new / patch / archive for learned skills as actor `reviewer`, ledgered and
+  undone with `skill-loop rollback`. SessionStart lists each change once with its ledger id.
+- **Suggestions for hand-written skills.** A patch or archive of a skill the loop did not write becomes a `suggest`
+  draft (frontmatter kept byte for byte), never applied by the loop, shown with its diff at SessionStart and in
+  `skill-loop review`. Approval is refused for linked skills (usually into `node_modules`).
+
+### Changed
+
+- A patch keeps the provenance its skill was built from.
+
+### Fixed
+
+- **More than 5 skill-loop `claude` runs at once.** `acquireSlot` created a slot file, then wrote its pid; a reader in
+  between deleted the live slot. Slots are now hard-linked from a temp file that already holds the pid.
+
 ## [1.7.2] - 2026-10-28 — Sessions use the indexed docs
 
 A check of real sessions found the semantic search was rarely used. In RE-InvestorHub, 1 of 6 sessions in two weeks
