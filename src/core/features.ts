@@ -94,6 +94,31 @@ export const featureOn = (feature: Feature, projectRoot?: string, env = process.
   return s.on && s.available;
 };
 
+export const AUTO_ENV = "SEMANTIC_MEMORY_SKILL_LOOP_AUTO";
+
+/**
+ * Skill loop auto mode (v1.8): the worker applies its own create / update / archive to learned skills instead of
+ * leaving drafts. Off by default; `skill_loop_auto: on | off` in the repo config beats the env switch both ways.
+ * Meaningless without the skill loop itself, so it reads as off when the loop is off.
+ */
+export function autoState(projectRoot?: string, env = process.env): { on: boolean; why: FeatureState["why"] } {
+  let on = false;
+  let why: FeatureState["why"] = "default";
+  const raw = env[AUTO_ENV];
+  if (raw !== undefined && raw !== "") {
+    on = truthy(raw);
+    why = "env";
+  }
+  const repo = projectRoot ? readRepoConfig(projectRoot).skill_loop_auto : undefined;
+  if (truthy(repo) || falsy(repo)) {
+    on = truthy(repo);
+    why = "repo";
+  }
+  return { on, why };
+}
+
+export const autoOn = (projectRoot?: string, env = process.env) => featureOn("skill_loop", projectRoot, env) && autoState(projectRoot, env).on;
+
 /**
  * Set (true / false) or clear (undefined) one env key in ~/.claude/settings.json, touching nothing else.
  * Keeps a `.bak` of the previous file. Refuses (throws, writes nothing) when the file is not valid JSON.

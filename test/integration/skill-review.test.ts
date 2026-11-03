@@ -157,9 +157,15 @@ describe("skill-loop reviewer (v1.7, fake claude)", () => {
     expect(out.rejected[0].reason).toContain("pinned");
     const [d] = listDrafts(repo);
     expect(d.record).toMatchObject({ kind: "patch", target: join(repo, ".claude", "skills", "stop-vite-dev-server", "SKILL.md"), base_sha256: expect.stringMatching(/^[0-9a-f]{64}$/) });
+    // v1.8: a patch keeps the evidence its skill was built from
+    expect(readFileSync(join(d.dir, "SKILL.md"), "utf8")).toMatch(/sessions:\n\s+- s0\n\s+- s1/);
+    // v1.8: a patch of a hand-written skill is a suggestion: its own frontmatter kept byte for byte, body replaced
     await answer({ drafts: [draft({ kind: "patch", target: "mine", name: "mine" })] });
     out = await reviewSession(job, { env });
-    expect(out.rejected[0].reason).toContain("not written by the skill loop");
+    expect(out.rejected).toEqual([]);
+    const s = listDrafts(repo).find((x) => x.record.kind === "suggest")!;
+    expect(s.record).toMatchObject({ action: "patch", name: "mine", target: join(repo, ".claude", "skills", "mine", "SKILL.md") });
+    expect(readFileSync(join(s.dir, "SKILL.md"), "utf8")).toBe(`---\nname: mine\ndescription: the user's own\n---\n\n${BODY.trim()}\n`);
   });
 
   it("parses JSON bare or fenced; a non-JSON answer is a rejection, not a crash", async () => {

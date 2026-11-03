@@ -15,6 +15,7 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 | Version | What it adds |
 |---|---|
+| **1.8.0** | Skill loop: the reviewer judges existing skills too (prefers updating, rejects duplicates, retires dead entries and whole skills); opt-in auto mode applies its own changes to learned skills (ledgered, rollback); hand-written skills only get suggestions |
 | **1.7.2** | Sessions use the indexed docs: the prompt hook searches any `semantic-*` server and skips notifications and archived docs, a grep of an indexed folder is redirected once to the MCP search, `search_hybrid` skips tool search |
 | **1.7.1** | Skill-loop queue fixes: temp-directory sessions skipped, `claude` found from cron, resumed sessions re-reviewed |
 | **1.7.0** | The skill loop (learned skills between sessions) and jev mode, both opt-in |
@@ -95,6 +96,12 @@ was corrected, a background review drafts a skill — a short playbook Claude Co
 thing happens. The session never waits; the reviewer is a fenced, read-only `claude -p`; nothing lands until you
 approve it in `/skill-loop review`; unused learned skills go stale at 14 days and are archived at 30. Off (the
 default) changes nothing. See [the guide](.documentation/operational/skill-loop.md).
+
+Since 1.8 the reviewer also judges the skills a session touches. It patches one instead of creating a near-copy
+(duplicates are rejected in code), drops steps that name paths that no longer exist, and can retire a whole skill.
+`semantic-memory skill-loop auto on` lets it apply those changes to learned skills itself. Each change is ledgered,
+listed at the next SessionStart and undone with `skill-loop rollback <id>`. Skills you wrote are never changed:
+the loop saves suggestions for you to approve.
 
 ## Jev mode (opt-in, v1.7+)
 

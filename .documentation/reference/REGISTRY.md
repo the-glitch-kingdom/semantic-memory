@@ -3,7 +3,7 @@ title: Reference Registry
 tier: reference
 domains: [reference]
 status: active
-last_updated: '2026-10-28'
+last_updated: '2026-11-03'
 version: '1.0.0'
 purpose: Quick reference for reference documentation
 ---
@@ -31,11 +31,11 @@ purpose: Quick reference for reference documentation
 
 ## Recently Updated
 
+- [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) - 2026-11-03
 - [Configuration Reference](configuration-reference.md) - 2026-10-28
 - [MCP Tools Reference (44 tools)](mcp-tools-reference.md) - 2026-10-28
 - [CLI Reference](cli-reference.md) - 2026-10-25
 - [Hooks Reference](hooks-reference.md) - 2026-10-25
-- [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) - 2026-10-25
 
 ## By Status
 
@@ -57,4 +57,4 @@ purpose: Quick reference for reference documentation
 
 ---
 
-*Last updated: 2026-10-28*
+*Last updated: 2026-11-03*

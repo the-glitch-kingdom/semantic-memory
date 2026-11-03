@@ -3,7 +3,7 @@ title: Reference Documentation Index
 tier: reference
 domains: [reference]
 status: active
-last_updated: '2026-10-28'
+last_updated: '2026-11-03'
 version: '1.0.0'
 purpose: Complete listing of reference documentation
 ---
@@ -25,12 +25,12 @@ purpose: Complete listing of reference documentation
 
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
-| [CLI Reference](cli-reference.md) | active | 2026-10-25 | 3,533 |
-| [Configuration Reference](configuration-reference.md) | active | 2026-10-28 | 3,661 |
+| [CLI Reference](cli-reference.md) | active | 2026-10-25 | 3,696 |
+| [Configuration Reference](configuration-reference.md) | active | 2026-10-28 | 3,726 |
 | [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md) | active | 2026-10-24 | 3,309 |
-| [Hooks Reference](hooks-reference.md) | active | 2026-10-25 | 1,905 |
+| [Hooks Reference](hooks-reference.md) | active | 2026-10-25 | 1,943 |
 | [MCP Tools Reference (44 tools)](mcp-tools-reference.md) | active | 2026-10-28 | 2,962 |
-| [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) | active | 2026-10-25 | 560 |
+| [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) | active | 2026-11-03 | 560 |
 
 ## Keywords
 
@@ -44,4 +44,4 @@ This domain covers: reference, cli, tools, configuration, frontmatter
 
 ---
 
-*Last updated: 2026-10-28*
+*Last updated: 2026-11-03*

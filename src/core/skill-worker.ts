@@ -14,6 +14,8 @@ export interface ReviewOutcome {
   rejected: { reason: string }[];
   costUsd: number;
   note?: string;
+  /** v1.8 auto mode: the changes applied, as "<action> <skill> (<ledger id>)" */
+  applied?: string[];
 }
 
 export const MAX_ATTEMPTS = 3;
@@ -45,7 +47,7 @@ export async function drain(
         const outcome = await review(next.job);
         finishJob(next.path, "done", { ...outcome }, env);
         reviewed++;
-        log(repo, `reviewed ${next.job.session_id} (${next.job.reason}): ${outcome.drafts.length} draft(s), ${outcome.rejected.length} rejected, $${outcome.costUsd.toFixed(3)}${outcome.note ? ` — ${outcome.note}` : ""}`);
+        log(repo, `reviewed ${next.job.session_id} (${next.job.reason}): ${outcome.applied?.length ? `applied ${outcome.applied.join(", ")}; ` : ""}${outcome.drafts.length} draft(s), ${outcome.rejected.length} rejected, $${outcome.costUsd.toFixed(3)}${outcome.note ? ` — ${outcome.note}` : ""}`);
       } catch (e) {
         log(repo, `review of ${next.job.session_id} failed (attempt ${attempts}): ${(e as Error).message}`);
         if (attempts >= MAX_ATTEMPTS) {

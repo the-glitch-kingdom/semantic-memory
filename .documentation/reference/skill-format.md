@@ -12,8 +12,8 @@ tags:
   - frontmatter
   - lint
 status: active
-last_updated: '2026-10-25'
-version: 1.7.0
+last_updated: '2026-11-03'
+version: 1.8.0
 purpose: The contract every skill the skill loop writes follows — frontmatter
   fields, body sections, what stays out of the file — and every rule `skills
   lint` and `lint_vault({checks:["skills"]})` enforce.
@@ -64,7 +64,7 @@ skill_loop:
 | `pinned` | set it by hand to keep a skill exactly as it is |
 | `triggers` | the literal errors, commands and phrases it answers |
 | `applies_to` | the repo paths it is about (must exist for directory / project scope) and the programs its steps run |
-| `provenance` | the session, failure and correction it came from. **Required: no evidence, no skill.** |
+| `provenance` | the session, failure and correction it came from. **Required: no evidence, no skill.** A patch keeps the provenance its skill already had and adds the new evidence (v1.8). |
 | `cites` | knowledge-base facts its steps rely on, by id — linked, never copied |
 | `supersedes` | skills a merge replaced |
 
@@ -101,3 +101,20 @@ Every draft is linted before it is written and again before it lands.
 | `name_clash` | error | a skill the loop did not write (yours, a plugin's linked copy, a global one) already has this name |
 
 The skill loop never edits or archives a skill without `skill_loop:` / `metadata.generated_by: semantic-memory`.
+Since v1.8 it may *suggest* a change to one: a `suggest` draft that a person approves or rejects in
+`skill-loop review` (see [suggestions](../operational/skill-loop.md#suggestions-for-hand-written-skills)). A patch
+suggestion keeps the skill's own frontmatter byte for byte, and it is not linted against this format: a
+hand-written skill does not need the four sections. Only its secrets are checked.
+
+## Dedup and dead references (v1.8)
+
+Two deterministic checks run on drafts and landed skills, with no model call:
+
+- **Duplicate:** a new draft whose name matches, or whose words overlap ≥ 0.5 (Jaccard over name, description,
+  `triggers` and `applies_to`) with, a skill this repo loads or a waiting draft is rejected. Merging uses the
+  same measure.
+- **Dead reference:** a path the skill names that does not exist. These are `applies_to.paths`, and repo-relative
+  paths in code spans and fenced blocks whose first segment exists in the repo (or in a directory skill's
+  package). `file.ts:42` is checked as `file.ts`. URLs, globs, `~/…` and absolute paths are ignored. Dead
+  references go to the reviewer, who patches out or corrects the entry, and they make the curator queue a
+  maintenance review.

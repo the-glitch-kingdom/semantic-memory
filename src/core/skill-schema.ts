@@ -327,3 +327,68 @@ export function lintSkills(projectRoot: string, opts: { home?: string; extra?: s
   }
   return { files, findings };
 }
+
+// --- overlap and dead references (v1.8) ---
+
+/** The words a skill is about: name, description, triggers, applies_to. What dedup and merge compare. */
+export function skillWords(s: Pick<ParsedSkill, "name" | "description" | "meta">): Set<string> {
+  return new Set(
+    [s.name, s.description, ...(s.meta?.triggers ?? []), ...(s.meta?.applies_to.paths ?? []), ...(s.meta?.applies_to.commands ?? [])]
+      .join(" ")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2),
+  );
+}
+
+/** Jaccard overlap of two word sets. */
+export function overlap(x: Set<string>, y: Set<string>): number {
+  const shared = [...x].filter((w) => y.has(w)).length;
+  return shared / (x.size + y.size - shared || 1);
+}
+
+/** Overlap at or above this means the same procedure (dedup) or a merge candidate. */
+export const DUPLICATE_OVERLAP = 0.5;
+
+/** The first of `others` a new skill duplicates: same name, or word overlap >= DUPLICATE_OVERLAP. */
+export function duplicateOf<T extends { name: string; skill: Pick<ParsedSkill, "name" | "description" | "meta"> }>(
+  s: Pick<ParsedSkill, "name" | "description" | "meta">,
+  others: T[],
+): { other: T; overlap: number } | null {
+  const mine = skillWords(s);
+  for (const o of others) {
+    if (o.name === s.name) return { other: o, overlap: 1 };
+    const v = overlap(mine, skillWords(o.skill));
+    if (v >= DUPLICATE_OVERLAP) return { other: o, overlap: v };
+  }
+  return null;
+}
+
+// a token that reads as a path: has a slash, no URL / glob / variable / placeholder characters
+const PATHLIKE = /^(\.\/)?[A-Za-z0-9_.@-][A-Za-z0-9_.@/-]*\/[A-Za-z0-9_.@/-]*$/;
+
+/**
+ * Paths a skill names that no longer exist: `applies_to.paths`, and repo-relative paths in its code spans and
+ * fenced blocks. A body token counts only when its first segment exists here (so `origin/main` or
+ * `owner/repo` are not mistaken for paths); `file.ts:42` is checked as `file.ts`. `roots`: where relative paths
+ * may resolve (the repo, and a directory skill's own package).
+ */
+export function deadRefs(s: ParsedSkill, roots: string[]): string[] {
+  const exists = (p: string) => roots.some((r) => existsSync(join(r, p)));
+  const dead = new Set<string>();
+  for (const p of s.meta?.applies_to.paths ?? []) if (!exists(p)) dead.add(p);
+  const code = [...s.body.matchAll(/```[^\n]*\n([\s\S]*?)```|`([^`\n]+)`/g)].map((m) => m[1] ?? m[2]);
+  for (const chunk of code) {
+    for (let tok of chunk.split(/[\s"'()=;|&<>,]+/)) {
+      tok = tok.replace(/:\d+(:\d+)?$/, "").replace(/\/+$/, "").replace(/^\.\//, "");
+      if (!tok || !PATHLIKE.test(tok) || tok.startsWith("-")) continue;
+      const first = tok.split("/")[0];
+      if (first === ".." || !exists(first)) continue;
+      if (!exists(tok)) dead.add(tok);
+    }
+  }
+  return [...dead];
+}
+
+/** Where a skill's relative paths may resolve: the repo, plus a directory skill's package (<pkg>/.claude/skills/<name>). */
+export const refRoots = (repo: string, f: Pick<SkillFile, "dir" | "scope">) => (f.scope === "directory" ? [repo, join(f.dir, "..", "..", "..")] : [repo]);

@@ -19,8 +19,8 @@ export function registerSkillLoopCommands(program: Command) {
         process.exit(0);
       }
       const { drain } = await import("../core/skill-worker.js");
-      const { reviewSession } = await import("../core/skill-review.js");
-      const r = await drain(repo, (job) => reviewSession(job));
+      const { reviewAndApply } = await import("../core/skill-land.js");
+      const r = await drain(repo, (job) => reviewAndApply(job));
       console.log(r.locked ? "another worker holds this repo's lock" : `reviewed ${r.reviewed} session(s)${r.capped ? "; daily cap reached" : ""}${r.failed ? `; ${r.failed} set aside` : ""}`);
       process.exit(0);
     });
@@ -57,7 +57,10 @@ export function registerReviewCommands(cmd: Command) {
           else if (!drafts.length) console.log("no skill drafts waiting");
           else
             for (const d of drafts) {
-              console.log(`\n${d.id}  ${d.kind} ${d.name} → ${d.destination}`);
+              console.log(`\n${d.id}  ${d.kind}${d.action ? ` (${d.action})` : ""} ${d.name} → ${d.destination}`);
+              if (d.kind === "suggest") console.log(`  a suggested change to a hand-written skill: the loop never applies it${d.real_path ? `; the file is ${d.real_path}, apply it there by hand` : "; --approve applies it"}`);
+              if (d.why) console.log(`  why: ${d.why}`);
+              if (d.diff) console.log(d.diff.split("\n").map((l) => `    ${l}`).join("\n"));
               console.log(`  scope: ${d.scope}${d.scope_why ? ` (${d.scope_why})` : ""}${d.promotion?.length ? `; also in ${d.promotion.map((p) => p.repo).join(", ")}: --promote offers one global skill` : ""}`);
               console.log(`  evidence: sessions ${d.provenance?.sessions.join(", ")}; failures ${d.provenance?.failures.join(", ") || "-"}; corrections ${d.provenance?.corrections.join(", ") || "-"}`);
               if (d.verify.kind === "command") console.log(`  verify command (a --task eval runs it): ${d.verify.command}`);
@@ -105,6 +108,21 @@ export function registerCuratorCommands(cmd: Command) {
       if (opts.auto) log(repo, `curator: ${changes.map((a) => `${a.action} ${a.skill} (${a.why})`).join(", ") || "nothing to do"}`);
       else for (const a of r.actions) console.log(`${opts.dryRun ? "would " : ""}${a.action.padEnd(10)} ${a.skill} — ${a.why}`);
       if (!opts.auto && !r.actions.length) console.log("no learned skills here");
+      // v1.8: skills that name paths that are gone, or failed their Verify, get one skill-only review
+      const { maintenanceTargets, queueMaintenance } = await import("../core/skill-curator.js");
+      const { listDrafts } = await import("../core/skill-review.js");
+      const pending = new Set(listDrafts(repo).map((d) => d.record.target).filter((t): t is string => !!t));
+      if (opts.dryRun) {
+        for (const t of maintenanceTargets(repo, process.env, pending)) console.log(`would queue maintenance review: ${t.path} (${t.key})`);
+      } else if ((await import("../core/features.js")).featureOn("skill_loop", repo)) {
+        const job = queueMaintenance(repo, process.env, pending);
+        if (job) {
+          const line = `maintenance: queued a review of ${job.skills!.length} skill(s) — ${job.reason}`;
+          if (opts.auto) log(repo, line);
+          else console.log(line);
+          (await import("../core/skill-worker.js")).spawnWorker(repo);
+        }
+      }
       const { consolidateOn, proposeMerges } = await import("../core/skill-merge.js");
       if (!opts.dryRun && (opts.merge || consolidateOn(repo))) {
         const m = await proposeMerges(repo);
@@ -146,7 +164,9 @@ export async function skillLoopStatus(cwd: string): Promise<string[]> {
   const { listDrafts } = await import("../core/skill-review.js");
   const { runsToday, dailyRunCap, pendingJobs, lockHolder } = await import("../core/skill-queue.js");
   const repo = repoRoot(cwd);
+  const { describeAuto } = await import("./features.js");
   const lines = [
+    describeAuto(cwd),
     `drafts waiting: ${listDrafts(repo).length}${listDrafts(repo).length ? " (/skill-loop review)" : ""}`,
     `queued sessions for this repo: ${pendingJobs(repo).length}${lockHolder(repo) ? ` (worker running, pid ${lockHolder(repo)})` : ""}`,
     `reviews today (all repos): ${runsToday()} of ${dailyRunCap()} (SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS)`,
