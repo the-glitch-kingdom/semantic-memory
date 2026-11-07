@@ -110,8 +110,10 @@ export class Indexer {
     const plainText = this.stripMarkdown(content);
     const chunks = this.chunkText(plainText);
 
+    // YAML parses `title: 2024` as a number and `title: 2024-05-01` as a Date
+    const fmTitle = frontmatter.title as unknown;
     const title =
-      (frontmatter.title as string) ||
+      (fmTitle instanceof Date ? fmTitle.toISOString().slice(0, 10) : Array.isArray(fmTitle) ? fmTitle.join(" ") : fmTitle == null ? "" : String(fmTitle)) ||
       headers[0] ||
       basename(relativePath, ".md");
 

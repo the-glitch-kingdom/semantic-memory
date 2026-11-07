@@ -155,7 +155,7 @@ export const BM25_FRACTION = 0.8;
  * cannot transfer between vaults; the same share of this median does. Null when no doc has a scoring title.
  */
 export function bm25SelfTop(index: Bm25Index, docs: { title?: string }[]): number | null {
-  const titled = docs.filter((d) => d.title);
+  const titled = docs.filter((d) => typeof d.title === "string" && d.title); // an old index may hold a number or Date title
   const step = Math.max(1, Math.ceil(titled.length / SELF_QUERY_MAX));
   const tops = titled.filter((_, i) => i % step === 0).map((d) => index.search(d.title!, 1)[0]?.score ?? 0).filter((s) => s > 0).sort((a, b) => a - b);
   return tops.length ? tops[Math.floor(tops.length / 2)] : null;

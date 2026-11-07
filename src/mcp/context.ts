@@ -496,7 +496,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     if (indexingPromise) return;
     indexingPromise = fullIndex()
       .catch((err) => {
-        process.stderr.write(`Index error: ${err?.message ?? err}\n`);
+        process.stderr.write(`Index error: ${err?.stack ?? err}\n`);
         if (indexState === "indexing") indexState = documents.length > 0 ? "stale" : "empty";
       })
       .finally(() => {
@@ -510,7 +510,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       const run = upgrading ? ((upgrading = false), fullIndex()) : serial(() => sync());
       reconcileInFlight = run
         .catch((err) => {
-          process.stderr.write(`Reconcile error: ${err?.message ?? err}\n`);
+          process.stderr.write(`Reconcile error: ${err?.stack ?? err}\n`);
           if (indexState === "indexing") indexState = "stale";
         })
         .finally(() => {

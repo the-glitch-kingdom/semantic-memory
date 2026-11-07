@@ -213,7 +213,7 @@ const TOOL_HELP: Record<string, { description: string; args: string; examples: s
     ],
   },
   search_hybrid: {
-    description: "Combined semantic + graph search — vector results re-ranked by graph proximity",
+    description: "Combined semantic + lexical search — vector and BM25 scores fused, re-ranked by load_priority",
     args: '{ "query": "string", "limit?": 10 }',
     examples: [
       '{ "query": "event driven architecture", "limit": 5 }',

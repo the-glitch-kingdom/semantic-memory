@@ -10,7 +10,7 @@ Issues #48 and #49. Full tables, misses and opt-out: `.documentation/changelog/v
 
 - **Decay default changed.** A note with a missing, unparseable or future `last_verified` is aged by `decay.missing_last_verified` (default `git`, the last commit date; also `mtime`, `penalty`, `fresh`) and `decay.missing_penalty` (0.85). Opt out with `missing_last_verified: fresh`. The `decay` block gains `source` and is attached whenever a fallback is used. The CLI `search` now applies decay like `search_hybrid`.
 - **Graph boost removed** (it was x1.3, never tuned; 1.0 was better on train).
-- **Stale marker in the text:** `search_*` responses start with `[stale: ...]` while an older index answers; the CLI sets `stale: true` on hits. `_meta.stale` is not shown to the model.
+- **Stale marker in the text:** `search_*` responses end with a separate `[stale: ...]` text block (content[0] stays the JSON) while an older index answers; the CLI sets `stale: true` on hits. `_meta.stale` is not shown to the model.
 - Index schema 6: one re-parse, vectors kept. `lint_vault` counts notes with no `last_verified`.
 
 ### Measured

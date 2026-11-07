@@ -24,17 +24,19 @@ Every missed target is stated in the PR.
   - [x] Verify #51 (remaining items), #52, #53 and #54 against main @ 93ab5f2 (notes.md)
   - [x] Sync main and cut `feat/index-text-pooling-body-dates`
   - [x] Commit this plan (the staged archive move of `boost-decay-fallback` goes in the same commit)
-- [ ] Phase 2: #51 fixes
-  - [ ] `title` is always a string: coerce non-string frontmatter titles (number, Date, array) in `Indexer.indexFile`
+- [x] Phase 2: #51 fixes
+  - [x] `title` is always a string: coerce non-string frontmatter titles (number, Date, array) in `Indexer.indexFile`
         (`src/core/indexer.ts:113`); a Date becomes its `YYYY-MM-DD` form. Also make `bm25SelfTop` skip non-string
         titles so an old index loaded from disk cannot throw either.
-  - [ ] Regression test: a vault with `title: 2024` and `title: 2024-05-01` answers `search_hybrid` (unit test on
+  - [x] Regression test: a vault with `title: 2024` and `title: 2024-05-01` answers `search_hybrid` (unit test on
         `bm25SelfTop`, plus an integration test through the MCP tool), and the index save succeeds.
-  - [ ] Check what happens when a background refresh throws today. If it fails every later call, keep serving the
+  - [x] Check what happens when a background refresh throws today. If it fails every later call, keep serving the
         old index and log the error with its stack to stderr instead. Tool errors log their stack to stderr.
-  - [ ] `search_hybrid` description without the graph boost in all three places: `src/mcp/tools/search.ts:158`,
+        Finding: already safe, only the log was thin (see notes). Both background paths now log `err.stack`; no tool-error wrapper exists (the SDK returns them), left alone.
+  - [x] `search_hybrid` description without the graph boost in all three places: `src/mcp/tools/search.ts:158`,
         `src/mcp/tools/inventory.ts:25`, `src/cli/index.ts:216`. Grep for any other "graph proximity" text.
-  - [ ] `CHANGELOG.md` 1.11.0 entry: the stale marker is a trailing separate text block, not a prefix.
+        Done: also AGENTS.md:30 (generated; regenerate_contract in Phase 10 would overwrite it from the code anyway).
+  - [x] `CHANGELOG.md` 1.11.0 entry: the stale marker is a trailing separate text block, not a prefix.
 - [ ] Phase 3: Eval first (written before any indexing, decay or embedder change)
   - [ ] Fixture docs and questions (train and held-out) for #52: an identifier only inside backticks (e.g.
         `check_rls_coverage.py`), a value only in a table cell (an env var name), a `snake_case_name` in prose, a
@@ -142,7 +144,7 @@ Every missed target is stated in the PR.
 1. Embedded text for #52: the same kept text, or prose plus inline identifiers without long code blocks? (Phase 5,
    chosen on train)
 2. Does `git` mode simply switch to body dates, or is `git-body` a separate source value? (Phase 4)
-3. Does the background refresh fail every later call when it throws, or only the self-query? (Phase 2)
+3. ~~Does the background refresh fail every later call when it throws?~~ No: caught in runReconcile/backgroundIndex, state goes stale, calls keep serving the old index. Only the tool that hits the throw (search_hybrid via bm25Min) failed. (Phase 2)
 4. Do bge-small / arctic-embed-s with the right pooling and prompt beat MiniLM on our splits? Reported only; no
    default change in this release. (Phase 6)
 
@@ -155,10 +157,10 @@ Every missed target is stated in the PR.
   measurement isolates one change.
 
 ## Errors Encountered
-- (none yet)
+- Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 2** - #51 fixes
+**Currently in Phase 3** - Eval first
 
 ---
 

@@ -57,3 +57,12 @@
 ## Append-Only Log
 ### 2026-11-07
 - Plan written; one plan for #51 leftovers + #52 + #53 + #54 (shared schema bump and re-embed).
+
+### Phase 2 findings (2026-11-07)
+- Background refresh that throws: `runReconcile` and `backgroundIndex` catch, log `err.message`, set state `stale`, and
+  `ensureFresh` awaits a promise that never rejects. So later calls keep serving the old index; the refresh is retried
+  on the next throttle window. Only search_hybrid failed (bm25Min -> selfTop in the tool). No behaviour change needed;
+  the log now carries `err.stack` instead of the message.
+- Fix: `Indexer.indexFile` coerces title (Date -> YYYY-MM-DD, array -> space-joined, number -> String); `bm25SelfTop`
+  skips non-string titles. Tests: `test/unit/bm25.test.ts` and `test/integration/non-string-title.test.ts` both fail with
+  "s.toLowerCase is not a function" on the unfixed code (checked by stashing the two src files).
