@@ -47,17 +47,18 @@ Every missed target is stated in the PR.
         (expected: the unverified doc wins).
         Done: tier `frontmatter-touch` (6 cases), `touched.json` + `gitHistory(..., touched)`. Baseline: the answer still wins 5/6 (relevance decides, twin multiplier 1.0 vs 0.989); the 400-day multiplier gate is the sharp it.fails.
   - [x] Re-record all splits (fixture train/held-out, real train/held-out, decay) for main @ 93ab5f2 in notes.md.
-- [ ] Phase 4: Git-date decay by last body change (#54)
-  - [ ] `gitCommitDates` keeps each path's blob history from the same single `git log --raw` (newest first), not only
+- [x] Phase 4: Git-date decay by last body change (#54)
+  - [x] `gitCommitDates` keeps each path's blob history from the same single `git log --raw` (newest first), not only
         the newest entry.
-  - [ ] Body dates: read the needed blobs through ONE `git cat-file --batch` process; for each unverified doc whose
+  - [x] Body dates: read the needed blobs through ONE `git cat-file --batch` process; for each unverified doc whose
         newest blob matches the file on disk, walk back to the first commit whose body (text after frontmatter, same
         rule as `parseFrontmatter`) differs from the previous version. A file's first commit counts as a body change.
         Bounded walk, timeout as today.
-  - [ ] Store the body date as `gitDate`; the `decay` block says which rule was used (`source: "git-body"`, or
+  - [x] Store the body date as `gitDate`; the `decay` block says which rule was used (`source: "git-body"`, or
         `git` with a field) and the commit date. Decide and record.
-  - [ ] Still no git calls at query time; dates are kept with the doc and recomputed only when its content changes.
-  - [ ] Measure on the decay fixture and every split.
+        Decided: `source: "git"` unchanged; in git mode the date IS the last body change (see Decisions Made).
+  - [x] Still no git calls at query time; dates are kept with the doc and recomputed only when its content changes.
+  - [x] Measure on the decay fixture and every split. Done: see notes.md "Eval results: Phase 4".
 - [ ] Phase 5: Indexed text keeps code, tables and identifiers (#52)
   - [ ] `stripMarkdown`: keep inline code contents (drop the backticks), keep fenced code contents (drop the fence
         lines), turn table rows into space-separated cells and drop separator rows, strip `*_~` only at word edges so
@@ -158,12 +159,19 @@ Every missed target is stated in the PR.
 - Order: #51 fixes, eval cases, #54 (independent of text), #52 (changes chunk text), #53 (changes vectors), so each
   measurement isolates one change.
 
+- #54 reuses `source: "git"` (no new `git-body` value): the `git` mode now means "last body change", the block's age_days is that date's age, and
+  clients keyed on `source` keep working. Existing unverified `gitDate`s from schema 6 are newest-commit dates; the Phase 5 schema bump (6 to 7)
+  clears them, so they are re-dated by body once. Do not ship Phase 4 without it.
+- `gitCommitDates` now returns every commit per path (newest first); `gitBodyDates` (src/core/git-dates.ts) walks back at most 20 commits per path
+  through one `git cat-file --batch`, comparing `parseFrontmatter(...).content` (exported from indexer.ts); a delete (zero blob) ends the walk.
+
 ## Errors Encountered
+- Phase 4: full `npm test` failed hook-failure Jev-hang and freshness-scale warm start under load; both pass alone (16/16).
 - Phase 3: full `npm test` failed freshness-scale warm start and hook-failure Jev-hang under load; both pass alone (16/16).
 - Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 4** - Git-date decay by last body change (#54)
+**Currently in Phase 5** - Indexed text keeps code, tables and identifiers (#52)
 
 ---
 

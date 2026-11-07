@@ -31,7 +31,7 @@ export async function listMarkdown(notesPath: string): Promise<string[]> {
 }
 
 // Invalid YAML (e.g. an unquoted colon in a value) keeps the body searchable with empty frontmatter
-function parseFrontmatter(raw: string, file: string): { data: Record<string, unknown>; content: string } {
+export function parseFrontmatter(raw: string, file: string): { data: Record<string, unknown>; content: string } {
   try {
     return matter(raw);
   } catch (err: any) {

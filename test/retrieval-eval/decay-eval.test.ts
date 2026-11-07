@@ -85,15 +85,15 @@ describe("Decay fixture eval (verified doc vs unverified twin)", () => {
   });
 
   // #54 (index-text-pooling-body-dates): a frontmatter-only commit today moves the file's git date, not its body's. v1.11.0 dates the twin today (multiplier 1.0, so
-  // relevance alone decides: 3/3 train, 2/3 held-out); Phase 4 dates it by its last body change (400 days, multiplier ~0.47 like the old-verified control).
+  // relevance alone decides: 3/3 train, 2/3 held-out); v1.12.0 dates it by its last body change (400 days, multiplier ~0.47 like the old-verified control).
   it("train: the recently verified doc beats a twin touched by a frontmatter-only commit", () => {
     expect(count("train", "search_hybrid", "frontmatter-touch", (r) => r.beatsTwin)).toBe(total("train", "search_hybrid", "frontmatter-touch"));
   });
-  it.fails("heldout: the recently verified doc beats a twin touched by a frontmatter-only commit", () => {
+  it("heldout: the recently verified doc beats a twin touched by a frontmatter-only commit", () => {
     expect(count("heldout", "search_hybrid", "frontmatter-touch", (r) => r.beatsTwin)).toBe(total("heldout", "search_hybrid", "frontmatter-touch"));
   });
   for (const s of ["train", "heldout"]) {
-    it.fails(`${s}: the touched twin decays as its 400-day-old body (multiplier below 0.6, source git)`, () => {
+    it(`${s}: the touched twin decays as its 400-day-old body (multiplier below 0.6, source git)`, () => {
       const twins = table[s].search_hybrid.filter((r) => r.tier === "frontmatter-touch").map((r) => r.twinDecay);
       expect(twins.length).toBeGreaterThan(0);
       for (const d of twins) { expect(d?.source).toBe("git"); expect(d!.multiplier).toBeLessThan(0.6); }

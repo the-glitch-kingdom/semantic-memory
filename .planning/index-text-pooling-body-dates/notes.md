@@ -89,6 +89,13 @@ near-identical, so relevance decides and the answer still wins 5 of 6. The sharp
 after Phase 4. Gates: train beats-twin is a real gate; held-out beats-twin (2/3 now) and the "touched twin decays as 400 days
 (multiplier < 0.6, source git)" check for both splits are it.fails until Phase 4.
 
+## Eval results: Phase 4 (body dates)
+Decay fixture (answer ranked first), tier `frontmatter-touch`: train semantic 3/3, hybrid 3/3; held-out semantic 3/3, hybrid 3/3 (was 3/3 and 2/3). Twin decay block: ~400-day
+age, multiplier < 0.6, source git, both splits. unverified 4/4 and old-verified 2/2 unchanged. Three it.fails gates are now real gates
+(held-out beats-twin, twin multiplier x2 splits). `npm run eval`: 51 passed, 11 expected-fail (was 48 / 14). Other splits unchanged (hybrid fixture train 38/52 class,
+real train 21/27, real held-out 15/23, #52 code-vault as in Baselines); no ranking code besides decay input changed.
+Unit: test/unit/git-body-dates.test.ts (frontmatter-only skipped, body edit resets, first commit, delete/restore). PATH-spy (one log, <=1 cat-file) is Phase 9.
+
 ## Append-Only Log
 ### 2026-11-07
 - Plan written; one plan for #51 leftovers + #52 + #53 + #54 (shared schema bump and re-embed).

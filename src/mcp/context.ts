@@ -13,7 +13,7 @@ import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { decayForDoc, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
-import { gitBlobId, gitCommitDates } from "../core/git-dates.js";
+import { gitBlobId, gitBodyDates, gitCommitDates } from "../core/git-dates.js";
 import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
@@ -357,17 +357,20 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     }
 
     // Decay `git` mode: one `git log` per build or reconcile dates the docs that have no usable last_verified and are new, changed
-    // or still undated. A doc whose bytes differ from its last commit stays undated (decay then takes the penalty).
+    // or still undated, by its last body change. A doc whose bytes differ from its last commit stays undated (decay then takes the penalty).
     const gitDates = new Map<string, string>();
     if (getDecayConfig().enabled && getDecayConfig().missing_last_verified === "git") {
       const unverified = (d: IndexedDocument) => !(Date.parse(normalizeVerifiedDate(d.frontmatter?.last_verified) ?? "") <= Date.now());
       const todo = [...parsed, ...(rebuild ? [] : documents.filter((d) => !d.gitDate))].filter(unverified);
       if (todo.length > 0) {
         const commits = await gitCommitDates(notesPath);
+        const unchanged: string[] = [];
         for (const d of todo) {
-          const c = commits.get(d.path);
-          if (c && gitBlobId(await readFile(join(notesPath, d.path)).catch(() => Buffer.alloc(0))) === c.blob) gitDates.set(d.path, new Date(c.ms).toISOString());
+          const c = commits.get(d.path)?.[0];
+          if (c && gitBlobId(await readFile(join(notesPath, d.path)).catch(() => Buffer.alloc(0))) === c.blob) unchanged.push(d.path);
         }
+        // the date is the last change of the body, so a frontmatter-only commit (a bulk re-tag) does not make an old note look fresh
+        for (const [path, ms] of await gitBodyDates(notesPath, commits, unchanged)) gitDates.set(path, new Date(ms).toISOString());
       }
     }
 
