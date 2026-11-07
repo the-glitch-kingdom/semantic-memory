@@ -221,3 +221,33 @@ describe("index freshness without a watcher", () => {
     }
   }, 180_000);
 });
+
+describe("shutdown", () => {
+  it("flushes the debounced save when the client goes away, so the next start re-parses nothing", async () => {
+    const { StdioClientTransport } = await import("@modelcontextprotocol/sdk/client/stdio.js");
+    const dir = await createTempVault();
+    try {
+      const client = new Client({ name: "t", version: "1" });
+      await client.connect(new StdioClientTransport({ command: "node", args: [join(import.meta.dirname, "..", "..", "dist", "cli", "index.js"), "--notes", dir] }));
+      for (;;) {
+        const stats = JSON.parse(((await client.callTool({ name: "get_stats", arguments: {} })).content as { text: string }[])[0].text);
+        if (stats.indexState === "ready") break;
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      await new Promise((r) => setTimeout(r, 2500)); // let the build's own save land
+      await writeFile(join(dir, "late.md"), "# Late\n\nWritten just before the session ends, about dugongs.\n");
+      await client.callTool({ name: "search_text", arguments: { pattern: "dugongs" } }); // reconciles, schedules a save 2 s out
+      await client.close();
+      await new Promise((r) => setTimeout(r, 500));
+
+      const ctx = await buildContext(dir, { reconcileThrottleMs: 0 });
+      const parsed = vi.spyOn(ctx.indexer, "indexFile");
+      expect(await ctx.tryLoadCachedIndex()).toBe(true);
+      await ctx.reconcileNow();
+      expect(parsed).not.toHaveBeenCalled();
+      expect(ctx.getDocByPath().has("late.md")).toBe(true);
+    } finally {
+      await cleanupTempDir(dir);
+    }
+  }, 240_000);
+});

@@ -1,0 +1,79 @@
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { cp, mkdtemp, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { createServer } from "../../src/mcp/server.js";
+import { openSearch } from "../../src/cli/search.js";
+import { cleanupTempDir } from "../setup.js";
+
+const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
+
+describe("docs fixture through the MCP client and the CLI search", () => {
+  let dir: string;
+  let client: Client;
+  const call = async (name: string, args: Record<string, unknown>) => {
+    const res = await client.callTool({ name, arguments: args });
+    return JSON.parse((res.content as { text: string }[])[0].text);
+  };
+
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), "sp-parity-"));
+    await cp(FIXTURE, dir, { recursive: true });
+    const server = await createServer(dir, { waitForReady: true });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await server.connect(st);
+    client = new Client({ name: "parity", version: "1.0.0" });
+    await client.connect(ct);
+  }, 240_000);
+  afterAll(async () => {
+    await client.close();
+    await cleanupTempDir(dir);
+  });
+
+  it("CLI search (the hook path) returns the same order as search_hybrid", async () => {
+    const searcher = await openSearch(dir);
+    const questions = (await readFile(join(import.meta.dirname, "..", "retrieval-eval", "golden-docs.jsonl"), "utf-8"))
+      .split("\n")
+      .filter((l) => l.startsWith("{"))
+      .map((l) => JSON.parse(l).q as string);
+    expect(questions.length).toBeGreaterThan(30);
+    for (const q of questions) {
+      const mcp = (await call("search_hybrid", { query: q, limit: 8 })).map((r: any) => r.path);
+      const cli = (await searcher.search(q, 8)).map((r) => r.path);
+      expect(cli, q).toEqual(mcp);
+    }
+  }, 240_000);
+
+  it("every search and graph tool answers with the documented shape", async () => {
+    const sem = await call("search_semantic", { query: "how do I rotate API keys", limit: 3 });
+    expect(sem[0]).toMatchObject({ path: expect.any(String), confidence: expect.any(Number), snippet: expect.any(String) });
+    expect(sem.some((r: any) => r.path.includes("archive/"))).toBe(false);
+
+    const hyb = await call("search_hybrid", { query: "how do I rotate API keys", limit: 3, full: true });
+    expect(hyb[0]).toHaveProperty("matchedChunk");
+
+    const text = await call("search_text", { pattern: "flush" });
+    expect(text.length).toBeGreaterThan(0);
+
+    const graph = await call("search_graph", { concept: "ingest pipeline", limit: 5 });
+    expect(graph.length).toBeGreaterThan(0);
+    expect(graph.some((n: any) => n.path.endsWith("INDEX.md"))).toBe(false);
+
+    const start = (await call("forwardlinks", { path: "architecture/ingest-pipeline.md" }))[0];
+    expect(start).toBeDefined();
+    const back = await call("backlinks", { path: start.path });
+    expect(back.map((n: any) => n.path)).toContain("architecture/ingest-pipeline.md");
+    const path = await call("graph_path", { from: "architecture/ingest-pipeline.md", to: start.path });
+    expect(path).toEqual(["architecture/ingest-pipeline.md", start.path]);
+
+    const stats = await call("get_stats", {});
+    expect(stats.indexState).toBe("ready");
+  }, 120_000);
+
+  it("an off-topic question is marked no_strong_match on every result", async () => {
+    const res = await call("search_hybrid", { query: "recipe for sourdough bread starter", limit: 3 });
+    expect(res.every((r: any) => r.no_strong_match === true)).toBe(true);
+  }, 60_000);
+});

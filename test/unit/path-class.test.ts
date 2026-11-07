@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   pathClassMultiplier,
+  isExcludedPath,
   loadPathClassConfig,
   DEFAULT_PATH_CLASS_CONFIG,
   type PathClassConfig,
@@ -64,5 +65,22 @@ describe("loadPathClassConfig", () => {
     dir = await mkdtemp(join(tmpdir(), "pc-"));
     await writeFile(join(dir, "vault.schema.yml"), "path_class:\n  enabled: false\n", "utf-8");
     expect(loadPathClassConfig(dir).enabled).toBe(false);
+  });
+
+  it("falls back to defaults on malformed yaml or wrongly typed fields", async () => {
+    dir = await mkdtemp(join(tmpdir(), "pc-"));
+    await writeFile(join(dir, "vault.schema.yml"), "path_class: [unclosed\n  : :", "utf-8");
+    expect(loadPathClassConfig(dir)).toEqual(DEFAULT_PATH_CLASS_CONFIG);
+    await writeFile(join(dir, "vault.schema.yml"), "path_class:\n  rules: nope\n  exclude: 7\n", "utf-8");
+    const c = loadPathClassConfig(dir);
+    expect(c.rules).toEqual(DEFAULT_PATH_CLASS_CONFIG.rules);
+    expect(c.exclude).toEqual(DEFAULT_PATH_CLASS_CONFIG.exclude);
+  });
+
+  it("matches archives at the top level, nested and under a dot-dir, and exclude [] opts out", () => {
+    for (const p of ["archive/a.md", "security/archive/a.md", ".documentation/archive/a.md"]) {
+      expect(isExcludedPath(p, DEFAULT_PATH_CLASS_CONFIG), p).toBe(true);
+      expect(isExcludedPath(p, { ...DEFAULT_PATH_CLASS_CONFIG, exclude: [] }), p).toBe(false);
+    }
   });
 });

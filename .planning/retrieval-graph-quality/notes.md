@@ -230,3 +230,29 @@ Shipped: `confidence = clamp(cos + (cos - best other cos) + 0.1 if BM25 agrees, 
 
 ## Eval results
 - Phase 9: offline tarball semantic-sidekick-offline-1.9.0-e524c85a66-x64.tgz = 532M (557,695,835 bytes; expected ~0.55 GB), built in 45 s with --allow-dirty (version bump uncommitted). Reranker model is opt-in and not bundled. Not published.
+
+### Phase 11 (review, validation, real-corpus benchmark)
+
+Real corpus: this repo's `.documentation/` (137 docs incl. archive), 30 own questions in `test/retrieval-eval/real-corpus.jsonl` (10 exact, 8 paraphrase, 6 multi-doc, 6 negative),
+run by `scripts/retrieval-eval/real-corpus.mjs` through the production launch (`node dist/cli/index.js --notes <copy>` over stdio). Before = commit c22f65c (v1.8.0), after = this branch.
+
+| measure (24 answerable) | v1.8.0 hybrid | v1.9.0 hybrid | v1.9.0 semantic |
+|---|---|---|---|
+| answer @1 | 13/24 (54%) | 15/24 (62.5%) | 13/24 |
+| @3 | 19/24 | 19/24 | 20/24 |
+| @8 | 21/24 | 23/24 | 22/24 |
+| exact @1 / paraphrase @1 / multi @1 | 7/10, 4/8, 2/6 | 8/10, 4/8, 3/6 | 7/10, 4/8, 2/6 |
+| negatives flagged `no_strong_match` | 0/6 | 6/6 | 6/6 |
+| correct @1 answers wrongly flagged | 0 | 4 of 15 | 2 of 13 |
+| archive hits | 0 | 0 | 0 |
+| mean payload per search | 16,711 B | 6,391 B | 6,162 B |
+| spawn to first answer, cold index (137 docs) | 10.4 s | 10.9 s | |
+| spawn to first answer, warm cache | 1,409 ms | 844 ms | |
+
+- Before, hybrid and semantic were identical on every question (the "20/20 identical" bug); now they differ.
+- TARGET MISSED: answer @1 is 62.5%, under the plan's 0.80 (the fixture is 23/35 = 66%, the same shortfall). The misses are mostly rank 2 to 5 behind a changelog or reference page that mentions the topic
+  (x03, x05, m04 rank 2; p01, p03, p04, p07 rank 3 to 5; m06 never covered). @3 is 79% and @8 96%. Nothing here is a regression: @1 rose, never fell.
+- Warm start under 1 s met on the real corpus (844 ms) and on the 1,000-doc tree (best of 3 under 1,000 ms in `freshness-scale.test.ts`).
+- Stale audit on a 1,000-doc tree after an edit: 0% stale, 0 missing, 0 index/disk mismatch (`freshness-scale.test.ts`).
+- Offline tarball `semantic-sidekick-offline-1.9.0-*-x64.tgz` built in 44 s, 532 MB; extracted, installed with `--prefix`, `--verify` exit 0 ("10660 files match"). `scripts/smoke-install.sh`: SMOKE PASS (v1.9.0).
+- Known limit found and not fixed (pre-existing): `stripMarkdown` removes table rows and inline code before indexing, so `search_text` and the vectors never see config-table names such as `TIDEWATCH_FLUSH_MS`.

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { minimatch } from "minimatch";
 import { Indexer } from "../../src/core/indexer.js";
-import { GraphBuilder } from "../../src/core/graph.js";
+import { GraphBuilder, loadExcludeHubs, DEFAULT_EXCLUDE_HUBS } from "../../src/core/graph.js";
 import { applyGraphBoost, GRAPH_BOOST } from "../../src/core/graph-boost.js";
 import { DEFAULT_PATH_CLASS_CONFIG, filterPathClass, isExcludedPath, loadPathClassConfig } from "../../src/core/path-class.js";
 import type { IndexedDocument } from "../../src/core/types.js";
@@ -122,5 +122,22 @@ describe("archive globs", () => {
       await writeFile(join(dir, "vault.schema.yml"), "path_class:\n  exclude: []\n");
       expect(loadPathClassConfig(dir).exclude).toEqual([]);
     } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+});
+
+describe("loadExcludeHubs", () => {
+  it("falls back to the default on a missing file, malformed yaml or a wrong type", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "hubs-"));
+    try {
+      expect(loadExcludeHubs(dir)).toEqual(DEFAULT_EXCLUDE_HUBS);
+      await writeFile(join(dir, "vault.schema.yml"), "graph: [oops\n  : :");
+      expect(loadExcludeHubs(dir)).toEqual(DEFAULT_EXCLUDE_HUBS);
+      await writeFile(join(dir, "vault.schema.yml"), "graph:\n  exclude_hubs: 3\n");
+      expect(loadExcludeHubs(dir)).toEqual(DEFAULT_EXCLUDE_HUBS);
+      await writeFile(join(dir, "vault.schema.yml"), "graph:\n  exclude_hubs: ['**/HOME.md']\n");
+      expect(loadExcludeHubs(dir)).toEqual(["**/HOME.md"]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

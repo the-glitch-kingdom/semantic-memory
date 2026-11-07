@@ -354,9 +354,12 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     vectorIndex = next;
     setDocuments(docs);
     stale = false;
-    indexState = "ready";
     dirty = true;
-    if (!rebuild) scheduleSave();
+    // a forced rebuild is ready only once it is on disk (fullIndex), so "ready" always means a persisted index
+    if (!rebuild) {
+      indexState = "ready";
+      scheduleSave();
+    }
   }
 
   function scheduleSave(delay = SAVE_DEBOUNCE_MS) {
@@ -429,6 +432,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       // a forced rebuild replaces whatever is on disk (unusable or stale), so it commits over the current generation
       generation = (await readMeta(indexPath))?.generation ?? 0;
       await save();
+      indexState = "ready";
     }).finally(() => {
       fullIndexing--;
     });

@@ -6,6 +6,7 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
+import { Bm25Index, fuseRrf } from "../core/bm25.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
@@ -26,7 +27,7 @@ export interface SearchHit {
   score: number;
   snippet?: string;
   mtime?: string;
-  /** 0..1; the CLI has no BM25 arm, so it reads lower than search_hybrid's */
+  /** 0..1 */
   confidence?: number;
   no_strong_match?: true;
 }
@@ -35,6 +36,8 @@ export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
   const searcher = await openSearch(opts.notes, { textOnly: opts.textOnly });
   return searcher.search(opts.query, opts.limit ?? 8);
 }
+
+type SearchHitRaw = ReturnType<VectorIndex["search"]>[number];
 
 export interface Searcher {
   search(query: string, limit?: number): Promise<SearchHit[]>;
@@ -102,24 +105,27 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   await graph.load(indexPath);
 
   const docByPath = new Map(docs.map((d) => [d.path, d]));
+  const bm25 = new Bm25Index();
+  for (const d of docs) bm25.addDoc(d.path, d.chunks);
   const pathClass = loadPathClassConfig(notesPath);
   return {
     async search(query, limit = 8) {
       const queryEmbed = await embedder.embed(query);
       const semantic = vectorIndex.search(queryEmbed, limit * 3);
 
+      // same order as search_hybrid: each arm adjusted, then fused (the CLI skips decay and usage boosts)
+      const adjust = (rs: SearchHitRaw[]) =>
+        rs
+          .map((r) => {
+            const doc = docByPath.get(r.path);
+            let score = r.score * pathClassMultiplier(r.path, pathClass);
+            if (doc?.loadPriority !== undefined) score *= 1 + (doc.loadPriority - 5) * 0.04;
+            return { ...r, score };
+          })
+          .sort((a, b) => b.score - a.score);
       const ranked = withConfidence(
         filterPathClass(
-          applyGraphBoost(semantic, graph)
-            .map((r) => {
-              const doc = docByPath.get(r.path);
-              let score = r.score * pathClassMultiplier(r.path, pathClass);
-              if (doc?.loadPriority !== undefined) {
-                score *= 1 + (doc.loadPriority - 5) * 0.04;
-              }
-              return { ...r, score };
-            })
-            .sort((a, b) => b.score - a.score),
+          fuseRrf(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))),
           pathClass
         )
       ).slice(0, limit);

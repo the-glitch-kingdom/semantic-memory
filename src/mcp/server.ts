@@ -83,7 +83,8 @@ export async function createServer(notesPath: string, options: ServerOptions = {
       });
   }
 
-  return server;
+  // startServer flushes a pending debounced save on the way out
+  return Object.assign(server, { flushIndex: () => ctx.flushIndex() });
 }
 
 // Claude Code loads server instructions at session start even while the tools are deferred (v1.7.2)
@@ -118,15 +119,18 @@ export async function startServer(notesPath: string, options: ServerOptions = {}
   // on stdin; it does not call process.exit() on EOF. The McpServer class also
   // does not exit the process on transport close — both are correct library
   // behaviour. It is the application's responsibility to exit, and this is it.
-  process.stdin.once("end", () => process.exit(0));
-  process.stdin.once("close", () => process.exit(0));
+  // A reconcile's save is debounced 2 s: flush it first (bounded) so the next start does not redo the work.
+  const quit = () =>
+    void Promise.race([server.flushIndex().catch(() => {}), new Promise((r) => setTimeout(r, 3000))]).finally(() => process.exit(0));
+  process.stdin.once("end", quit);
+  process.stdin.once("close", quit);
 
   // Honor explicit termination signals sent by process managers or the kernel.
   // SIGTERM: sent by systemd, launchd, Docker, or `kill <pid>`.
   // SIGHUP:  sent when the controlling terminal closes (e.g. SSH disconnect).
   // SIGINT (Ctrl-C) is already handled by Node.js default behaviour.
-  process.once("SIGTERM", () => process.exit(0));
-  process.once("SIGHUP", () => process.exit(0));
+  process.once("SIGTERM", quit);
+  process.once("SIGHUP", quit);
 
   await server.connect(transport);
 }

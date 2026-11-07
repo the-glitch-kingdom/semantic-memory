@@ -1,0 +1,32 @@
+// Real-corpus set for this repo's .documentation (retrieval-graph-quality Phase 11). Written against those docs, not the issue's
+// questions. Facets are case-insensitive regexes that must all appear in the live (non-archive) results; negatives have none.
+{"id":"x01","tier":"exact","q":"How many reviews a day does the skill loop worker stop at across all repos?","facets":["reviews a day"]}
+{"id":"x02","tier":"exact","q":"What are the usage_boost defaults for cap and per_citation?","facets":["cap: 1\\.5","per_citation: 0\\.1"]}
+{"id":"x03","tier":"exact","q":"What is the half-life in days for gotcha notes in the decay config?","facets":["gotcha: 180"]}
+{"id":"x04","tier":"exact","q":"What default timeout do SessionEnd hooks get?","facets":["1\\.5 s"]}
+{"id":"x05","tier":"exact","q":"For how many seconds is the citation snapshot cached?","facets":["cached for 15 seconds"]}
+{"id":"x06","tier":"exact","q":"What does session_status report when a session has been open over 24 hours with no activity?","facets":["state: \"stale\""]}
+{"id":"x07","tier":"exact","q":"How long did the redactor's flag rule take on 1 MB of a1-a1 input?","facets":["107 s"]}
+{"id":"x08","tier":"exact","q":"Which environment variable turns jev mode on?","facets":["SEMANTIC_MEMORY_JEV=1"]}
+{"id":"x09","tier":"exact","q":"Which variable controls the daily review cap of the skill loop?","facets":["SEMANTIC_MEMORY_SKILL_LOOP_DAILY_RUNS"]}
+{"id":"x10","tier":"exact","q":"What does the regenerate_contract tool write at the project root?","facets":["AGENTS\\.md"]}
+{"id":"p01","tier":"paraphrase","q":"The cleanup my script starts when a conversation closes never finishes its work","facets":["detached"]}
+{"id":"p02","tier":"paraphrase","q":"A lock was removed while its owner was still alive, so more workers ran than the limit allowed","facets":["acquireSlot"]}
+{"id":"p03","tier":"paraphrase","q":"My file-watching library reports ready but never sees any change when I give it a wildcard","facets":["chokidar"]}
+{"id":"p04","tier":"paraphrase","q":"Negating a flag in the argument parser flipped the default to the opposite value","facets":["opts\\.quantized"]}
+{"id":"p05","tier":"paraphrase","q":"Reading the same broken header text twice, the second read succeeds with empty data","facets":["matter\\.cache"]}
+{"id":"p06","tier":"paraphrase","q":"Notes people actually rely on should float up; what keeps that nudge bounded?","facets":["min\\(cap"]}
+{"id":"p07","tier":"paraphrase","q":"Why does an old note sit so far below a freshly written one?","facets":["ranking low"]}
+{"id":"p08","tier":"paraphrase","q":"A finished background task makes my prompt hook run searches over an XML envelope","facets":["task-notification"]}
+{"id":"m01","tier":"multi","q":"How does the redactor decide a value is a secret, and which secrets does it miss?","facets":["Known values","hunter2"]}
+{"id":"m02","tier":"multi","q":"How do I switch jev mode on, and what does the machine need for it to work?","facets":["jev-mode on","TYPESAFE_API_KEY"]}
+{"id":"m03","tier":"multi","q":"Why must long work in a session-end hook be started detached, and how is that done?","facets":["1\\.5 s","detached: true"]}
+{"id":"m04","tier":"multi","q":"How is the decay multiplier computed and what stops a note reaching zero?","facets":["0\\.5 \\^ \\(age_days","floor: 0\\.1"]}
+{"id":"m05","tier":"multi","q":"How many sessions can be open at once, and what happens to one left idle for a day?","facets":["one session per project","state: \"stale\""]}
+{"id":"m06","tier":"multi","q":"What do I check before an npm publish, and why can npx serve an old version afterwards?","facets":["Sync the CLI version","npx"]}
+{"id":"n01","tier":"negative","q":"How do I configure single sign-on with Okta for the web dashboard?"}
+{"id":"n02","tier":"negative","q":"Which Helm chart values deploy this to Kubernetes?"}
+{"id":"n03","tier":"negative","q":"How do I migrate the vector index into PostgreSQL with pgvector?"}
+{"id":"n04","tier":"negative","q":"What is the recipe for a sourdough starter?"}
+{"id":"n05","tier":"negative","q":"How do I run embedding inference on a CUDA GPU?"}
+{"id":"n06","tier":"negative","q":"What is the refund policy for the paid Stripe plan?"}
