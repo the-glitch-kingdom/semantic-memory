@@ -127,20 +127,20 @@ Sources:
   - [x] Real-corpus before (#43 head) / after on this repo's `.documentation/`, both splits -- hybrid @1 train 20 -> 21, held-out 14 -> 14 (@3 25->27 / 23->23)
   - [x] `npm run lint && npm run build && npm test && npm run eval`; `scripts/smoke-install.sh`; offline tarball
         install + `--verify` -- lint, build, npm test (851 pass, 6 expected-fail; hook-failure timing flake passed alone), eval (39 pass, 6 expected-fail), smoke PASS v1.10.0, tarball 531 MiB install + `--verify` OK (9987 files)
-- [ ] Phase 8: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New `.documentation/changelog/v1-10-0-retrieval-fields.md` (before/after per split)
-  - [ ] Update `.documentation/operational/retrieval-tuning-guide.md` (field channels, `index_fields`, `meta_weight`,
+- [x] Phase 8: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New `.documentation/changelog/v1-10-0-retrieval-fields.md` (before/after per split)
+  - [x] Update `.documentation/operational/retrieval-tuning-guide.md` (field channels, `index_fields`, `meta_weight`,
         coverage bias)
-  - [ ] Update `.documentation/reference/configuration-reference.md` (`index_fields`, `ranking.*`, and the field
+  - [x] Update `.documentation/reference/configuration-reference.md` (`index_fields`, `ranking.*`, and the field
         contract table from #44, linking hit-em-with-the-docs' frontmatter reference) and
         `reference/mcp-tools-reference.md` (`matched`, title, coverage stats, read-top-3 guidance)
-  - [ ] Record the negative results in `retrieval-tuning-guide.md`: answer packet (#45), and any trial that lost
-  - [ ] Update `.documentation/architecture/what-gets-indexed.md` (fields, meta chunks, `generated: true`)
-  - [ ] Update `.documentation/operational/failure-lookup-guide.md`: object symptoms are now indexed; drop the
+  - [x] Record the negative results in `retrieval-tuning-guide.md`: answer packet (#45), and any trial that lost
+  - [x] Update `.documentation/architecture/what-gets-indexed.md` (fields, meta chunks, `generated: true`)
+  - [x] Update `.documentation/operational/failure-lookup-guide.md`: object symptoms are now indexed; drop the
         "planned follow-up" note and the tags workaround
-  - [ ] Update `.documentation/testing/tests-and-validation.md` (field eval, coverage-bias check)
-  - [ ] Regenerate AGENTS.md via `regenerate_contract` with `projectRoot` = this repo
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md/REGISTRY.md
+  - [x] Update `.documentation/testing/tests-and-validation.md` (field eval, coverage-bias check)
+  - [x] Regenerate AGENTS.md via `regenerate_contract` with `projectRoot` = this repo
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md/REGISTRY.md
 
 ## Key Questions
 1. Should `generated: true` docs stay graph nodes or vanish? (Default: graph-only, matching #43's archive handling.)
@@ -187,6 +187,8 @@ Sources:
   split gate and failed on the new baseline; reduced to its answered@1-flag ceiling.
 
 ## Status
+**Phase 8 done** (changelog, tuning guide, config and MCP references, what-gets-indexed, failure-lookup, tests doc, AGENTS.md regenerated, `freshness-scale` warm-start timing flaked under load and passed alone; `hewtd maintain --quick` run: 10 errors / 19 warnings, 11 errors before this phase, all pre-existing). Plan COMPLETE.
+
 **Phase 7 done** (independent review found no defect; integration acceptance tests added; all gates green). Next: Phase 8 documentation.
 
 **Phase 6 done** (nothing dead found; #43 plan archived). Next: Phase 7 validation.

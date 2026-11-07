@@ -31,7 +31,7 @@ purpose: Complete listing of architecture documentation
 | [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) | active | 2026-10-24 | 1,611 |
 | [Schema and Provenance](schema-and-provenance.md) | active | 2026-04-23 | 878 |
 | [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) | active | 2026-10-24 | 1,330 |
-| [What gets indexed where and why](what-gets-indexed.md) | active | 2026-05-09 | 2,088 |
+| [What gets indexed where and why](what-gets-indexed.md) | active | 2026-05-09 | 2,188 |
 
 ## Keywords
 

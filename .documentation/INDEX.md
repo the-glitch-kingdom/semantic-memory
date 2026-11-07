@@ -31,7 +31,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 22 | Release notes per version and phase |
+| [Changelog](#changelog) | 23 | Release notes per version and phase |
 | [Operational](#operational) | 16 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 6 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -220,6 +220,7 @@ purpose: Navigation hub for all documentation
 | [Phase 4 — Routing + Transitions](changelog/phase-4-routing.md) | reference | active | 2026-04-23 |
 | [v1.0 — Rebrand to semantic-memory](changelog/v1-0-rebrand.md) | reference | active | 2026-05-09 |
 | [v1.1 — brain-absorption](changelog/v1-1-brain-absorption.md) | reference | active | 2026-05-09 |
+| [v1.10.0 — retrieval-ready fields](changelog/v1-10-0-retrieval-fields.md) | reference | active | 2026-11-07 |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](changelog/v1-2-3-hygiene-completion.md) | reference | active | 2026-07-10 |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](changelog/v1-2-state-consolidation.md) | reference | active | 2026-05-09 |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 |
@@ -257,7 +258,7 @@ purpose: Navigation hub for all documentation
 | [Lexicon & Query Expansion — Operating Guide](operational/lexicon-guide.md) | guide | active | 2026-07-10 |
 | [Logs and Events (log.md)](operational/logs-and-events.md) | reference | active | 2026-04-23 |
 | [Modes Guide](operational/modes-guide.md) | guide | active | 2026-10-28 |
-| [Retrieval Tuning Guide](operational/retrieval-tuning-guide.md) | guide | active | 2026-11-06 |
+| [Retrieval Tuning Guide](operational/retrieval-tuning-guide.md) | guide | active | 2026-11-07 |
 | [Session Paging & Speaker Profile — Operating Guide](operational/session-paging-guide.md) | guide | active | 2026-07-11 |
 | [Sessions guide — verification-gated work units](operational/sessions-guide.md) | guide | active | 2026-05-09 |
 | [The skill loop — learned skills between sessions](operational/skill-loop.md) | guide | active | 2026-11-03 |
@@ -275,10 +276,10 @@ purpose: Navigation hub for all documentation
 | Document | Tier | Status | Updated |
 |----------|------|--------|----------|
 | [CLI Reference](reference/cli-reference.md) | reference | active | 2026-10-25 |
-| [Configuration Reference](reference/configuration-reference.md) | reference | active | 2026-10-28 |
+| [Configuration Reference](reference/configuration-reference.md) | reference | active | 2026-11-07 |
 | [Frontmatter spec — every field, what it does, who reads it](reference/frontmatter-spec.md) | reference | active | 2026-10-24 |
 | [Hooks Reference](reference/hooks-reference.md) | reference | active | 2026-10-25 |
-| [MCP Tools Reference (44 tools)](reference/mcp-tools-reference.md) | reference | active | 2026-10-28 |
+| [MCP Tools Reference (44 tools)](reference/mcp-tools-reference.md) | reference | active | 2026-11-07 |
 | [Learned skill format — the skill_loop frontmatter block and its lint rules](reference/skill-format.md) | reference | active | 2026-11-03 |
 
 ---

@@ -17,10 +17,10 @@ tags:
   - path_class
   - eval
 status: active
-last_updated: '2026-11-06'
-version: 1.9.1
-purpose: How search_hybrid ranks, what confidence and no_strong_match mean,
-  which knobs exist (path_class.exclude, graph.exclude_hubs, rerank), and how to
+last_updated: '2026-11-07'
+version: 1.10.0
+purpose: How search_hybrid ranks, how frontmatter fields are indexed, what confidence and no_strong_match mean,
+  which knobs exist (index_fields, ranking, path_class.exclude, graph.exclude_hubs, rerank), what lost, and how to
   run and extend the retrieval eval.
 load_priority: 6
 estimated_read_time: 4 minutes
@@ -35,13 +35,15 @@ Since v1.9.0 `search_hybrid` is the tool to ask a question with. This guide cove
 
 ## How a query is ranked
 
-1. **Vector arm**: cosine over chunk embeddings (one result per doc). HNSW runs with `ef = max(100, k)` so recall vs exact cosine is 0.999 ([KB fact](../knowledge-base/facts/hnswlib-ef-defaults-to-10.md)).
-2. **Lexical arm**: an in-house BM25 index (`src/core/bm25.ts`, no dependency). Each chunk is indexed with its doc's `title`, `purpose` and path tokens (split on `/ . - _`) prepended; the returned text is unchanged. A chunk counts only when it matches at least `min(2, query terms)` query terms.
+1. **Vector arm**: cosine over chunk embeddings (one result per doc). Since v1.10 a doc's score is `max(best body cosine, meta_weight x best metadata cosine)`, where metadata chunks are the embedded `purpose` / `summary` / `description` and each symptom phrase (below). HNSW runs with `ef = max(100, k)` so recall vs exact cosine is 0.999 ([KB fact](../knowledge-base/facts/hnswlib-ef-defaults-to-10.md)).
+2. **Lexical arm**: an in-house BM25 index (`src/core/bm25.ts`, no dependency). Each chunk is indexed with its doc's field text (v1.10: `title`, `purpose`, `summary`, `description`, `keywords`, `tags`, `symptoms`) and path tokens (split on `/ . - _`) prepended; the returned text is unchanged. A chunk counts only when it matches at least `min(2, query terms)` query terms.
 3. **Boosts on each list before fusion**: `load_priority`, confidence decay, usage boost and `path_class` multipliers.
 4. **Score fusion** per doc (best chunk): `0.7 * cosine + 0.3 * bm25 / max(bm25 over candidates)`. With no BM25 hits the order is pure cosine. Rank-only RRF was replaced because it let a weak lexical arm displace a strong #1 ([KB fact](../knowledge-base/facts/rank-only-rrf-lets-a-weak-arm-displace-a-strong-first.md)). The 0.7 weight was swept on the train splits only and left at 0.7.
 5. **Graph boost**: x1.3 for a doc linked to one of the top 5 semantic hits.
 6. **Content-hash dedup**: a live doc and a byte-identical archived copy collapse to the live one.
 7. **Optional cross-encoder rerank** (off by default, below).
+
+Between 4 and 5 sits an optional whole-doc **coverage** boost and **link prior** (`ranking:`), both off by default (below).
 
 Paths in `path_class.exclude` are never indexed (no chunks, vectors or BM25 entries); they stay graph-only nodes so `supersedes` edges resolve. Paths in `results.exclude` are indexed but dropped from results.
 
@@ -49,7 +51,7 @@ Paths in `path_class.exclude` are never indexed (no chunks, vectors or BM25 entr
 
 ## Reading the result
 
-Each result carries `path`, `title` (the doc's frontmatter or parsed title), `score`, `confidence` (0-1), a ~600-char `excerpt` centred on the match, and `decay` / `usage` blocks when they apply. Pass `full: true` for the old whole-chunk shape.
+Each result carries `path`, `title` (the doc's frontmatter or parsed title), `matched: { field, text }` when a metadata chunk won (the excerpt is still the best body chunk), `score`, `confidence` (0-1), a ~600-char `excerpt` centred on the match, and `decay` / `usage` blocks when they apply. Pass `full: true` for the old whole-chunk shape.
 
 - **`confidence`** = the doc's cosine, plus 0.1 when BM25 also returned it (the margin term was noise and is gone).
 - **`no_strong_match: true`** appears on every result when the best cosine is under 0.36 AND the best BM25 score is under 0.8 x the index's threshold. Read it as "weak match, verify before citing", not "not documented". `search_semantic` has no BM25 arm, so cosine alone decides. The results are still returned.
@@ -92,6 +94,37 @@ rerank:
 - **Rerank stays off.** The only variants that raised @1 (+1 case of 35, within noise) cost about 0.7 s per search against a 150 ms bar, and the fast variants lost the gain. Turning it on downloads about 90 MB on first use; if the model cannot load, the fused order is used and a line is logged once.
 - **The embedder stays MiniLM.** `bge-small` and `gte-small` were no better on `search_hybrid` and raised negative cosines to 0.5-0.8, which breaks abstention.
 
+## Field channels (v1.10)
+
+```yaml
+index_fields:
+  lexical: [title, purpose, summary, description, keywords, tags, symptoms]
+  vector: [purpose, summary, description, symptoms]
+  symptom_keys: [user_phrase, error_pattern, alert_name]
+  meta_weight: 0.8
+ranking:
+  coverage_weight: 0     # off
+  link_prior: 1          # off
+  link_prior_min_links: 5
+```
+
+- **Object symptoms** (hit-em-with-the-docs playbooks) are read through `symptom_keys`; `user_phrase` may be a string or a list. `error_pattern` is regex text, so it feeds BM25 only. `target`, `cites` and `severity` are never indexed. Field contract: see the [configuration reference](../reference/configuration-reference.md#index_fields-vaultschemayml--v1100).
+- **`meta_weight` 0.8** was picked on train: accuracy is flat within one case from 0.7 to 1.1, while abstention is not (metadata chunks of unrelated notes raise a negative's best cosine; 0.8 is the highest weight that kept every real-train negative flagged).
+- **Coverage bias.** Docs with no fields get no metadata chunks, so a purpose-carrying neighbour can outrank them. The eval's `nofield` tier measures it (held-out 2 -> 1 in v1.10.0). `get_stats` / `lint_vault` report `fieldCoverage`; if a field is rare in your corpus, fill it in before trusting the channel.
+- A field-list change re-parses the corpus; vectors are keyed by text, so only changed metadata embeds. `meta_weight` is search-time only.
+- `generated: true` docs are never indexed or returned, and are not graph nodes.
+
+## Trials that lost or were not built
+
+Recorded so nobody repeats them (train splits; held-out read afterwards, same direction).
+
+- **Coverage boost** (`score *= 1 + w * cover`, w 0.1-0.6): no answer gained; cost one real-train paraphrase @1 and one fixture @3. At 0.6 it over-weights checklists (fixture exact 12 -> 11). The overview-vs-narrow-doc case works in a unit test, but fusion already ranks our overview questions first. Shipped wired, off.
+- **Link prior** (1.1 at >= 5 links, also 10 and 20): a net loss on the real corpus; link-heavy reference docs displace the specific doc. Shipped wired, off.
+- **Answer packet** (#45 section 2): top-3 coverage 0.92 with and without. Not built. The `broad_query` flag is not built either; the read-top-3 / search-each-step guidance covers it.
+- **Embedding `error_pattern`**: identical train tables, so BM25 only. **Dropping `alert_name` from vectors**: lost a symptom case, kept.
+- **Field-term BM25 weight** (field text at 0.5 / 0.25 of a body term): no fixture change, real train -1; reverted. **`BM25_FRACTION` 0.9-1.2, `NO_STRONG_MATCH_BELOW` 0.38-0.40**: no train gain, false flags rose; unchanged. `COSINE_WEIGHT` 0.7-0.9: arms pull opposite ways; kept 0.7.
+- Open: the lexical paraphrase gap (path-token and title matches beating the body answer) and abstention on the held-out sets.
+
 ## Graph edges
 
 `backlinks`, `forwardlinks`, `graph_path` and `search_graph` take a `types` filter. Default edges: `link` (markdown `](x.md)`), `wikilink`, `related`, `cites`, `same-incident`. Opt in with `supersedes` (live to archived copy) or `tag` (shared-topic neighbours; excluded by default because it made backlinks equal forwardlinks). `search_graph` seeds from the top 5 semantic hits of the concept, not from a substring match.
@@ -109,10 +142,13 @@ node scripts/retrieval-eval/mine-selection.mjs        # draft eval questions fro
 
 The gate is `test/retrieval-eval/baseline.json`: @1 floors per arm, archive hits, `answeredFlagged` and `meanBytes` ceilings, link precision and recall. Raise a floor when a change earns it. Add cases to `test/retrieval-eval/golden.jsonl` with `facets` (regexes the answer must match), `negative: true` for questions the corpus does not answer.
 
+**Tier floors (v1.10).** `baseline.json` `tiers` holds answer@1 and @3 floors for every tier (exact, paraphrase, symptom, nofield, multi, all) per arm and split; the eval fails when any drops. Fixture floors are exact; real-corpus floors sit one below the measured run (random HNSW). Raise a floor when a change earns it.
+
 **Splits and gates (v1.9.1).** Four splits: fixture train (`golden-docs.jsonl`), fixture held-out (`golden-docs-heldout.jsonl`), real train (`real-corpus.jsonl`) and real held-out (`real-corpus-heldout.jsonl`, against `.documentation/`). Tune weights and thresholds on train only; held-out is written before a ranking change and reported as measured. Gates on every split: hybrid @1 >= semantic @1 - 1, paraphrase-tier hybrid @1 >= semantic's, all negatives flagged, answerable false flags <= 10%, plus HNSW recall@k >= 0.97 vs exact cosine. Gates v1.9.1 still misses run as `it.fails` (expected failures) and flip red when fixed; see the [v1.9.1 changelog](../changelog/v1-9-1-ranking-regression.md).
 
 ## See also
 
 - [Indices and storage](../architecture/indices-and-storage.md)
 - [Configuration reference](../reference/configuration-reference.md)
+- [v1.10.0 changelog](../changelog/v1-10-0-retrieval-fields.md)
 - [Tests and validation](../testing/tests-and-validation.md)
