@@ -3,7 +3,7 @@ title: Documentation Index
 tier: reference
 domains: [root]
 status: active
-last_updated: '2026-11-03'
+last_updated: '2026-11-07'
 version: '1.0.0'
 purpose: Navigation hub for all documentation
 ---
@@ -31,8 +31,8 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 20 | Release notes per version and phase |
-| [Operational](#operational) | 15 | Day-to-day operating guides for the plugin |
+| [Changelog](#changelog) | 21 | Release notes per version and phase |
+| [Operational](#operational) | 16 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 6 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
 | [Deployment](#deployment) | 1 | Publishing and offline packaging |
@@ -234,6 +234,7 @@ purpose: Navigation hub for all documentation
 | [v1.7.1 — skill loop queue fixes](changelog/v1-7-1-skill-loop-queue-fixes.md) | reference | active | 2026-10-28 |
 | [v1.7.2 — sessions use the indexed docs](changelog/v1-7-2-vault-context-sources.md) | reference | active | 2026-10-28 |
 | [v1.8.0 — skill loop auto mode, dedup, and retiring old entries](changelog/v1-8-0-skill-loop-auto.md) | reference | active | 2026-11-03 |
+| [v1.9.0 — retrieval and graph quality, index freshness](changelog/v1-9-0-retrieval-graph-quality.md) | reference | active | 2026-11-06 |
 
 ---
 
@@ -255,6 +256,7 @@ purpose: Navigation hub for all documentation
 | [Lexicon & Query Expansion — Operating Guide](operational/lexicon-guide.md) | guide | active | 2026-07-10 |
 | [Logs and Events (log.md)](operational/logs-and-events.md) | reference | active | 2026-04-23 |
 | [Modes Guide](operational/modes-guide.md) | guide | active | 2026-10-28 |
+| [Retrieval Tuning Guide](operational/retrieval-tuning-guide.md) | guide | active | 2026-11-06 |
 | [Session Paging & Speaker Profile — Operating Guide](operational/session-paging-guide.md) | guide | active | 2026-07-11 |
 | [Sessions guide — verification-gated work units](operational/sessions-guide.md) | guide | active | 2026-05-09 |
 | [The skill loop — learned skills between sessions](operational/skill-loop.md) | guide | active | 2026-11-03 |
@@ -310,6 +312,6 @@ purpose: Navigation hub for all documentation
 
 ## Maintenance
 
-- **Last generated:** 2026-11-03
+- **Last generated:** 2026-11-07
 - **Run maintenance:** `npx hit-em-with-the-docs maintain`
 - **Regenerate index:** `npx hit-em-with-the-docs index`

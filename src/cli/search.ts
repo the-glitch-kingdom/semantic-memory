@@ -6,6 +6,11 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
+import { Bm25Index, fuseRrf } from "../core/bm25.js";
+import { applyGraphBoost } from "../core/graph-boost.js";
+import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
+import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
+import { readConsistentMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
 export interface SearchCliOptions {
@@ -22,12 +27,17 @@ export interface SearchHit {
   score: number;
   snippet?: string;
   mtime?: string;
+  /** 0..1 */
+  confidence?: number;
+  no_strong_match?: true;
 }
 
 export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
   const searcher = await openSearch(opts.notes, { textOnly: opts.textOnly });
   return searcher.search(opts.query, opts.limit ?? 8);
 }
+
+type SearchHitRaw = ReturnType<VectorIndex["search"]>[number];
 
 export interface Searcher {
   search(query: string, limit?: number): Promise<SearchHit[]>;
@@ -46,9 +56,10 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   const indexer = new Indexer(notesPath);
   const indexPath = join(notesPath, ".semantic-sidekick-index");
 
-  // Prefer the parsed-doc cache written by reindex — avoids re-parsing 500+ files
-  // on every hook call. Falls back to a full parse if the cache is missing.
-  let documents = existsSync(indexPath) ? await indexer.loadDocsCache(indexPath) : null;
+  // Prefer the parsed-doc cache the server committed — avoids re-parsing 500+ files on every hook call.
+  // Read-only: a cache from another parser version or caught mid-commit is not used, and nothing is written here.
+  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath) : null;
+  let documents = committed ? await indexer.loadDocsCache(indexPath) : null;
   if (!documents) {
     documents = await indexer.indexAll();
   }
@@ -64,6 +75,9 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   // Hybrid path: load cached index, embed query, search + graph rerank.
   if (!existsSync(indexPath)) {
     throw new Error(`index not built at ${indexPath} — run: semantic-sidekick --notes ${notesPath} --reindex`);
+  }
+  if (!committed) {
+    throw new Error(`index at ${indexPath} is being rewritten or was built by another version — retry, or run --reindex`);
   }
 
   const embedder = new Embedder();
@@ -91,35 +105,40 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   await graph.load(indexPath);
 
   const docByPath = new Map(docs.map((d) => [d.path, d]));
+  const bm25 = new Bm25Index();
+  for (const d of docs) bm25.addDoc(d.path, d.chunks);
+  const pathClass = loadPathClassConfig(notesPath);
   return {
     async search(query, limit = 8) {
       const queryEmbed = await embedder.embed(query);
       const semantic = vectorIndex.search(queryEmbed, limit * 3);
-      const graphResults = graph.searchGraph(query, 2);
-      const graphPaths = new Set(graphResults.map((r) => r.path));
 
-      const hybrid = semantic
-        .map((r) => {
-          const doc = docByPath.get(r.path);
-          let score = graphPaths.has(r.path) ? r.score * 1.3 : r.score;
-          if (doc?.loadPriority !== undefined) {
-            score *= 1 + (doc.loadPriority - 5) * 0.04;
-          }
-          return { ...r, score };
-        })
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+      // same order as search_hybrid: each arm adjusted, then fused (the CLI skips decay and usage boosts)
+      const adjust = (rs: SearchHitRaw[]) =>
+        rs
+          .map((r) => {
+            const doc = docByPath.get(r.path);
+            let score = r.score * pathClassMultiplier(r.path, pathClass);
+            if (doc?.loadPriority !== undefined) score *= 1 + (doc.loadPriority - 5) * 0.04;
+            return { ...r, score };
+          })
+          .sort((a, b) => b.score - a.score);
+      const ranked = withConfidence(
+        filterPathClass(
+          fuseRrf(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))),
+          pathClass
+        )
+      ).slice(0, limit);
+      const weak = isWeak(ranked);
 
-      return hybrid.map((r) => {
-        const doc = docByPath.get(r.path);
-        return {
-          path: r.path,
-          title: (r as any).title ?? doc?.title,
-          score: r.score,
-          snippet: (r as any).snippet,
-          mtime: doc?.mtime,
-        };
-      });
+      return ranked.map((r) => ({
+        path: r.path,
+        title: r.title ?? docByPath.get(r.path)?.title,
+        score: r.score,
+        confidence: r.confidence,
+        snippet: excerpt(r.matchedChunk ?? r.snippet, query),
+        ...(weak && { no_strong_match: true as const }),
+      }));
     },
   };
 }

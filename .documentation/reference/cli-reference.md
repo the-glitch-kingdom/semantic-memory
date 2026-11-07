@@ -52,7 +52,7 @@ All subcommands accept `--help`.
 ```bash
 semantic-memory --notes <path> [--reindex] [--stats] [--wait-for-ready] [--read-only]
                                [--model <name>] [--workers <n>] [--batch-size <n>]
-                               [--no-quantized] [--no-watch]
+                               [--no-quantized] [--no-watch (deprecated)]
 ```
 
 - `--reindex` — force full reindex and exit.
@@ -60,6 +60,7 @@ semantic-memory --notes <path> [--reindex] [--stats] [--wait-for-ready] [--read-
 - `--wait-for-ready` — block until index fully built (default: lazy; search tools return "Indexing in progress" until ready).
 - `--read-only` — suppress write tools. Read-only mode exposes 20 tools (search × 4, read × 3, get_frontmatter, `log_query`, lint × 5, graph × 4, system × 2). `verify_note`, `manage_lexicon`, `manage_dossier`, `manage_profile` and, since v1.6.1, `log_event` are write-gated (21 before 1.6.1). Write-mode exposes 44 (v1.5+; was 42 in v1.4, 41 in v1.3, 40 in v1.2).
 - `--model <name>` — override the embedding model (default: `all-MiniLM-L6-v2`). Switching models invalidates the existing index — startup detects mismatch and forces a reindex.
+- `--no-watch` — deprecated no-op since v1.9.0 (nothing watches the tree; the index reconciles on demand). Accepted until v2.0.0.
 - `--workers <n>` — number of worker threads for parallel embedding.
 - `--batch-size <n>` — batch size for embedding requests.
 
@@ -79,7 +80,7 @@ semantic-memory search "<query>" --notes <path> [--limit N] [--text-only] [--jso
 - `--text-only` — skip ONNX embedder, use TextSearch only. Faster cold start but noisier for natural-language queries.
 - `--json` — default is also JSON; flag exists for self-documentation.
 
-**Output:** JSON array of `{ path, title, score, snippet, mtime }`.
+**Output:** JSON array of `{ path, title, score, confidence, snippet, mtime }` (v1.9.0: `confidence`, `no_strong_match` when weak, ~600-char snippet). Ranks like `search_hybrid` (vector + BM25 fused, graph boost, archive excluded), without decay or usage boosts. Read-only: it never writes the index.
 **Uses parsed-doc cache** at `.semantic-sidekick-index/docs.cache.json` for ~0.7s latency on cache hit.
 
 ---

@@ -1,7 +1,6 @@
 import { relative } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { Watcher } from "../core/watcher.js";
 import { buildContext, type ServerOptions } from "./context.js";
 import { registerSearchTools } from "./tools/search.js";
 import { registerReadTools } from "./tools/read.js";
@@ -29,49 +28,63 @@ export async function createServer(notesPath: string, options: ServerOptions = {
     { instructions: serverInstructions(notesPath, options.readOnly) }
   );
 
+  // Pull-based freshness: every tool first reconciles the index with the tree (throttled), and
+  // answers served from a warm cache that the first reconcile has not yet checked carry _meta.stale.
+  // A tool that writes notes lifts the throttle so the next search sees the write at once.
+  const registerTool = server.tool.bind(server) as (...args: any[]) => unknown;
+  let writesNotes = false;
+  (server as any).tool = (...args: any[]) => {
+    const handler = args[args.length - 1];
+    const mutates = writesNotes;
+    args[args.length - 1] = async (...a: unknown[]) => {
+      await ctx.ensureFresh();
+      const res = await handler(...a);
+      if (mutates) ctx.invalidate();
+      return ctx.isStale() && res && typeof res === "object" ? { ...res, _meta: { ...res._meta, stale: true } } : res;
+    };
+    return registerTool(...args);
+  };
+
   // Conditional tool registration (v1.4 Phase 7, DEFAULT OFF). When enabled via
   // tools.conditional AND the active mode is outage-silence, register only the
   // core read/search surface. Default → full surface (unchanged).
   const minimal = useMinimalToolSurface(notesPath);
 
+  const registerWriting = (register: (s: McpServer, c: typeof ctx) => void) => {
+    writesNotes = true;
+    register(server, ctx);
+    writesNotes = false;
+  };
+
   registerSearchTools(server, ctx);
   registerReadTools(server, ctx);
   registerSystemTools(server, ctx);
   if (!minimal) {
-    registerWriteTools(server, ctx);
-    registerPatchTools(server, ctx);
+    registerWriting(registerWriteTools);
+    registerWriting(registerPatchTools);
     registerLintTools(server, ctx);
-    registerLogTools(server, ctx);
-    registerMetadataTools(server, ctx);
+    registerWriting(registerLogTools);
+    registerWriting(registerMetadataTools);
     registerGraphTools(server, ctx);
-    registerContractTools(server, ctx);
-    registerSessionTools(server, ctx);
+    registerWriting(registerContractTools);
+    registerWriting(registerSessionTools);
   }
 
   if (options.waitForReady) {
-    await ctx.tryLoadCachedIndex();
-    await ctx.fullIndex();
+    const cached = await ctx.tryLoadCachedIndex();
+    if (!cached || options.forceReindex) await ctx.fullIndex();
+    else await ctx.reconcileNow();
   } else {
     ctx.tryLoadCachedIndex()
-      .then((cached) => {
-        // a stale cache (chunk count drifted from the notes on disk) is served while it rebuilds
-        if (!cached || ctx.getIndexState() === "stale") ctx.backgroundIndex();
-      })
+      .then((cached) => (cached ? ctx.reconcileNow() : ctx.backgroundIndex()))
       .catch((err) => {
         process.stderr.write(`Startup error: ${err?.message ?? err}\n`);
         ctx.backgroundIndex();
       });
   }
 
-  if (options.watch !== false) {
-    const watcher = new Watcher(notesPath);
-    watcher.on("changed", () => {
-      ctx.backgroundIndex();
-    });
-    watcher.start();
-  }
-
-  return server;
+  // startServer flushes a pending debounced save on the way out
+  return Object.assign(server, { flushIndex: () => ctx.flushIndex() });
 }
 
 // Claude Code loads server instructions at session start even while the tools are deferred (v1.7.2)
@@ -80,7 +93,8 @@ export function serverInstructions(notesPath: string, readOnly = false): string 
   return (
     `This server indexes ${where} (markdown${readOnly ? ", read-only" : ""}) for semantic search. ` +
     `For a question about what ${where} says, call search_hybrid here before grepping or opening files there, ` +
-    `then read_note the hits; search_text finds exact strings.` +
+    `then read_note the hits; search_text finds exact strings. ` +
+    `If the results carry no_strong_match: true, the vault does not document it: say "not documented" instead of answering from them.` +
     (readOnly ? "" : " Write research, decisions and gotchas here with synthesize_note.")
   );
 }
@@ -96,8 +110,7 @@ export async function startServer(notesPath: string, options: ServerOptions = {}
   // its end of the pipe is closed by the kernel, and the child receives EOF on
   // process.stdin (emits 'end' then 'close').
   //
-  // Without these handlers the chokidar FSWatcher (inotify fd) and the ONNX
-  // InferenceSession native thread-pool keep the Node.js event loop alive
+  // Without these handlers the ONNX InferenceSession native thread-pool keeps the Node.js event loop alive
   // indefinitely — producing one orphan process (~180–200 MB RSS each) per Claude
   // session. On low-memory boxes this accumulates until RAM + swap are exhausted
   // and the host freezes.
@@ -106,15 +119,18 @@ export async function startServer(notesPath: string, options: ServerOptions = {}
   // on stdin; it does not call process.exit() on EOF. The McpServer class also
   // does not exit the process on transport close — both are correct library
   // behaviour. It is the application's responsibility to exit, and this is it.
-  process.stdin.once("end", () => process.exit(0));
-  process.stdin.once("close", () => process.exit(0));
+  // A reconcile's save is debounced 2 s: flush it first (bounded) so the next start does not redo the work.
+  const quit = () =>
+    void Promise.race([server.flushIndex().catch(() => {}), new Promise((r) => setTimeout(r, 3000))]).finally(() => process.exit(0));
+  process.stdin.once("end", quit);
+  process.stdin.once("close", quit);
 
   // Honor explicit termination signals sent by process managers or the kernel.
   // SIGTERM: sent by systemd, launchd, Docker, or `kill <pid>`.
   // SIGHUP:  sent when the controlling terminal closes (e.g. SSH disconnect).
   // SIGINT (Ctrl-C) is already handled by Node.js default behaviour.
-  process.once("SIGTERM", () => process.exit(0));
-  process.once("SIGHUP", () => process.exit(0));
+  process.once("SIGTERM", quit);
+  process.once("SIGHUP", quit);
 
   await server.connect(transport);
 }

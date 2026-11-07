@@ -176,6 +176,22 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         "path": {
           "type": "string",
         },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "cites",
+              "same-incident",
+              "supersedes",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
       },
       "required": [
         "path",
@@ -299,6 +315,22 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         "path": {
           "type": "string",
         },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "cites",
+              "same-incident",
+              "supersedes",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
       },
       "required": [
         "path",
@@ -334,7 +366,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "get_stats",
   },
   {
-    "description": "Find the shortest path between two notes in the knowledge graph",
+    "description": "Find the shortest path between two notes over link, wikilink, related, cites and same-incident edges (pass types to change)",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -344,6 +376,22 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         },
         "to": {
           "type": "string",
+        },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "cites",
+              "same-incident",
+              "supersedes",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
         },
       },
       "required": [
@@ -915,7 +963,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "rename_tag",
   },
   {
-    "description": "Graph traversal — find notes connected to a concept via wikilinks, related_docs, and specific tags. Results ranked by directness, load_priority, and degree.",
+    "description": "Graph traversal — the notes closest to a concept by meaning (its top semantic hits), then the notes they link to or are linked from (links, wikilinks, related_docs, cited facts, same incident), nearest first. Hub files are skipped and there is no popularity tiebreak. Pass types to change the edges followed (e.g. add 'tag').",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -931,6 +979,22 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "default": 2,
           "type": "number",
         },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "cites",
+              "same-incident",
+              "supersedes",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
       },
       "required": [
         "concept",
@@ -940,7 +1004,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "search_graph",
   },
   {
-    "description": "Combined semantic + graph search — vector results re-ranked by graph proximity and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block.",
+    "description": "Combined semantic + lexical + graph search — vector and BM25 results fused by reciprocal rank, re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the top result is weak every result has \`no_strong_match: true\` (the vault does not document it). \`full: true\` returns whole chunks and frontmatter fields.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -948,6 +1012,11 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         "domain": {
           "description": "Filter by frontmatter domain",
           "type": "string",
+        },
+        "full": {
+          "default": false,
+          "description": "Return the whole result (full matched chunk, frontmatter fields) instead of the trimmed default",
+          "type": "boolean",
         },
         "limit": {
           "default": 10,
@@ -981,7 +1050,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "search_hybrid",
   },
   {
-    "description": "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Set decay.enabled:false in vault.schema.yml to disable.",
+    "description": "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the top result is weak every result has \`no_strong_match: true\` (the vault does not document it). \`full: true\` returns whole chunks and frontmatter fields.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -989,6 +1058,11 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         "domain": {
           "description": "Filter by frontmatter domain (e.g. 'api', 'security')",
           "type": "string",
+        },
+        "full": {
+          "default": false,
+          "description": "Return the whole result (full matched chunk, frontmatter fields) instead of the trimmed default",
+          "type": "boolean",
         },
         "limit": {
           "default": 10,

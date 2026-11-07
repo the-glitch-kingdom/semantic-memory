@@ -59,7 +59,7 @@ export async function createServer(notesPath, options) {
   registerSessionTools(server, ctx);         // gated: ctx.options.readOnly => no-op
 
   // ... startup (cache load + background index)
-  // ... watcher (chokidar)
+  // (no watcher since v1.9.0)
   // ... return server
 }
 ```
@@ -236,6 +236,8 @@ The descriptions are ALSO what `regenerate_contract` reads to populate the AGENT
 
 ## Lifecycle: server startup
 
+> **v1.9.0:** the resident chokidar watcher is gone. Each search calls `ctx.ensureFresh()`, which runs `reconcile()` (stat walk, content hash, parse and embed only what changed, in-place HNSW update) at most every `reconcileThrottleMs` (2 s) and serializes concurrent calls; an edit during a reconcile is handled by the next call. Saves are debounced 2 s, atomic and under `index.lock` (see [indices-and-storage](./indices-and-storage.md#freshness-pull-based-reconcile-v190)), and `startServer` flushes a pending save (bounded to 3 s) on stdin close or SIGTERM. `indexState` is `ready` only after the index is committed to disk.
+
 ```
 createServer(notesPath, options)
   └─ buildContext(notesPath, options)
@@ -247,10 +249,12 @@ createServer(notesPath, options)
   └─ register all tool modules (in order above)
 
   └─ startup branch:
-      ├─ if (waitForReady): tryLoadCachedIndex(); fullIndex()      // CLI --reindex flag
-      └─ else: tryLoadCachedIndex().then(cached => !cached && backgroundIndex())
+      ├─ if (forceReindex): fullIndex()                           // CLI --reindex flag
+      ├─ else: tryLoadCachedIndex() -> loaded index served (indexState "stale", `_meta.stale`)
+      │        then the first reconcile re-parses/re-embeds only changed files
+      └─ no usable cache: fullIndex() in the background (or awaited with waitForReady)
 
-  └─ if (watch !== false): new Watcher(notesPath); on("changed", backgroundIndex)
+  └─ no watcher (v1.9.0): freshness is a throttled reconcile() before searches, see below
 
   └─ return server
 ```
@@ -268,7 +272,7 @@ process.once("SIGTERM", () => process.exit(0));
 process.once("SIGHUP", () => process.exit(0));
 ```
 
-This is critical. Without these handlers, the chokidar inotify FD and the ONNX inference session keep the event loop alive forever. On Claude Code session end, that produces an orphan process (~180-200 MB RSS) per session — and on low-memory boxes, accumulating orphans exhausts swap and freeze the host.
+This is critical. Without these handlers, the ONNX inference session keep the event loop alive forever. On Claude Code session end, that produces an orphan process (~180-200 MB RSS) per session — and on low-memory boxes, accumulating orphans exhausts swap and freeze the host.
 
 The MCP SDK does NOT exit the process on transport close. It's the application's responsibility. These four lines are it.
 

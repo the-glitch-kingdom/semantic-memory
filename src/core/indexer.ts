@@ -5,12 +5,28 @@ import matter from "./matter.js";
 import { glob } from "glob";
 import { readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { basename, join, relative, posix } from "node:path";
 import type { IndexedDocument } from "./types.js";
 
 const DOCS_CACHE_FILE = "docs.cache.json";
 
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
+
+/** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
+export const INDEX_SCHEMA_VERSION = 3; // 2: markdown links (mdLinks); 3: cites, archivedFrom
+export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
+/** One ignore list for the full index and for reconcile, so they always see the same files. */
+export const IGNORE_GLOBS = ["**/node_modules/**"];
+
+// follow: true descends into symlinked directories. Without this, users
+// who symlink an external folder into their vault (a common pattern for
+// sharing notes across projects) get silently empty indexing for the
+// symlinked content. glob does cycle detection via visited inodes so
+// circular symlinks are handled safely.
+// Sorted: glob's order depends on I/O timing, and HNSW results depend on insertion order.
+export async function listMarkdown(notesPath: string): Promise<string[]> {
+  return (await glob("**/*.md", { cwd: notesPath, follow: true, ignore: IGNORE_GLOBS })).sort();
+}
 
 // Invalid YAML (e.g. an unquoted colon in a value) keeps the body searchable with empty frontmatter
 function parseFrontmatter(raw: string, file: string): { data: Record<string, unknown>; content: string } {
@@ -32,12 +48,7 @@ export class Indexer {
   }
 
   async indexAll(): Promise<IndexedDocument[]> {
-    // follow: true descends into symlinked directories. Without this, users
-    // who symlink an external folder into their vault (a common pattern for
-    // sharing notes across projects) get silently empty indexing for the
-    // symlinked content. glob does cycle detection via visited inodes so
-    // circular symlinks are handled safely.
-    const files = await glob("**/*.md", { cwd: this.notesPath, follow: true });
+    const files = await listMarkdown(this.notesPath);
     // One unreadable file must not take the whole corpus down with it
     const docs = await Promise.all(
       files.map((file) =>
@@ -87,6 +98,7 @@ export class Indexer {
     const tree = this.processor.parse(content);
 
     const wikilinks = this.extractWikilinks(tree);
+    const mdLinks = this.extractMarkdownLinks(tree, relativePath);
     const tags = this.extractTags(content, frontmatter);
     const headers = this.extractHeaders(tree);
     const plainText = this.stripMarkdown(content);
@@ -129,12 +141,21 @@ export class Indexer {
       ? (frontmatter.related_docs as string[]).filter((v) => typeof v === "string")
       : undefined;
 
+    // hewtd playbooks cite facts per symptom: `symptoms: [{ text, cites: [fact-id] }]`; a top-level `cites` is read too
+    const citeSources: unknown[] = [
+      ...(Array.isArray(frontmatter.symptoms) ? (frontmatter.symptoms as any[]).map((s) => s?.cites) : []),
+      frontmatter.cites,
+    ];
+    const cites = [...new Set(citeSources.flatMap((c) => (Array.isArray(c) ? c : [])).filter((c): c is string => typeof c === "string" && c.length > 0))];
+    const archivedFrom = typeof frontmatter.archived_from === "string" ? frontmatter.archived_from : undefined;
+
     return {
       path: relativePath,
       title,
       content: plainText,
       frontmatter,
       wikilinks,
+      mdLinks,
       tags,
       headers,
       chunks: allChunks,
@@ -145,6 +166,8 @@ export class Indexer {
       ...(domains !== undefined && { domains }),
       ...(purpose !== undefined && { purpose }),
       ...(relatedDocs !== undefined && { relatedDocs }),
+      ...(cites.length > 0 && { cites }),
+      ...(archivedFrom !== undefined && { archivedFrom }),
     };
   }
 
@@ -184,6 +207,29 @@ export class Indexer {
     };
     walk(tree);
     return [...new Set(links.filter(Boolean))];
+  }
+
+  /**
+   * Vault-relative `.md` targets of `[text](x.md)` links and link definitions. Walks the parsed tree, so links in
+   * code blocks and images are never seen. External URLs, bare `#anchor`s, root-relative paths and links leaving
+   * the vault are skipped; `#anchor`, `?query` and `%20` escapes are resolved away.
+   */
+  extractMarkdownLinks(tree: any, sourcePath: string): string[] {
+    const out = new Set<string>();
+    const walk = (node: any) => {
+      if ((node.type === "link" || node.type === "definition") && typeof node.url === "string") {
+        const url = node.url.split(/[#?]/)[0];
+        if (url && !/^([a-z][a-z0-9+.-]*:|\/)/i.test(url)) {
+          let decoded = url;
+          try { decoded = decodeURIComponent(url); } catch { /* keep the raw text */ }
+          const target = posix.normalize(posix.join(posix.dirname(sourcePath), decoded));
+          if (target.endsWith(".md") && !target.startsWith("..")) out.add(target);
+        }
+      }
+      for (const child of node.children ?? []) walk(child);
+    };
+    walk(tree);
+    return [...out];
   }
 
   private extractTags(content: string, frontmatter: Record<string, unknown>): string[] {

@@ -18,6 +18,8 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
+      # retrieval floors (test/retrieval-eval/baseline.json): fails if answer@1, archive hits or link scores regress
+      - run: npm run eval
 
   smoke:
     # Fresh-install smoke test — mechanically prevents the v1.1.0-class packaging bug.

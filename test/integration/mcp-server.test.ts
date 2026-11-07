@@ -476,7 +476,7 @@ describe("MCP Server", () => {
   });
 
   describe("Path-class ranking (v1.4)", () => {
-    it("ranks an archived copy below its live twin for the same query", async () => {
+    it("drops an archived copy from results and keeps its live twin", async () => {
       const body = "# Quokka nebula protocol\n\nThe quokka nebula protocol handshake and quokka nebula retry logic.";
       await client.callTool({
         name: "create_note",
@@ -493,9 +493,8 @@ describe("MCP Server", () => {
       const liveIdx = parsed.findIndex((r: any) => r.path === "live/quokka.md");
       const archiveIdx = parsed.findIndex((r: any) => r.path === "archive/quokka.md");
       expect(liveIdx).toBeGreaterThanOrEqual(0);
-      expect(archiveIdx).toBeGreaterThanOrEqual(0);
-      // Near-identical content, but the archived copy is down-weighted (0.3×) → ranks lower.
-      expect(liveIdx).toBeLessThan(archiveIdx);
+      // path_class.exclude defaults to **/archive/**: the archived twin never comes back
+      expect(archiveIdx).toBe(-1);
 
       await client.callTool({ name: "delete_note", arguments: { path: "live/quokka.md", confirm: true } });
       await client.callTool({ name: "delete_note", arguments: { path: "archive/quokka.md", confirm: true } });

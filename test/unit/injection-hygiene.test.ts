@@ -46,6 +46,17 @@ describe("injection hygiene (formatContextBlock)", () => {
     expect(instructions.length).toBeLessThan(320); // was ~700 chars
   });
 
+  it("shows the CLI's confidence and says so when every shown hit is no_strong_match (Phase 7)", () => {
+    const strong = formatContextBlock("prompt", "q", [{ ...hit("a.md", 0.5), confidence: 0.62 }]);
+    expect(strong).toContain("confidence: 0.62");
+    expect(strong).not.toContain("No strong match");
+    const weak = formatContextBlock("prompt", "q", [{ ...hit("a.md", 0.5), confidence: 0.3, no_strong_match: true }]);
+    expect(weak).toContain("No strong match");
+    expect(weak).toContain('"not documented"');
+    // hits from an older CLI (no confidence field) render as before
+    expect(formatContextBlock("prompt", "q", [hit("a.md", 0.5)])).not.toContain("confidence");
+  });
+
   it("drops archive/ hits at any depth before the score gate (v1.7.2)", () => {
     const block = formatContextBlock("prompt", "q", [hit("archive/old.md", 0.9), hit("docs/archive/x.md", 0.8), hit("live.md", 0.5)]);
     expect(block).toContain("live.md");

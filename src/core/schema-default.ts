@@ -95,12 +95,30 @@ decay:
 
 # Path-class ranking (v1.4). Down-weights whole regions of the vault by path glob
 # (composes multiplicatively with decay + load_priority). First matching rule wins.
-# The default down-weights archived notes so retired docs stop dominating results.
+# The default down-weights archived notes so retired docs stop dominating results,
+# and "exclude" drops them from search results entirely (set exclude: [] to keep them,
+# down-weighted). Globs match with dot: true, so .documentation/archive/ is covered.
 path_class:
   enabled: true
   rules:
-    - glob: "archive/**"
+    - glob: "**/archive/**"
       multiplier: 0.3
+  exclude:
+    - "**/archive/**"
+
+# Knowledge graph (v1.9). Generated hub files link to everything, which makes every
+# note a neighbour of every other: they are left out of the graph.
+graph:
+  exclude_hubs:
+    - "**/INDEX.md"
+    - "**/REGISTRY.md"
+
+# Cross-encoder rerank of the top 30 fused search_hybrid results (v1.9). Off by default: it
+# adds ~0.7 s per search on CPU and the model (~90 MB) downloads on first use. See the
+# retrieval-tuning guide for the measured trade-off. Falls back to the fused order if the model is unavailable.
+rerank:
+  enabled: false
+  model: "Xenova/ms-marco-MiniLM-L-6-v2"
 
 # Usage-feedback ranking (v1.5). Boosts notes that get CITED after retrieval (per
 # the local selection log) so load-bearing knowledge floats up. Bounded by cap to

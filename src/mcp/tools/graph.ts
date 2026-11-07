@@ -2,14 +2,16 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
 
+const types = z.array(z.enum(["link", "wikilink", "related", "cites", "same-incident", "supersedes", "tag"])).optional().describe("Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)");
+
 export function registerGraphTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
     "backlinks",
     "Find all notes that link TO a given note",
-    { path: z.string(), limit: z.coerce.number().optional().default(50) },
-    async ({ path, limit }) => {
+    { path: z.string(), limit: z.coerce.number().optional().default(50), types },
+    async ({ path, limit, types }) => {
       if (ctx.getDocuments().length === 0 && ctx.getIndexState() !== "ready") return ctx.textResponse(ctx.indexingMessage());
-      const results = ctx.graph.backlinks(path).slice(0, limit);
+      const results = ctx.graph.backlinks(path, types).slice(0, limit);
       return ctx.textResponse(JSON.stringify(results, null, 2));
     }
   );
@@ -17,21 +19,21 @@ export function registerGraphTools(server: McpServer, ctx: ServerContext): void 
   server.tool(
     "forwardlinks",
     "Find all notes linked FROM a given note",
-    { path: z.string(), limit: z.coerce.number().optional().default(50) },
-    async ({ path, limit }) => {
+    { path: z.string(), limit: z.coerce.number().optional().default(50), types },
+    async ({ path, limit, types }) => {
       if (ctx.getDocuments().length === 0 && ctx.getIndexState() !== "ready") return ctx.textResponse(ctx.indexingMessage());
-      const results = ctx.graph.forwardlinks(path).slice(0, limit);
+      const results = ctx.graph.forwardlinks(path, types).slice(0, limit);
       return ctx.textResponse(JSON.stringify(results, null, 2));
     }
   );
 
   server.tool(
     "graph_path",
-    "Find the shortest path between two notes in the knowledge graph",
-    { from: z.string(), to: z.string() },
-    async ({ from, to }) => {
+    "Find the shortest path between two notes over link, wikilink, related, cites and same-incident edges (pass types to change)",
+    { from: z.string(), to: z.string(), types },
+    async ({ from, to, types }) => {
       if (ctx.getDocuments().length === 0 && ctx.getIndexState() !== "ready") return ctx.textResponse(ctx.indexingMessage());
-      const path = ctx.graph.findPath(from, to);
+      const path = ctx.graph.findPath(from, to, types);
       if (!path) return ctx.textResponse("No path found");
       return ctx.textResponse(JSON.stringify(path));
     }

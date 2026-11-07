@@ -20,7 +20,9 @@
 <!-- This section fills in naturally. When you hit a non-obvious issue, add it here. -->
 <!-- Examples: "HMR doesn't work on WSL2", "port 6543 breaks migrations" -->
 
-_No known issues documented yet. When you encounter a non-obvious problem and its solution, add it here so future sessions don't re-discover it._
+_When you encounter a non-obvious problem and its solution, add it here so future sessions don't re-discover it._
+
+- **Stale `index.lock`** (v1.9.0+): `<notes>/.semantic-sidekick-index/index.lock` holds `{pid, at}` while a server writes the index. A dead pid or a lock older than 10 minutes is taken over automatically; only if saves keep being skipped with no live semantic-memory process for that folder, remove it with `rm <notes>/.semantic-sidekick-index/index.lock`. Never while a server runs. See `.documentation/troubleshooting/troubleshooting.md`.
 
 ## Deploy Procedures
 

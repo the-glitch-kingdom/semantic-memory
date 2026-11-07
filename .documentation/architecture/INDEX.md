@@ -3,7 +3,7 @@ title: Architecture Documentation Index
 tier: reference
 domains: [architecture]
 status: active
-last_updated: '2026-11-03'
+last_updated: '2026-11-07'
 version: '1.0.0'
 purpose: Complete listing of architecture documentation
 ---
@@ -26,12 +26,12 @@ purpose: Complete listing of architecture documentation
 | Document | Status | Updated | Words |
 |----------|--------|---------|-------|
 | [Architecture — the Five Layers](architecture-layers.md) | active | 2026-10-25 | 1,758 |
-| [Indices and storage — every file semantic-memory writes](indices-and-storage.md) | active | 2026-10-25 | 1,992 |
+| [Indices and storage — every file semantic-memory writes](indices-and-storage.md) | active | 2026-10-25 | 2,233 |
 | [Injection Points](injection-points.md) | active | 2026-10-28 | 2,157 |
-| [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) | active | 2026-10-24 | 1,502 |
+| [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) | active | 2026-10-24 | 1,611 |
 | [Schema and Provenance](schema-and-provenance.md) | active | 2026-04-23 | 878 |
 | [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) | active | 2026-10-24 | 1,330 |
-| [What gets indexed where and why](what-gets-indexed.md) | active | 2026-05-09 | 1,899 |
+| [What gets indexed where and why](what-gets-indexed.md) | active | 2026-05-09 | 2,038 |
 
 ## Keywords
 
@@ -45,4 +45,4 @@ This domain covers: architecture, design, system, system-design, pattern, patter
 
 ---
 
-*Last updated: 2026-11-03*
+*Last updated: 2026-11-07*

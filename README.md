@@ -11,10 +11,11 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 ## Status
 
-**v1.7.2** (2026-10-28), on npm as `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
+**v1.9.0** (next release; 1.8.0 is the latest on npm), package `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
 
 | Version | What it adds |
 |---|---|
+| **1.9.0** | Retrieval and index quality (#41): `search_hybrid` fuses BM25 with vectors and boosts link neighbours, markdown links and typed edges in the graph, archived copies excluded, `confidence` and `no_strong_match`, a ~35% smaller payload, and an index that reconciles with the files before searching (no watcher, edits and offline changes are never stale) |
 | **1.8.0** | Skill loop: the reviewer judges existing skills too (prefers updating, rejects duplicates, retires dead entries and whole skills); opt-in auto mode applies its own changes to learned skills (ledgered, rollback); hand-written skills only get suggestions |
 | **1.7.2** | Sessions use the indexed docs: the prompt hook searches any `semantic-*` server and skips notifications and archived docs, a grep of an indexed folder is redirected once to the MCP search, `search_hybrid` skips tool search |
 | **1.7.1** | Skill-loop queue fixes: temp-directory sessions skipped, `claude` found from cron, resumed sessions re-reviewed |

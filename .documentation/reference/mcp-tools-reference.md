@@ -53,25 +53,27 @@ here before grepping it), which Claude Code loads at session start even while to
 
 ### `search_semantic`
 Vector similarity search over chunk embeddings.
-**Args:** `{ query, limit?=10, modifiedAfter?, modifiedBefore?, status?, tier?, domain? }`
+**Args:** `{ query, limit?=10, full?=false, modifiedAfter?, modifiedBefore?, status?, tier?, domain? }`
+**v1.9.0:** vector only (no lexical fusion, no graph boost); same `confidence`, `no_strong_match`, excerpt and `full` as `search_hybrid`.
 **Use when:** conceptual/semantic queries ("authentication flows").
 **Skip when:** looking for exact strings — prefer `search_text`.
 **v1.3+ confidence decay:** results are down-weighted by time since `last_verified`. Decayed results carry a `decay: { multiplier, age_days, effective_half_life, reason }` block. See [configuration-reference.md](./configuration-reference.md#decay-vaultschemayml).
 **v1.5+ usage-feedback ranking:** results cited (via `read_note`) after a prior search earn a bounded rank boost (composes multiplicatively with decay + path_class + load_priority). Boosted results carry a `usage: { citations, multiplier }` block. See [configuration-reference.md](./configuration-reference.md#usage_boost-vaultschemayml).
 
 ### `search_text`
-BM25-ish keyword search over full note content.
+Keyword search over full note content. Honours `path_class.exclude` unless `pathGlob` is given (v1.9.0).
 **Args:** `{ pattern, regex?=false, caseSensitive?=false, pathGlob?, tagFilter?, limit?=20, modifiedAfter?, modifiedBefore?, status?, tier?, domain? }`
 **Use when:** exact strings, regex patterns, or identifier searches.
 
 ### `search_graph`
-Wikilink + `related_docs` traversal around a concept.
-**Args:** `{ concept, maxDepth?=2, limit?=20 }`
+Traversal around a concept: seeds are the top 5 semantic hits of the concept (v1.9.0; it used to match the whole query as a substring), then link, wikilink, `related_docs`, `cites` and `same-incident` edges are walked in both directions, nearest first. Hub files are skipped, there is no popularity tiebreak, and archived notes are dropped.
+**Args:** `{ concept, maxDepth?=2, limit?=20, types? }` (`types`: any of `link`, `wikilink`, `related`, `cites`, `same-incident`, `supersedes`, `tag`)
 **Use when:** "what's connected to this?" questions; end-to-end topic mapping.
 
 ### `search_hybrid` ⭐
-Semantic + graph rerank. **The default for most queries.**
-**Args:** `{ query, limit?=10, [date/status/tier/domain filters] }`
+Vector + BM25 lexical results fused by reciprocal rank, then boosted x1.3 for 1-hop link neighbours of the top 5 semantic hits. **The default for most queries.** See the [retrieval tuning guide](../operational/retrieval-tuning-guide.md).
+**Args:** `{ query, limit?=10, full?=false, [date/status/tier/domain filters] }`
+**v1.9.0 result shape:** each item is `{ path, title, score, confidence, snippet (~600-char excerpt), decay?, usage? }`; `full: true` returns the old whole-chunk shape plus `confidence`. When the top confidence is under 0.50 every item has `no_strong_match: true` (the corpus does not document it). The #1 item carries up to 3 `related` docs (linked, each a match on its own; skipped when weak). While the first reconcile after a warm start is running, `_meta.stale` is true. Archived notes are excluded (`path_class.exclude`); a byte-identical live/archived pair returns the live one.
 **Notes:** SessionStart vault-context hook calls this. **v1.7.2:** the one tool kept out of Claude Code's tool
 search (`_meta` `anthropic/alwaysLoad`); the doc-search redirect names it when it denies a grep of an indexed folder.
 **v1.3+ confidence decay:** same decay down-weighting and `decay` block as `search_semantic`. `search_text`/`search_graph` are unaffected — decay only applies to the two ranked/semantic tools.
@@ -242,9 +244,11 @@ All lint tools accept `{ pathGlob? }` to scope to a subset.
 
 ## Graph (4) — always available
 
-### `backlinks` — `{ path, limit?=50 }` — notes that link TO this one.
-### `forwardlinks` — `{ path, limit?=50 }` — notes this one links to.
-### `graph_path` — `{ from, to }` — shortest path via wikilinks.
+Since v1.9.0 these follow typed edges: `types` (any of `link`, `wikilink`, `related`, `cites`, `same-incident`, `supersedes`, `tag`; default is everything except `supersedes` and `tag`). Backlinks and forwardlinks differ for a one-way link; hub files (`INDEX.md`, `REGISTRY.md`) are not nodes.
+
+### `backlinks` — `{ path, limit?=50, types? }` — notes that link TO this one (markdown links, wikilinks, `related_docs`, cites).
+### `forwardlinks` — `{ path, limit?=50, types? }` — notes this one links to.
+### `graph_path` — `{ from, to, types? }` — shortest path over the link-type edges.
 ### `graph_statistics` — `{}` — most-connected nodes, orphans, density.
 
 ## Log / Maintenance (3)
@@ -267,7 +271,7 @@ Force `INDEX.md` regen.
 ### `get_stats`
 Vault + index stats: note count, chunks, embedding dims, graph density, model, indexedAt, state (ready/stale/indexing/empty).
 
-### `reindex` — actually a write op but no readOnly gate (rebuilds derived state)
+### `reindex` — (v1.9.0: forces a full rebuild; day to day the index reconciles itself before searches)  actually a write op but no readOnly gate (rebuilds derived state)
 Force full reindex. Blocks until ready.
 
 ## Contract (2) — 🆕 v1.1+ — read-only disables both

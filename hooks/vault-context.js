@@ -201,13 +201,15 @@ export function formatContextBlock(source, query, hits) {
   lines.push("");
   for (const h of shown) {
     const score = typeof h.score === "number" ? h.score.toFixed(2) : "";
-    const meta = [h.source, score ? `score: ${score}` : ""].filter(Boolean).join(", ");
+    const conf = typeof h.confidence === "number" ? `confidence: ${h.confidence.toFixed(2)}` : "";
+    const meta = [h.source, score ? `score: ${score}` : "", conf].filter(Boolean).join(", ");
     lines.push(`- \`${h.path}\`${meta ? ` (${meta})` : ""}`);
     if (h.snippet) {
       const snip = h.snippet.replace(/\s+/g, " ").slice(0, 240);
       lines.push(`  > ${snip}`);
     }
   }
+  if (shown.every((h) => h.no_strong_match)) lines.push(`\nNo strong match: these are the nearest notes, not an answer. If the prompt is a project lookup, say "not documented" instead of answering from them.`);
   lines.push("");
   lines.push(`Instructions: Apply cite-or-deflect ONLY to project prose lookups (how/why/where does X work here) — cite the hit paths, or say "not in vault". For meta/tool/debug/status/directive/conversational prompts, ignore this block silently. Do NOT narrate "X unrelated" or "not in vault" on those.`);
   lines.push(`</vault-context>`);

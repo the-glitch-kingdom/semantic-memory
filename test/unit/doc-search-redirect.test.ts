@@ -39,6 +39,7 @@ describe("doc search redirect (PreToolUse)", () => {
   it("denies a Grep of the docs folder, naming that server's search tools", () => {
     const reason = decide(grep(".documentation"), env);
     expect(reason).toContain("mcp__semantic-memory-docs__search_hybrid");
+    expect(reason).toContain("no_strong_match");
     expect(reason).toContain("mcp__semantic-memory-docs__search_text");
     expect(reason).toContain("run the same command again");
   });

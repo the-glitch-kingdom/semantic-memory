@@ -1,10 +1,32 @@
 import Graph from "graphology";
-import { bfsFromNode } from "graphology-traversal";
-import { bidirectional } from "graphology-shortest-path";
-import type { IndexedDocument, GraphNode, GraphEdge, GraphStats } from "./types.js";
+import type { IndexedDocument, GraphNode, GraphStats, EdgeType } from "./types.js";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { parse as parseYaml } from "yaml";
+import { minimatch } from "minimatch";
+
+/** Edges that mean "this note points at that note"; tag edges only mean "same topic" and are opt-in. */
+export const LINK_EDGE_TYPES: EdgeType[] = ["link", "wikilink", "related", "cites", "same-incident"];
+export const DEFAULT_EXCLUDE_HUBS = ["**/INDEX.md", "**/REGISTRY.md"];
+
+export interface GraphOptions {
+  /** generated hub files that link to everything: not graph nodes */
+  excludeHubs?: string[];
+  /** archived copies lose a same-named wikilink to the live doc */
+  isArchived?: (path: string) => boolean;
+}
+
+/** `graph.exclude_hubs` from vault.schema.yml; missing file, block or parse error gives the default. */
+export function loadExcludeHubs(vaultPath: string): string[] {
+  try {
+    const parsed = parseYaml(readFileSync(join(vaultPath, "vault.schema.yml"), "utf-8")) as { graph?: { exclude_hubs?: unknown } } | null;
+    const g = parsed?.graph?.exclude_hubs;
+    return Array.isArray(g) ? g.filter((x): x is string => typeof x === "string") : DEFAULT_EXCLUDE_HUBS;
+  } catch {
+    return DEFAULT_EXCLUDE_HUBS;
+  }
+}
 
 /**
  * Tags shared by more than this many docs are too generic to be meaningful
@@ -17,12 +39,14 @@ const TAG_EDGE_MAX_DOCS = 15;
 export class GraphBuilder {
   private graph: Graph;
 
-  constructor() {
+  constructor(private opts: GraphOptions = {}) {
     this.graph = new Graph({ type: "directed", multi: false });
   }
 
-  buildFromDocuments(documents: IndexedDocument[]): void {
+  buildFromDocuments(allDocuments: IndexedDocument[]): void {
     this.graph.clear();
+    const hubs = this.opts.excludeHubs ?? DEFAULT_EXCLUDE_HUBS;
+    const documents = allDocuments.filter((d) => !hubs.some((g) => minimatch(d.path, g, { dot: true })));
 
     // Add nodes — store optional metadata fields when present
     for (const doc of documents) {
@@ -35,11 +59,22 @@ export class GraphBuilder {
     }
 
     const pathLookup = new Map<string, string>();
-    for (const doc of documents) {
+    // live docs last, so they win a name shared with an archived copy
+    const archived = this.opts.isArchived ?? (() => false);
+    for (const doc of [...documents.filter((d) => archived(d.path)), ...documents.filter((d) => !archived(d.path))]) {
       const nameNoExt = doc.path.replace(/\.md$/, "");
       const basename = nameNoExt.split("/").pop()!;
       pathLookup.set(basename.toLowerCase(), doc.path);
       pathLookup.set(nameNoExt.toLowerCase(), doc.path);
+    }
+
+    // Add markdown-link edges (weight 1.0); targets are already vault-relative paths
+    for (const doc of documents) {
+      for (const target of doc.mdLinks ?? []) {
+        if (target !== doc.path && this.graph.hasNode(target) && !this.graph.hasEdge(doc.path, target)) {
+          this.graph.addEdge(doc.path, target, { type: "link", weight: 1.0 });
+        }
+      }
     }
 
     // Add wikilink edges (weight 1.0)
@@ -64,6 +99,35 @@ export class GraphBuilder {
         if (target && target !== doc.path && !this.graph.hasEdge(doc.path, target)) {
           this.graph.addEdge(doc.path, target, { type: "related", weight: 1.0 });
         }
+      }
+    }
+
+    // cites: playbook -> the fact ids its symptoms cite (a fact id is the file's basename)
+    for (const doc of documents) {
+      for (const id of doc.cites ?? []) {
+        const target = pathLookup.get(id.replace(/\.md$/, "").split("/").pop()!.toLowerCase());
+        if (target && target !== doc.path && !this.graph.hasEdge(doc.path, target)) {
+          this.graph.addEdge(doc.path, target, { type: "cites", weight: 1.0 });
+        }
+      }
+    }
+
+    // supersedes: the live doc at `archived_from` -> the archived copy that says where it came from
+    for (const doc of documents) {
+      if (doc.archivedFrom && doc.archivedFrom !== doc.path && this.graph.hasNode(doc.archivedFrom) && !this.graph.hasEdge(doc.archivedFrom, doc.path)) {
+        this.graph.addEdge(doc.archivedFrom, doc.path, { type: "supersedes", weight: 1.0 });
+      }
+    }
+
+    // same-incident: files under one `incidents/<id>/` folder (both directions)
+    const incidents = new Map<string, string[]>();
+    for (const doc of documents) {
+      const dir = /(^|\/)incidents\/[^/]+\/[^/]+\.md$/.test(doc.path) ? doc.path.slice(0, doc.path.lastIndexOf("/")) : null;
+      if (dir) incidents.set(dir, [...(incidents.get(dir) ?? []), doc.path]);
+    }
+    for (const files of incidents.values()) {
+      for (const a of files) {
+        for (const b of files) if (a !== b && !this.graph.hasEdge(a, b)) this.graph.addEdge(a, b, { type: "same-incident", weight: 1.0 });
       }
     }
 
@@ -94,63 +158,74 @@ export class GraphBuilder {
     }
   }
 
-  backlinks(notePath: string): GraphNode[] {
+  backlinks(notePath: string, types: EdgeType[] = LINK_EDGE_TYPES): GraphNode[] {
     if (!this.graph.hasNode(notePath)) return [];
-    return this.graph.inNeighbors(notePath).map((n) => this.nodeToGraphNode(n));
+    return this.graph
+      .filterInEdges(notePath, (_e, a) => types.includes(a.type))
+      .map((e) => this.nodeToGraphNode(this.graph.source(e)));
   }
 
-  forwardlinks(notePath: string): GraphNode[] {
+  forwardlinks(notePath: string, types: EdgeType[] = LINK_EDGE_TYPES): GraphNode[] {
     if (!this.graph.hasNode(notePath)) return [];
-    return this.graph.outNeighbors(notePath).map((n) => this.nodeToGraphNode(n));
+    return this.graph
+      .filterOutEdges(notePath, (_e, a) => types.includes(a.type))
+      .map((e) => this.nodeToGraphNode(this.graph.target(e)));
   }
 
-  findPath(from: string, to: string): string[] | null {
+  /** Shortest directed path over the given edge types (breadth-first). */
+  findPath(from: string, to: string, types: EdgeType[] = LINK_EDGE_TYPES): string[] | null {
     if (!this.graph.hasNode(from) || !this.graph.hasNode(to)) return null;
-    const path = bidirectional(this.graph, from, to);
-    return path;
+    const prev = new Map<string, string | null>([[from, null]]);
+    for (let queue = [from]; queue.length; ) {
+      const next: string[] = [];
+      for (const n of queue) {
+        if (n === to) {
+          const path: string[] = [];
+          for (let p: string | null = to; p !== null; p = prev.get(p)!) path.unshift(p);
+          return path;
+        }
+        for (const e of this.graph.filterOutEdges(n, (_e, a) => types.includes(a.type))) {
+          const t = this.graph.target(e);
+          if (!prev.has(t)) {
+            prev.set(t, n);
+            next.push(t);
+          }
+        }
+      }
+      queue = next;
+    }
+    return null;
   }
 
-  searchGraph(concept: string, maxDepth = 2, limit = 20): GraphNode[] {
-    const lc = concept.toLowerCase();
-
-    const directMatches = new Set<string>(
-      this.graph.nodes().filter((n) => {
-        const attrs = this.graph.getNodeAttributes(n);
-        const title = typeof attrs.title === "string" ? attrs.title : String(attrs.title ?? "");
-        return (
-          n.toLowerCase().includes(lc) ||
-          title.toLowerCase().includes(lc) ||
-          (attrs.tags as string[] | undefined)?.some((t) => t.toLowerCase().includes(lc))
-        );
-      })
-    );
-
-    const visited = new Set<string>();
-    for (const start of directMatches) {
-      bfsFromNode(this.graph, start, (_node, _attr, depth) => {
-        if (visited.size >= limit * 3) return true; // gather 3x limit before ranking
-        visited.add(_node);
-        return depth >= maxDepth;
-      });
+  /**
+   * Notes connected to the `seeds` (the paths of the concept's best semantic hits), nearest first: the seeds in
+   * their given order, then each ring of link-type neighbours (either direction) out to `maxDepth`. Hubs are not
+   * nodes, so they never carry a walk; deprecated/archived nodes go last. There is no degree tiebreak: a
+   * well-connected note is not a better answer.
+   */
+  searchGraph(seeds: string[], maxDepth = 2, limit = 20, types: EdgeType[] = LINK_EDGE_TYPES): GraphNode[] {
+    const depthOf = new Map<string, number>();
+    let ring = seeds.filter((s) => this.graph.hasNode(s));
+    ring.forEach((s) => depthOf.set(s, 0));
+    const order = [...ring];
+    for (let depth = 1; depth <= maxDepth && ring.length; depth++) {
+      const next: string[] = [];
+      for (const n of ring) {
+        for (const e of [...this.graph.filterOutEdges(n, (_e, a) => types.includes(a.type)), ...this.graph.filterInEdges(n, (_e, a) => types.includes(a.type))]) {
+          const m = this.graph.opposite(n, e);
+          if (!depthOf.has(m)) {
+            depthOf.set(m, depth);
+            next.push(m);
+            order.push(m);
+          }
+        }
+      }
+      ring = next;
     }
-
-    // Sort: direct matches first, then by loadPriority desc, then by degree desc
-    // deprecated/archived nodes sort to the end
-    const ranked = [...visited].sort((a, b) => {
-      const aAttrs = this.graph.getNodeAttributes(a);
-      const bAttrs = this.graph.getNodeAttributes(b);
-      const aDeprecated = aAttrs.status === "deprecated" || aAttrs.status === "archived" ? 1 : 0;
-      const bDeprecated = bAttrs.status === "deprecated" || bAttrs.status === "archived" ? 1 : 0;
-      if (aDeprecated !== bDeprecated) return aDeprecated - bDeprecated;
-      const aDirect = directMatches.has(a) ? 0 : 1;
-      const bDirect = directMatches.has(b) ? 0 : 1;
-      if (aDirect !== bDirect) return aDirect - bDirect;
-      const aPriority = (aAttrs.loadPriority as number | undefined) ?? 5;
-      const bPriority = (bAttrs.loadPriority as number | undefined) ?? 5;
-      if (aPriority !== bPriority) return bPriority - aPriority;
-      return this.graph.degree(b) - this.graph.degree(a);
-    });
-
+    const retired = (n: string) => ["deprecated", "archived"].includes(this.graph.getNodeAttribute(n, "status") as string) ? 1 : 0;
+    const prio = (n: string) => (this.graph.getNodeAttribute(n, "loadPriority") as number | undefined) ?? 5;
+    // Array.sort is stable: equal keys keep seed / walk order
+    const ranked = [...order].sort((a, b) => retired(a) - retired(b) || depthOf.get(a)! - depthOf.get(b)! || (depthOf.get(a) ? prio(b) - prio(a) : 0));
     return ranked.slice(0, limit).map((n) => this.nodeToGraphNode(n));
   }
 

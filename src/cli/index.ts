@@ -308,18 +308,18 @@ const TOOL_HELP: Record<string, { description: string; args: string; examples: s
 
   // Graph
   backlinks: {
-    description: "Find all notes that link TO a given note via [[wikilinks]]",
-    args: '{ "path": "string" }',
+    description: "Find all notes that link TO a given note via markdown links, [[wikilinks]] and related_docs",
+    args: '{ "path": "string", "types?": ["link|wikilink|related|tag"] }',
     examples: ['{ "path": "microservices.md" }'],
   },
   forwardlinks: {
     description: "Find all notes linked FROM a given note",
-    args: '{ "path": "string" }',
+    args: '{ "path": "string", "types?": ["link|wikilink|related|tag"] }',
     examples: ['{ "path": "project-overview.md" }'],
   },
   graph_path: {
-    description: "Find the shortest path between two notes in the knowledge graph",
-    args: '{ "from": "string", "to": "string" }',
+    description: "Find the shortest path between two notes over link, wikilink and related edges",
+    args: '{ "from": "string", "to": "string", "types?": ["link|wikilink|related|tag"] }',
     examples: ['{ "from": "project-overview.md", "to": "user-service.md" }'],
   },
   graph_statistics: {
@@ -627,7 +627,7 @@ program
   .option("--workers <n>", "Number of worker threads for parallel embedding", parseInt)
   .option("--batch-size <n>", "Texts per ONNX forward pass (default: 8)", parseInt)
   .option("--no-quantized", "Use full-precision model instead of quantized (slower, slightly higher quality)")
-  .option("--no-watch", "Disable file watcher")
+  .option("--no-watch", "Deprecated no-op: nothing watches the tree any more, the index is reconciled on demand")
   .action(async (opts) => {
     const notesPath = resolve(opts.notes);
 
@@ -650,8 +650,8 @@ program
     if (opts.reindex) {
       const { createServer } = await import("../mcp/server.js");
       await createServer(notesPath, {
-        watch: false,
         waitForReady: true,
+        forceReindex: true,
         model: opts.model,
         workers: opts.workers,
         batchSize: opts.batchSize,
@@ -668,7 +668,6 @@ program
     // Default: start MCP server on stdio
     const { startServer } = await import("../mcp/server.js");
     await startServer(notesPath, {
-      watch: opts.watch,
       waitForReady: opts.waitForReady,
       model: opts.model,
       workers: opts.workers,
