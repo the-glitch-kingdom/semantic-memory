@@ -17,5 +17,7 @@
   "knowledge-base/facts/mqtt-retained-flag-replays.md": [],
   "testing/tests-and-validation.md": [],
   "changelog/v2-0-release.md": ["architecture/alerting-engine.md"],
-  "archive/legacy-alerting.md": ["architecture/alerting-engine.md"]
+  "archive/legacy-alerting.md": ["architecture/alerting-engine.md"],
+  "troubleshooting/playbooks/consumer-lag-playbook.md": ["knowledge-base/facts/mqtt-retained-flag-replays.md"],
+  "troubleshooting/playbooks/blank-charts-playbook.md": ["knowledge-base/facts/clock-drift-reorders-positions.md"]
 }

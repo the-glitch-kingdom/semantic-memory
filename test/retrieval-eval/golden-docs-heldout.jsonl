@@ -31,3 +31,17 @@
 {"id":"n06","tier":"negative","q":"What price per liter do our vessels pay for fuel?"}
 {"id":"n07","tier":"negative","q":"How do I set up Terraform for the staging network?"}
 {"id":"n08","tier":"negative","q":"Who designed the company logo?"}
+// field-eval additions (retrieval-ready-fields Phase 2). Written before any ranking run on them; never used to choose weights or thresholds.
+{"id": "hs1", "tier": "symptom", "q": "Everything we see on the chart lags far behind the real boat", "facets": ["consumers evict"]}
+{"id": "hs2", "tier": "symptom", "q": "graphs show nothing for the previous day", "facets": ["rollup --day"]}
+{"id": "hs3", "tier": "symptom", "q": "RollupJobSkipped", "facets": ["rollup --day"]}
+{"id": "hs4", "tier": "symptom", "q": "rebalance timed out after 30000ms", "facets": ["consumers evict"]}
+{"id": "hp1", "tier": "paraphrase", "q": "A gateway lost its link for several days, how are the missing readings recovered?", "facets": ["replays them oldest first"]}
+{"id": "hp2", "tier": "paraphrase", "q": "I need definitions for the fleet jargon", "facets": ["Pier-worker: a queue consumer"]}
+{"id": "hp3", "tier": "paraphrase", "q": "Limit how much the expensive uplink may cost for each boat", "facets": ["sat_budget_mb"]}
+{"id": "hp4", "tier": "paraphrase", "q": "The broker rejects a boat because its credentials expired", "facets": ["certs renew"]}
+{"id": "hn1", "tier": "nofield", "q": "When are alert rules backed up and how many days are copies kept?", "facets": ["kept 14 days"]}
+{"id": "hn2", "tier": "nofield", "q": "Which unit are distances stored in?", "facets": ["nautical miles"]}
+{"id": "hm1", "tier": "multi", "q": "Describe how the system works from collection through to who may view data", "facets": ["gateway on each vessel buffers", "only what their role allows"]}
+{"id": "hm2", "tier": "multi", "q": "Summarize the stages a reading passes through, including where critical alerts get paged", "facets": ["five stages", "pages the on-call engineer"]}
+{"id": "hm3", "tier": "multi", "q": "A boat was out of contact for days: how does it catch up and how long are the replayed readings retained?", "facets": ["replays them oldest first", "Hot \\(7 days\\)"]}

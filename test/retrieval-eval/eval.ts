@@ -118,7 +118,7 @@ export function formatReport(m: EvalMetrics): string {
 
 export interface FacetCase {
   id: string;
-  tier: "exact" | "paraphrase" | "multi" | "negative";
+  tier: "exact" | "paraphrase" | "symptom" | "nofield" | "multi" | "negative";
   q: string;
   /** Regexes (case-insensitive). The case is answered at k when every one matches the text of some non-archive result in the top k. */
   facets?: string[];

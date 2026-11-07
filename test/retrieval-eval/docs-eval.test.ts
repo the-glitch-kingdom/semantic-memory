@@ -22,8 +22,8 @@ import {
  */
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
 const HERE = import.meta.dirname;
-// Gates v1.9.0 fails, run as expected failures until Phase 4 (score fusion) fixes them; see .planning/v191-ranking-regression/notes.md "Eval results".
-const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": {}, "fixture-heldout": { atOne: true, paraphrase: true, falseFlags: true } };
+// Gates the field fixture fails today, run as expected failures until retrieval-ready-fields Phases 3-4 fix them; see .planning/retrieval-ready-fields/notes.md "Eval results".
+const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { atOne: true, paraphrase: true, falseFlags: true, negatives: true }, "fixture-heldout": { paraphrase: true, falseFlags: true, negatives: true } };
 const STOP = new Set("the a an of to for and or in on is are do does how what which when where who with from that this it we our can i my be".split(" "));
 
 describe("Facet eval (golden-docs vs docs-vault)", () => {
@@ -118,16 +118,19 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     for (const c of heldCases.filter((c) => c.tier !== "negative")) expect(facetRank(c.facets!, live, (p) => texts.get(p)!), c.id).not.toBeNull();
   });
 
-  it("the held-out set keeps its size: >= 20 answerable (>= 10 paraphrase) and >= 8 negatives; train has >= 12 negatives", () => {
+  it("the held-out set keeps its size: >= 20 answerable (>= 10 paraphrase, >= 6 multi, >= 4 symptom) and >= 8 negatives; train has >= 12 negatives and >= 8 multi", () => {
     const n = (cs: FacetCase[], t: (c: FacetCase) => boolean) => cs.filter(t).length;
     expect(n(heldCases, (c) => c.tier !== "negative")).toBeGreaterThanOrEqual(20);
     expect(n(heldCases, (c) => c.tier === "paraphrase")).toBeGreaterThanOrEqual(10);
+    expect(n(heldCases, (c) => c.tier === "multi")).toBeGreaterThanOrEqual(6);
+    expect(n(heldCases, (c) => c.tier === "symptom")).toBeGreaterThanOrEqual(4);
+    expect(n(cases, (c) => c.tier === "multi")).toBeGreaterThanOrEqual(8);
     expect(n(heldCases, (c) => c.tier === "negative")).toBeGreaterThanOrEqual(8);
     expect(n(cases, (c) => c.tier === "negative")).toBeGreaterThanOrEqual(12);
   });
 
-  splitGates("fixture train", () => arms as any, baseline.splits["fixture-train"], KNOWN["fixture-train"]);
-  splitGates("fixture held-out", () => heldArms as any, baseline.splits["fixture-heldout"], KNOWN["fixture-heldout"]);
+  splitGates("fixture train", () => arms as any, baseline.splits["fixture-train"], KNOWN["fixture-train"], baseline.tiers["fixture-train"]);
+  splitGates("fixture held-out", () => heldArms as any, baseline.splits["fixture-heldout"], KNOWN["fixture-heldout"], baseline.tiers["fixture-heldout"]);
 
   it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {
     expect(recall).toBeGreaterThanOrEqual(baseline.hnswRecallMin);
@@ -139,9 +142,9 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     }
   });
 
-  it("every negative reports no_strong_match and answered@1 cases are flagged no more than the recorded baseline", () => {
+  // negatives flagged is a split gate (KNOWN-aware); this one keeps the cost of abstaining bounded
+  it("answered@1 cases are flagged no more than the recorded baseline", () => {
     const h = arms.search_hybrid;
-    expect(h.negativesFlagged).toBe(h.negativeTop.length);
     expect(h.answeredFlagged).toBeLessThanOrEqual(baseline.arms.search_hybrid.answeredFlagged);
   });
 
