@@ -17,7 +17,7 @@ export async function gitCommitDates(dir: string): Promise<Map<string, { ms: num
   const out = new Map<string, { ms: number; blob: string }>();
   let stdout: string;
   try {
-    ({ stdout } = await run("git", ["-C", dir, "-c", "core.quotepath=off", "log", "--relative", "--raw", "--no-renames", "--no-abbrev", "--format=%ct", "--", "."], { maxBuffer: 1 << 28 }));
+    ({ stdout } = await run("git", ["-C", dir, "-c", "core.quotepath=off", "log", "--relative", "--raw", "--no-renames", "--no-abbrev", "--format=%ct", "--", "."], { maxBuffer: 1 << 28, timeout: 60_000 }));
   } catch {
     return out;
   }

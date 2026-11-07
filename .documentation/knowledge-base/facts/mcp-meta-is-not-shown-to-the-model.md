@@ -36,7 +36,7 @@ backlinks: []
 Claude Code passes an MCP tool result's text content to the model; `_meta` on the result is not shown to it. `_meta.stale: true` (v1.9.x) therefore told no agent that an older index was answering. Observed from issue #48 verification; not confirmed against Claude Code source.
 
 ## Instead
-Put state an agent must act on in the response text. v1.11.0 starts `search_hybrid`, `search_semantic` and `search_text` output with a `[stale: ...]` line. Keep `_meta` for clients that read it.
+Put state an agent must act on in the response text. v1.11.0 ends `search_hybrid`, `search_semantic` and `search_text` output with a separate `[stale: ...]` text block, so the first block stays parseable JSON. Keep `_meta` for clients that read it.
 
 ## How to verify
 `test/integration/freshness.test.ts` asserts the marker in the text of the three search tools during an upgrade.

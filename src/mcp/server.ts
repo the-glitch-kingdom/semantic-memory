@@ -43,9 +43,10 @@ export async function createServer(notesPath: string, options: ServerOptions = {
       const res = await handler(...a);
       if (mutates) ctx.invalidate();
       if (!ctx.isStale() || !res || typeof res !== "object") return res;
-      // _meta is not shown to the model in Claude Code, so a search also says it in the text it reads
-      const first = (res as any).content?.[0];
-      const marked = String(args[0]).startsWith("search_") && first?.type === "text" ? [{ ...first, text: `${STALE_NOTE}\n${first.text}` }, ...(res as any).content.slice(1)] : (res as any).content;
+      // _meta is not shown to the model in Claude Code, so a search also says it in the text it reads. A separate
+      // trailing block keeps content[0] the plain JSON that programmatic clients parse.
+      const content = (res as any).content;
+      const marked = String(args[0]).startsWith("search_") && Array.isArray(content) ? [...content, { type: "text", text: STALE_NOTE }] : content;
       return { ...res, content: marked, _meta: { ...(res as any)._meta, stale: true } };
     };
     return registerTool(...args);
