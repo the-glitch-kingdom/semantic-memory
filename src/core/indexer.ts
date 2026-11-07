@@ -7,13 +7,14 @@ import { readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { basename, join, relative, posix } from "node:path";
 import type { IndexedDocument } from "./types.js";
+import { isExcludedPath, loadPathClassConfig, type PathClassConfig } from "./path-class.js";
 
 const DOCS_CACHE_FILE = "docs.cache.json";
 
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 3; // 2: markdown links (mdLinks); 3: cites, archivedFrom
+export const INDEX_SCHEMA_VERSION = 4; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -41,9 +42,11 @@ function parseFrontmatter(raw: string, file: string): { data: Record<string, unk
 export class Indexer {
   private notesPath: string;
   private processor: any;
+  private pathClass: PathClassConfig;
 
   constructor(notesPath: string) {
     this.notesPath = notesPath;
+    this.pathClass = loadPathClassConfig(notesPath);
     this.processor = unified().use(remarkParse).use(remarkWikiLink);
   }
 
@@ -112,7 +115,8 @@ export class Indexer {
     const symptoms = Array.isArray(frontmatter.symptoms)
       ? (frontmatter.symptoms as unknown[]).filter((s): s is string => typeof s === "string" && s.trim().length > 0).map((s) => s.trim())
       : [];
-    const allChunks = symptoms.length > 0 ? [...chunks, ...symptoms] : chunks;
+    // excluded docs (archive by default) stay graph nodes so supersedes edges resolve, but are never embedded or searched
+    const allChunks = isExcludedPath(relativePath, this.pathClass) ? [] : symptoms.length > 0 ? [...chunks, ...symptoms] : chunks;
 
     const title =
       (frontmatter.title as string) ||

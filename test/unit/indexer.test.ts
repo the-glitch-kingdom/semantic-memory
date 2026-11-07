@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Indexer } from "../../src/core/indexer.js";
 import { FIXTURES_VAULT, createTempVault, cleanupTempDir } from "../setup.js";
-import { writeFile, symlink } from "node:fs/promises";
+import { writeFile, symlink, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { IndexedDocument } from "../../src/core/types.js";
 
@@ -94,6 +94,38 @@ describe("Indexer", () => {
       // No chunk should drastically exceed target
       for (const chunk of chunks) {
         expect(chunk.length).toBeLessThan(4000);
+      }
+    });
+  });
+
+  // v1.9.1: path_class.exclude was applied to results only, so archived docs were still embedded
+  describe("path_class.exclude", () => {
+    it("keeps an excluded doc as a graph-only node: frontmatter and links, no chunks", async () => {
+      const dir = await createTempVault();
+      try {
+        await mkdir(join(dir, "archive"), { recursive: true });
+        await writeFile(join(dir, "archive", "old.md"), "---\ntitle: Old\nsymptoms:\n  - it hangs\n---\n\n# Old\n\nSee [live](../microservices.md).\n");
+        const docs = await new Indexer(dir).indexAll();
+        const old = docs.find((d) => d.path === "archive/old.md")!;
+        expect(old.chunks).toEqual([]);
+        expect(old.frontmatter.title).toBe("Old");
+        expect(old.mdLinks).toEqual(["microservices.md"]);
+        expect(docs.find((d) => d.path === "microservices.md")!.chunks.length).toBeGreaterThan(0);
+      } finally {
+        await cleanupTempDir(dir);
+      }
+    });
+
+    it("indexes the archive again when exclusion is opted out", async () => {
+      const dir = await createTempVault();
+      try {
+        await mkdir(join(dir, "archive"), { recursive: true });
+        await writeFile(join(dir, "archive", "old.md"), "# Old\n\nbody text\n");
+        await writeFile(join(dir, "vault.schema.yml"), "path_class:\n  exclude: []\n");
+        const old = (await new Indexer(dir).indexAll()).find((d) => d.path === "archive/old.md")!;
+        expect(old.chunks.length).toBeGreaterThan(0);
+      } finally {
+        await cleanupTempDir(dir);
       }
     });
   });

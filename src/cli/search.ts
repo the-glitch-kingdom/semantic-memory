@@ -9,7 +9,7 @@ import { TextSearch } from "../core/search-text.js";
 import { Bm25Index, fuseRrf } from "../core/bm25.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
-import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
+import { loadPathClassConfig, indexExclude, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
 import { readConsistentMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
@@ -58,7 +58,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
 
   // Prefer the parsed-doc cache the server committed — avoids re-parsing 500+ files on every hook call.
   // Read-only: a cache from another parser version or caught mid-commit is not used, and nothing is written here.
-  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath) : null;
+  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath, indexExclude(loadPathClassConfig(notesPath))) : null;
   let documents = committed ? await indexer.loadDocsCache(indexPath) : null;
   if (!documents) {
     documents = await indexer.indexAll();

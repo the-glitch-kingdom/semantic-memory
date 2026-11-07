@@ -120,7 +120,7 @@ describe("index freshness without a watcher", () => {
     expect(await top(second.ctx, "quokka telemetry rollups")).toBe("orphan.md");
   }, 180_000);
 
-  it("a schemaVersion bump re-parses every file but embeds nothing whose text is unchanged", async () => {
+  it("a schemaVersion bump serves the old index (stale), then re-parses every file but embeds nothing whose text is unchanged", async () => {
     const first = await track();
     await first.ctx.flushIndex();
     const metaPath = join(dir, ".semantic-sidekick-index", "meta.json");
@@ -129,9 +129,12 @@ describe("index freshness without a watcher", () => {
     const ctx = await buildContext(dir, NOW);
     open_.push(ctx);
     const parsed = vi.spyOn(ctx.indexer, "indexFile");
-    expect(await ctx.tryLoadCachedIndex()).toBe(false);
+    expect(await ctx.tryLoadCachedIndex()).toBe(true);
+    expect(ctx.isStale()).toBe(true);
+    expect(ctx.getDocuments().length).toBe(first.ctx.getDocuments().length); // answering from the old index
     const spy = vi.spyOn(ctx.embedder, "embedBatch");
-    await ctx.fullIndex();
+    await ctx.reconcileNow();
+    expect(ctx.isStale()).toBe(false);
     expect(parsed).toHaveBeenCalledTimes(first.ctx.getDocuments().length);
     expect(spy).not.toHaveBeenCalled();
     await ctx.flushIndex();

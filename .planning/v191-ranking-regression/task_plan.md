@@ -32,21 +32,22 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
   - [x] Record the v1.9.0 baseline for every split and arm in notes.md (fixture held-out reproduces it: hybrid 13/23 vs
         semantic 17/23; no collision docs needed)
   - [x] Wire the new tests into `npm run eval` (`vitest run test/retrieval-eval` picks up `real-corpus-eval.test.ts`, `gates.ts` is shared by both)
-- [ ] Phase 3: Index hygiene, HNSW accuracy and upgrade migration
-  - [ ] `setEf(Math.max(100, k))` after `initIndex` and after `readIndexSync` (`src/core/vector.ts:42,79,123`);
+- [x] Phase 3: Index hygiene, HNSW accuracy and upgrade migration
+  - [x] `setEf(Math.max(100, k))` after `initIndex` and after `readIndexSync` (`src/core/vector.ts:42,79,123`);
         unit test that a search after load and after incremental `addChunks` uses the raised ef
-  - [ ] Excluded paths are not indexed: `path_class.exclude` (default `**/archive/**`) joins
+        (done: set inside `VectorIndex.search`, so build, grown and loaded indexes all get it; `test/unit/vector-ef.test.ts`)
+  - [x] Excluded paths are not indexed: `path_class.exclude` (default `**/archive/**`) joins
         `IGNORE_GLOBS` (`src/core/indexer.ts:19`) for chunks, vectors and BM25 -- this is the item the
         v1.9.0 plan ticked but never did. Excluded docs stay graph nodes only (frontmatter + links, no
         chunks) so `supersedes` edges still resolve. Config hash feeds `meta.ignoreGlobs`
-  - [ ] `results.exclude` globs (default: the `graph.exclude_hubs` list plus generated reports such as
+  - [x] `results.exclude` globs (default: the `graph.exclude_hubs` list plus generated reports such as
         `**/reports/link-check-*.md`) removed from search results
-  - [ ] Bump `INDEX_SCHEMA_VERSION`
-  - [ ] Vector migration on upgrade: read old `hnsw-meta.json` (label -> docPath, chunkIndex, text) plus
+  - [x] Bump `INDEX_SCHEMA_VERSION`
+  - [x] Vector migration on upgrade: read old `hnsw-meta.json` (label -> docPath, chunkIndex, text) plus
         positional `embeddings.json` (`path:chunkIndex`), and re-key each vector to
         `sha256(model \0 text)` when the text equals a current chunk; re-embed only the rest
-  - [ ] Serve the old index during the upgrade with `_meta.stale: true` instead of "Indexing in progress"
-  - [ ] Re-run eval, record numbers
+  - [x] Serve the old index during the upgrade with `_meta.stale: true` instead of "Indexing in progress"
+  - [x] Re-run eval, record numbers (notes.md "Phase 3"); the HNSW recall `it.fails` in `real-corpus-eval.test.ts` is now a real gate
 - [ ] Phase 4: Ranking -- score fusion and field-aware BM25
   - [ ] Replace rank-only RRF in `search_hybrid` with doc-level score fusion:
         `0.7 * cosine + 0.3 * bm25 / max(bm25 over candidates)` (best chunk per doc), then the existing
@@ -144,14 +145,20 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
   runner `scripts/retrieval-eval/real-corpus.mjs` takes `--questions` for the held-out file and is used for Phase 9's before/after.
 - Plans are force-added (`git add -f`); `.planning/` is gitignored but tracked.
 
+- Phase 3: `setEf` is called inside `VectorIndex.search` (every search) instead of after `initIndex`/`readIndexSync`: one call site covers build, `addChunks` growth, `resizeIndex` and load. `ef = max(100, k)`.
+- Phase 3: excluded docs stay in `docs.cache.json` with `chunks: []` (and full `content`, so an explicit `search_text` `pathGlob` still reaches them). `meta.ignoreGlobs` now hashes `[IGNORE_GLOBS, effective path_class.exclude]`; editing the exclude list re-parses the corpus.
+- Phase 3: `results.exclude` lives in `PathClassConfig.resultsExclude` and is applied by `filterPathClass` (so semantic, hybrid, graph seeds and text search all honour it), even when `path_class.enabled` is false.
+- Phase 3: upgrade = `loadFromDisk(allowOlder)` serves an index whose parser/schema is older (including v1.7.2/v1.8, which wrote no commit record or manifest) with `stale`, then the first reconcile runs `fullIndex()` (full re-parse, vectors reused by text key). Positional `path:chunkIndex` vector keys are re-keyed via the old `hnsw-meta.json` text (`rekeyPositional` in `context.ts`) and pruned at the next save.
+
 ## Errors Encountered
+- Phase 3: `test/integration/freshness.test.ts` asserted the old behaviour (a schema bump makes `tryLoadCachedIndex` return false); it now asserts the old index is served stale, then reconcile rebuilds without embedding. Load-dependent flakes seen once in the full run and passing alone: `freshness-scale` warm start, `skill-eval` concurrency, `hook-failure` Jev-hang timing.
 - Phase 2: train case `m06` in `real-corpus.jsonl` was unanswerable from `.documentation/` (its facet "Sync the CLI version" lives only in
   `.claude/rules/operational-runbook.md`), so it counted as a miss for every arm since v1.9.0. Re-pointed to facets present in
   `deployment/release-process.md`; the only edit to an existing train question (negatives were appended).
 - Phase 2: `test/integration/dossier-mcp.test.ts` failed once on a teardown `ENOTEMPTY` under load; passes alone.
 
 ## Status
-**Currently in Phase 3** - index hygiene, HNSW accuracy and upgrade migration (Phase 2 done: held-out sets, gates, recall check committed).
+**Currently in Phase 4** - ranking: score fusion and field-aware BM25 (Phase 3 done: ef, index-time exclusion, results.exclude, upgrade migration + stale serving).
 
 ---
 

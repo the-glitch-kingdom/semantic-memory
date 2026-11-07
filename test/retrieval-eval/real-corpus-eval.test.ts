@@ -63,8 +63,8 @@ describe("Facet eval (real corpus: .documentation)", () => {
   splitGates("real train", () => splits["real-train"].arms as any, baseline.splits["real-train"], KNOWN["real-train"]);
   splitGates("real held-out", () => splits["real-heldout"].arms as any, baseline.splits["real-heldout"], KNOWN["real-heldout"]);
 
-  // v1.9.0 searches at hnswlib's default ef=10 (recall 0.929 here); Phase 3 adds setEf and turns this into a real gate.
-  it.fails(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {
+  // v1.9.0 searched at hnswlib's default ef=10 (recall 0.929 here); VectorIndex.search sets ef >= 100.
+  it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {
     expect(recall).toBeGreaterThanOrEqual(baseline.hnswRecallMin);
   });
 });

@@ -48,3 +48,22 @@ Held-out sets written before any look at ranking scores: `golden-docs-heldout.js
   `scripts/retrieval-eval/stale-audit.mjs` (`hnswRecall`). Gate 0.97; Phase 3 `setEf` must reach it.
 - Expected failures (`it.fails`): fixture held-out hybrid >= semantic - 1 (13 < 16), fixture held-out paraphrase hybrid >= semantic (8 < 12), real-corpus HNSW recall.
 - Real-corpus numbers wobble by 1 case between builds (hnswlib builds a random graph), so those floors in `baseline.json` sit 1 below the best run.
+
+### Phase 3 -- index hygiene (answer@1 / answerable; hybrid vs semantic, after setEf + index-time exclusion)
+
+| Split | semantic @1 | hybrid @1 | paraphrase sem / hyb @1 | HNSW recall@24 |
+|---|---|---|---|---|
+| fixture train (35) | 22 | 23 | 9 / 9 | 1.000 (fixture, all questions) |
+| fixture held-out (23) | 17 | 13 | 12 / 8 | 1.000 |
+| real train (24) | 12 | 13 | 4 / 4 | 0.999 (was 0.929) |
+| real held-out (24) | 10 | 13 | 8 / 11 | 0.999 |
+
+- Key Question 4: `ef = max(100, k)` is enough. Real-corpus recall@24 vs exact cosine went 0.929 -> 0.999; no brute-force fallback needed.
+- Ranking is unchanged by this phase (RRF still in place): the fixture held-out hybrid regression (13 vs 17) is the Phase 4 target and its `it.fails` gates still hold.
+  Real-corpus hybrid numbers sit within the +-1 build wobble of Phase 2.
+- Negatives still 12/12 and 8/8 flagged on every split; answered@1 false flags unchanged (Phase 5).
+- Upgrade tests (`test/integration/index-upgrade.test.ts`, real fixtures): a v1.7.2-style index (positional embeddings.json + hnsw-meta.json, meta without
+  schema/generation, no manifest) and a v1.9.0-style index (schema 3, old ignoreGlobs hash) each answer `search_hybrid` with `_meta.stale: true` while the rebuild is parked
+  at its embedding step, then embed exactly 1 chunk (the edited note) and end at the current schema with only text-keyed vectors. Mutation check: without `rekeyPositional` the
+  v1.7.2 case re-embeds 10 chunks and fails.
+- Caveat: an old positional key could hold a vector for older text than hnsw-meta.json records (v1.7.2 reused `path:i` keys when a chunk's text changed); migration trusts hnsw-meta.json.

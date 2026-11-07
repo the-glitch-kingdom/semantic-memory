@@ -11,10 +11,10 @@ import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { computeDecay, loadDecayConfig, normalizeVerifiedDate, type DecayConfig } from "../core/decay.js";
-import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
+import { pathClassMultiplier, filterPathClass as filterPathClassBy, indexExclude, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
-import { commitIndex, filesMatchMeta, metaMtime, parserMatches, readMeta } from "../core/index-store.js";
+import { commitIndex, filesMatchMeta, ignoreGlobsHash, metaMtime, parserMatches, readMeta } from "../core/index-store.js";
 import type { IndexedDocument, IndexState } from "../core/types.js";
 
 export interface ServerOptions {
@@ -162,6 +162,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   let generation = 0; // of the commit this process last loaded or wrote
   let lastMetaMtime = 0; // meta.json as we last saw it; a different value means another process committed
   let stale = false; // loaded from disk, first reconcile not finished
+  let upgrading = false; // the loaded index was written by an older parser: served as-is until a full rebuild replaces it
   let dirty = false;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let fullIndexing = 0;
@@ -177,9 +178,27 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   let vectorsLoaded = false;
   let vectorsDirty = false;
   const vectorKey = (text: string) => sha256(`${embedder.getModel()}\0${text}`);
+  /**
+   * v1.7.2 and v1.8 keyed vectors `path:chunkIndex`; their hnsw-meta.json holds the text each label was built from.
+   * Re-key those to the text key so an upgrade re-embeds only chunks whose text changed. The old keys are pruned at the next save.
+   */
+  async function rekeyPositional(map: Map<string, Float32Array>) {
+    if (![...map.keys()].some((k) => k.includes(":"))) return;
+    try {
+      const old: ({ docPath: string; chunkIndex: number; text: string } | null)[] = JSON.parse(await readFile(join(indexPath, "hnsw-meta.json"), "utf-8"));
+      for (const m of old) {
+        const v = m && map.get(`${m.docPath}:${m.chunkIndex}`);
+        if (v) map.set(vectorKey(m.text), v);
+      }
+      vectorsDirty = true;
+    } catch {
+      /* no usable hnsw-meta.json: the chunks are embedded again */
+    }
+  }
   async function getVectors() {
     if (!vectorsLoaded) {
       vectors = await embedder.loadEmbeddings(indexPath);
+      await rekeyPositional(vectors);
       vectorsLoaded = true;
     }
     return vectors;
@@ -207,23 +226,26 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   }
 
   /** Adopt what another process (or an earlier run) committed. False leaves the current state alone. */
-  async function loadFromDisk(): Promise<boolean> {
+  async function loadFromDisk(allowOlder = false): Promise<boolean> {
     for (let attempt = 0; attempt < 2; attempt++) {
       const meta = await readMeta(indexPath);
-      if (!meta || !parserMatches(meta)) return false;
+      if (!meta) return false;
+      const older = !parserMatches(meta, indexExclude(getPathClassConfig()));
+      if (older && !allowOlder) return false;
       if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions()) {
         process.stderr.write(`Model changed (${meta.model} → ${embedder.getModel()}), forcing reindex\n`);
         return false;
       }
-      if (!(await filesMatchMeta(indexPath, meta))) {
+      // an older index (v1.7.2 and v1.8 wrote no commit record) is only served, never extended: the check is for current ones
+      if (!older && !(await filesMatchMeta(indexPath, meta))) {
         await new Promise((r) => setTimeout(r, 100)); // a commit may be mid-rename
         continue;
       }
       const tempVector = new VectorIndex(embedder.getDimensions());
       const docs = await indexer.loadDocsCache(indexPath);
-      let loadedManifest: Manifest | null = null;
+      let loadedManifest: Manifest | null = older ? {} : null;
       try {
-        loadedManifest = JSON.parse(await readFile(join(indexPath, "manifest.json"), "utf-8"));
+        if (!older) loadedManifest = JSON.parse(await readFile(join(indexPath, "manifest.json"), "utf-8"));
       } catch {
         /* handled below */
       }
@@ -232,7 +254,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
       manifest = loadedManifest;
       vectorIndex = tempVector;
-      generation = meta.generation;
+      generation = meta.generation ?? 0;
+      upgrading = older;
       resetBm25(docs);
       setDocuments(docs);
       return true;
@@ -245,7 +268,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       indexState = "loading";
       await embedder.init();
       lastMetaMtime = await metaMtime(indexPath);
-      if (!(await loadFromDisk())) return false;
+      if (!(await loadFromDisk(true))) return false;
       stale = true; // served now, checked against the tree by the first reconcile
       indexState = "stale";
       return true;
@@ -399,6 +422,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
         model: embedder.getModel(),
         dimensions: embedder.getDimensions(),
         totalChunks: docs.reduce((n, d) => n + d.chunks.length, 0),
+        ignoreGlobs: ignoreGlobsHash(indexExclude(getPathClassConfig())),
       },
       async (stage) => {
         await Promise.all([
@@ -452,8 +476,13 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   function runReconcile(): Promise<void> {
     if (!reconcileInFlight) {
-      reconcileInFlight = serial(() => sync())
-        .catch((err) => void process.stderr.write(`Reconcile error: ${err?.message ?? err}\n`))
+      // an older index is replaced by a full rebuild, while the old one keeps answering (stale)
+      const run = upgrading ? ((upgrading = false), fullIndex()) : serial(() => sync());
+      reconcileInFlight = run
+        .catch((err) => {
+          process.stderr.write(`Reconcile error: ${err?.message ?? err}\n`);
+          if (indexState === "indexing") indexState = "stale";
+        })
         .finally(() => {
           reconcileInFlight = null;
           lastReconcileAt = Date.now();
