@@ -122,6 +122,17 @@ graph:
     - "**/INDEX.md"
     - "**/REGISTRY.md"
 
+# Frontmatter fields authors write to be found (v1.10). "lexical" fields join the text every BM25 chunk
+# of a note is also indexed under; "vector" fields become extra metadata chunks (the first of purpose /
+# summary / description a note has, plus every symptom phrase). Object-form symptoms are read from
+# symptom_keys (error_pattern is regex text: BM25 only). A note's vector score is max(best body cosine,
+# meta_weight x best metadata cosine). Notes with "generated: true" are never indexed or returned.
+index_fields:
+  lexical: [title, purpose, summary, description, keywords, tags, symptoms]
+  vector: [purpose, summary, description, symptoms]
+  symptom_keys: [user_phrase, error_pattern, alert_name]
+  meta_weight: 0.8
+
 # Cross-encoder rerank of the top 30 fused search_hybrid results (v1.9). Off by default: it
 # adds ~0.7 s per search on CPU and the model (~90 MB) downloads on first use. See the
 # retrieval-tuning guide for the measured trade-off. Falls back to the fused order if the model is unavailable.

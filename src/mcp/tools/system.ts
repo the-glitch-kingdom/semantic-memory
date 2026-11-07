@@ -1,11 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
 import type { VaultStats } from "../../core/types.js";
+import { fieldCoverage } from "../../core/fields.js";
+import { docChunks } from "../../core/vector.js";
 
 export function registerSystemTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
     "get_stats",
-    "Vault and index statistics — note count, chunks, embeddings, graph density",
+    "Vault and index statistics — note count, chunks, embeddings, graph density, and fieldCoverage: the share of searchable notes carrying each indexed frontmatter field",
     {},
     async () => {
       const documents = ctx.getDocuments();
@@ -15,7 +17,8 @@ export function registerSystemTools(server: McpServer, ctx: ServerContext): void
       const graphStats = documents.length > 0 ? ctx.graph.statistics() : { totalNodes: 0, totalEdges: 0 };
       const stats: VaultStats = {
         totalNotes: documents.length,
-        totalChunks: documents.reduce((n, d) => n + d.chunks.length, 0),
+        totalChunks: documents.reduce((n, d) => n + docChunks(d).length, 0),
+        fieldCoverage: fieldCoverage(documents, ctx.fields),
         totalEmbeddings: vectorIndex?.getChunkMeta().length ?? 0,
         embeddingDimensions: ctx.embedder.getDimensions(),
         embeddingModel: ctx.embedder.getModel(),
@@ -41,7 +44,7 @@ export function registerSystemTools(server: McpServer, ctx: ServerContext): void
       await ctx.fullIndex();
       const documents = ctx.getDocuments();
       return ctx.textResponse(
-        `Reindexed: ${documents.length} notes, ${documents.reduce((n, d) => n + d.chunks.length, 0)} chunks`
+        `Reindexed: ${documents.length} notes, ${documents.reduce((n, d) => n + docChunks(d).length, 0)} chunks`
       );
     }
   );

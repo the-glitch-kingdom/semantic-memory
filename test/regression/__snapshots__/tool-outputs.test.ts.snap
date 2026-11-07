@@ -127,6 +127,18 @@ exports[`Regression: MCP tool outputs (golden snapshots) > get_stats > returns v
   "embeddingDimensions": 384,
   "embeddingModel": "sentence-transformers/all-MiniLM-L6-v2",
   "embeddingRuntime": "native",
+  "fieldCoverage": {
+    "docs": 10,
+    "fields": {
+      "description": 0,
+      "keywords": 0,
+      "purpose": 0,
+      "summary": 0,
+      "symptoms": 0,
+      "tags": 0.8,
+      "title": 0.8,
+    },
+  },
   "graphEdges": 22,
   "graphNodes": 10,
   "hasLastIndexed": true,
@@ -173,6 +185,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > lint_vault > returns 
   "topLevelKeys": [
     "byRule",
     "counts",
+    "fieldCoverage",
     "findings",
     "schemaPath",
   ],

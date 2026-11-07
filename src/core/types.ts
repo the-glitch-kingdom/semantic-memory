@@ -9,6 +9,12 @@ export interface IndexedDocument {
   tags: string[];
   headers: string[];
   chunks: string[];
+  /** metadata chunks embedded beside the body (purpose / summary / description, symptom phrases) */
+  meta?: { field: string; text: string }[];
+  /** frontmatter field text every BM25 chunk of the doc is also indexed under */
+  fieldText?: string;
+  /** `generated: true`: no chunks, not a graph node, never returned */
+  generated?: boolean;
   /** ISO timestamp — prefers frontmatter last_updated/updated/date/lastmod, falls back to fs.stat mtime */
   mtime: string;
   // Optional fields sourced from frontmatter when present (e.g. hit-em-with-the-docs schema)
@@ -30,6 +36,8 @@ export interface SearchResult {
   score: number;
   snippet: string;
   matchedChunk?: string;
+  /** set when a metadata chunk (not the body) won the doc; the snippet is still the best body chunk */
+  matched?: { field: string; text: string };
   /** raw vector cosine of the matched chunk, before any boost (set by VectorIndex.search, kept through fusion) */
   cosine?: number;
   /** the lexical (BM25) arm also returned this doc */
@@ -96,6 +104,8 @@ export interface VaultStats {
   indexSize: number;
   lastIndexed: string | null;
   stale?: boolean;
+  /** share of searchable notes carrying each indexed frontmatter field (index_fields.lexical) */
+  fieldCoverage?: { docs: number; fields: Record<string, number> };
   indexState: IndexState;
   indexProgress?: { embedded: number; total: number };
 }

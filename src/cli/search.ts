@@ -6,11 +6,12 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
+import { loadIndexFields } from "../core/fields.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
-import { loadPathClassConfig, indexExclude, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
-import { readConsistentMeta, readMeta } from "../core/index-store.js";
+import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
+import { parserInputs, readConsistentMeta, readMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
 export interface SearchCliOptions {
@@ -26,6 +27,7 @@ export interface SearchHit {
   title?: string;
   score: number;
   snippet?: string;
+  matched?: { field: string; text: string };
   mtime?: string;
   /** 0..1 */
   confidence?: number;
@@ -54,11 +56,12 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   }
 
   const indexer = new Indexer(notesPath);
+  const fields = loadIndexFields(notesPath);
   const indexPath = join(notesPath, ".semantic-sidekick-index");
 
   // Prefer the parsed-doc cache the server committed — avoids re-parsing 500+ files on every hook call.
   // Read-only: a cache from another parser version or caught mid-commit is not used, and nothing is written here.
-  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath, indexExclude(loadPathClassConfig(notesPath))) : null;
+  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath, parserInputs(loadPathClassConfig(notesPath), fields)) : null;
   let documents = committed ? await indexer.loadDocsCache(indexPath) : null;
   if (!documents) {
     documents = await indexer.indexAll();
@@ -68,7 +71,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
 
   if (opts.textOnly) {
     const textSearch = new TextSearch();
-    textSearch.setDocuments(docs);
+    textSearch.setDocuments(docs.filter((d) => !d.generated));
     return { search: async (query, limit = 8) => textHits(textSearch, docs, query, limit) };
   }
 
@@ -95,7 +98,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
     }
   }
 
-  const vectorIndex = new VectorIndex(embedder.getDimensions());
+  const vectorIndex = new VectorIndex(embedder.getDimensions(), fields.meta_weight);
   const loaded = await vectorIndex.load(indexPath);
   if (!loaded) {
     throw new Error(`could not load vector index at ${indexPath} — run --reindex`);
@@ -140,6 +143,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
         score: r.score,
         confidence: r.confidence,
         snippet: excerpt(r.matchedChunk ?? r.snippet, query),
+        ...(r.matched && { matched: r.matched }),
         ...(weak && { no_strong_match: true as const }),
       }));
     },

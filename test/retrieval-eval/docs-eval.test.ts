@@ -22,8 +22,8 @@ import {
  */
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
 const HERE = import.meta.dirname;
-// Gates the field fixture fails today, run as expected failures until retrieval-ready-fields Phases 3-4 fix them; see .planning/retrieval-ready-fields/notes.md "Eval results".
-const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { atOne: true, paraphrase: true, falseFlags: true, negatives: true }, "fixture-heldout": { paraphrase: true, falseFlags: true, negatives: true } };
+// Gates the field fixture fails today, run as expected failures until retrieval-ready-fields Phase 4 fixes them; see .planning/retrieval-ready-fields/notes.md "Eval results".
+const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { paraphrase: true, falseFlags: true, negatives: true }, "fixture-heldout": { paraphrase: true, falseFlags: true, negatives: true } };
 const STOP = new Set("the a an of to for and or in on is are do does how what which when where who with from that this it we our can i my be".split(" "));
 
 describe("Facet eval (golden-docs vs docs-vault)", () => {

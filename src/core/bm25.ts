@@ -22,9 +22,9 @@ interface Chunk {
  * Scoring walks every chunk that shares a term with the query: fine for a docs vault (thousands of
  * chunks); shortcut: no inverted index, add one if a vault passes ~50k chunks.
  */
-/** Doc-level text every chunk is also indexed under: a symptom-style query often matches the title or file name, not the chunk. */
-export const bm25Fields = (d: { path: string; title?: string; purpose?: string }): string =>
-  `${d.title ?? ""} ${d.purpose ?? ""} ${d.path.replace(/[/.\-_]+/g, " ")}`;
+/** Doc-level text every chunk is also indexed under: a symptom-style query often matches the title, a frontmatter field or the file name, not the chunk. */
+export const bm25Fields = (d: { path: string; title?: string; purpose?: string; fieldText?: string }): string =>
+  `${d.fieldText ?? `${d.title ?? ""} ${d.purpose ?? ""}`} ${d.path.replace(/[/.\-_]+/g, " ")}`;
 
 export class Bm25Index {
   private byDoc = new Map<string, Chunk[]>();

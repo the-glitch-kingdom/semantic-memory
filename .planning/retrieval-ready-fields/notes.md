@@ -83,3 +83,54 @@ Graph: forwardlinks 1.0/1.0, backlinks 1.0/1.0 after adding the playbooks to the
 Gates: `baseline.json` `tiers` floors (every tier, both arms, @1 and @3) enforced by `splitGates`; `npm run eval`
 37 passed, 8 expected-fail (fixture train atOne / paraphrase / negatives / falseFlags; fixture held-out paraphrase /
 falseFlags / negatives; real held-out negatives). Full `npm test` 822 passed, 8 expected-fail, 1 skipped.
+
+### Phase 3 (index the fields): choices measured on TRAIN only
+Sweeps ran `docs-eval` + `real-corpus-eval` per setting; only the train blocks were read to choose.
+
+`meta_weight` (hybrid, train; fixture n=49, real n=27; nofield = coverage-bias check, n=2):
+
+| meta_weight | fixture @1 / @3 | paraphrase @1 | symptom @1 | nofield @1 | negatives flagged (fixture / real) | answerable flagged (fixture) |
+|---|---|---|---|---|---|---|
+| 0.7 | 35 / 43 | 12 | 4/4 | 2/2 | 11/12 / 12/12 | 6 |
+| 0.8 | 34 / 43 | 11 | 4/4 | 2/2 | 11/12 / 12/12 | 5 |
+| 0.9 | 34 / 42 | 11 | 4/4 | 2/2 | 10/12 / 11/12 | 4 |
+| 1.0 | 34 / 42 | 11 | 4/4 | 2/2 | 9/12 / 11/12 | 4 |
+| 1.1 | 34 / 42 | 11 | 4/4 | 2/2 | 7/12 / 11/12 | 4 |
+
+Accuracy is flat within one case from 0.7 to 1.1; the weight mostly moves abstention (metadata chunks of unrelated notes
+raise the best cosine of a negative). Default **0.8**: the highest weight that keeps the real-train gate "every negative is
+flagged" (12/12) green. Real train @1 21/27 at 0.7-1.0 (22 at 1.1). The nofield tier is 2/2 at every weight, so the
+train split cannot see coverage bias; the held-out nofield tier can (below).
+
+`error_pattern` embedded vs BM25-only (0.8): identical tables on both train splits (34/43, 21/27, same tiers), so it stays
+BM25-only (regex text). `alert_name` (an exact identifier) embedded vs not: dropping it loses one symptom case (hybrid
+train @1 34 -> 33, symptom 4 -> 3) and restores semantic exact @3 (12 -> 13): kept embedded.
+
+After Phase 3 (v1.9.1 ranking + field channels, meta_weight 0.8). answer@1 / @3 (n):
+
+| split | arm | all | exact | paraphrase | symptom | nofield | multi |
+|---|---|---|---|---|---|---|---|
+| fixture train | semantic | 32/42 (49) | 10/12 (15) | 12/15 (16) | 4/4 (4) | 2/2 (2) | 4/9 (12) |
+| fixture train | hybrid | 34/43 | 12/13 | 11/14 | 4/4 | 2/2 | 5/10 |
+| fixture held-out | semantic | 23/31 (36) | 4/5 (6) | 13/16 (17) | 3/3 (4) | 2/2 (2) | 1/5 (7) |
+| fixture held-out | hybrid | 22/29 | 4/5 | 12/13 | 3/3 | 1/2 | 2/6 |
+| real train | semantic | 15/22 (27) | 7/9 (10) | 3/6 (8) | - | - | 5/7 (9) |
+| real train | hybrid | 21/27 | 9/10 | 5/8 | - | - | 7/9 |
+| real held-out | semantic | 13/19 (27) | 1/2 (4) | 9/13 (17) | - | - | 3/4 (6) |
+| real held-out | hybrid | 14/23 | 1/4 | 10/15 | - | - | 3/4 |
+
+Versus the Phase 2 baseline (hybrid @1): fixture train 25 -> 34 (symptom 0 -> 4, paraphrase 7 -> 11), fixture held-out
+20 -> 22 (symptom 0 -> 3), real train 20 -> 21, real held-out 14 -> 14. Misses, as measured:
+- fixture held-out hybrid nofield @1 2 -> 1 (one no-field answer outranked by a purpose-carrying neighbour: coverage bias
+  visible only on held-out; not tuned. Phase 4 tests whether the coverage boost offsets it.)
+- fixture held-out hybrid @1 22 still below semantic 23 on paraphrase (12 vs 13), same gap as #43's.
+- Abstention (hybrid): fixture train negatives 11/12 flagged (was 11/12), answerable false flags 5/49 = 10.2% (was 6);
+  fixture held-out negatives 7/8, false flags 7/36 (was 8/36); real train 12/12 and 0 false flags; real held-out 7/8, 2/27.
+  The rule (all negatives flagged, false flags <= 10%) is NOT met on fixture train/held-out and real held-out: left as
+  expected-fail gates for Phase 4. Fixture-train `hybrid @1 within 1 of semantic` now passes (34 vs 32): converted to a real gate.
+- `answeredFlagged` (correct @1 but flagged weak) 0 -> 3 because 9 more cases are now answered at @1, 3 of them weakly.
+- Semantic fixture-train exact @3 13 -> 12 (alert_name, above).
+HNSW recall 1.000. `npm run eval`: 38 passed, 7 expected-fail. Full `npm test` 834 passed, 7 expected-fail, 1 skipped; the
+hook-failure Jev-hang timing test failed once under load and passed alone.
+Upgrade: INDEX_SCHEMA_VERSION 4 -> 5 and the field-list hash re-parse the corpus; vectors are keyed by text, so only
+metadata chunks (and string symptoms, same text, reused) embed.

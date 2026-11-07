@@ -52,6 +52,7 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
           score: e.score,
           confidence: e.confidence,
           snippet: excerpt(e.matchedChunk ?? e.snippet, query),
+          ...(e.matched && { matched: e.matched }),
           ...((e as any).decay && { decay: (e as any).decay }),
           ...((e as any).usage && { usage: (e as any).usage }),
         };

@@ -46,7 +46,8 @@ export class GraphBuilder {
   buildFromDocuments(allDocuments: IndexedDocument[]): void {
     this.graph.clear();
     const hubs = this.opts.excludeHubs ?? DEFAULT_EXCLUDE_HUBS;
-    const documents = allDocuments.filter((d) => !hubs.some((g) => minimatch(d.path, g, { dot: true })));
+    // generated files (`generated: true`) are hubs too: not nodes, so they carry no walk and add no degree
+    const documents = allDocuments.filter((d) => !d.generated && !hubs.some((g) => minimatch(d.path, g, { dot: true })));
 
     // Add nodes — store optional metadata fields when present
     for (const doc of documents) {
