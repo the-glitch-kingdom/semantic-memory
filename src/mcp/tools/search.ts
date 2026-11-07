@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
+import { applyCoverage } from "../../core/rank.js";
 import { fuseScores } from "../../core/bm25.js";
 import { applyGraphBoost } from "../../core/graph-boost.js";
 import { RERANK_TOP } from "../../core/reranker.js";
@@ -155,7 +156,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + lexical + graph search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. `full: true` returns whole chunks and frontmatter fields.",
+    "Combined semantic + lexical + graph search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -180,7 +181,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
           .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
           .sort((a, b) => b.score - a.score);
       const semanticResults = adjust(applyGraphBoost(vectorIndex.search(queryEmbed, limit * 3), ctx.graph));
-      let hybrid = fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3)));
+      let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
       hybrid = ctx.filterPathClass(hybrid);
 
       hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);

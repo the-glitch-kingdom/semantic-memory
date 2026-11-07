@@ -32,7 +32,7 @@ If the injected context is enough to answer, answer from it and cite the note pa
 
 ### 2. If injected context is thin or missing, search the vault yourself
 
-Call `mcp__semantic-vault__search_hybrid` (or `search_text` for exact-match needs) with the user's question as the query. Read 2–3 promising hits in full via `mcp__semantic-vault__read_note` before answering. Do not answer from snippets alone — snippets lose context and produce confidently wrong answers.
+Call `mcp__semantic-vault__search_hybrid` (or `search_text` for exact-match needs) with the user's question as the query. Read 2–3 promising hits in full via `mcp__semantic-vault__read_note` before answering. Do not answer from snippets alone — snippets lose context and produce confidently wrong answers. For a broad or end-to-end question ("how does X work", "overview of Y", several steps), read the top 3 results, not just #1 (the best single doc often ranks 2nd), and search each step separately ("how is it deployed", "how is it verified", "how is it rolled back").
 
 ### 3. Cite, or say "not in vault" — **only when the prompt is actually a vault lookup**
 

@@ -133,6 +133,15 @@ index_fields:
   symptom_keys: [user_phrase, error_pattern, alert_name]
   meta_weight: 0.8
 
+# Whole-doc coverage and link prior on the fused search_hybrid candidates (v1.10), applied after fusion:
+# score *= 1 + coverage_weight * (idf-weighted share of the query's terms found anywhere in the note), and
+# score *= link_prior for a note with >= link_prior_min_links outgoing links. Off by default: on the train
+# splits neither gained an answer (retrieval tuning guide). Try coverage_weight 0.3 / link_prior 1.1 and measure.
+ranking:
+  coverage_weight: 0
+  link_prior: 1
+  link_prior_min_links: 5
+
 # Cross-encoder rerank of the top 30 fused search_hybrid results (v1.9). Off by default: it
 # adds ~0.7 s per search on CPU and the model (~90 MB) downloads on first use. See the
 # retrieval-tuning guide for the measured trade-off. Falls back to the fused order if the model is unavailable.

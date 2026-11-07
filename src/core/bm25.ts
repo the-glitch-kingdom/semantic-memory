@@ -28,12 +28,15 @@ export const bm25Fields = (d: { path: string; title?: string; purpose?: string; 
 
 export class Bm25Index {
   private byDoc = new Map<string, Chunk[]>();
+  /** every distinct token of a doc (chunks + field text + path words): the term set `cover` reads, kept current by add/removeDoc */
+  private docTerms = new Map<string, Set<string>>();
   private df = new Map<string, number>();
   private chunkCount = 0;
   private totalLen = 0;
 
   clear(): void {
     this.byDoc.clear();
+    this.docTerms.clear();
     this.df.clear();
     this.chunkCount = 0;
     this.totalLen = 0;
@@ -52,6 +55,7 @@ export class Bm25Index {
       this.totalLen -= c.len;
     }
     this.byDoc.delete(docPath);
+    this.docTerms.delete(docPath);
   }
 
   /** `fields` (title, purpose, path words) is indexed with every chunk but is not part of the chunk text returned. */
@@ -67,6 +71,22 @@ export class Bm25Index {
       return { docPath, text, tf, len: tokens.length };
     });
     this.byDoc.set(docPath, chunks);
+    this.docTerms.set(docPath, new Set(chunks.flatMap((c) => [...c.tf.keys()])));
+  }
+
+  /** idf-weighted share of the query's distinct indexed terms that appear anywhere in the doc (0 when the query has none). */
+  cover(docPath: string, query: string): number {
+    const have = this.docTerms.get(docPath);
+    let all = 0;
+    let hit = 0;
+    for (const t of new Set(tokenize(query))) {
+      const n = this.df.get(t);
+      if (!n) continue;
+      const w = Math.log(1 + (this.chunkCount - n + 0.5) / (n + 0.5));
+      all += w;
+      if (have?.has(t)) hit += w;
+    }
+    return all > 0 ? hit / all : 0;
   }
 
   /** One result per doc, its best chunk, best first. */

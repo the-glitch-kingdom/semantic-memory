@@ -62,3 +62,11 @@
 {"id": "o02", "tier": "multi", "q": "Give me a one-page summary of the platform covering collecting, processing, alerts, storage and access", "facets": ["Workers validate every reading", "only what their role allows"]}
 {"id": "o03", "tier": "multi", "q": "How do the main parts of the system fit together?", "facets": ["five stages", "Beacon engine checks"]}
 {"id": "o04", "tier": "multi", "q": "A vessel was offline for days, how does it catch up and where do payloads that keep failing end up?", "facets": ["replays them oldest first", "harbor\\.dlq"]}
+{"id": "q01", "tier": "paraphrase", "q": "How long do we hold on to the nightly copies of the rule database?", "facets": ["kept 14 days"]}
+{"id": "q02", "tier": "paraphrase", "q": "What is the largest number of queue-draining processes the topic can support?", "facets": ["ceiling is 24 workers"]}
+{"id": "q03", "tier": "symptom", "q": "the on-call pager stayed silent although the same rule triggered again ten minutes later", "facets": ["cooldown of 15 minutes"]}
+{"id": "q04", "tier": "paraphrase", "q": "In which measurement units are vessel positions and velocities saved?", "facets": ["nautical miles"]}
+{"id": "q05", "tier": "paraphrase", "q": "Can a user switch the dashboard to a dark look?", "facets": ["light or dark theme"]}
+{"id": "q06", "tier": "symptom", "q": "messages pile up on the queue and nobody is draining them fast enough", "facets": ["exceeds 10,000 messages"]}
+{"id": "q07", "tier": "paraphrase", "q": "What is the longest the pipeline waits before pushing out a partial batch?", "facets": ["TIDEWATCH_FLUSH_MS"]}
+{"id": "q08", "tier": "paraphrase", "q": "Which role may change alert conditions but cannot manage accounts?", "facets": ["engineer: dashboards plus rule editing"]}

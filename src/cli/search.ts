@@ -7,10 +7,11 @@ import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
 import { loadIndexFields } from "../core/fields.js";
+import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
-import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
+import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
 import { parserInputs, readConsistentMeta, readMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
@@ -111,6 +112,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   const bm25 = new Bm25Index();
   for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
   const pathClass = loadPathClassConfig(notesPath);
+  const ranking = loadRanking(notesPath);
   const selfTop = (await readMeta(indexPath))?.bm25SelfTop ?? bm25SelfTop(bm25, docs);
   const bm25Min = selfTop === null ? null : selfTop * BM25_FRACTION;
   return {
@@ -130,7 +132,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
           .sort((a, b) => b.score - a.score);
       const all = withConfidence(
         filterPathClass(
-          fuseScores(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))),
+          applyCoverage(fuseScores(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
           pathClass
         )
       );

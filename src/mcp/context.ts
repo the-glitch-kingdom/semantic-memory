@@ -7,6 +7,7 @@ import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex, docChunks } from "../core/vector.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop } from "../core/bm25.js";
 import { loadIndexFields, type IndexFields } from "../core/fields.js";
+import { loadRanking, type RankingConfig } from "../core/rank.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
@@ -66,6 +67,9 @@ export interface ServerContext {
   indexer: Indexer;
   /** `index_fields` from vault.schema.yml */
   fields: IndexFields;
+  /** `ranking` from vault.schema.yml: whole-doc coverage and link prior */
+  ranking: RankingConfig;
+  isExcluded(path: string): boolean;
   embedder: Embedder;
   /** null when `rerank.enabled` is off (vault.schema.yml) */
   reranker: Reranker | null;
@@ -657,6 +661,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     textSearch,
     bm25,
     fields,
+    ranking: loadRanking(notesPath),
+    isExcluded: (p) => isExcludedPath(p, getPathClassConfig()),
     bm25Min: () => {
       const top = selfTop();
       return top === null ? null : top * BM25_FRACTION;

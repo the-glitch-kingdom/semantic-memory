@@ -2,11 +2,11 @@
   "_comment": "Measured floor for docs-eval.test.ts and real-corpus-eval.test.ts. arms: fixture train split (35+ answerable, 12 negatives). splits: answer@1 per split. tiers: answer@1 and @3 per split, arm and tier (exact = keyword, paraphrase, symptom, nofield = answer doc carries no fields, multi = broad or cross-doc), set by retrieval-ready-fields Phase 2 on the field fixture; the eval fails when any tier drops below its floor. Raise at the end of each phase; never lower (answeredFlagged and meanBytes are ceilings). Real-corpus floors sit 1 below the best run: the HNSW graph is random per build.",
   "arms": {
     "search_semantic": {
-      "answeredAt1": 32,
+      "answeredAt1": 39,
       "archiveHits": 0
     },
     "search_hybrid": {
-      "answeredAt1": 34,
+      "answeredAt1": 39,
       "archiveHits": 0,
       "answeredFlagged": 3,
       "meanBytes": 4132,
@@ -28,8 +28,8 @@
   },
   "splits": {
     "fixture-train": {
-      "search_semantic": 32,
-      "search_hybrid": 34
+      "search_semantic": 39,
+      "search_hybrid": 39
     },
     "fixture-heldout": {
       "search_semantic": 23,
@@ -49,8 +49,8 @@
     "fixture-train": {
       "search_semantic": {
         "all": {
-          "at1": 32,
-          "at3": 42
+          "at1": 39,
+          "at3": 50
         },
         "exact": {
           "at1": 10,
@@ -65,18 +65,18 @@
           "at3": 2
         },
         "paraphrase": {
-          "at1": 12,
-          "at3": 15
+          "at1": 18,
+          "at3": 21
         },
         "symptom": {
-          "at1": 4,
-          "at3": 4
+          "at1": 5,
+          "at3": 6
         }
       },
       "search_hybrid": {
         "all": {
-          "at1": 34,
-          "at3": 43
+          "at1": 39,
+          "at3": 51
         },
         "exact": {
           "at1": 12,
@@ -91,12 +91,12 @@
           "at3": 2
         },
         "paraphrase": {
-          "at1": 11,
-          "at3": 14
+          "at1": 14,
+          "at3": 20
         },
         "symptom": {
-          "at1": 4,
-          "at3": 4
+          "at1": 6,
+          "at3": 6
         }
       }
     },

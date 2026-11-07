@@ -134,3 +134,59 @@ HNSW recall 1.000. `npm run eval`: 38 passed, 7 expected-fail. Full `npm test` 8
 hook-failure Jev-hang timing test failed once under load and passed alone.
 Upgrade: INDEX_SCHEMA_VERSION 4 -> 5 and the field-list hash re-parse the corpus; vectors are keyed by text, so only
 metadata chunks (and string symptoms, same text, reused) embed.
+
+### Phase 4 (coverage ranking and agent guidance): sweeps on TRAIN only, held-out read afterwards
+New train questions (written for this phase, shaped like symptom / paraphrase queries; none copied from an issue): 8 on the
+fixture (`q01`-`q08`: 6 paraphrase, 2 symptom). Fixture train is now 57 cases (51 answerable). Held-out untouched.
+
+Hybrid train @1/@3 before the sweep (coverage off): fixture 39/51 (exact 12/13, paraphrase 14/20, symptom 6/6, multi 5/10,
+nofield 2/2); real 21/27 (@3 27/27). Semantic arm on fixture train: 39/50, paraphrase 18/22.
+
+Coverage and link prior (starting point: the issue's 0.3 / 1.1 / 5), hybrid, train:
+
+| coverage_weight / link_prior / min links | fixture @1/@3 | fixture multi @1 | real @1 | real multi @1 | real paraphrase @1 |
+|---|---|---|---|---|---|
+| 0 / 1 / - (off) | 39/51 | 5/10 | 21 | 7/9 | 5/8 |
+| 0.1 / 1 | 39/50 | 5/10 | 20 | 7/9 | 4/8 |
+| 0.2 / 1 | 39/50 | 5/10 | 20 | 7/9 | 4/8 |
+| 0.3 / 1 | 39/50 | 5/10 | 20 | 7/9 | 4/8 |
+| 0.45 / 1 (before the new questions) | 34/44 vs 34/43 | 5/10 | 19 | 6/9 | 4/7 |
+| 0.6 / 1 | 33/44 (exact 11/13) | 5/10 | 19 | 6/9 | 4/7 |
+| 0.3 / 1.1 / 5 | 39/50 | 5/10 | 17 | 6/9 | 4/7 |
+| 0 / 1.1 / 5 | 34/43 | 5/10 | 20 | 7/9 | 5/8 |
+| 0 / 1.1 / 10 | 34/43 | 5/10 | 20 | 7/9 | 5/8 |
+| 0 / 1.1 / 20 | 34/43 | 5/10 | 21 | 7/9 | 5/8 |
+
+Reading: the issue's gain does not reproduce on our train. (1) The fixture's broad overview questions (`o01`-`o04`) are
+already answered at #1 by fusion alone, and its other multi-doc cases split their facets across docs, so no single-doc
+ranker can raise multi @1; the real corpus' broad questions (`x20`-`x22`) are also at #1 already. (2) Coverage costs one
+real-train paraphrase @1 (`p04` flips on a 0.01 margin) and one fixture @3 at every weight 0.1-0.6, and gains nothing.
+(3) The link prior is a net loss on the real corpus: link-heavy reference docs (`troubleshooting.md`, `hooks-reference.md`,
+`configuration-reference.md`, `mcp-tools-reference.md`) displace the specific doc (`x05`, `x10`, `m06` fall). The issue's
+warning that 0.6 over-weights checklists reproduces (exact 12 -> 11 on the fixture). Chosen defaults, by train: **coverage_weight 0,
+link_prior 1, link_prior_min_links 5**: the helper (`src/core/rank.ts`, `Bm25Index.cover`) ships wired into MCP and CLI and is
+a no-op until a vault opts in under `ranking:`. A unit test builds the issue's shape (an overview whose sections each match one
+aspect vs a narrow doc) and shows coverage 0.3 ranks the overview first.
+Held-out, read after choosing (hybrid @1/@3): fixture off 22/29, 0.3/1 22/29, 0.3/1.1 22/29 (multi 2/6 in all three); real off
+14/23, 0.3/1 14/22, 0.3/1.1 13/20. Same direction as train; nothing was tuned on it.
+
+Closing #43's held-out gaps (lexical arm, tuned on train incl. the 8 new questions):
+- `COSINE_WEIGHT` 0.7 / 0.8 / 0.9: fixture train @1 39 / 41 / 42, real train @1 21 / 19 / 18. Sums equal (60), the arms pull in
+  opposite directions: kept 0.7.
+- BM25 field-term weight (doc-level field text scored at 0.5 and 0.25 of a body term, via a separate field tf): fixture train
+  @1 39 at both (no change), real train 20 (down one); reverted, not shipped.
+- `BM25_FRACTION` 0.9 / 1.0 / 1.2 and `NO_STRONG_MATCH_BELOW` 0.38 / 0.40: train negatives flagged stay 11/12 (fixture, the
+  unflagged one has a high cosine) and 12/12 (real); only the answerable false flags rise (5 -> 7 -> 9). No train gain: unchanged.
+  (BM25_FRACTION 0.9 would flag real held-out 8/8, but that is a held-out-only gain and is not used.)
+- Result: the 8 new questions raised the answerable base, so fixture-train false flags are 5/51 = 9.8%: the gate passes and is a
+  real gate now (`KNOWN["fixture-train"].falseFlags` removed). Still failing, left as expected failures: fixture train
+  paraphrase (hybrid 14 vs semantic 18) and negatives (11/12); fixture held-out paraphrase / false flags / negatives; real
+  held-out negatives (7/8). The lexical paraphrase gap is path-token and title matches (`ingest-pipeline` for "pipeline",
+  `clock-drift-reorders-positions` for "positions") beating the body answer; no train-only knob closed it.
+
+Negative result recorded, not built: the "answer packet" (issue #45 section 2: top-3 coverage 0.92 with and without), and the
+`broad_query` flag (the read-top-3 and split-by-step guidance covers it; no measured need).
+Guidance added to the `search_hybrid` description, `serverInstructions`, `skills/semantic-first/SKILL.md` and
+`skills/vault-first/SKILL.md`; `test/unit/search-guidance.test.ts` pins all four; skill evals unchanged and green.
+Floors raised in `baseline.json` for fixture train (hybrid all 34/43 -> 39/51, paraphrase 11/14 -> 14/20, symptom 4/4 -> 6/6;
+semantic paraphrase 12/15 -> 18/21). `npm run eval`: 39 passed, 6 expected-fail.
