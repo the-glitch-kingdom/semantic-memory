@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { withConfidence, isWeak, excerpt, EXCERPT_CHARS, NO_STRONG_MATCH_BELOW } from "../../src/core/confidence.js";
-import { fuseRrf } from "../../src/core/bm25.js";
+import { fuseScores } from "../../src/core/bm25.js";
 
 const r = (path: string, cosine?: number, lexical?: boolean) => ({ path, title: path, score: 1, snippet: "", cosine, lexical });
 
@@ -30,13 +30,13 @@ describe("withConfidence", () => {
   });
 });
 
-describe("fuseRrf keeps cosine and the lexical flag per doc", () => {
+describe("fuseScores keeps cosine and the lexical flag per doc", () => {
   it("takes cosine from the vector arm even when the lexical chunk wins the doc", () => {
-    const fused = fuseRrf([r("a", 0.4), r("b", 0.3)], [r("b"), r("a")]);
+    const fused = fuseScores([r("a", 0.4), r("b", 0.3)], [r("b", 4), r("a", 2)]);
     const b = fused.find((x) => x.path === "b")!;
     expect(b.cosine).toBe(0.3);
     expect(b.lexical).toBe(true);
-    expect(fuseRrf([r("a", 0.4)], []).find((x) => x.path === "a")!.lexical).toBe(false);
+    expect(fuseScores([r("a", 0.4)], []).find((x) => x.path === "a")!.lexical).toBeFalsy();
   });
 });
 

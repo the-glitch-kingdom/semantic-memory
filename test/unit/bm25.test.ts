@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Bm25Index, fuseRrf } from "../../src/core/bm25.js";
+import { Bm25Index, bm25Fields, fuseScores } from "../../src/core/bm25.js";
 
 const r = (path: string, score = 1) => ({ path, title: path, score, snippet: "", matchedChunk: path });
 
@@ -36,20 +36,43 @@ describe("Bm25Index", () => {
   });
 });
 
-describe("fuseRrf", () => {
-  it("rewards agreement and keeps one entry per doc", () => {
-    const fused = fuseRrf([r("x"), r("y"), r("z")], [r("y"), r("w")]);
-    expect(fused.map((x) => x.path)).toEqual(["y", "x", "w", "z"]);
-    expect(fused.filter((x) => x.path === "y")).toHaveLength(1);
+describe("fuseScores", () => {
+  it("is pure vector order when BM25 returns nothing", () => {
+    const v = [r("x", 0.8), r("y", 0.6)];
+    expect(fuseScores(v, [])).toEqual(v);
   });
 
-  it("scores a doc ranked first by both arms at 1.0", () => {
-    expect(fuseRrf([r("x")], [r("x")])[0].score).toBeCloseTo(1, 5);
+  it("needs real lexical evidence to displace a strong vector #1, and keeps one entry per doc", () => {
+    const v = [r("x", 0.8), r("y", 0.7)];
+    expect(fuseScores(v, [r("x", 10), r("y", 1)]).map((a) => a.path)).toEqual(["x", "y"]);
+    expect(fuseScores(v, [r("y", 5)]).map((a) => a.path)).toEqual(["y", "x"]); // a lone lexical hit is the strongest lexical evidence there is
   });
 
-  it("takes the chunk from the arm that ranked the doc higher", () => {
-    const v = { ...r("y"), matchedChunk: "vec" };
-    const l = { ...r("y"), matchedChunk: "lex" };
-    expect(fuseRrf([r("x"), v], [l])[0].matchedChunk).toBe("lex");
+  it("scores 0.7 cosine + 0.3 scaled bm25 and flags lexical hits", () => {
+    const [a, b, c] = fuseScores([r("x", 0.5), r("y", 0.6)], [r("x", 8), r("z", 4)]);
+    expect([a.path, a.score]).toEqual(["x", expect.closeTo(0.65, 5)]);
+    expect(a.lexical).toBe(true);
+    expect([b.path, b.score]).toEqual(["y", expect.closeTo(0.42, 5)]);
+    expect(b.lexical).toBeUndefined();
+    expect([c.path, c.score]).toEqual(["z", expect.closeTo(0.15, 5)]);
+    expect(fuseScores([r("x", 0.5)], [r("x", 3)]).length).toBe(1);
+  });
+
+  it("takes the chunk from the vector arm, the lexical one only for a doc the vector arm missed", () => {
+    const v = { ...r("y", 0.5), matchedChunk: "vec" };
+    const l = { ...r("y", 1), matchedChunk: "lex" };
+    const out = fuseScores([v], [l, { ...r("z", 1), matchedChunk: "lexz" }]);
+    expect(out.find((x) => x.path === "y")!.matchedChunk).toBe("vec");
+    expect(out.find((x) => x.path === "z")!.matchedChunk).toBe("lexz");
+  });
+});
+
+describe("field-aware BM25", () => {
+  it("finds a doc by its title, purpose or path words without changing the returned chunk", () => {
+    const i = new Bm25Index();
+    i.addDoc("ops/dead-letter-queue.md", ["messages that fail go aside"], bm25Fields({ path: "ops/dead-letter-queue.md", title: "Poison handling", purpose: "quarantine" }));
+    i.addDoc("other.md", ["unrelated words"]);
+    for (const q of ["poison handling", "quarantine", "dead letter queue"]) expect(i.search(q).map((x) => x.path), q).toEqual(["ops/dead-letter-queue.md"]);
+    expect(i.search("poison handling")[0].matchedChunk).toBe("messages that fail go aside");
   });
 });

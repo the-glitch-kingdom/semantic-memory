@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
-import { fuseRrf } from "../../core/bm25.js";
+import { fuseScores } from "../../core/bm25.js";
 import { applyGraphBoost } from "../../core/graph-boost.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { excerpt, isWeak, standaloneConfidence, withConfidence, NO_STRONG_MATCH_BELOW } from "../../core/confidence.js";
@@ -30,7 +30,7 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
   return scored
     .filter((r) => r.path !== path && near.has(r.path) && standaloneConfidence(r) >= NO_STRONG_MATCH_BELOW)
     .slice(0, RELATED_MAX)
-    .map((r) => ({ path: r.path, title: r.title, confidence: standaloneConfidence(r) }));
+    .map((r) => ({ path: r.path, title: ctx.enrichResult(r).title, confidence: standaloneConfidence(r) }));
 }
 
 /**
@@ -153,7 +153,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + lexical + graph search — vector and BM25 results fused by reciprocal rank, re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the top result is weak every result has `no_strong_match: true` (the vault does not document it). `full: true` returns whole chunks and frontmatter fields.",
+    "Combined semantic + lexical + graph search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the top result is weak every result has `no_strong_match: true` (the vault does not document it). `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -172,13 +172,13 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
       const queryEmbed = await ctx.embedder.embed(query);
       await ctx.refreshUsageBoost();
-      // Boosts act on each arm's own scores, before fusion: RRF scores are flat, so a x1.3 on them would reorder far too much.
+      // Boosts act on each arm's own scores, before fusion, so a x1.3 stays a x1.3 on the cosine.
       const adjust = (rs: SearchResult[]) =>
         rs
           .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
           .sort((a, b) => b.score - a.score);
       const semanticResults = adjust(applyGraphBoost(vectorIndex.search(queryEmbed, limit * 3), ctx.graph));
-      let hybrid = fuseRrf(semanticResults, adjust(ctx.bm25.search(query, limit * 3)));
+      let hybrid = fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3)));
       hybrid = ctx.filterPathClass(hybrid);
 
       hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);

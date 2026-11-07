@@ -34,6 +34,7 @@ describe("search payload and abstention", () => {
       const q = "What does the harbor.dlq topic receive?";
       const [trim] = await call(tool, { query: q, limit: 3 });
       expect(Object.keys(trim).sort()).toEqual(expect.arrayContaining(["confidence", "path", "score", "snippet", "title"]));
+      expect(trim.title).not.toBe(trim.path); // the doc's title, not its path
       expect(trim.matchedChunk).toBeUndefined();
       expect(trim.mtime).toBeUndefined();
       expect(trim.snippet.length).toBeLessThanOrEqual(604);

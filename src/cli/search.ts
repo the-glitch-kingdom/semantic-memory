@@ -6,7 +6,7 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
-import { Bm25Index, fuseRrf } from "../core/bm25.js";
+import { Bm25Index, bm25Fields, fuseScores } from "../core/bm25.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { loadPathClassConfig, indexExclude, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
@@ -106,7 +106,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
 
   const docByPath = new Map(docs.map((d) => [d.path, d]));
   const bm25 = new Bm25Index();
-  for (const d of docs) bm25.addDoc(d.path, d.chunks);
+  for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
   const pathClass = loadPathClassConfig(notesPath);
   return {
     async search(query, limit = 8) {
@@ -125,7 +125,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
           .sort((a, b) => b.score - a.score);
       const ranked = withConfidence(
         filterPathClass(
-          fuseRrf(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))),
+          fuseScores(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))),
           pathClass
         )
       ).slice(0, limit);
@@ -133,7 +133,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
 
       return ranked.map((r) => ({
         path: r.path,
-        title: r.title ?? docByPath.get(r.path)?.title,
+        title: docByPath.get(r.path)?.title ?? r.title,
         score: r.score,
         confidence: r.confidence,
         snippet: excerpt(r.matchedChunk ?? r.snippet, query),

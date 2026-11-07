@@ -5,7 +5,7 @@ import { Embedder } from "../core/embedder.js";
 import { Reranker, loadRerankConfig } from "../core/reranker.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
-import { Bm25Index } from "../core/bm25.js";
+import { Bm25Index, bm25Fields } from "../core/bm25.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
@@ -222,7 +222,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   /** Whole-index load or rebuild: drop the lexical index and refill it from these docs. */
   function resetBm25(docs: IndexedDocument[]) {
     bm25.clear();
-    for (const d of docs) bm25.addDoc(d.path, d.chunks);
+    for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
   }
 
   /** Adopt what another process (or an earlier run) committed. False leaves the current state alone. */
@@ -356,7 +356,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     }
     for (const doc of parsed) {
       byPath.set(doc.path, doc);
-      bm25.addDoc(doc.path, doc.chunks);
+      bm25.addDoc(doc.path, doc.chunks, bm25Fields(doc));
       vec.addChunks(
         doc.chunks.map((t) => cache.get(vectorKey(t))!),
         doc.chunks.map((text, chunkIndex) => ({ docPath: doc.path, chunkIndex, text }))
@@ -516,6 +516,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     if (!doc) return result;
     return {
       ...result,
+      // the index results carry the path as their title
+      ...(doc.title && { title: doc.title }),
       mtime: doc.mtime,
       ...(doc.loadPriority !== undefined && { loadPriority: doc.loadPriority }),
       ...(doc.status !== undefined && { status: doc.status }),

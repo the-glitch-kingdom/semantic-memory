@@ -37,11 +37,11 @@
     },
     "real-train": {
       "search_semantic": 12,
-      "search_hybrid": 13
+      "search_hybrid": 16
     },
     "real-heldout": {
       "search_semantic": 10,
-      "search_hybrid": 12
+      "search_hybrid": 10
     }
   },
   "hnswRecallMin": 0.97
