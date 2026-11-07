@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 23
+- **Total Documents:** 24
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -32,6 +32,7 @@ purpose: Complete listing of changelog documentation
 | [v1.0 — Rebrand to semantic-memory](v1-0-rebrand.md) | active | 2026-05-09 | 510 |
 | [v1.1 — brain-absorption](v1-1-brain-absorption.md) | active | 2026-05-09 | 862 |
 | [v1.10.0 — retrieval-ready fields](v1-10-0-retrieval-fields.md) | active | 2026-11-07 | 772 |
+| [v1.11.0 — graph boost removed, decay age fallback, stale marker](v1-11-0-boost-decay-fallback.md) | active | 2026-11-07 | 633 |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](v1-2-3-hygiene-completion.md) | active | 2026-07-10 | 613 |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](v1-2-state-consolidation.md) | active | 2026-05-09 | 671 |
 | [v1.3.1 — selection-logging telemetry](v1-3-1-telemetry.md) | active | 2026-07-10 | 653 |
@@ -47,7 +48,7 @@ purpose: Complete listing of changelog documentation
 | [v1.7.2 — sessions use the indexed docs](v1-7-2-vault-context-sources.md) | active | 2026-10-28 | 485 |
 | [v1.8.0 — skill loop auto mode, dedup, and retiring old entries](v1-8-0-skill-loop-auto.md) | active | 2026-11-03 | 565 |
 | [v1.9.0 — retrieval and graph quality, index freshness](v1-9-0-retrieval-graph-quality.md) | active | 2026-11-06 | 735 |
-| [v1.9.1 — ranking regression fix](v1-9-1-ranking-regression.md) | active | 2026-11-06 | 766 |
+| [v1.9.1 — ranking regression fix](v1-9-1-ranking-regression.md) | active | 2026-11-06 | 785 |
 
 ## Keywords
 

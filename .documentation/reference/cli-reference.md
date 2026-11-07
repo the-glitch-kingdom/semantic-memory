@@ -80,7 +80,7 @@ semantic-memory search "<query>" --notes <path> [--limit N] [--text-only] [--jso
 - `--text-only` — skip ONNX embedder, use TextSearch only. Faster cold start but noisier for natural-language queries.
 - `--json` — default is also JSON; flag exists for self-documentation.
 
-**Output:** JSON array of `{ path, title, score, confidence, snippet, mtime }` (v1.9.0: `confidence`, `no_strong_match` when weak, ~600-char snippet). Ranks like `search_hybrid` (vector + BM25 fused, graph boost, archive excluded), without decay or usage boosts. Read-only: it never writes the index.
+**Output:** JSON array of `{ path, title, score, confidence, snippet, mtime }` (v1.9.0: `confidence`, `no_strong_match` when weak, ~600-char snippet). Ranks like `search_hybrid` (vector + BM25 fused, archive excluded) and, since v1.11, applies the same decay (hits carry the `decay` block with `source`), without usage boosts. While another process holds `index.lock`, hits carry `stale: true`. Read-only: it never writes the index.
 **Uses parsed-doc cache** at `.semantic-sidekick-index/docs.cache.json` for ~0.7s latency on cache hit.
 
 ---

@@ -2,6 +2,22 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.11.0] - 2026-11-07 — Notes with no `last_verified` age by git, graph boost removed, stale marker the agent can see
+
+Issues #48 and #49. Full tables, misses and opt-out: `.documentation/changelog/v1-11-0-boost-decay-fallback.md`.
+
+### Changed
+
+- **Decay default changed.** A note with a missing, unparseable or future `last_verified` is aged by `decay.missing_last_verified` (default `git`, the last commit date; also `mtime`, `penalty`, `fresh`) and `decay.missing_penalty` (0.85). Opt out with `missing_last_verified: fresh`. The `decay` block gains `source` and is attached whenever a fallback is used. The CLI `search` now applies decay like `search_hybrid`.
+- **Graph boost removed** (it was x1.3, never tuned; 1.0 was better on train).
+- **Stale marker in the text:** `search_*` responses start with `[stale: ...]` while an older index answers; the CLI sets `stale: true` on hits. `_meta.stale` is not shown to the model.
+- Index schema 6: one re-parse, vectors kept. `lint_vault` counts notes with no `last_verified`.
+
+### Measured
+
+Hybrid answer @1 (v1.10.0 to v1.11.0): fixture train 39 to 38, fixture held-out 22 to 25, real train 21 to 22, real held-out 13 to 15. Decay fixture train 4/6 to 6/6.
+Kept after measuring: `meta_weight` 0.8 and the 0.36 abstention cutoff (0.45 falsely flags 22% / 31% / 11% of answerable questions). Floors lowered: fixture-train @1 39 to 38 and exact @1 12 to 11, fixture held-out multi @3 6 to 5. Answer @1 on the real corpus is still under the 0.80 goal.
+
 ## [1.9.0] - 2026-11-06 — Search finds the right doc first, and the index matches the files
 
 Issue #41: on a docs corpus `search_hybrid` was no better than grep, backlinks equalled forwardlinks, archived copies

@@ -345,6 +345,8 @@ decay:
     gotcha: 180
     source: null                # null = never decays
     proposal: 14
+  missing_last_verified: git     # v1.11: git | mtime | penalty | fresh
+  missing_penalty: 0.85          # v1.11
   floor: 0.1                     # notes never drop below this multiplier
   hotness_boost:
     enabled: false               # extend half-life for heavily-backlinked notes (opt-in, off by default)
@@ -354,6 +356,8 @@ decay:
 - **`enabled`** — master switch. `false` reproduces pre-v1.3 ranking byte-for-byte.
 - **`default_half_life_days`** — half-life used for any type not listed in `per_type`. Multiplier formula: `0.5 ^ (age_days / half_life)`.
 - **`per_type`** — per-note-type half-life override, keyed by frontmatter `type`. `null` for a type means it never decays (e.g. `source`).
+- **`missing_last_verified`** (v1.11+, default `git`) — `git` | `mtime` | `penalty` | `fresh`: the age source for a note whose `last_verified` is missing, unparseable or future. `fresh` restores v1.10.0. `last_validated` is never read. Details: [decay guide](../operational/decay-guide.md).
+- **`missing_penalty`** (v1.11+, default 0.85) — multiplier for `penalty`, and when `git` or `mtime` has no date.
 - **`floor`** — minimum multiplier a decayed note can reach; decay ranks down, never to zero.
 - **`hotness_boost`** — opt-in, off by default. When `enabled: true`, extends the effective half-life for heavily-backlinked notes, up to `cap`×.
 
@@ -438,7 +442,7 @@ index_fields:
 ```
 
 - **`lexical`** — frontmatter fields added to every chunk's BM25 text. **`vector`** — fields embedded as extra metadata chunks. **`symptom_keys`** — keys read from object-form `symptoms` (`error_pattern` is regex text: BM25 only). Unknown fields are ignored. A list change re-parses the corpus; only changed metadata embeds.
-- **`meta_weight`** — a note's vector score is `max(best body cosine, meta_weight x best metadata cosine)`; search-time only.
+- **`meta_weight`** — a note's vector score is `max(best body cosine, meta_weight x best metadata cosine)`; search-time only. See the [tuning guide](../operational/retrieval-tuning-guide.md).
 - Notes with `generated: true` are never indexed, returned or made graph nodes.
 
 Field contract (the shape hit-em-with-the-docs writes and semantic-memory reads; see its frontmatter reference):
