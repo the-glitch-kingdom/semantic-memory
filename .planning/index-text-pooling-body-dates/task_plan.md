@@ -97,9 +97,10 @@ Every missed target is stated in the PR.
         `.claude-plugin/plugin.json`, `AGENTS.md` frontmatter), then `npm install --package-lock-only --ignore-scripts`
   - [x] Offline tarball builds (`--allow-dirty` here; rebuilt from the merge commit before publishing)
         Built semantic-sidekick-offline-1.12.0-d361527ab4-x64.tgz, 922M, sha256 7143fb33...5397, verify OK (10016 files), model configs present. Size is 922M not ~0.55G because the host model cache also holds bge-small, arctic-s/xs and the reranker from the Phase 6 comparison; rebuild from a clean cache before publishing. Not install-tested.
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove trial knobs, sweep scripts and the losing embed-text variant from Phase 5; dead-code check over the
+- [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove trial knobs, sweep scripts and the losing embed-text variant from Phase 5; dead-code check over the
         branch diff (`tsc --noUnusedLocals`, grep). Pre-existing unused locals are left alone.
+        Checked: no env trial knobs or sweep scripts remain (the option (b) switch was reverted in Phase 5); `tsc --noUnusedLocals` output is identical to main (12 pre-existing); every new export is used. Nothing to remove.
 - [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review of `git diff main...HEAD`. Look for:
     - per-query git calls, or one git process per file
@@ -183,7 +184,7 @@ Every missed target is stated in the PR.
 - Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 8** - Cleanup
+**Currently in Phase 9** - Validate
 
 ---
 
