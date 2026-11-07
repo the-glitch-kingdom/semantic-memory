@@ -74,25 +74,25 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
         answering from `docs.cache.json`; read-only, never writes the index
   - [x] `reindex` tool and `--reindex` keep forcing a full rebuild
   - [x] Re-run eval + freshness audit, record numbers
-- [ ] Phase 4: Graph and ranking bug fixes (issue Phase 1)
-  - [ ] Markdown links: `extractMarkdownLinks` in `src/core/indexer.ts` (resolve relative to the
+- [x] Phase 4: Graph and ranking bug fixes (issue Phase 1)
+  - [x] Markdown links: `extractMarkdownLinks` in `src/core/indexer.ts` (resolve relative to the
         source file, strip `#anchor` and `?query`, skip `http(s):`/`mailto:`/images, decode `%20`);
         new `IndexedDocument.mdLinks`; `link` edges (weight 1.0) in `GraphBuilder.buildFromDocuments`
-  - [ ] Typed edges: `backlinks` / `forwardlinks` / `findPath` default to `link|wikilink|related`;
+  - [x] Typed edges: `backlinks` / `forwardlinks` / `findPath` default to `link|wikilink|related`;
         optional `types` filter on the MCP tools and CLI; tag edges kept for `search_graph` only
-  - [ ] Hub exclusion: configurable `graph.exclude_hubs` globs (default `**/INDEX.md`,
+  - [x] Hub exclusion: configurable `graph.exclude_hubs` globs (default `**/INDEX.md`,
         `**/REGISTRY.md`) skipped as traversal nodes and in degree ranking
-  - [ ] Hybrid boost seeded from semantic hits: 1-hop `link|wikilink|related` neighbours of the top 5
+  - [x] Hybrid boost seeded from semantic hits: 1-hop `link|wikilink|related` neighbours of the top 5
         semantic results get the boost (not the query string); same fix in `src/cli/search.ts`
         (share one helper in `src/core/` so the two paths cannot drift again)
-  - [ ] Archive glob: default `path_class` rule `**/archive/**` matched with `{ dot: true }`; update
+  - [x] Archive glob: default `path_class` rule `**/archive/**` matched with `{ dot: true }`; update
         `src/core/path-class.ts` default + `src/core/schema-default.ts`
-  - [ ] `path_class.exclude` globs (default `**/archive/**`) dropping matches from search results
+  - [x] `path_class.exclude` globs (default `**/archive/**`) dropping matches from search results
         entirely; down-weight stays for vaults that opt out of exclusion
-  - [ ] Content-hash dedup: identical chunk text across docs keeps only the live (non-excluded) copy
-        (reuses Phase 3's chunk hashes)
-  - [ ] Bump `schemaVersion` (parsing and edges changed) so caches re-parse without re-embedding
-  - [ ] Re-run eval, record numbers, raise CI floor
+  - [x] Content-hash dedup: identical chunk text across docs keeps only the live (non-excluded) copy
+        (compares the matched chunk text itself, which is what the hash is of; only bites when exclusion is opted out)
+  - [x] Bump `schemaVersion` (parsing and edges changed) so caches re-parse without re-embedding
+  - [x] Re-run eval, record numbers, raise CI floor
 - [ ] Phase 5: Lexical arm and fusion (issue Phase 2, part 1)
   - [ ] BM25 over chunks in `src/core/bm25.ts` (no new dependency; tokenizer, k1=1.2, b=0.75),
         updated per doc by `reconcile()`
@@ -263,14 +263,20 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 3 `**/node_modules/**` is now an ignore glob for the full index too (only the watcher ignored it before); the list is one constant (`IGNORE_GLOBS`) shared by `indexAll` and `reconcile`, hashed into `meta.ignoreGlobs`.
 - Several Phase 11 acceptance tests were written with Phase 3 in `test/integration/freshness.test.ts` (edit mid-session, touch-all, warm start, edit while down, schemaVersion bump, mixed commit, zero inotify, two processes, edit during reconcile); Phase 11 should re-check and tick them, not rewrite them.
 
+- Phase 4: hub files (`graph.exclude_hubs`) are left out of the graph as nodes, not just as traversal hops: one rule covers
+  traversal, degree ranking and statistics. `search_text` also honours `path_class.exclude` unless the call passes an explicit `pathGlob`.
+- Phase 4: `types` filter exists on the MCP tools `backlinks`/`forwardlinks`/`graph_path`; the CLI has no such subcommands (the tool help in `cli/index.ts` documents it). `findPath` is now a small BFS over the typed edges, so `graphology-shortest-path` is unused (dependency left in package.json; drop it in Phase 10).
+- Phase 4: the boost seeds are the top 5 semantic docs; two linked seeds boost each other. Graph config (hub globs) is read at server start, so a change needs a restart.
+
 ## Errors Encountered
 - Phase 2: `test/unit/skill-eval.test.ts` concurrency case ("never exceed 5 live claude processes") and one other timing test failed in 2 of 3 full runs under load, passed alone and on the 3rd full run. Unrelated to this work (process-timing based); not touched.
 - Phase 3: `hook-failure.test.ts` "Jev error or hang" (3209 ms vs a 3000 ms budget) failed once under the full-suite load, passed alone. Unrelated (hook process timing).
 - Phase 3: sorting the file listing changed which of two equal-length graph paths wins, so the `graph_path` golden snapshot (project-overview -> user-service) now goes via api-gateway instead of microservices; both are shortest paths. Snapshot updated.
 - Phase 3: reconcile parsed files in completion order, so HNSW insertion order varied and one `docs-eval` run failed once (approximate-NN tie flips); fixed by keeping `plan.parse` order. 6 consecutive eval runs green after.
+- Phase 4: one full run failed `e2e/new-features.test.ts` "should write meta.json with model info" and the skill-eval concurrency case; both pass alone and in the next two full runs (load timing, unrelated).
 
 ## Status
-**Currently in Phase 4** (graph and ranking bug fixes). Phase 3 (pull-based reconcile, atomic generation commit) done; numbers in notes.md "Phase 3".
+**Currently in Phase 5** (lexical arm and fusion). Phase 4 (graph and ranking fixes) done; numbers in notes.md "Phase 4".
 
 ---
 

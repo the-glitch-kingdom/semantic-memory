@@ -308,18 +308,18 @@ const TOOL_HELP: Record<string, { description: string; args: string; examples: s
 
   // Graph
   backlinks: {
-    description: "Find all notes that link TO a given note via [[wikilinks]]",
-    args: '{ "path": "string" }',
+    description: "Find all notes that link TO a given note via markdown links, [[wikilinks]] and related_docs",
+    args: '{ "path": "string", "types?": ["link|wikilink|related|tag"] }',
     examples: ['{ "path": "microservices.md" }'],
   },
   forwardlinks: {
     description: "Find all notes linked FROM a given note",
-    args: '{ "path": "string" }',
+    args: '{ "path": "string", "types?": ["link|wikilink|related|tag"] }',
     examples: ['{ "path": "project-overview.md" }'],
   },
   graph_path: {
-    description: "Find the shortest path between two notes in the knowledge graph",
-    args: '{ "from": "string", "to": "string" }',
+    description: "Find the shortest path between two notes over link, wikilink and related edges",
+    args: '{ "from": "string", "to": "string", "types?": ["link|wikilink|related|tag"] }',
     examples: ['{ "from": "project-overview.md", "to": "user-service.md" }'],
   },
   graph_statistics: {

@@ -6,6 +6,8 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
+import { applyGraphBoost } from "../core/graph-boost.js";
+import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
 import { readConsistentMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
@@ -96,24 +98,25 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   await graph.load(indexPath);
 
   const docByPath = new Map(docs.map((d) => [d.path, d]));
+  const pathClass = loadPathClassConfig(notesPath);
   return {
     async search(query, limit = 8) {
       const queryEmbed = await embedder.embed(query);
       const semantic = vectorIndex.search(queryEmbed, limit * 3);
-      const graphResults = graph.searchGraph(query, 2);
-      const graphPaths = new Set(graphResults.map((r) => r.path));
 
-      const hybrid = semantic
-        .map((r) => {
-          const doc = docByPath.get(r.path);
-          let score = graphPaths.has(r.path) ? r.score * 1.3 : r.score;
-          if (doc?.loadPriority !== undefined) {
-            score *= 1 + (doc.loadPriority - 5) * 0.04;
-          }
-          return { ...r, score };
-        })
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+      const hybrid = filterPathClass(
+        applyGraphBoost(semantic, graph)
+          .map((r) => {
+            const doc = docByPath.get(r.path);
+            let score = r.score * pathClassMultiplier(r.path, pathClass);
+            if (doc?.loadPriority !== undefined) {
+              score *= 1 + (doc.loadPriority - 5) * 0.04;
+            }
+            return { ...r, score };
+          })
+          .sort((a, b) => b.score - a.score),
+        pathClass
+      ).slice(0, limit);
 
       return hybrid.map((r) => {
         const doc = docByPath.get(r.path);

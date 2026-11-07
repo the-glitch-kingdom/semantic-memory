@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
+import { applyGraphBoost } from "../../core/graph-boost.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
 /**
@@ -42,6 +43,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       let results = vectorIndex.search(queryEmbed, limit * 3);
       results = results.map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))));
       results.sort((a, b) => b.score - a.score);
+      results = ctx.filterPathClass(results);
       results = ctx.applyDateFilter(results, modifiedAfter, modifiedBefore);
       const docByPath = ctx.getDocByPath();
       if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
@@ -73,6 +75,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       const documents = ctx.getDocuments();
       if (documents.length === 0 && ctx.getIndexState() !== "ready") return ctx.textResponse(ctx.indexingMessage());
       let results = ctx.textSearch.search(opts);
+      if (!opts.pathGlob) results = ctx.filterPathClass(results); // an explicit pathGlob can still reach the archive
       results = ctx.applyDateFilter(results, modifiedAfter, modifiedBefore);
       const docByPath = ctx.getDocByPath();
       if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
@@ -101,7 +104,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + graph search — vector results re-ranked by graph proximity and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block.",
+    "Combined semantic + graph search — vector results re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -120,20 +123,12 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       const queryEmbed = await ctx.embedder.embed(query);
       await ctx.refreshUsageBoost();
       const semanticResults = vectorIndex.search(queryEmbed, limit * 3);
-      const graphResults = ctx.graph.searchGraph(query, 2);
-      const graphPaths = new Set(graphResults.map((r) => r.path));
 
-      let hybrid = semanticResults.map((r) =>
-        ctx.applyUsageBoost(
-          ctx.applyPathClass(
-            ctx.applyDecay({
-              ...r,
-              score: ctx.applyPriorityBoost(graphPaths.has(r.path) ? r.score * 1.3 : r.score, r.path),
-            })
-          )
-        )
+      let hybrid = applyGraphBoost(semanticResults, ctx.graph).map((r) =>
+        ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) })))
       );
       hybrid.sort((a, b) => b.score - a.score);
+      hybrid = ctx.filterPathClass(hybrid);
 
       hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);
       const docByPath = ctx.getDocByPath();

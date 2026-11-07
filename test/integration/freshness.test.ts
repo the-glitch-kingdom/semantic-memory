@@ -8,6 +8,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../../src/mcp/server.js";
 import { filesMatchMeta, readMeta } from "../../src/core/index-store.js";
 import { createTempVault, cleanupTempDir } from "../setup.js";
+import { INDEX_SCHEMA_VERSION } from "../../src/core/indexer.js";
 
 const NOW = { reconcileThrottleMs: 0 };
 
@@ -134,7 +135,7 @@ describe("index freshness without a watcher", () => {
     expect(parsed).toHaveBeenCalledTimes(first.ctx.getDocuments().length);
     expect(spy).not.toHaveBeenCalled();
     await ctx.flushIndex();
-    expect((await readMeta(join(dir, ".semantic-sidekick-index")))?.schemaVersion).toBe(1);
+    expect((await readMeta(join(dir, ".semantic-sidekick-index")))?.schemaVersion).toBe(INDEX_SCHEMA_VERSION);
   }, 180_000);
 
   it("a commit that died between renames is detected on the next start and recovered", async () => {

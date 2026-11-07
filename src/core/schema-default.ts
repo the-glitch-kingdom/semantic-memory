@@ -95,12 +95,23 @@ decay:
 
 # Path-class ranking (v1.4). Down-weights whole regions of the vault by path glob
 # (composes multiplicatively with decay + load_priority). First matching rule wins.
-# The default down-weights archived notes so retired docs stop dominating results.
+# The default down-weights archived notes so retired docs stop dominating results,
+# and "exclude" drops them from search results entirely (set exclude: [] to keep them,
+# down-weighted). Globs match with dot: true, so .documentation/archive/ is covered.
 path_class:
   enabled: true
   rules:
-    - glob: "archive/**"
+    - glob: "**/archive/**"
       multiplier: 0.3
+  exclude:
+    - "**/archive/**"
+
+# Knowledge graph (v1.9). Generated hub files link to everything, which makes every
+# note a neighbour of every other: they are left out of the graph.
+graph:
+  exclude_hubs:
+    - "**/INDEX.md"
+    - "**/REGISTRY.md"
 
 # Usage-feedback ranking (v1.5). Boosts notes that get CITED after retrieval (per
 # the local selection log) so load-bearing knowledge floats up. Bounded by cap to

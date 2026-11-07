@@ -4,6 +4,8 @@ export interface IndexedDocument {
   content: string;
   frontmatter: Record<string, unknown>;
   wikilinks: string[];
+  /** vault-relative targets of markdown `[text](x.md)` links; absent in caches from before schemaVersion 2 */
+  mdLinks?: string[];
   tags: string[];
   headers: string[];
   chunks: string[];
@@ -41,10 +43,13 @@ export interface GraphNode {
   status?: string;        // present when frontmatter status is set
 }
 
+/** `link` = markdown link, `related` = frontmatter related_docs, `tag` = shared rare tag */
+export type EdgeType = "link" | "wikilink" | "related" | "tag";
+
 export interface GraphEdge {
   source: string;
   target: string;
-  type: "wikilink" | "tag" | "backlink";
+  type: EdgeType;
   weight: number;
 }
 

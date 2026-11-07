@@ -10,7 +10,9 @@ import { minimatch } from "minimatch";
  * observed failure where `archive/` and `archive/pre-restructure/` copies of a
  * retired doc dominated the top hits. Composes multiplicatively with decay and
  * load_priority at the same `context.ts` rank site; it never removes notes, only
- * ranks them lower. First matching rule wins.
+ * ranks them lower. First matching rule wins. `exclude` globs (v1.9) drop matches from
+ * search results entirely. Globs match with `dot: true`: `**` otherwise skips dot-dirs,
+ * so an archive glob would miss `.documentation/archive/`.
  */
 
 export interface PathClassRule {
@@ -21,11 +23,16 @@ export interface PathClassRule {
 export interface PathClassConfig {
   enabled: boolean;
   rules: PathClassRule[];
+  /** globs dropped from search results; `[]` opts out and leaves only the down-weight */
+  exclude: string[];
 }
+
+const MM = { dot: true };
 
 export const DEFAULT_PATH_CLASS_CONFIG: PathClassConfig = {
   enabled: true,
-  rules: [{ glob: "archive/**", multiplier: 0.3 }],
+  rules: [{ glob: "**/archive/**", multiplier: 0.3 }],
+  exclude: ["**/archive/**"],
 };
 
 /** The multiplier for a note path — first matching rule, else 1.0 (no effect). */
@@ -33,9 +40,28 @@ export function pathClassMultiplier(path: string, config: PathClassConfig): numb
   if (!config.enabled) return 1;
   for (const rule of config.rules) {
     if (typeof rule.multiplier !== "number") continue;
-    if (minimatch(path, rule.glob)) return rule.multiplier;
+    if (minimatch(path, rule.glob, MM)) return rule.multiplier;
   }
   return 1;
+}
+
+export function isExcludedPath(path: string, config: PathClassConfig): boolean {
+  return config.enabled && config.exclude.some((g) => minimatch(path, g, MM));
+}
+
+/**
+ * Drop excluded paths. With exclusion opted out, a down-weighted result whose best chunk is
+ * identical to a full-weight result's is dropped too (the archived copy of a live doc).
+ */
+export function filterPathClass<T extends { path: string; matchedChunk?: string }>(results: T[], config: PathClassConfig): T[] {
+  if (!config.enabled) return results;
+  const live = new Set<string>();
+  for (const r of results) if (r.matchedChunk && pathClassMultiplier(r.path, config) === 1) live.add(r.matchedChunk);
+  return results.filter(
+    (r) =>
+      !isExcludedPath(r.path, config) &&
+      !(r.matchedChunk && live.has(r.matchedChunk) && pathClassMultiplier(r.path, config) < 1)
+  );
 }
 
 /**
@@ -54,6 +80,7 @@ export function loadPathClassConfig(vaultPath: string): PathClassConfig {
       rules: Array.isArray(p.rules)
         ? p.rules.filter((r): r is PathClassRule => !!r && typeof r.glob === "string" && typeof r.multiplier === "number")
         : DEFAULT_PATH_CLASS_CONFIG.rules,
+      exclude: Array.isArray(p.exclude) ? p.exclude.filter((g): g is string => typeof g === "string") : DEFAULT_PATH_CLASS_CONFIG.exclude,
     };
   } catch {
     return DEFAULT_PATH_CLASS_CONFIG;

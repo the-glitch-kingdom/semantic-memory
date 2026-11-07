@@ -5,7 +5,7 @@ import matter from "./matter.js";
 import { glob } from "glob";
 import { readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { basename, join, relative, posix } from "node:path";
 import type { IndexedDocument } from "./types.js";
 
 const DOCS_CACHE_FILE = "docs.cache.json";
@@ -13,7 +13,7 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 1;
+export const INDEX_SCHEMA_VERSION = 2; // 2: markdown links (mdLinks)
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -98,6 +98,7 @@ export class Indexer {
     const tree = this.processor.parse(content);
 
     const wikilinks = this.extractWikilinks(tree);
+    const mdLinks = this.extractMarkdownLinks(tree, relativePath);
     const tags = this.extractTags(content, frontmatter);
     const headers = this.extractHeaders(tree);
     const plainText = this.stripMarkdown(content);
@@ -146,6 +147,7 @@ export class Indexer {
       content: plainText,
       frontmatter,
       wikilinks,
+      mdLinks,
       tags,
       headers,
       chunks: allChunks,
@@ -195,6 +197,29 @@ export class Indexer {
     };
     walk(tree);
     return [...new Set(links.filter(Boolean))];
+  }
+
+  /**
+   * Vault-relative `.md` targets of `[text](x.md)` links and link definitions. Walks the parsed tree, so links in
+   * code blocks and images are never seen. External URLs, bare `#anchor`s, root-relative paths and links leaving
+   * the vault are skipped; `#anchor`, `?query` and `%20` escapes are resolved away.
+   */
+  extractMarkdownLinks(tree: any, sourcePath: string): string[] {
+    const out = new Set<string>();
+    const walk = (node: any) => {
+      if ((node.type === "link" || node.type === "definition") && typeof node.url === "string") {
+        const url = node.url.split(/[#?]/)[0];
+        if (url && !/^([a-z][a-z0-9+.-]*:|\/)/i.test(url)) {
+          let decoded = url;
+          try { decoded = decodeURIComponent(url); } catch { /* keep the raw text */ }
+          const target = posix.normalize(posix.join(posix.dirname(sourcePath), decoded));
+          if (target.endsWith(".md") && !target.startsWith("..")) out.add(target);
+        }
+      }
+      for (const child of node.children ?? []) walk(child);
+    };
+    walk(tree);
+    return [...out];
   }
 
   private extractTags(content: string, frontmatter: Record<string, unknown>): string[] {

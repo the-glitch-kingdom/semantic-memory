@@ -118,3 +118,20 @@ This repo's `.documentation/` copy (137 docs / 255 chunks), `stale-audit.mjs` (n
 
 Inotify: `createServer` holds 0 inotify instances (counted in `/proc/self/fdinfo`, `freshness.test.ts`); before it held one watch per file + directory.
 Not measured: the real production `.mcp.json` launch (Phase 11), Windows/macOS.
+
+### Phase 4 (graph and ranking fixes; fixture `test/fixtures/docs-vault`, `npm run eval`, 3 identical runs)
+
+| arm | @1 (was) | @3 | @8 | archive hits (was) |
+|---|---|---|---|---|
+| search_semantic | 20/33 (19) | 30/33 | 32/33 | 0 (8) |
+| search_hybrid | 20/33 (19) | 30/33 | 32/33 | 0 (8) |
+| search_text | 6/33 (6) | 15/33 | 24/33 | 0 (26) |
+
+- Graph vs hand-written truth: forwardlinks and backlinks precision 1.000 (was 0.257), recall 1.000 (was 0.750).
+  Markdown links add the recall, hub exclusion and the tag-edge default removal add the precision.
+- The one extra @1 hit is the live doc no longer sharing a slot with its archived copy. Hybrid still equals semantic at @1 on
+  this fixture: the 1.3 boost reorders scores but no fixture case has the answer just below a linked top hit. Unit test
+  `graph-links.test.ts` proves the order change where it exists.
+- Negative top scores are still 0.14 to 0.45: abstention is Phase 7.
+- minimatch: `**/archive/**` does not match `.documentation/archive/a.md` without `{ dot: true }` (asserted in `graph-links.test.ts`).
+- `INDEX_SCHEMA_VERSION` 1 -> 2: caches re-parse, vectors are kept.

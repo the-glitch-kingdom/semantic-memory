@@ -2,14 +2,14 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
-import { GraphBuilder } from "../core/graph.js";
+import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { computeDecay, loadDecayConfig, normalizeVerifiedDate, type DecayConfig } from "../core/decay.js";
-import { pathClassMultiplier, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
+import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
 import { commitIndex, filesMatchMeta, metaMtime, parserMatches, readMeta } from "../core/index-store.js";
@@ -106,6 +106,8 @@ export interface ServerContext {
    * No-op when disabled or no glob matches.
    */
   applyPathClass<T extends { path: string; score: number }>(r: T): T;
+  /** Drops `path_class.exclude` matches (archive by default) and archived copies of live chunks. */
+  filterPathClass<T extends { path: string; matchedChunk?: string }>(results: T[]): T[];
   /**
    * Apply the usage-feedback boost (v1.5): notes cited repeatedly (per the
    * selection log) earn a bounded rank boost (≤ cap), attaching a `usage` block
@@ -129,7 +131,10 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   const indexer = new Indexer(notesPath);
   const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized);
-  const graph = new GraphBuilder();
+  const graph = new GraphBuilder({
+    excludeHubs: loadExcludeHubs(notesPath),
+    isArchived: (p) => isExcludedPath(p, getPathClassConfig()),
+  });
   const textSearch = new TextSearch();
   const crud = new NoteCrud(notesPath);
   const frontmatterManager = new FrontmatterManager(notesPath);
@@ -521,6 +526,10 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     return m === 1 ? r : { ...r, score: r.score * m };
   }
 
+  function filterPathClass<T extends { path: string; matchedChunk?: string }>(results: T[]): T[] {
+    return filterPathClassBy(results, getPathClassConfig());
+  }
+
   // Usage-feedback boost (v1.5). Config is process-cached; the citation snapshot
   // is refreshed from the selection log on a short TTL so within-session citations
   // eventually take effect without re-reading the log on every scored result.
@@ -604,6 +613,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     applyPriorityBoost,
     applyDecay,
     applyPathClass,
+    filterPathClass,
     applyUsageBoost,
     refreshUsageBoost,
     applyDateFilter,

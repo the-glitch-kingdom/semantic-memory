@@ -176,6 +176,19 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         "path": {
           "type": "string",
         },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related; add 'tag' for shared-topic neighbours)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
       },
       "required": [
         "path",
@@ -299,6 +312,19 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         "path": {
           "type": "string",
         },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related; add 'tag' for shared-topic neighbours)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
       },
       "required": [
         "path",
@@ -334,7 +360,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "get_stats",
   },
   {
-    "description": "Find the shortest path between two notes in the knowledge graph",
+    "description": "Find the shortest path between two notes over link, wikilink and related edges (pass types to change)",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -344,6 +370,19 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         },
         "to": {
           "type": "string",
+        },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related; add 'tag' for shared-topic neighbours)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
         },
       },
       "required": [
@@ -940,7 +979,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "search_graph",
   },
   {
-    "description": "Combined semantic + graph search — vector results re-ranked by graph proximity and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block.",
+    "description": "Combined semantic + graph search — vector results re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
