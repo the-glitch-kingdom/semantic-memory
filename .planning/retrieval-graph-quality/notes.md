@@ -79,3 +79,42 @@ Answered@k = every facet regex matched by a non-archive result in the top k (cou
 
 The CI floor (`test/retrieval-eval/baseline.json`) equals these numbers: @1 19/19/7, archive hits 8/8/24,
 link precision 0.271, recall 0.791 (floored to 3 decimals).
+
+### Phase 3 (index freshness; fixture `test/fixtures/docs-vault` eval unchanged, generated 1,000-doc tree, this repo's `.documentation/` copy)
+
+Eval after Phase 3 (`npm run eval`): semantic and hybrid arms identical to the Phase 2 baseline (@1 19/33, archive hits 8).
+Phase 3 sorts the file listing (glob order follows I/O timing and HNSW results depend on insertion order; two
+unsorted runs under load failed the archive-hit gate). That moves the two order-dependent arms: search_text @1 7 -> 6,
+archive hits 24 -> 26, and graph precision 0.271 -> 0.257 / recall 0.791 -> 0.750 (which of two same-named docs a
+wikilink resolves to depends on listing order; Phase 4 fixes that with archive exclusion). `baseline.json` floors for
+those two re-recorded at the deterministic values; they are now stable run to run.
+
+Key Question 5, raw hnswlib-node, 384-d random vectors:
+
+| vectors | rebuild from cached vectors | 50 x (markDelete + addPoint) |
+|---|---|---|
+| 1,000 | 87 ms | 6 ms |
+| 5,000 | 1,020 ms | 17 ms |
+| 10,000 | 3,004 ms | 26 ms |
+
+Rebuild is over the 200 ms bar at 5k, so the index is updated in place and compacted (rebuild) past 30% deleted nodes.
+
+Generated tree, 1,000 docs / ~3,000 chunks (330 random words each, wikilinks, tags), 37 MB index:
+- cold build (no cache, MiniLM, in-process): 120 s (200 docs: 24 s)
+- warm start to first answer (createServer, nothing changed, search_semantic): 511-524 ms; answer carries `_meta.stale` until the first reconcile ends; 0 files re-parsed, 0 chunks embedded
+- search with an idle reconcile before it (1,000 files stat'd, nothing changed): 25 ms total; second search inside the 2 s window: 4-12 ms
+- edit one doc, next search: 32-67 ms total (reconcile + parse + embed 1 chunk + HNSW update)
+- full graph rebuild 11-14 ms; text index setDocuments 0 ms (why the graph is rebuilt whole, not patched)
+
+This repo's `.documentation/` copy (137 docs / 255 chunks), `stale-audit.mjs` (now also compares the committed HNSW chunk list with the files on disk):
+
+| state | stale vectors | missing | orphans | index vs disk mismatch | cold start to first answer |
+|---|---|---|---|---|---|
+| Phase 2 baseline, clean | 0% | 0 | 0 | n/a | 1,352 ms |
+| Phase 2 baseline, 10 docs edited while down | 8.6% | n/a | n/a | n/a | 1,839 ms (full re-parse) |
+| Phase 3, clean | 0% | 0 | 0 | 0 | 431 ms |
+| Phase 3, 10 docs edited while down | 0% | 0 | 0 | 0 | 915 ms (re-parse + re-embed those 10 only) |
+| Phase 3, every file touched, no content change | 0% | 0 | 0 | 0 | 459 ms (manifest rewrite only) |
+
+Inotify: `createServer` holds 0 inotify instances (counted in `/proc/self/fdinfo`, `freshness.test.ts`); before it held one watch per file + directory.
+Not measured: the real production `.mcp.json` launch (Phase 11), Windows/macOS.

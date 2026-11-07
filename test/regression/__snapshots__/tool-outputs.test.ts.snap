@@ -143,7 +143,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > graph_path > returns 
 exports[`Regression: MCP tool outputs (golden snapshots) > graph_path > returns a path between two known notes 1`] = `
 [
   "project-overview.md",
-  "microservices.md",
+  "api-gateway.md",
   "user-service.md",
 ]
 `;

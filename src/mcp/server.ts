@@ -1,7 +1,6 @@
 import { relative } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { Watcher } from "../core/watcher.js";
 import { buildContext, type ServerOptions } from "./context.js";
 import { registerSearchTools } from "./tools/search.js";
 import { registerReadTools } from "./tools/read.js";
@@ -29,46 +28,59 @@ export async function createServer(notesPath: string, options: ServerOptions = {
     { instructions: serverInstructions(notesPath, options.readOnly) }
   );
 
+  // Pull-based freshness: every tool first reconciles the index with the tree (throttled), and
+  // answers served from a warm cache that the first reconcile has not yet checked carry _meta.stale.
+  // A tool that writes notes lifts the throttle so the next search sees the write at once.
+  const registerTool = server.tool.bind(server) as (...args: any[]) => unknown;
+  let writesNotes = false;
+  (server as any).tool = (...args: any[]) => {
+    const handler = args[args.length - 1];
+    const mutates = writesNotes;
+    args[args.length - 1] = async (...a: unknown[]) => {
+      await ctx.ensureFresh();
+      const res = await handler(...a);
+      if (mutates) ctx.invalidate();
+      return ctx.isStale() && res && typeof res === "object" ? { ...res, _meta: { ...res._meta, stale: true } } : res;
+    };
+    return registerTool(...args);
+  };
+
   // Conditional tool registration (v1.4 Phase 7, DEFAULT OFF). When enabled via
   // tools.conditional AND the active mode is outage-silence, register only the
   // core read/search surface. Default → full surface (unchanged).
   const minimal = useMinimalToolSurface(notesPath);
 
+  const registerWriting = (register: (s: McpServer, c: typeof ctx) => void) => {
+    writesNotes = true;
+    register(server, ctx);
+    writesNotes = false;
+  };
+
   registerSearchTools(server, ctx);
   registerReadTools(server, ctx);
   registerSystemTools(server, ctx);
   if (!minimal) {
-    registerWriteTools(server, ctx);
-    registerPatchTools(server, ctx);
+    registerWriting(registerWriteTools);
+    registerWriting(registerPatchTools);
     registerLintTools(server, ctx);
-    registerLogTools(server, ctx);
-    registerMetadataTools(server, ctx);
+    registerWriting(registerLogTools);
+    registerWriting(registerMetadataTools);
     registerGraphTools(server, ctx);
-    registerContractTools(server, ctx);
-    registerSessionTools(server, ctx);
+    registerWriting(registerContractTools);
+    registerWriting(registerSessionTools);
   }
 
   if (options.waitForReady) {
-    await ctx.tryLoadCachedIndex();
-    await ctx.fullIndex();
+    const cached = await ctx.tryLoadCachedIndex();
+    if (!cached || options.forceReindex) await ctx.fullIndex();
+    else await ctx.reconcileNow();
   } else {
     ctx.tryLoadCachedIndex()
-      .then((cached) => {
-        // a stale cache (chunk count drifted from the notes on disk) is served while it rebuilds
-        if (!cached || ctx.getIndexState() === "stale") ctx.backgroundIndex();
-      })
+      .then((cached) => (cached ? ctx.reconcileNow() : ctx.backgroundIndex()))
       .catch((err) => {
         process.stderr.write(`Startup error: ${err?.message ?? err}\n`);
         ctx.backgroundIndex();
       });
-  }
-
-  if (options.watch !== false) {
-    const watcher = new Watcher(notesPath);
-    watcher.on("changed", () => {
-      ctx.backgroundIndex();
-    });
-    watcher.start();
   }
 
   return server;
@@ -96,8 +108,7 @@ export async function startServer(notesPath: string, options: ServerOptions = {}
   // its end of the pipe is closed by the kernel, and the child receives EOF on
   // process.stdin (emits 'end' then 'close').
   //
-  // Without these handlers the chokidar FSWatcher (inotify fd) and the ONNX
-  // InferenceSession native thread-pool keep the Node.js event loop alive
+  // Without these handlers the ONNX InferenceSession native thread-pool keeps the Node.js event loop alive
   // indefinitely — producing one orphan process (~180–200 MB RSS each) per Claude
   // session. On low-memory boxes this accumulates until RAM + swap are exhausted
   // and the host freezes.

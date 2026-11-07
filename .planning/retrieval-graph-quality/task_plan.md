@@ -39,38 +39,41 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
   - [x] Record the baseline numbers in notes.md (retrieval + freshness)
   - [x] CI gate: `npm run eval` in `.github/workflows/ci.yml`, failing if @1 drops below the recorded
         baseline (floor raised at the end of each phase)
-- [ ] Phase 3: Index freshness: pull-based reconcile replaces the watcher (issue comment)
-  - [ ] Embeddings keyed by chunk content hash (sha256 of the chunk text), not `path:chunkIndex`
+- [x] Phase 3: Index freshness: pull-based reconcile replaces the watcher (issue comment)
+  - [x] Embeddings keyed by chunk content hash (sha256 of the chunk text), not `path:chunkIndex`
         (`src/mcp/context.ts:199-208,224`); old positional `embeddings.json` read once and discarded
-  - [ ] Orphan pruning: vectors no current chunk references are dropped on save
-  - [ ] Manifest `path -> { mtimeMs, size, ino, contentHash }` from `fs.stat` (never the frontmatter
+        (key = sha256(model NUL text): a model change misses by key; legacy keys are orphans, pruned on next save)
+  - [x] Orphan pruning: vectors no current chunk references are dropped on save
+  - [x] Manifest `path -> { mtimeMs, size, ino, contentHash }` from `fs.stat` (never the frontmatter
         `mtime`, which stays for decay/date filters only), persisted with the index
-  - [ ] `meta.json` gains `schemaVersion`, `chunker` params, `ignoreGlobs` hash, `generation`;
+  - [x] `meta.json` gains `schemaVersion`, `chunker` params, `ignoreGlobs` hash, `generation` (+ `files`: size/mtime of each
+        commit file, which is how a mixed commit is detected; files keep their old formats);
         mismatched `schemaVersion`/`chunker`/`ignoreGlobs` discards parsed docs but keeps vectors;
         mismatched `model`/`dimensions` discards vectors too
-  - [ ] `reconcile()` in `src/core/reconcile.ts`: walk + stat with the shared ignore globs (one config
+  - [x] `reconcile()` in `src/core/reconcile.ts`: walk + stat with the shared ignore globs (one config
         with Phase 4's `path_class.exclude`), diff against the manifest: stat same -> skip; stat
         changed + hash same -> manifest only; hash changed -> re-parse that file; new -> parse;
         gone -> drop doc, chunks, vectors, edges
-  - [ ] Incremental apply: text search per doc, graph edges for changed docs and affected tags only,
+  - [x] Incremental apply: text search per doc, graph edges for changed docs and affected tags only,
         HNSW `markDelete`/`addPoint` (or rebuild from cached vectors, no re-embedding), embed only
-        unseen chunk hashes
-  - [ ] Startup: load + validate the cache (all files same `generation`), serve immediately with
+        unseen chunk hashes (graph is rebuilt whole: 11 ms at 1k docs; HNSW is incremental: rebuild is 1020 ms at 5k vectors,
+        compacted by rebuild past 30% deleted)
+  - [x] Startup: load + validate the cache (all files same `generation`), serve immediately with
         `stale: true` on responses until the first reconcile finishes; no `indexAll()` on a warm cache
         (`tryLoadCachedIndex`, `src/mcp/context.ts:130-171`)
-  - [ ] Lazy reconcile before every search/read/graph tool, throttled to once per 2 s; serialized,
+  - [x] Lazy reconcile before every search/read/graph tool, throttled to once per 2 s; serialized,
         a call arriving mid-reconcile awaits it; a change arriving mid-reconcile is caught by the
         next call (fixes the dropped-edit bug at `backgroundIndex`, `src/mcp/context.ts:270`)
-  - [ ] Atomic, debounced persistence: every file written to a temp name under a new `generation`,
+  - [x] Atomic, debounced persistence: every file written to a temp name under a new `generation`,
         renamed into place, `meta.json` last as the commit marker; one writer per index dir via a
         lockfile (stale-lock takeover by pid check), other processes reload when `meta.json` changes
-  - [ ] Remove the resident watcher from `src/mcp/server.ts:66-71`; `--no-watch` stays accepted as a
+  - [x] Remove the resident watcher from `src/mcp/server.ts:66-71`; `--no-watch` stays accepted as a
         deprecated no-op; `Watcher` stays exported from `src/core/index.ts` (public API) marked
         deprecated, for removal in v2.0.0
-  - [ ] CLI/hook search path (`src/cli/search.ts`) checks `generation` + `schemaVersion` before
+  - [x] CLI/hook search path (`src/cli/search.ts`) checks `generation` + `schemaVersion` before
         answering from `docs.cache.json`; read-only, never writes the index
-  - [ ] `reindex` tool and `--reindex` keep forcing a full rebuild
-  - [ ] Re-run eval + freshness audit, record numbers
+  - [x] `reindex` tool and `--reindex` keep forcing a full rebuild
+  - [x] Re-run eval + freshness audit, record numbers
 - [ ] Phase 4: Graph and ranking bug fixes (issue Phase 1)
   - [ ] Markdown links: `extractMarkdownLinks` in `src/core/indexer.ts` (resolve relative to the
         source file, strip `#anchor` and `?query`, skip `http(s):`/`mailto:`/images, decode `%20`);
@@ -246,11 +249,28 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Plans are in `.gitignore` (`.planning/`) but tracked plans are force-added (`git add -f`), as the
   existing plans are.
 
+- Phase 3 measured Key Question 5: HNSW rebuild from cached vectors is 87 ms / 1,020 ms / 3,004 ms at 1k / 5k / 10k
+  vectors (384-d), over the 200 ms bar, while 50 markDelete+addPoint edits cost 6 / 17 / 26 ms. So the index updates
+  in place (`VectorIndex.addChunks` / `removeDoc`) and is rebuilt from cached vectors only when more than 30% of nodes are deleted.
+- Phase 3 commit consistency: `meta.json.files` holds size + mtime of the five commit files (hnsw.bin, hnsw-meta.json, graph.json,
+  docs.cache.json, manifest.json) and a reader accepts the index only if all match; `embeddings.json` is outside the commit set
+  (content-addressed, any version is valid). This keeps every file in its old format (judge-pack, stale-audit and the e2e test read them)
+  instead of stamping a generation into each file.
+- Phase 3 unified full index and reconcile: `fullIndex` is `reconcile` against an empty manifest, so one code path parses,
+  embeds unseen chunk hashes, and updates the index. `--reindex` passes `forceReindex`; `createServer({waitForReady})` on a warm cache now reconciles.
+- Phase 3 `stale: true` is `_meta.stale` on tool results (search results are arrays, so a body field would change their shape) and `stale` in `get_stats`.
+- Phase 3 tools that write notes (write, patch, log, metadata, contract, session groups) lift the 2 s reconcile throttle so a search right after a write sees it.
+- Phase 3 `**/node_modules/**` is now an ignore glob for the full index too (only the watcher ignored it before); the list is one constant (`IGNORE_GLOBS`) shared by `indexAll` and `reconcile`, hashed into `meta.ignoreGlobs`.
+- Several Phase 11 acceptance tests were written with Phase 3 in `test/integration/freshness.test.ts` (edit mid-session, touch-all, warm start, edit while down, schemaVersion bump, mixed commit, zero inotify, two processes, edit during reconcile); Phase 11 should re-check and tick them, not rewrite them.
+
 ## Errors Encountered
 - Phase 2: `test/unit/skill-eval.test.ts` concurrency case ("never exceed 5 live claude processes") and one other timing test failed in 2 of 3 full runs under load, passed alone and on the 3rd full run. Unrelated to this work (process-timing based); not touched.
+- Phase 3: `hook-failure.test.ts` "Jev error or hang" (3209 ms vs a 3000 ms budget) failed once under the full-suite load, passed alone. Unrelated (hook process timing).
+- Phase 3: sorting the file listing changed which of two equal-length graph paths wins, so the `graph_path` golden snapshot (project-overview -> user-service) now goes via api-gateway instead of microservices; both are shortest paths. Snapshot updated.
+- Phase 3: reconcile parsed files in completion order, so HNSW insertion order varied and one `docs-eval` run failed once (approximate-NN tie flips); fixed by keeping `plan.parse` order. 6 consecutive eval runs green after.
 
 ## Status
-**Currently in Phase 3** (index freshness). Phase 2 eval harness done; baseline in notes.md and `test/retrieval-eval/baseline.json`.
+**Currently in Phase 4** (graph and ranking bug fixes). Phase 3 (pull-based reconcile, atomic generation commit) done; numbers in notes.md "Phase 3".
 
 ---
 

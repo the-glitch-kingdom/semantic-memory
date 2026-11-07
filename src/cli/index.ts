@@ -627,7 +627,7 @@ program
   .option("--workers <n>", "Number of worker threads for parallel embedding", parseInt)
   .option("--batch-size <n>", "Texts per ONNX forward pass (default: 8)", parseInt)
   .option("--no-quantized", "Use full-precision model instead of quantized (slower, slightly higher quality)")
-  .option("--no-watch", "Disable file watcher")
+  .option("--no-watch", "Deprecated no-op: nothing watches the tree any more, the index is reconciled on demand")
   .action(async (opts) => {
     const notesPath = resolve(opts.notes);
 
@@ -650,8 +650,8 @@ program
     if (opts.reindex) {
       const { createServer } = await import("../mcp/server.js");
       await createServer(notesPath, {
-        watch: false,
         waitForReady: true,
+        forceReindex: true,
         model: opts.model,
         workers: opts.workers,
         batchSize: opts.batchSize,
@@ -668,7 +668,6 @@ program
     // Default: start MCP server on stdio
     const { startServer } = await import("../mcp/server.js");
     await startServer(notesPath, {
-      watch: opts.watch,
       waitForReady: opts.waitForReady,
       model: opts.model,
       workers: opts.workers,

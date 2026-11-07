@@ -12,6 +12,22 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
+/** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
+export const INDEX_SCHEMA_VERSION = 1;
+export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
+/** One ignore list for the full index and for reconcile, so they always see the same files. */
+export const IGNORE_GLOBS = ["**/node_modules/**"];
+
+// follow: true descends into symlinked directories. Without this, users
+// who symlink an external folder into their vault (a common pattern for
+// sharing notes across projects) get silently empty indexing for the
+// symlinked content. glob does cycle detection via visited inodes so
+// circular symlinks are handled safely.
+// Sorted: glob's order depends on I/O timing, and HNSW results depend on insertion order.
+export async function listMarkdown(notesPath: string): Promise<string[]> {
+  return (await glob("**/*.md", { cwd: notesPath, follow: true, ignore: IGNORE_GLOBS })).sort();
+}
+
 // Invalid YAML (e.g. an unquoted colon in a value) keeps the body searchable with empty frontmatter
 function parseFrontmatter(raw: string, file: string): { data: Record<string, unknown>; content: string } {
   try {
@@ -32,12 +48,7 @@ export class Indexer {
   }
 
   async indexAll(): Promise<IndexedDocument[]> {
-    // follow: true descends into symlinked directories. Without this, users
-    // who symlink an external folder into their vault (a common pattern for
-    // sharing notes across projects) get silently empty indexing for the
-    // symlinked content. glob does cycle detection via visited inodes so
-    // circular symlinks are handled safely.
-    const files = await glob("**/*.md", { cwd: this.notesPath, follow: true });
+    const files = await listMarkdown(this.notesPath);
     // One unreadable file must not take the whole corpus down with it
     const docs = await Promise.all(
       files.map((file) =>

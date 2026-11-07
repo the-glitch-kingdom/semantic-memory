@@ -24,6 +24,7 @@ export function registerSystemTools(server: McpServer, ctx: ServerContext): void
         graphEdges: graphStats.totalEdges,
         indexSize: 0,
         lastIndexed: indexState === "ready" ? new Date().toISOString() : null,
+        ...(ctx.isStale() && { stale: true }),
         indexState,
         indexProgress: indexState === "indexing" ? indexProgress : undefined,
       };

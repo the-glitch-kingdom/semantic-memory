@@ -477,7 +477,10 @@ export class Embedder {
     for (const [key, vec] of embeddings) {
       entries.push({ key, data: Array.from(vec) });
     }
-    await writeFile(join(indexPath, "embeddings.json"), JSON.stringify(entries));
+    // temp + rename: a reader (or a crash) never sees half a file
+    const tmp = join(indexPath, `embeddings.json.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`);
+    await writeFile(tmp, JSON.stringify(entries));
+    await rename(tmp, join(indexPath, "embeddings.json"));
   }
 
   async loadEmbeddings(

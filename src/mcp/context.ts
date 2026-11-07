@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
 import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
@@ -12,11 +11,18 @@ import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { computeDecay, loadDecayConfig, normalizeVerifiedDate, type DecayConfig } from "../core/decay.js";
 import { pathClassMultiplier, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
+import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
+import { commitIndex, filesMatchMeta, metaMtime, parserMatches, readMeta } from "../core/index-store.js";
 import type { IndexedDocument, IndexState } from "../core/types.js";
 
 export interface ServerOptions {
+  /** @deprecated No effect: the index is reconciled on demand, nothing watches the tree. Kept so `--no-watch` keeps working. */
   watch?: boolean;
   waitForReady?: boolean;
+  /** With waitForReady: rebuild everything instead of reconciling a warm cache (`--reindex`). */
+  forceReindex?: boolean;
+  /** Minimum gap between on-demand reconciles. Default 2000. */
+  reconcileThrottleMs?: number;
   model?: string;
   workers?: number;
   batchSize?: number;
@@ -70,6 +76,16 @@ export interface ServerContext {
   tryLoadCachedIndex(): Promise<boolean>;
   fullIndex(): Promise<void>;
   backgroundIndex(): void;
+  /** Reconcile with the tree before a tool answers (throttled, serialized). */
+  ensureFresh(): Promise<void>;
+  /** Make the next ensureFresh() reconcile regardless of the throttle (after a write). */
+  invalidate(): void;
+  /** Reconcile now, ignoring the throttle. */
+  reconcileNow(): Promise<void>;
+  /** True from a warm load until the first reconcile has checked the cache against the tree. */
+  isStale(): boolean;
+  /** Write any pending incremental change to disk now. */
+  flushIndex(): Promise<void>;
   isIndexingInFlight(): boolean;
 
   textResponse(text: string): { content: { type: "text"; text: string }[] };
@@ -127,143 +143,272 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   let indexProgress = { embedded: 0, total: 0 };
   let indexingPromise: Promise<void> | null = null;
 
+  // Pull-based freshness: no watcher. The manifest says what the index last saw of each file;
+  // reconcile() diffs it against the tree before a tool answers.
+  let manifest: Manifest = {};
+  let generation = 0; // of the commit this process last loaded or wrote
+  let lastMetaMtime = 0; // meta.json as we last saw it; a different value means another process committed
+  let stale = false; // loaded from disk, first reconcile not finished
+  let dirty = false;
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let fullIndexing = 0;
+  let reconcileInFlight: Promise<void> | null = null;
+  let lastReconcileAt = 0;
+  const throttleMs = options.reconcileThrottleMs ?? 2000;
+  const SAVE_DEBOUNCE_MS = 2000;
+  const SAVE_INTERVAL = 100; // chunks embedded between partial saves of a long build
+  const COMPACT_RATIO = 0.3;
+
+  // chunk text -> embedding, loaded on first need (an unchanged warm start never reads it)
+  let vectors = new Map<string, Float32Array>();
+  let vectorsLoaded = false;
+  let vectorsDirty = false;
+  const vectorKey = (text: string) => sha256(`${embedder.getModel()}\0${text}`);
+  async function getVectors() {
+    if (!vectorsLoaded) {
+      vectors = await embedder.loadEmbeddings(indexPath);
+      vectorsLoaded = true;
+    }
+    return vectors;
+  }
+
+  // reconcile, full index and save all mutate the same state: one at a time
+  let chain: Promise<unknown> = Promise.resolve();
+  const serial = <T>(fn: () => Promise<T>): Promise<T> => {
+    const run = chain.then(fn);
+    chain = run.catch(() => {});
+    return run;
+  };
+
+  function setDocuments(docs: IndexedDocument[]) {
+    documents = docs;
+    docByPath = new Map(docs.map((d) => [d.path, d]));
+    textSearch.setDocuments(docs);
+    graph.buildFromDocuments(docs);
+  }
+
+  /** Adopt what another process (or an earlier run) committed. False leaves the current state alone. */
+  async function loadFromDisk(): Promise<boolean> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const meta = await readMeta(indexPath);
+      if (!meta || !parserMatches(meta)) return false;
+      if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions()) {
+        process.stderr.write(`Model changed (${meta.model} → ${embedder.getModel()}), forcing reindex\n`);
+        return false;
+      }
+      if (!(await filesMatchMeta(indexPath, meta))) {
+        await new Promise((r) => setTimeout(r, 100)); // a commit may be mid-rename
+        continue;
+      }
+      const tempVector = new VectorIndex(embedder.getDimensions());
+      const docs = await indexer.loadDocsCache(indexPath);
+      let loadedManifest: Manifest | null = null;
+      try {
+        loadedManifest = JSON.parse(await readFile(join(indexPath, "manifest.json"), "utf-8"));
+      } catch {
+        /* handled below */
+      }
+      if (!docs || !loadedManifest || !(await tempVector.load(indexPath))) return false;
+      if ((await readMeta(indexPath))?.generation !== meta.generation) continue; // committed under us: read again
+
+      manifest = loadedManifest;
+      vectorIndex = tempVector;
+      generation = meta.generation;
+      setDocuments(docs);
+      return true;
+    }
+    return false;
+  }
+
   async function tryLoadCachedIndex(): Promise<boolean> {
     try {
       indexState = "loading";
       await embedder.init();
-
-      const metaPath = join(indexPath, "meta.json");
-      let meta: { model?: string; totalChunks?: number; dimensions?: number; indexedAt?: string } | null = null;
-      if (existsSync(metaPath)) {
-        try {
-          meta = JSON.parse(await readFile(metaPath, "utf-8"));
-          if (meta?.model && meta.model !== embedder.getModel()) {
-            process.stderr.write(`Model changed (${meta.model} → ${embedder.getModel()}), forcing reindex\n`);
-            return false;
-          }
-        } catch {
-          meta = null;
-        }
-      }
-
-      const tempVector = new VectorIndex(embedder.getDimensions());
-      const vectorLoaded = await tempVector.load(indexPath);
-      if (!vectorLoaded) return false;
-
-      const savedEmbeddings = await embedder.loadEmbeddings(indexPath);
-      if (savedEmbeddings.size === 0) return false;
-
-      const graphLoaded = await graph.load(indexPath);
-      if (!graphLoaded) return false;
-
-      documents = await indexer.indexAll();
-      docByPath = new Map(documents.map((d) => [d.path, d]));
-      textSearch.setDocuments(documents);
-
-      vectorIndex = tempVector;
-
-      const currentChunks = documents.reduce((n, d) => n + d.chunks.length, 0);
-      const fresh = meta?.totalChunks !== undefined && meta.totalChunks === currentChunks;
-      indexState = fresh ? "ready" : "stale";
+      lastMetaMtime = await metaMtime(indexPath);
+      if (!(await loadFromDisk())) return false;
+      stale = true; // served now, checked against the tree by the first reconcile
+      indexState = "stale";
       return true;
     } catch {
       return false;
     }
   }
 
-  async function fullIndex() {
-    indexState = "indexing";
-    indexProgress = { embedded: 0, total: 0 };
-
-    await embedder.init();
-    const newDocs = await indexer.indexAll();
-
-    const totalChunks = newDocs.reduce((n, d) => n + d.chunks.length, 0);
-    indexProgress = { embedded: 0, total: totalChunks };
-
-    const newTextSearch = new TextSearch();
-    newTextSearch.setDocuments(newDocs);
-
-    const newGraph = new GraphBuilder();
-    newGraph.buildFromDocuments(newDocs);
-
-    const savedEmbeddings = await embedder.loadEmbeddings(indexPath);
-
-    const SAVE_INTERVAL = 100;
-    const allChunks: { embedding: Float32Array; docPath: string; chunkIndex: number; text: string }[] = [];
-    const cumulativeEmbeddings = new Map<string, Float32Array>(savedEmbeddings);
-
-    type PendingChunk = { text: string; docPath: string; chunkIndex: number };
-    const pendingChunks: PendingChunk[] = [];
-
-    for (const doc of newDocs) {
-      for (let i = 0; i < doc.chunks.length; i++) {
-        const key = `${doc.path}:${i}`;
-        const existing = cumulativeEmbeddings.get(key);
-        if (existing) {
-          allChunks.push({ embedding: existing, docPath: doc.path, chunkIndex: i, text: doc.chunks[i] });
-        } else {
-          pendingChunks.push({ text: doc.chunks[i], docPath: doc.path, chunkIndex: i });
-        }
+  /**
+   * Bring the index in line with the tree. `rebuild` ignores the loaded state and re-parses every
+   * file (vectors are still reused by chunk text), swapping the result in when done.
+   */
+  async function sync(rebuild = false): Promise<void> {
+    if (!rebuild) {
+      const m = await metaMtime(indexPath);
+      if (m && m !== lastMetaMtime) {
+        lastMetaMtime = m;
+        await loadFromDisk().catch(() => false);
       }
     }
 
-    indexProgress = { embedded: allChunks.length, total: totalChunks };
+    const plan = await reconcile(notesPath, rebuild ? {} : manifest);
+    if (!plan.changed && !rebuild) {
+      if (stale || indexState === "stale") {
+        stale = false;
+        indexState = "ready";
+      }
+      return;
+    }
 
-    if (pendingChunks.length > 0) {
-      let chunksSinceLastSave = 0;
-      const alreadyEmbedded = allChunks.length;
+    // plan.parse order, not completion order: HNSW is order-sensitive and results should be reproducible
+    const parsed = (
+      await Promise.all(
+        plan.parse.map(async (file) => {
+          try {
+            return await indexer.indexFile(join(notesPath, file), file);
+          } catch (err: any) {
+            process.stderr.write(`Skipping ${file}: ${err?.message ?? err}\n`);
+            // keep what we knew so the file is retried on the next pass
+            const prev = rebuild ? undefined : manifest[file];
+            if (prev) plan.manifest[file] = prev;
+            else delete plan.manifest[file];
+            return null;
+          }
+        })
+      )
+    ).filter((d): d is IndexedDocument => d !== null);
 
+    const cache = await getVectors();
+    const unseen = new Map<string, string>();
+    for (const doc of parsed) for (const text of doc.chunks) if (!cache.has(vectorKey(text))) unseen.set(vectorKey(text), text);
+
+    const totalChunks = parsed.reduce((n, d) => n + d.chunks.length, 0);
+    const toEmbed = [...unseen.entries()];
+    indexProgress = { embedded: totalChunks - toEmbed.length, total: totalChunks };
+    if (toEmbed.length > 0) {
+      await embedder.init();
+      let sinceSave = 0;
       await embedder.embedBatch(
-        pendingChunks.map((c) => c.text),
+        toEmbed.map(([, text]) => text),
         async (done, _total, embeddings) => {
           if (!embeddings) return;
-          const batchStart = done - embeddings.length;
-          for (let i = 0; i < embeddings.length; i++) {
-            const { docPath, chunkIndex, text } = pendingChunks[batchStart + i];
-            const key = `${docPath}:${chunkIndex}`;
-            cumulativeEmbeddings.set(key, embeddings[i]);
-            allChunks.push({ embedding: embeddings[i], docPath, chunkIndex, text });
-            chunksSinceLastSave++;
-          }
-
-          const current = alreadyEmbedded + done;
-          indexProgress = { embedded: current, total: totalChunks };
-          options.onProgress?.(current, totalChunks);
-
-          if (chunksSinceLastSave >= SAVE_INTERVAL) {
-            await embedder.saveEmbeddings(cumulativeEmbeddings, indexPath);
-            chunksSinceLastSave = 0;
+          const start = done - embeddings.length;
+          embeddings.forEach((e, i) => cache.set(toEmbed[start + i][0], e));
+          vectorsDirty = true;
+          sinceSave += embeddings.length;
+          indexProgress = { embedded: totalChunks - toEmbed.length + done, total: totalChunks };
+          options.onProgress?.(indexProgress.embedded, totalChunks);
+          if (sinceSave >= SAVE_INTERVAL) {
+            await embedder.saveEmbeddings(cache, indexPath); // a killed long build resumes from here
+            sinceSave = 0;
           }
         }
       );
     }
 
-    const newVector = new VectorIndex(embedder.getDimensions());
-    newVector.build(
-      allChunks.map((c) => c.embedding),
-      allChunks.map((c) => ({ docPath: c.docPath, chunkIndex: c.chunkIndex, text: c.text }))
-    );
+    // From here on everything is synchronous: a search never sees a half-applied change.
+    const byPath = new Map(rebuild ? [] : documents.map((d) => [d.path, d] as const));
+    const vec = rebuild || !vectorIndex ? new VectorIndex(embedder.getDimensions()) : vectorIndex;
+    for (const path of [...plan.gone, ...parsed.map((d) => d.path)]) {
+      vec.removeDoc(path);
+      byPath.delete(path);
+    }
+    for (const doc of parsed) {
+      byPath.set(doc.path, doc);
+      vec.addChunks(
+        doc.chunks.map((t) => cache.get(vectorKey(t))!),
+        doc.chunks.map((text, chunkIndex) => ({ docPath: doc.path, chunkIndex, text }))
+      );
+    }
+    const docs = [...byPath.values()];
+    let next = vec;
+    if (vec.deletedRatio() > COMPACT_RATIO) {
+      // markDelete leaves the node in the graph; past this ratio a rebuild from cached vectors is cheaper than carrying them
+      const chunks = docs.flatMap((d) => d.chunks.map((text, chunkIndex) => ({ docPath: d.path, chunkIndex, text })));
+      if (chunks.every((c) => cache.has(vectorKey(c.text)))) {
+        next = new VectorIndex(embedder.getDimensions());
+        next.build(chunks.map((c) => cache.get(vectorKey(c.text))!), chunks);
+      }
+    }
 
-    documents = newDocs;
-    docByPath = new Map(documents.map((d) => [d.path, d]));
-    textSearch.setDocuments(newDocs);
-    graph.buildFromDocuments(newDocs);
-    vectorIndex = newVector;
+    manifest = plan.manifest;
+    vectorIndex = next;
+    setDocuments(docs);
+    stale = false;
     indexState = "ready";
+    dirty = true;
+    if (!rebuild) scheduleSave();
+  }
 
-    await Promise.all([
-      graph.save(indexPath),
-      newVector.save(indexPath),
-      embedder.saveEmbeddings(cumulativeEmbeddings, indexPath),
-      indexer.saveDocsCache(indexPath, newDocs),
-      writeFile(join(indexPath, "meta.json"), JSON.stringify({
+  function scheduleSave(delay = SAVE_DEBOUNCE_MS) {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      serial(save).catch((err) => process.stderr.write(`Index save error: ${err?.message ?? err}\n`));
+    }, delay);
+    saveTimer.unref();
+  }
+
+  /** Atomic save (see commitIndex). Runs inside `serial`, so the snapshot cannot change mid-write. */
+  async function save(): Promise<void> {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    if (!dirty) return;
+
+    if (vectorsLoaded) {
+      const live = new Set(documents.flatMap((d) => d.chunks.map(vectorKey)));
+      for (const key of vectors.keys()) {
+        if (!live.has(key)) {
+          vectors.delete(key);
+          vectorsDirty = true;
+        }
+      }
+      if (vectorsDirty) await embedder.saveEmbeddings(vectors, indexPath);
+      vectorsDirty = false;
+    }
+
+    const docs = documents;
+    const meta = await commitIndex(
+      indexPath,
+      generation,
+      {
         model: embedder.getModel(),
         dimensions: embedder.getDimensions(),
-        totalChunks: allChunks.length,
-        indexedAt: new Date().toISOString(),
-      })),
-    ]);
+        totalChunks: docs.reduce((n, d) => n + d.chunks.length, 0),
+      },
+      async (stage) => {
+        await Promise.all([
+          graph.save(stage),
+          vectorIndex?.save(stage),
+          indexer.saveDocsCache(stage, docs),
+          writeFile(join(stage, "manifest.json"), JSON.stringify(manifest)),
+        ]);
+      }
+    );
+    if (meta) {
+      generation = meta.generation;
+      lastMetaMtime = await metaMtime(indexPath);
+      dirty = false;
+    } else {
+      // another process holds the lock or committed first: retry later (the next sync adopts their commit and re-diffs)
+      scheduleSave(5_000);
+    }
+  }
+
+  /** Write any pending change now (reindex, tests). */
+  const flushIndex = () => serial(save);
+
+  function fullIndex(): Promise<void> {
+    fullIndexing++;
+    return serial(async () => {
+      indexState = "indexing";
+      indexProgress = { embedded: 0, total: 0 };
+      await embedder.init();
+      await sync(true);
+      // a forced rebuild replaces whatever is on disk (unusable or stale), so it commits over the current generation
+      generation = (await readMeta(indexPath))?.generation ?? 0;
+      await save();
+    }).finally(() => {
+      fullIndexing--;
+    });
   }
 
   function backgroundIndex() {
@@ -276,6 +421,27 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       .finally(() => {
         indexingPromise = null;
       });
+  }
+
+  function runReconcile(): Promise<void> {
+    if (!reconcileInFlight) {
+      reconcileInFlight = serial(() => sync())
+        .catch((err) => void process.stderr.write(`Reconcile error: ${err?.message ?? err}\n`))
+        .finally(() => {
+          reconcileInFlight = null;
+          lastReconcileAt = Date.now();
+        });
+    }
+    return reconcileInFlight;
+  }
+
+  /** Called before every tool. Throttled; a call arriving mid-reconcile awaits it; the first one after a warm load does not wait. */
+  async function ensureFresh(): Promise<void> {
+    if (indexState === "loading" || indexState === "empty" || fullIndexing > 0) return;
+    if (reconcileInFlight) return stale ? undefined : reconcileInFlight;
+    if (Date.now() - lastReconcileAt < throttleMs) return;
+    const run = runReconcile();
+    if (!stale) await run;
   }
 
   function textResponse(text: string) {
@@ -424,6 +590,13 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     tryLoadCachedIndex,
     fullIndex,
     backgroundIndex,
+    ensureFresh,
+    invalidate: () => {
+      lastReconcileAt = 0;
+    },
+    reconcileNow: runReconcile,
+    isStale: () => stale,
+    flushIndex,
     isIndexingInFlight: () => indexingPromise !== null,
     textResponse,
     indexingMessage,

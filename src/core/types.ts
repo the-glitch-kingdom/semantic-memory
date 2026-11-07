@@ -75,6 +75,7 @@ export interface VaultStats {
   graphEdges: number;
   indexSize: number;
   lastIndexed: string | null;
+  stale?: boolean;
   indexState: IndexState;
   indexProgress?: { embedded: number; total: number };
 }

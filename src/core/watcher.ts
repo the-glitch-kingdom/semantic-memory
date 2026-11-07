@@ -9,6 +9,11 @@ export interface WatcherEvents {
 const IGNORED_DIRS = /(^|[\\/])(node_modules|\.semantic-sidekick-index|\.git)([\\/]|$)/;
 const isMarkdown = (path: string) => path.endsWith(".md");
 
+/**
+ * @deprecated The server no longer watches the tree: it reconciles the index on demand (see reconcile.ts).
+ * Kept exported for API compatibility; one inotify watch per file and directory is why it was dropped.
+ * Removal is planned for v2.0.0.
+ */
 export class Watcher extends EventEmitter {
   private notesPath: string;
   private fsWatcher: FSWatcher | null = null;

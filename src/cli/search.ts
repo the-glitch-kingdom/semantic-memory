@@ -6,6 +6,7 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
+import { readConsistentMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
 export interface SearchCliOptions {
@@ -46,9 +47,10 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   const indexer = new Indexer(notesPath);
   const indexPath = join(notesPath, ".semantic-sidekick-index");
 
-  // Prefer the parsed-doc cache written by reindex — avoids re-parsing 500+ files
-  // on every hook call. Falls back to a full parse if the cache is missing.
-  let documents = existsSync(indexPath) ? await indexer.loadDocsCache(indexPath) : null;
+  // Prefer the parsed-doc cache the server committed — avoids re-parsing 500+ files on every hook call.
+  // Read-only: a cache from another parser version or caught mid-commit is not used, and nothing is written here.
+  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath) : null;
+  let documents = committed ? await indexer.loadDocsCache(indexPath) : null;
   if (!documents) {
     documents = await indexer.indexAll();
   }
@@ -64,6 +66,9 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   // Hybrid path: load cached index, embed query, search + graph rerank.
   if (!existsSync(indexPath)) {
     throw new Error(`index not built at ${indexPath} — run: semantic-sidekick --notes ${notesPath} --reindex`);
+  }
+  if (!committed) {
+    throw new Error(`index at ${indexPath} is being rewritten or was built by another version — retry, or run --reindex`);
   }
 
   const embedder = new Embedder();

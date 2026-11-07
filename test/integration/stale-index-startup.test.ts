@@ -7,13 +7,15 @@ import { createServer } from "../../src/mcp/server.js";
 import { createTempVault, cleanupTempDir } from "../setup.js";
 
 // Issue #29 bug 1: a cached index that loads but no longer matches the notes on disk
-// ("stale") was served forever; startup only reindexed when the cache failed to load.
+// ("stale") was served forever. Since v1.9 the first reconcile after a warm load diffs the tree
+// against the saved manifest and re-embeds only what changed (the full rebuild is for a model or
+// parser change); the commit lands on a 2 s debounce.
 
 const metaPath = (dir: string) => join(dir, ".semantic-sidekick-index", "meta.json");
 const readMeta = async (dir: string) => JSON.parse(await readFile(metaPath(dir), "utf-8"));
 
 async function connect(dir: string) {
-  const server = await createServer(dir, { watch: false });
+  const server = await createServer(dir);
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
   const client = new Client({ name: "test-client", version: "1.0.0" });
@@ -41,7 +43,7 @@ describe("startup with a cached index", () => {
   beforeEach(async () => {
     tempDir = await createTempVault();
     // build and persist the cache once
-    await createServer(tempDir, { watch: false, waitForReady: true });
+    await createServer(tempDir, { waitForReady: true });
   }, 180_000);
 
   afterEach(async () => {
@@ -50,7 +52,7 @@ describe("startup with a cached index", () => {
     await cleanupTempDir(tempDir);
   });
 
-  it("rebuilds a stale cache in the background", async () => {
+  it("reconciles a stale cache in the background, without a full rebuild", async () => {
     const before = await readMeta(tempDir);
     await writeFile(
       join(tempDir, "added-after-index.md"),
