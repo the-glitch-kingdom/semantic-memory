@@ -23,10 +23,16 @@
 {"id":"m03","tier":"multi","q":"Why must long work in a session-end hook be started detached, and how is that done?","facets":["1\\.5 s","detached: true"]}
 {"id":"m04","tier":"multi","q":"How is the decay multiplier computed and what stops a note reaching zero?","facets":["0\\.5 \\^ \\(age_days","floor: 0\\.1"]}
 {"id":"m05","tier":"multi","q":"How many sessions can be open at once, and what happens to one left idle for a day?","facets":["one session per project","state: \"stale\""]}
-{"id":"m06","tier":"multi","q":"What do I check before an npm publish, and why can npx serve an old version afterwards?","facets":["Sync the CLI version","npx"]}
+{"id":"m06","tier":"multi","q":"What do I check before an npm publish, and why can npx serve an old version afterwards?","facets":["Every release changes all five","clear stale npx caches"]}
 {"id":"n01","tier":"negative","q":"How do I configure single sign-on with Okta for the web dashboard?"}
 {"id":"n02","tier":"negative","q":"Which Helm chart values deploy this to Kubernetes?"}
 {"id":"n03","tier":"negative","q":"How do I migrate the vector index into PostgreSQL with pgvector?"}
 {"id":"n04","tier":"negative","q":"What is the recipe for a sourdough starter?"}
 {"id":"n05","tier":"negative","q":"How do I run embedding inference on a CUDA GPU?"}
 {"id":"n06","tier":"negative","q":"What is the refund policy for the paid Stripe plan?"}
+{"id":"n07","tier":"negative","q":"How do I back up a Redis cache?"}
+{"id":"n08","tier":"negative","q":"What is the support ticket SLA?"}
+{"id":"n09","tier":"negative","q":"How do I set up Grafana dashboards for latency?"}
+{"id":"n10","tier":"negative","q":"How do I localize the CLI into German?"}
+{"id":"n11","tier":"negative","q":"Which Docker base image does the production container use?"}
+{"id":"n12","tier":"negative","q":"How do I enable two-factor login for the web console?"}

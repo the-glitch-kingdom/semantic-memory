@@ -16,23 +16,22 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
   - [x] Measure HNSW recall at default vs raised `ef` on real vectors (test vault, 2,764 vectors)
   - [x] Find why the v1.9.0 eval missed the regression (notes.md "Why the eval missed it")
   - [x] Commit the archive move of `.planning/retrieval-graph-quality/` carried over from main
-- [ ] Phase 2: Eval that catches this class of regression
-  - [ ] Held-out split: a NEW question set written before any ranking change in this plan, our own
+- [x] Phase 2: Eval that catches this class of regression
+  - [x] Held-out split: a NEW question set written before any ranking change in this plan, our own
         questions (none from the #41/#43 benchmarks), symptom-heavy like real usage: >= 20 answerable
         (>= 10 symptom/paraphrase, keyword, multi-doc) + >= 8 negatives on `test/fixtures/docs-vault/`,
         in `test/retrieval-eval/golden-docs-heldout.jsonl`. Tuning in later phases uses ONLY the
         existing `golden-docs.jsonl` (train); held-out is reported, never tuned on
-  - [ ] Real-corpus held-out set against this repo's `.documentation/` (>= 20 answerable, symptom-heavy,
+  - [x] Real-corpus held-out set against this repo's `.documentation/` (>= 20 answerable, symptom-heavy,
         >= 8 negatives) in `test/retrieval-eval/real-corpus-heldout.jsonl`, written now, same rule
-  - [ ] More negatives on the train split too (total >= 12) so abstention thresholds are not thin
-  - [ ] Gates in `test/retrieval-eval/docs-eval.test.ts` + `baseline.json`: hybrid @1 >= semantic @1 - 1
+  - [x] More negatives on the train split too (total >= 12) so abstention thresholds are not thin
+  - [x] Gates in `test/retrieval-eval/docs-eval.test.ts` + `baseline.json`: hybrid @1 >= semantic @1 - 1
         on every split; paraphrase-tier hybrid @1 >= semantic paraphrase @1; held-out @1 floor
-  - [ ] HNSW recall check: exact cosine top-k vs `VectorIndex.search` on the eval queries, in the eval
+  - [x] HNSW recall check: exact cosine top-k vs `VectorIndex.search` on the eval queries, in the eval
         (gate >= 0.97) and in `scripts/retrieval-eval/stale-audit.mjs`
-  - [ ] Record the v1.9.0 baseline for every split and arm in notes.md (expect hybrid < semantic on
-        symptom questions; if the fixture does not reproduce it, add fixture docs whose incidental
-        words collide with symptom queries until it does, and say so)
-  - [ ] Wire the new tests into `npm run eval`
+  - [x] Record the v1.9.0 baseline for every split and arm in notes.md (fixture held-out reproduces it: hybrid 13/23 vs
+        semantic 17/23; no collision docs needed)
+  - [x] Wire the new tests into `npm run eval` (`vitest run test/retrieval-eval` picks up `real-corpus-eval.test.ts`, `gates.ts` is shared by both)
 - [ ] Phase 3: Index hygiene, HNSW accuracy and upgrade migration
   - [ ] `setEf(Math.max(100, k))` after `initIndex` and after `readIndexSync` (`src/core/vector.ts:42,79,123`);
         unit test that a search after load and after incremental `addChunks` uses the raised ef
@@ -138,13 +137,21 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
 - Every phase verifies a box in code before ticking it: the v1.9.0 plan ticked the shared-exclude item
   without doing it, which caused root cause 3 here.
 - `setEf` over brute-force exact search unless recall misses: smallest change.
+- Phase 2: gates v1.9.0 fails run as `it.fails` (expected failures) so the suite stays green and flips red when fixed: fixture held-out
+  hybrid-vs-semantic @1 and paraphrase @1 (Phase 4 flips them), real-corpus HNSW recall (Phase 3 flips it). `KNOWN` in `docs-eval.test.ts` /
+  `real-corpus-eval.test.ts` and the `it.fails` recall tests are the switches; remove them in the phase that fixes each.
+- Phase 2: real-corpus eval runs in-process (`real-corpus-eval.test.ts`, shared `harness.ts`) over a copy of `.documentation/`; the production-launch
+  runner `scripts/retrieval-eval/real-corpus.mjs` takes `--questions` for the held-out file and is used for Phase 9's before/after.
 - Plans are force-added (`git add -f`); `.planning/` is gitignored but tracked.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: train case `m06` in `real-corpus.jsonl` was unanswerable from `.documentation/` (its facet "Sync the CLI version" lives only in
+  `.claude/rules/operational-runbook.md`), so it counted as a miss for every arm since v1.9.0. Re-pointed to facets present in
+  `deployment/release-process.md`; the only edit to an existing train question (negatives were appended).
+- Phase 2: `test/integration/dossier-mcp.test.ts` failed once on a teardown `ENOTEMPTY` under load; passes alone.
 
 ## Status
-**Currently in Phase 2** - building the held-out eval.
+**Currently in Phase 3** - index hygiene, HNSW accuracy and upgrade migration (Phase 2 done: held-out sets, gates, recall check committed).
 
 ---
 

@@ -28,3 +28,23 @@ Full text: `gh issue view 43 --repo the-glitch-kingdom/semantic-memory`.
 
 ## Eval results
 (per phase)
+
+### Phase 2 -- v1.9.0 baseline (answer@1 / answerable; hybrid vs semantic)
+Held-out sets written before any look at ranking scores: `golden-docs-heldout.jsonl` (23 answerable: 13 symptom/paraphrase, 6 exact, 4 multi; 8 negatives),
+`real-corpus-heldout.jsonl` (24 answerable: 17 paraphrase, 4 exact, 3 multi; 8 negatives). Train negatives raised to 12 on both train sets.
+
+| Split | semantic @1 | hybrid @1 | paraphrase sem / hyb @1 | negatives flagged (hybrid) | answered@1 flagged (hybrid) |
+|---|---|---|---|---|---|
+| fixture train (35) | 22 | 23 | 9 / 9 | 12/12 | 2 |
+| fixture held-out (23) | 17 (0.74) | 13 (0.57) | 12 / 8 | 8/8 | 4 |
+| real train (24) | 12 | 13 | 4 / 4 | 12/12 | 4 |
+| real held-out (24) | 10 | 12-13 (random HNSW build) | 8 / 11 | 8/8 | 3-4 |
+
+- The regression reproduces on the fixture held-out set (hybrid 4 below semantic, 4 paraphrase cases lost) with no extra fixture docs. It does not on the
+  real corpus, where hybrid is ahead of semantic; both are far under 0.75 (0.42-0.54), so Phases 3-4 have headroom to show on both.
+- Every negative is flagged today on all four splits, but only because hybrid's `no_strong_match` fires on its 0.5 RRF-shaped top scores; answered cases are
+  flagged 2-4 times. Phase 5 must keep 100% negatives while cutting those false flags to <= 10%.
+- HNSW recall@24 vs exact cosine: 1.000 on the 15-doc fixture, 0.929 on `.documentation/` (268 chunks, train+held-out questions), same figure from
+  `scripts/retrieval-eval/stale-audit.mjs` (`hnswRecall`). Gate 0.97; Phase 3 `setEf` must reach it.
+- Expected failures (`it.fails`): fixture held-out hybrid >= semantic - 1 (13 < 16), fixture held-out paraphrase hybrid >= semantic (8 < 12), real-corpus HNSW recall.
+- Real-corpus numbers wobble by 1 case between builds (hnswlib builds a random graph), so those floors in `baseline.json` sit 1 below the best run.

@@ -41,3 +41,9 @@
 {"id":"n04","tier":"negative","q":"What is the on-call phone number for the harbormaster?"}
 {"id":"n05","tier":"negative","q":"How does the platform take credit card payments for ticket sales?"}
 {"id":"n06","tier":"negative","q":"Describe the Kubernetes autoscaling policy for the web frontend"}
+{"id":"n07","tier":"negative","q":"How do I back up the Redis cache nightly?"}
+{"id":"n08","tier":"negative","q":"What is the escalation process for a billing dispute?"}
+{"id":"n09","tier":"negative","q":"How do I add a new language pack for the crew handheld app?"}
+{"id":"n10","tier":"negative","q":"Which Docker base image do the gateways run on?"}
+{"id":"n11","tier":"negative","q":"How do I set up Grafana panels for request latency?"}
+{"id":"n12","tier":"negative","q":"What is the onboarding checklist for a new shipping partner?"}
