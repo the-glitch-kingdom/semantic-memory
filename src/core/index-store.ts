@@ -19,6 +19,9 @@ export interface IndexMeta {
   generation: number;
   model: string;
   dimensions: number;
+  /** how the vectors were pooled and the prompt queries get; absent = mean, none (indexes before v1.12) */
+  pooling?: string;
+  queryPrompt?: string;
   totalChunks: number;
   /** median top BM25 score of title self-queries (bm25SelfTop): the corpus scale for the no_strong_match lexical threshold; absent in older indexes */
   bm25SelfTop?: number | null;
@@ -135,7 +138,7 @@ export async function withLock(indexPath: string, fn: () => Promise<void>): Prom
 export async function commitIndex(
   indexPath: string,
   expectedGeneration: number,
-  info: Pick<IndexMeta, "model" | "dimensions" | "totalChunks" | "ignoreGlobs" | "bm25SelfTop">,
+  info: Pick<IndexMeta, "model" | "dimensions" | "pooling" | "queryPrompt" | "totalChunks" | "ignoreGlobs" | "bm25SelfTop">,
   write: (stageDir: string) => Promise<void>
 ): Promise<IndexMeta | null> {
   const stage = join(indexPath, `.stage-${process.pid}-${Math.random().toString(36).slice(2)}`);

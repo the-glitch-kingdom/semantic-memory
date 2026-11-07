@@ -94,6 +94,20 @@ rerank:
 - **Rerank stays off.** The only variants that raised @1 (+1 case of 35, within noise) cost about 0.7 s per search against a 150 ms bar, and the fast variants lost the gain. Turning it on downloads about 90 MB on first use; if the model cannot load, the fused order is used and a line is logged once.
 - **The embedder stays MiniLM.** `bge-small` and `gte-small` were no better on `search_hybrid` and raised negative cosines to 0.5-0.8, which breaks abstention.
 
+## What the indexed text keeps (v1.12)
+
+`stripMarkdown` produces the one text used for BM25, vectors and `search_text`. It keeps inline code contents (backticks dropped), fenced code contents (the fence lines dropped, any indent), and table cells (space-separated; separator rows dropped). `snake_case_name` stays one token; `*`, `~~` and `_` are removed only at word edges (`2*3` is kept). Known shortcut: `__init__` outside code loses its underscores.
+
+**Embed-text choice.** Option (a), the same kept text for vectors and BM25, beat option (b), dropping fenced contents from the embedded text, on the train splits (real-train hybrid 22 vs 20, semantic equal at 19). Held-out was not used to choose. Cost: some prose tiers lose a case, real-train hybrid negatives flagged 12/12 to 9/12 (code tokens raise BM25 on off-topic queries), and cold index time can double on a docs tree with many code blocks. Numbers: [v1.12.0 changelog](../changelog/v1-12-0-index-text-pooling-body-dates.md).
+
+## Trying another embedder (v1.12)
+
+```bash
+semantic-memory serve --model BAAI/bge-small-en-v1.5   # pooling and prompt come from the model's own config
+```
+
+Override with `embedding.pooling` / `embedding.query_prompt` in `vault.schema.yml` or `--pooling` / `--query-prompt`. The first start re-embeds everything. Judge it on your own questions with `EVAL_MODEL=<model> npx vitest run test/retrieval-eval`; floors fail for other models by construction, and the abstention cutoff (0.36) is calibrated on MiniLM, so other models flag no negatives. On our splits bge-small and arctic-s (right pooling and prompt) did not beat MiniLM, so the default stays. Not supported: models that need a document prefix (nomic-embed).
+
 ## Field channels (v1.10)
 
 ```yaml

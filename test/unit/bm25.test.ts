@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Bm25Index, bm25Fields, fuseScores } from "../../src/core/bm25.js";
+import { Bm25Index, bm25Fields, bm25SelfTop, fuseScores } from "../../src/core/bm25.js";
 
 const r = (path: string, score = 1) => ({ path, title: path, score, snippet: "", matchedChunk: path });
 
@@ -74,5 +74,15 @@ describe("field-aware BM25", () => {
     i.addDoc("other.md", ["unrelated words"]);
     for (const q of ["poison handling", "quarantine", "dead letter queue"]) expect(i.search(q).map((x) => x.path), q).toEqual(["ops/dead-letter-queue.md"]);
     expect(i.search("poison handling")[0].matchedChunk).toBe("messages that fail go aside");
+  });
+});
+
+describe("bm25SelfTop with non-string titles (#51)", () => {
+  it("skips a number or Date title loaded from an old index instead of throwing", () => {
+    const i = new Bm25Index();
+    i.addDoc("a.md", ["harbor dlq poison messages"]);
+    i.addDoc("b.md", ["tides"]);
+    const docs = [{ title: 2024 }, { title: new Date("2024-05-01") }, { title: "harbor dlq" }] as unknown as { title?: string }[];
+    expect(bm25SelfTop(i, docs)).toBeGreaterThan(0);
   });
 });

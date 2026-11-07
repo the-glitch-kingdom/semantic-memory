@@ -6,14 +6,14 @@ import { Reranker, loadRerankConfig } from "../core/reranker.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex, docChunks } from "../core/vector.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop } from "../core/bm25.js";
-import { loadIndexFields, type IndexFields } from "../core/fields.js";
+import { loadEmbeddingOverrides, loadIndexFields, type IndexFields } from "../core/fields.js";
 import { loadRanking, type RankingConfig } from "../core/rank.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { decayForDoc, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
-import { gitBlobId, gitCommitDates } from "../core/git-dates.js";
+import { gitBlobId, gitBodyDates, gitCommitDates } from "../core/git-dates.js";
 import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
@@ -32,6 +32,9 @@ export interface ServerOptions {
   workers?: number;
   batchSize?: number;
   quantized?: boolean;
+  /** overrides embedding.pooling / embedding.query_prompt in vault.schema.yml, which override the model's own config */
+  pooling?: "mean" | "cls";
+  queryPrompt?: string;
   readOnly?: boolean;
   onProgress?: (embedded: number, total: number) => void;
 }
@@ -141,7 +144,11 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   const indexer = new Indexer(notesPath);
   const fields = loadIndexFields(notesPath);
-  const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized);
+  const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized, {
+    ...loadEmbeddingOverrides(notesPath),
+    ...(options.pooling ? { pooling: options.pooling } : {}),
+    ...(options.queryPrompt !== undefined ? { queryPrompt: options.queryPrompt } : {}),
+  });
   const rerankConfig = loadRerankConfig(notesPath);
   const reranker = rerankConfig.enabled ? new Reranker(rerankConfig.model) : null;
   const graph = new GraphBuilder({
@@ -183,7 +190,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   let vectors = new Map<string, Float32Array>();
   let vectorsLoaded = false;
   let vectorsDirty = false;
-  const vectorKey = (text: string) => sha256(`${embedder.getModel()}\0${text}`);
+  // cls vectors get their own keys; mean keeps the pre-1.12 key so MiniLM vectors are reused untouched
+  const vectorKey = (text: string) => sha256(`${embedder.getModel()}${embedder.getPooling() === "cls" ? "\0cls" : ""}\0${text}`);
   /**
    * v1.7.2 and v1.8 keyed vectors `path:chunkIndex`; their hnsw-meta.json holds the text each label was built from.
    * Re-key those to the text key so an upgrade re-embeds only chunks whose text changed. The old keys are pruned at the next save.
@@ -242,8 +250,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       if (!meta) return false;
       const older = !parserMatches(meta, parserInputs(getPathClassConfig(), fields));
       if (older && !allowOlder) return false;
-      if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions()) {
-        process.stderr.write(`Model changed (${meta.model} → ${embedder.getModel()}), forcing reindex\n`);
+      if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions() || (meta.pooling ?? "mean") !== embedder.getPooling() || (meta.queryPrompt ?? "") !== embedder.getQueryPrompt()) {
+        process.stderr.write(`Model, pooling or query prompt changed (${meta.model} → ${embedder.getModel()}, ${meta.pooling ?? "mean"} → ${embedder.getPooling()}), forcing reindex\n`);
         return false;
       }
       // an older index (v1.7.2 and v1.8 wrote no commit record) is only served, never extended: the check is for current ones
@@ -357,17 +365,20 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     }
 
     // Decay `git` mode: one `git log` per build or reconcile dates the docs that have no usable last_verified and are new, changed
-    // or still undated. A doc whose bytes differ from its last commit stays undated (decay then takes the penalty).
+    // or still undated, by its last body change. A doc whose bytes differ from its last commit stays undated (decay then takes the penalty).
     const gitDates = new Map<string, string>();
     if (getDecayConfig().enabled && getDecayConfig().missing_last_verified === "git") {
       const unverified = (d: IndexedDocument) => !(Date.parse(normalizeVerifiedDate(d.frontmatter?.last_verified) ?? "") <= Date.now());
       const todo = [...parsed, ...(rebuild ? [] : documents.filter((d) => !d.gitDate))].filter(unverified);
       if (todo.length > 0) {
         const commits = await gitCommitDates(notesPath);
+        const unchanged: string[] = [];
         for (const d of todo) {
-          const c = commits.get(d.path);
-          if (c && gitBlobId(await readFile(join(notesPath, d.path)).catch(() => Buffer.alloc(0))) === c.blob) gitDates.set(d.path, new Date(c.ms).toISOString());
+          const c = commits.get(d.path)?.[0];
+          if (c && gitBlobId(await readFile(join(notesPath, d.path)).catch(() => Buffer.alloc(0))) === c.blob) unchanged.push(d.path);
         }
+        // the date is the last change of the body, so a frontmatter-only commit (a bulk re-tag) does not make an old note look fresh
+        for (const [path, ms] of await gitBodyDates(notesPath, commits, unchanged)) gitDates.set(path, new Date(ms).toISOString());
       }
     }
 
@@ -450,6 +461,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       {
         model: embedder.getModel(),
         dimensions: embedder.getDimensions(),
+        pooling: embedder.getPooling(),
+        queryPrompt: embedder.getQueryPrompt(),
         totalChunks: docs.reduce((n, d) => n + docChunks(d).length, 0),
         ignoreGlobs: ignoreGlobsHash(parserInputs(getPathClassConfig(), fields)),
         bm25SelfTop: selfTop(),
@@ -496,7 +509,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     if (indexingPromise) return;
     indexingPromise = fullIndex()
       .catch((err) => {
-        process.stderr.write(`Index error: ${err?.message ?? err}\n`);
+        process.stderr.write(`Index error: ${err?.stack ?? err}\n`);
         if (indexState === "indexing") indexState = documents.length > 0 ? "stale" : "empty";
       })
       .finally(() => {
@@ -510,7 +523,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       const run = upgrading ? ((upgrading = false), fullIndex()) : serial(() => sync());
       reconcileInFlight = run
         .catch((err) => {
-          process.stderr.write(`Reconcile error: ${err?.message ?? err}\n`);
+          process.stderr.write(`Reconcile error: ${err?.stack ?? err}\n`);
           if (indexState === "indexing") indexState = "stale";
         })
         .finally(() => {

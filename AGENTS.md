@@ -1,7 +1,7 @@
 ---
 generated_by: semantic-memory
-version: 1.11.0
-last_generated: 2026-11-07T18:47:33.358Z
+version: 1.12.0
+last_generated: 2026-11-07T22:22:44.070Z
 ---
 
 # Project Agent Contract
@@ -27,7 +27,7 @@ last_generated: 2026-11-07T18:47:33.358Z
 - `search_semantic` — Vector similarity search — find notes similar to a query by meaning.
 - `search_text` — Full-text keyword or regex search across all notes with optional filters.
 - `search_graph` — Graph traversal — find notes connected to a concept via wikilinks, related_docs, and tags.
-- `search_hybrid` — Combined semantic + graph search — vector results re-ranked by graph proximity and load_priority.
+- `search_hybrid` — Combined semantic + lexical search — vector and BM25 scores fused, re-ranked by load_priority and decayed by age.
 - `read_note` — Read the full content of a specific note by path.
 - `list_notes` — List all indexed notes with metadata.
 - `create_note` — Create a new markdown note.

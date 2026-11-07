@@ -9,8 +9,9 @@ const DAY_MS = 86_400_000;
  * Give a temp vault (never this repo) a git history with backdated commits, so the decay `git` mode can be measured: one commit per
  * distinct age, dated `age` days ago via GIT_AUTHOR_DATE/GIT_COMMITTER_DATE. Files missing from `ages` get `defaultAge`, which keeps the
  * existing splits' ranking unchanged when decay falls back to git. File mtimes are set to the same age (the `mtime` mode).
+ * `touched` files then get a frontmatter-only commit dated now (one added key, body bytes untouched): the git date of the file moves to today, its body does not.
  */
-export async function gitHistory(dir: string, ages: Record<string, number> = {}, defaultAge = 10): Promise<void> {
+export async function gitHistory(dir: string, ages: Record<string, number> = {}, defaultAge = 10, touched: string[] = []): Promise<void> {
   const files = await glob("**/*.md", { cwd: dir });
   const byAge = new Map<number, string[]>();
   for (const f of files) byAge.set(ages[f] ?? defaultAge, [...(byAge.get(ages[f] ?? defaultAge) ?? []), f]);
@@ -25,6 +26,11 @@ export async function gitHistory(dir: string, ages: Record<string, number> = {},
     for (const f of fs) utimesSync(join(dir, f), when, when);
     git(["add", "--", ...fs]);
     git(["commit", "-q", "-m", `docs ${age}d ago`], when.toISOString());
+  }
+  if (touched.length) {
+    for (const f of touched) writeFileSync(join(dir, f), readFileSync(join(dir, f), "utf-8").replace(/^---\n/, "---\nreviewed_by: ops-team\n"));
+    git(["add", "--", ...touched]);
+    git(["commit", "-q", "-m", "frontmatter only"], new Date().toISOString());
   }
 }
 

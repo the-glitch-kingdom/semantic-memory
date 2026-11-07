@@ -22,7 +22,7 @@ export const CURRENT_TOOL_INVENTORY: readonly ToolInventoryEntry[] = [
   { name: "search_semantic", description: "Vector similarity search — find notes similar to a query by meaning.", group: "search" },
   { name: "search_text", description: "Full-text keyword or regex search across all notes with optional filters.", group: "search" },
   { name: "search_graph", description: "Graph traversal — find notes connected to a concept via wikilinks, related_docs, and tags.", group: "search" },
-  { name: "search_hybrid", description: "Combined semantic + graph search — vector results re-ranked by graph proximity and load_priority.", group: "search" },
+  { name: "search_hybrid", description: "Combined semantic + lexical search — vector and BM25 scores fused, re-ranked by load_priority and decayed by age.", group: "search" },
   // read
   { name: "read_note", description: "Read the full content of a specific note by path.", group: "read" },
   { name: "read_multiple_notes", description: "Batch read multiple notes in one call.", group: "read", deprecated: true },

@@ -6,6 +6,7 @@ import { homedir } from "node:os";
 import { Readable } from "node:stream";
 import { pipeline as streamPipeline } from "node:stream/promises";
 import { Worker } from "node:worker_threads";
+import { MODEL_CONFIG_FILES, poolAndNormalizeMany, resolveEmbedSettings, type EmbedSettings } from "./pooling.js";
 import { fileURLToPath } from "node:url";
 
 // MiniLM-L6-v2 is the default: ~3 min to index 2,853 chunks on CPU vs ~16 min for nomic.
@@ -85,6 +86,28 @@ export async function downloadFile(url: string, destPath: string): Promise<void>
   }
 }
 
+/**
+ * Fetch the sentence-transformers pooling/prompt configs next to the model. A 404 is cached as `{}` (the model
+ * declares none: mean, no prompt); a network failure leaves the file absent so the next start retries, and an
+ * offline start uses whatever is cached.
+ */
+async function fetchModelConfigs(model: string, modelDir: string): Promise<void> {
+  for (const rel of MODEL_CONFIG_FILES) {
+    const dest = join(modelDir, rel);
+    if (existsSync(dest)) continue;
+    try {
+      const res = await fetch(`https://huggingface.co/${model}/resolve/main/${rel}`, { signal: AbortSignal.timeout(10_000) });
+      if (!res.ok && res.status !== 404) continue;
+      await mkdir(dirname(dest), { recursive: true });
+      const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+      await writeFile(tmp, res.ok ? await res.text() : "{}");
+      await rename(tmp, dest);
+    } catch {
+      /* offline: mean pooling, no prompt, until the files can be fetched */
+    }
+  }
+}
+
 export class Embedder {
   private model: string;
   private session: OrtSession | null = null;
@@ -97,13 +120,18 @@ export class Embedder {
   private batchSize: number;
   private quantized: boolean;
   private modelPath = "";
+  private overrides: Partial<EmbedSettings>;
+  private settings: EmbedSettings;
 
   constructor(
     model: string = DEFAULT_MODEL,
     numWorkers: number = DEFAULT_WORKERS,
     batchSize: number = DEFAULT_BATCH_SIZE,
-    quantized: boolean = DEFAULT_QUANTIZED
+    quantized: boolean = DEFAULT_QUANTIZED,
+    overrides: Partial<EmbedSettings> = {}
   ) {
+    this.overrides = overrides;
+    this.settings = { pooling: overrides.pooling ?? "mean", queryPrompt: overrides.queryPrompt ?? "" };
     this.model = model;
     this.numWorkers = numWorkers;
     this.batchSize = batchSize;
@@ -154,6 +182,9 @@ export class Embedder {
       }
       process.stderr.write(`Model downloaded to ${modelDir}\n`);
     }
+    await fetchModelConfigs(this.model, modelDir);
+    this.settings = resolveEmbedSettings(modelDir, this.overrides);
+
     // Load tokenizer (uses HF transformers tokenizer infrastructure)
     this.tokenizer = await AutoTokenizer.from_pretrained(this.model, {
       cache_dir: CACHE_DIR,
@@ -217,78 +248,7 @@ export class Embedder {
     const outputTensor = output[this.session.outputNames[0]];
     const hiddenSize = outputTensor.dims[outputTensor.dims.length - 1];
 
-    // Mean pooling with attention mask + L2 normalization
-    return this.meanPoolAndNormalize(outputTensor.data, attentionMaskRaw, seqLen, hiddenSize);
-  }
-
-  private meanPoolAndNormalize(
-    embeddings: Float32Array,
-    attentionMask: number[],
-    seqLen: number,
-    hiddenSize: number
-  ): Float32Array {
-    const result = new Float32Array(hiddenSize);
-    let maskSum = 0;
-
-    for (let t = 0; t < seqLen; t++) {
-      const mask = attentionMask[t];
-      maskSum += mask;
-      const offset = t * hiddenSize;
-      for (let d = 0; d < hiddenSize; d++) {
-        result[d] += embeddings[offset + d] * mask;
-      }
-    }
-
-    if (maskSum > 0) {
-      for (let d = 0; d < hiddenSize; d++) result[d] /= maskSum;
-    }
-
-    // L2 normalize
-    let norm = 0;
-    for (let d = 0; d < hiddenSize; d++) norm += result[d] * result[d];
-    norm = Math.sqrt(norm);
-    if (norm > 0) {
-      for (let d = 0; d < hiddenSize; d++) result[d] /= norm;
-    }
-
-    return result;
-  }
-
-  // Mean pool + L2 normalize the output of a batched ONNX forward pass.
-  // outputData: flat Float32Array of shape [batchSize, seqLen, hiddenSize]
-  // maskData:   flat number[] of shape [batchSize, seqLen]
-  private meanPoolAndNormalizeMany(
-    outputData: Float32Array,
-    maskData: number[],
-    batchSize: number,
-    seqLen: number,
-    hiddenSize: number
-  ): Float32Array[] {
-    const results: Float32Array[] = [];
-    for (let b = 0; b < batchSize; b++) {
-      const result = new Float32Array(hiddenSize);
-      let maskSum = 0;
-      for (let t = 0; t < seqLen; t++) {
-        const mask = maskData[b * seqLen + t];
-        maskSum += mask;
-        const offset = (b * seqLen + t) * hiddenSize;
-        for (let d = 0; d < hiddenSize; d++) {
-          result[d] += outputData[offset + d] * mask;
-        }
-      }
-      if (maskSum > 0) {
-        for (let d = 0; d < hiddenSize; d++) result[d] /= maskSum;
-      }
-      // L2 normalize
-      let norm = 0;
-      for (let d = 0; d < hiddenSize; d++) norm += result[d] * result[d];
-      norm = Math.sqrt(norm);
-      if (norm > 0) {
-        for (let d = 0; d < hiddenSize; d++) result[d] /= norm;
-      }
-      results.push(result);
-    }
-    return results;
+    return poolAndNormalizeMany(outputTensor.data, attentionMaskRaw, 1, seqLen, hiddenSize, this.settings.pooling)[0];
   }
 
   // Embed a sub-batch of texts (length <= batchSize) in a single ONNX forward pass.
@@ -356,13 +316,7 @@ export class Embedder {
     const outputTensor = output[this.session.outputNames[0]];
     const hiddenSize = outputTensor.dims[outputTensor.dims.length - 1];
 
-    return this.meanPoolAndNormalizeMany(
-      outputTensor.data,
-      flatMaskNums,
-      n,
-      seqLen,
-      hiddenSize
-    );
+    return poolAndNormalizeMany(outputTensor.data, flatMaskNums, n, seqLen, hiddenSize, this.settings.pooling);
   }
 
   async embedBatch(
@@ -425,6 +379,7 @@ export class Embedder {
             cacheDir: CACHE_DIR,
             runtimeLabel: this.runtimeLabel,
             batchSize: this.batchSize,
+            pooling: this.settings.pooling,
           },
         });
 
@@ -455,6 +410,19 @@ export class Embedder {
 
     await Promise.all(workerPromises);
     return allResults;
+  }
+
+  /** A search query: the model's query prompt (if any) in front. Documents go through embed / embedBatch, never this. */
+  embedQuery(text: string): Promise<Float32Array> {
+    return this.embed(this.settings.queryPrompt + text);
+  }
+
+  getPooling(): EmbedSettings["pooling"] {
+    return this.settings.pooling;
+  }
+
+  getQueryPrompt(): string {
+    return this.settings.queryPrompt;
   }
 
   getDimensions(): number {

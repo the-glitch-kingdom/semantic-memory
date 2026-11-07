@@ -213,7 +213,7 @@ const TOOL_HELP: Record<string, { description: string; args: string; examples: s
     ],
   },
   search_hybrid: {
-    description: "Combined semantic + graph search — vector results re-ranked by graph proximity",
+    description: "Combined semantic + lexical search — vector and BM25 scores fused, re-ranked by load_priority",
     args: '{ "query": "string", "limit?": 10 }',
     examples: [
       '{ "query": "event driven architecture", "limit": 5 }',
@@ -624,11 +624,17 @@ program
   .option("--wait-for-ready", "Block startup until index is fully built before serving (default: index in background; tools return 'Indexing in progress' until ready)")
   .option("--read-only", "Suppress write tools (create_note, update_note, delete_note, move_note, update_frontmatter, manage_tags, rename_tag, log_event, ...) — use for shared docs vaults owned by another tool")
   .option("--model <name>", "Embedding model to use (default: all-MiniLM-L6-v2, fast; use nomic-ai/nomic-embed-text-v1.5 for higher quality)")
+  .option("--pooling <mode>", "Pooling for the embedding model: cls or mean (default: read from the model's own config)")
+  .option("--query-prompt <text>", "Text put in front of every search query (default: the model's own prompts.query); documents never get it")
   .option("--workers <n>", "Number of worker threads for parallel embedding", parseInt)
   .option("--batch-size <n>", "Texts per ONNX forward pass (default: 8)", parseInt)
   .option("--no-quantized", "Use full-precision model instead of quantized (slower, slightly higher quality)")
   .option("--no-watch", "Deprecated no-op: nothing watches the tree any more, the index is reconciled on demand")
   .action(async (opts) => {
+    if (opts.pooling && opts.pooling !== "cls" && opts.pooling !== "mean") {
+      console.error(`Error: --pooling must be cls or mean, got: ${opts.pooling}`);
+      process.exit(1);
+    }
     const notesPath = resolve(opts.notes);
 
     if (!existsSync(notesPath)) {
@@ -656,6 +662,8 @@ program
         workers: opts.workers,
         batchSize: opts.batchSize,
         quantized: opts.quantized,
+        pooling: opts.pooling,
+        queryPrompt: opts.queryPrompt,
         onProgress: (embedded, total) => {
           process.stderr.write(`\rEmbedding ${embedded}/${total} chunks...`);
         },
@@ -673,6 +681,8 @@ program
       workers: opts.workers,
       batchSize: opts.batchSize,
       quantized: opts.quantized,
+      pooling: opts.pooling,
+      queryPrompt: opts.queryPrompt,
       readOnly: opts.readOnly,
     });
   });

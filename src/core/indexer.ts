@@ -15,7 +15,7 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 6; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept)
+export const INDEX_SCHEMA_VERSION = 7; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed)
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -31,7 +31,7 @@ export async function listMarkdown(notesPath: string): Promise<string[]> {
 }
 
 // Invalid YAML (e.g. an unquoted colon in a value) keeps the body searchable with empty frontmatter
-function parseFrontmatter(raw: string, file: string): { data: Record<string, unknown>; content: string } {
+export function parseFrontmatter(raw: string, file: string): { data: Record<string, unknown>; content: string } {
   try {
     return matter(raw);
   } catch (err: any) {
@@ -110,8 +110,10 @@ export class Indexer {
     const plainText = this.stripMarkdown(content);
     const chunks = this.chunkText(plainText);
 
+    // YAML parses `title: 2024` as a number and `title: 2024-05-01` as a Date
+    const fmTitle = frontmatter.title as unknown;
     const title =
-      (frontmatter.title as string) ||
+      (fmTitle instanceof Date ? fmTitle.toISOString().slice(0, 10) : Array.isArray(fmTitle) ? fmTitle.join(" ") : fmTitle == null ? "" : String(fmTitle)) ||
       headers[0] ||
       basename(relativePath, ".md");
 
@@ -269,17 +271,24 @@ export class Indexer {
     return "";
   }
 
+  /**
+   * Plain text for BM25, search_text and embedding. Code is kept (fence lines dropped, backticks unwrapped) and table rows
+   * become space-separated cells, so identifiers and values in them stay findable. `_` is stripped only at word edges
+   * so snake_case and `a*b` survive; shortcut: `__init__` outside code loses its underscores like emphasis does.
+   */
   private stripMarkdown(content: string): string {
     return content
-      .replace(/```[\s\S]*?```/g, "")
-      .replace(/`[^`]+`/g, "")
+      .replace(/^[ \t]*(`{3,}[^`\n]*|~~~.*)$/gm, "")
+      .replace(/`([^`\n]+)`/g, "$1")
       .replace(/!\[.*?\]\(.*?\)/g, "")
       .replace(/\[([^\]]+)\]\(.*?\)/g, "$1")
-      .replace(/#{1,6}\s+/g, "")
-      .replace(/[*_~]{1,3}/g, "")
-      .replace(/>\s+/g, "")
-      .replace(/\|.*\|/g, "")
-      .replace(/-{3,}/g, "")
+      .replace(/^\s*#{1,6}\s+/gm, "")
+      .replace(/^[ \t]*\|[\s:|-]*\|?[ \t]*$/gm, "")
+      .replace(/^[ \t]*\|.*\|[ \t]*$/gm, (row) => row.replace(/\s*\|\s*/g, " ").trim())
+      .replace(/~~/g, "")
+      .replace(/(?<![\p{L}\p{N}])[*_]+|[*_]+(?![\p{L}\p{N}])/gu, "")
+      .replace(/^\s*>\s?/gm, "")
+      .replace(/^\s*-{3,}\s*$/gm, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
   }

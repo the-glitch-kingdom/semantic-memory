@@ -1,0 +1,8 @@
+[
+  "ops/ci-log-expiry.md",
+  "ops/agent-heartbeat-period.md",
+  "ops/failed-login-limit.md",
+  "ops/bulk-load-chunking.md",
+  "ops/invitation-expiry.md",
+  "ops/storage-redundancy-factor.md"
+]

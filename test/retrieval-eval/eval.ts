@@ -248,7 +248,7 @@ export async function hnswRecall(notesDir: string, queries: string[], k: number)
   const cos = (a: Float32Array, b: Float32Array) => { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return d / Math.sqrt(x * y); };
   let sum = 0;
   for (const q of queries) {
-    const qv = await embedder.embed(q);
+    const qv = await embedder.embedQuery(q);
     const exact = new Set(vecs.map((v, i) => ({ doc: chunks[i].docPath, s: cos(qv, v) })).sort((a, b) => b.s - a.s).slice(0, k).map((e) => e.doc));
     const got = index.search(qv, k).map((r) => r.path);
     sum += got.filter((p) => exact.has(p)).length / exact.size;

@@ -142,3 +142,52 @@ describe("excluded paths", () => {
     }
   }, 180_000);
 });
+
+describe("schema 6 to 7 (chunk text keeps code)", () => {
+  it("serves the old index (stale) while it re-embeds the one chunk whose text changed, then is consistent", async () => {
+    const dir = await createTempVault();
+    let client: Client | null = null;
+    try {
+      await writeFile(join(dir, "code-note.md"), "# Checks\n\nRun `check_rls_coverage.py` before every release.\n");
+      await createServer(dir, { waitForReady: true });
+      // what v1.11.0 left behind: schema 6, and for this doc a vector keyed by the old (identifier-less) text
+      const meta = await readJson(dir, "meta.json");
+      const labels = (await readJson(dir, "hnsw-meta.json") as ({ docPath: string; text: string } | null)[]).filter((m) => m?.docPath === "code-note.md");
+      expect(labels[0]!.text).toContain("check_rls_coverage.py");
+      const gone = sha256(`${meta.model}\0${labels[0]!.text}`);
+      const vecs = (await readJson(dir, "embeddings.json") as { key: string }[]).filter((e) => e.key !== gone);
+      await writeFile(idx(dir, "embeddings.json"), JSON.stringify(vecs));
+      await writeFile(idx(dir, "meta.json"), JSON.stringify({ ...meta, schemaVersion: 6 }));
+
+      let release!: () => void;
+      const gate = new Promise<void>((r) => (release = r));
+      const embedded: string[] = [];
+      const real = Embedder.prototype.embedBatch;
+      vi.spyOn(Embedder.prototype, "embedBatch").mockImplementation(async function (this: Embedder, texts, onProgress) {
+        embedded.push(...texts);
+        await gate;
+        return real.call(this, texts, onProgress);
+      });
+      client = await connect(dir);
+      const search = async () => {
+        const res = await client!.callTool({ name: "search_hybrid", arguments: { query: "microservices architecture" } });
+        const blocks = res.content as { text: string }[];
+        return { text: blocks[0].text, note: blocks.at(-1)!.text, meta: (res as any)._meta };
+      };
+      await waitFor(async () => !(await search()).text.startsWith("Indexing in progress"));
+      const during = await search();
+      expect(during.meta?.stale).toBe(true);
+      expect(during.note).toMatch(/^\[stale: /);
+      await waitFor(async () => embedded.length > 0);
+      release();
+      await waitFor(async () => (await readJson(dir, "meta.json")).schemaVersion === INDEX_SCHEMA_VERSION);
+      await waitFor(async () => (await search()).meta?.stale !== true);
+      expect(embedded).toHaveLength(1);
+      expect(embedded[0]).toContain("check_rls_coverage.py");
+    } finally {
+      vi.restoreAllMocks();
+      await client?.close();
+      await cleanupTempDir(dir);
+    }
+  }, 180_000);
+});

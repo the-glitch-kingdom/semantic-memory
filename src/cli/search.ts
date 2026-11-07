@@ -6,7 +6,7 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
-import { loadIndexFields } from "../core/fields.js";
+import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
@@ -88,15 +88,15 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
     throw new Error(`index at ${indexPath} is being rewritten or was built by another version — retry, or run --reindex`);
   }
 
-  const embedder = new Embedder();
+  const embedder = new Embedder(undefined, undefined, undefined, undefined, loadEmbeddingOverrides(notesPath));
   await embedder.init();
 
   const metaPath = join(indexPath, "meta.json");
   if (existsSync(metaPath)) {
     try {
-      const meta = JSON.parse(await readFile(metaPath, "utf-8")) as { model?: string };
-      if (meta.model && meta.model !== embedder.getModel()) {
-        throw new Error(`model mismatch (cached=${meta.model}, current=${embedder.getModel()}) — run --reindex`);
+      const meta = JSON.parse(await readFile(metaPath, "utf-8")) as { model?: string; pooling?: string; queryPrompt?: string };
+      if (meta.model && (meta.model !== embedder.getModel() || (meta.pooling ?? "mean") !== embedder.getPooling() || (meta.queryPrompt ?? "") !== embedder.getQueryPrompt())) {
+        throw new Error(`model mismatch (cached=${meta.model}/${meta.pooling ?? "mean"}, current=${embedder.getModel()}/${embedder.getPooling()}) — run --reindex`);
       }
     } catch (e) {
       if (e instanceof Error && e.message.startsWith("model mismatch")) throw e;
@@ -123,7 +123,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   const bm25Min = selfTop === null ? null : selfTop * BM25_FRACTION;
   return {
     async search(query, limit = 8) {
-      const queryEmbed = await embedder.embed(query);
+      const queryEmbed = await embedder.embedQuery(query);
       const semantic = vectorIndex.search(queryEmbed, limit * 3);
 
       // same order as search_hybrid: each arm adjusted, then fused (the CLI skips usage boosts)
