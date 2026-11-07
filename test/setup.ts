@@ -16,5 +16,6 @@ export async function createTempVault(): Promise<string> {
 }
 
 export async function cleanupTempDir(dir: string): Promise<void> {
-  await rm(dir, { recursive: true, force: true });
+  // A server's background index save can still be staging files here; rm retries ENOTEMPTY/EBUSY.
+  await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
