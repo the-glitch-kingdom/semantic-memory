@@ -171,3 +171,24 @@ Offline tarball (d361527, built before the Phase 9 stripMarkdown tweak, so it ho
 - 400-day body + frontmatter-only commit today decays as 400 days: met (decay eval frontmatter-touch tier, plus the new integration test).
 - A body edit resets the age: met (unit and integration tests).
 - No per-query git calls, computed at index time: met (PATH-spy test). Caveat: a body unchanged for more than 20 commits is dated at the 20th.
+
+### Mean vs CLS for #53 (after the workflow, 2026-11-07)
+Eval harness temporarily passed EVAL_POOLING / EVAL_PROMPT to createServer (reverted, not committed). docs-eval + real-corpus-eval, one run each.
+
+| config | sem fixture train (57) | sem fixture held-out (36) | sem real train (27) | sem real held-out (27) | hyb fixture train | hyb fixture held-out | hyb real train | hyb real held-out |
+|---|---|---|---|---|---|---|---|---|
+| MiniLM (mean) | 42/53 | 25/31 | 18/24 | 12/16 | 43/55 | 26/30 | 21/25 | 17/24 |
+| bge-small, mean | 42/54 | 23/30 | 13/17 | 7/13 | 41/52 | 24/31 | 19/25 | 14/20 |
+| bge-small, CLS | 39/51 | 21/29 | 12/16 | 7/11 | 40/52 | 23/30 | 20/25 | 13/17 |
+| arctic-s, mean, no prompt | 20/30 | 14/16 | 6/9 | 0/1 | 33/41 | 18/22 | 15/18 | 7/8 |
+| arctic-s, CLS, no prompt | 28/41 | 15/24 | 12/12 | 2/3 | 36/45 | 19/25 | 15/20 | 8/10 |
+| arctic-s, CLS + prompt | 40/53 | 24/31 | 14/18 | 8/11 | 41/53 | 25/30 | 18/23 | 13/19 |
+
+paraphrase @1 (semantic): fixture train / held-out / real train / real held-out
+MiniLM (mean) 17 14 3 6
+bge-small, mean 16 12 1 2
+bge-small, CLS 13 10 1 3
+arctic-s, mean, no prompt 5 4 1 0
+arctic-s, CLS, no prompt 9 4 1 1
+arctic-s, CLS + prompt 16 12 1 3
+

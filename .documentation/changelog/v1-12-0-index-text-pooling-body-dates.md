@@ -69,13 +69,28 @@ Decay fixture, tier `frontmatter-touch` (body 400 days old, frontmatter-only com
 
 Other embedders, with pooling and prompt read from their config (answer @1, semantic / hybrid): MiniLM, bge-small and arctic-s on real held-out are 12 / 17, 6 / 13 and 7 / 13; on real train 19 / 22, 12 / 20 and 12 / 18; on fixture train 42 / 43, 39 / 40 and 40 / 41. Neither beats MiniLM on any split, so the default stays. The abstention cutoff is calibrated on MiniLM, so other models flag no negatives; those counts say nothing about their ranking.
 
+Mean vs CLS, measured after the workflow on the final branch code (answer @1 / @3, one run each; the pooling and prompt forced with the overrides):
+
+| config | sem fixture train (57) | sem fixture held-out (36) | sem real train (27) | sem real held-out (27) | hyb fixture train | hyb fixture held-out | hyb real train | hyb real held-out |
+|---|---|---|---|---|---|---|---|---|
+| MiniLM (mean) | 42/53 | 25/31 | 18/24 | 12/16 | 43/55 | 26/30 | 21/25 | 17/24 |
+| bge-small, mean | 42/54 | 23/30 | 13/17 | 7/13 | 41/52 | 24/31 | 19/25 | 14/20 |
+| bge-small, CLS | 39/51 | 21/29 | 12/16 | 7/11 | 40/52 | 23/30 | 20/25 | 13/17 |
+| arctic-s, mean, no prompt | 20/30 | 14/16 | 6/9 | 0/1 | 33/41 | 18/22 | 15/18 | 7/8 |
+| arctic-s, CLS, no prompt | 28/41 | 15/24 | 12/12 | 2/3 | 36/45 | 19/25 | 15/20 | 8/10 |
+| arctic-s, CLS + prompt | 40/53 | 24/31 | 14/18 | 8/11 | 41/53 | 25/30 | 18/23 | 13/19 |
+
+- **arctic-embed-s needs both CLS and its query prompt.** Mean-pooled without the prompt (what 1.11.0 did) it scores 20/57 semantic on fixture train; CLS alone 28; CLS plus the prompt 40.
+- **bge-small does not gain from CLS here.** Mean pooling scores slightly higher than CLS on most splits (fixture train semantic 42 vs 39), within one run's noise on the real splits.
+- With its own config, neither model beats MiniLM.
+
 ## Missed targets and negative results
 
 - **#52 "paraphrase @1 within one question" is not met.** Keyword tiers held, but real held-out semantic paraphrase @1 fell 8 to 6 (@3 12 to 10, all @3 18 to 16), fixture-train semantic 18 to 17 and real-train hybrid 5 to 4. Floors were lowered, each recorded in the plan.
 - **Real-train hybrid "every negative flagged" fell 12/12 to 9/12** (held-out 7/8 unchanged). Kept code tokens raise BM25 scores of off-topic queries. It is a known failure (`it.fails`), not fixed.
 - **Cold index time roughly doubled** on a docs tree with many code blocks (14.9 s to 29.5 s in one noisy run); more chunks are kept. Not re-measured cleanly. The `search_hybrid` mean payload ceiling rose 4,575 to 4,750 B.
 - **Option (b)** (drop fenced block contents from the embedded text) was measured on train and lost to the kept text (real-train hybrid 20 vs 22); held-out was not used to choose.
-- **#53.** `nomic-embed-text-v1.5` needs `search_query: ` and `search_document: ` prefixes; only a query prompt is configurable, so it is documented, not supported, and not measured. The `--workers` embed path takes the pooling but has no CLS test. An offline start with no cached config files falls back to mean and records mean, so the next online start reindexes. The gain of the pooling fix on bge and arctic against their old mean-pooled numbers was not re-measured.
+- **#53.** `nomic-embed-text-v1.5` needs `search_query: ` and `search_document: ` prefixes; only a query prompt is configurable, so it is documented, not supported, and not measured. The `--workers` embed path takes the pooling but has no CLS test. An offline start with no cached config files falls back to mean and records mean, so the next online start reindexes. Mean vs CLS for bge-small and arctic-s was measured after the workflow (table above): CLS plus the prompt is what makes arctic usable; bge-small does not gain from CLS on these splits.
 - **#54.** A body unchanged across more than 20 commits is dated at the 20th, so it decays slightly less than it should. A shallow clone dates old files at its boundary commit.
 - **#51 not done (left in the issue by agreement):** identifier-aware fusion, a "#1 + related" metric, the blind set as a CI floor.
 - **Release.** The offline tarball built during release prep (922 MB, holds extra cached models) predates the final text rule; rebuild it from a clean model cache and the merge commit before publishing.
