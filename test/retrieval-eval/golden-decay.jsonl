@@ -1,0 +1,9 @@
+// Decay golden set for test/fixtures/decay-vault (boost-decay-fallback Phase 2). Each question has one answer doc (recent last_verified) and a twin that is
+// equally relevant but older: tier unverified = twin has no last_verified (git/file age 800 days), tier old-verified = twin's last_verified is 400 days old (control, decays today).
+// Written before any ranking was run against it. Facets match the answer doc only.
+{"id":"d01","tier":"unverified","q":"How long can a console session sit idle before the user is signed out?","facets":["after 20 minutes"],"answer":"ops/console-session-timeout.md","twin":"ops/idle-session-limits.md"}
+{"id":"d02","tier":"unverified","q":"How far back can we restore a nightly snapshot?","facets":["kept for 14 days"],"answer":"ops/nightly-snapshot-retention.md","twin":"ops/snapshot-keep-policy.md"}
+{"id":"d03","tier":"unverified","q":"How many times is a failed webhook delivery attempted again?","facets":["again 6 times"],"answer":"ops/webhook-redelivery.md","twin":"ops/webhook-failure-handling.md"}
+{"id":"d04","tier":"unverified","q":"What is the biggest file a user is allowed to attach?","facets":["is 25 MB"],"answer":"ops/attachment-size-limit.md","twin":"ops/upload-quotas.md"}
+{"id":"d05","tier":"old-verified","q":"How long does the lookup cache keep an entry before refetching it?","facets":["for 300 seconds"],"answer":"ops/lookup-cache-ttl.md","twin":"ops/lookup-cache-expiry.md"}
+{"id":"d06","tier":"old-verified","q":"How often do service passwords have to be changed?","facets":["every 90 days"],"answer":"ops/password-rotation-policy.md","twin":"ops/credential-renewal-cadence.md"}

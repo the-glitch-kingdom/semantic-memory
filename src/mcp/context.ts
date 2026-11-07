@@ -12,7 +12,8 @@ import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
-import { computeDecay, loadDecayConfig, normalizeVerifiedDate, type DecayConfig } from "../core/decay.js";
+import { decayForDoc, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
+import { gitBlobId, gitCommitDates } from "../core/git-dates.js";
 import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
@@ -33,13 +34,6 @@ export interface ServerOptions {
   quantized?: boolean;
   readOnly?: boolean;
   onProgress?: (embedded: number, total: number) => void;
-}
-
-export interface DecayBlock {
-  multiplier: number;
-  age_days: number;
-  effective_half_life: number;
-  reason: string;
 }
 
 export interface UsageBlock {
@@ -362,8 +356,27 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       );
     }
 
+    // Decay `git` mode: one `git log` per build or reconcile dates the docs that have no usable last_verified and are new, changed
+    // or still undated. A doc whose bytes differ from its last commit stays undated (decay then takes the penalty).
+    const gitDates = new Map<string, string>();
+    if (getDecayConfig().enabled && getDecayConfig().missing_last_verified === "git") {
+      const unverified = (d: IndexedDocument) => !(Date.parse(normalizeVerifiedDate(d.frontmatter?.last_verified) ?? "") <= Date.now());
+      const todo = [...parsed, ...(rebuild ? [] : documents.filter((d) => !d.gitDate))].filter(unverified);
+      if (todo.length > 0) {
+        const commits = await gitCommitDates(notesPath);
+        for (const d of todo) {
+          const c = commits.get(d.path);
+          if (c && gitBlobId(await readFile(join(notesPath, d.path)).catch(() => Buffer.alloc(0))) === c.blob) gitDates.set(d.path, new Date(c.ms).toISOString());
+        }
+      }
+    }
+
     // From here on everything is synchronous: a search never sees a half-applied change.
     selfTopCache = undefined;
+    for (const d of [...parsed, ...documents]) {
+      const date = gitDates.get(d.path);
+      if (date) d.gitDate = date;
+    }
     const byPath = new Map(rebuild ? [] : documents.map((d) => [d.path, d] as const));
     const vec = rebuild || !vectorIndex ? new VectorIndex(embedder.getDimensions(), fields.meta_weight) : vectorIndex;
     if (rebuild) bm25.clear();
@@ -561,28 +574,9 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     if (!cfg.enabled) return r;
     const doc = docByPath.get(r.path);
     if (!doc) return r;
-    const fm = doc.frontmatter ?? {};
-    const d = computeDecay({
-      type: typeof fm.type === "string" ? fm.type : undefined,
-      last_verified: normalizeVerifiedDate(fm.last_verified),
-      evergreen: fm.evergreen === true,
-      config: cfg,
-    });
-    const scored = { ...r, score: r.score * d.multiplier };
-    // Only surface the decay block when the note is actually down-weighted —
-    // don't clutter healthy results.
-    if (d.multiplier < 1) {
-      return {
-        ...scored,
-        decay: {
-          multiplier: Math.round(d.multiplier * 1000) / 1000,
-          age_days: Math.round(d.age_days),
-          effective_half_life: d.effective_half_life,
-          reason: d.reason,
-        },
-      };
-    }
-    return scored;
+    const { multiplier, block } = decayForDoc(doc, cfg);
+    const scored = { ...r, score: r.score * multiplier };
+    return block ? { ...scored, decay: block } : scored;
   }
 
   let pathClassConfig: PathClassConfig | null = null;

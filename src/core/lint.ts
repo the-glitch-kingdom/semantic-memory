@@ -31,6 +31,8 @@ export interface LintReport {
     errors: number;
     warnings: number;
     filesLinted: number;
+    /** notes with no last_verified: the stale rule cannot judge them, and decay ages them by decay.missing_last_verified */
+    noLastVerified: number;
   };
 }
 
@@ -109,7 +111,13 @@ export async function lintVault(
     ? resolveCodeRoot(opts.projectRoot ?? deriveProjectRoot(notesPath))
     : null;
 
+  let noLastVerified = 0;
   for (const [rel, raw] of rawByPath) {
+    try {
+      if (!matter(raw).data.last_verified) noLastVerified++;
+    } catch {
+      noLastVerified++; // unreadable frontmatter has none either; validateNote reports the parse error
+    }
     findings.push(...validateNote(rel, raw, schema, { todayIso: opts.todayIso }));
     findings.push(...findBrokenLinks(rel, raw, knownNames));
     if (codeRoot) findings.push(...findCodeSymbolDrift(rel, raw, codeRoot));
@@ -173,7 +181,7 @@ export async function lintVault(
     schemaPath: join(notesPath, "vault.schema.yml"),
     findings,
     byRule,
-    counts: { errors, warnings, filesLinted: files.length },
+    counts: { errors, warnings, filesLinted: files.length, noLastVerified },
   };
 }
 

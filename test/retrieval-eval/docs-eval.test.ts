@@ -8,6 +8,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { glob } from "glob";
 import { createServer } from "../../src/mcp/server.js";
 import { cleanupTempDir } from "../setup.js";
+import { gitHistory } from "./git-history.js";
 import { splitGates } from "./gates.js";
 import {
   runFacetEval, scoreLinks, invertLinks, facetRank, formatArm, parseGolden, hnswRecall,
@@ -23,7 +24,7 @@ import {
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
 const HERE = import.meta.dirname;
 // Gates the field fixture fails today, run as expected failures until retrieval-ready-fields Phase 4 fixes them; see .planning/retrieval-ready-fields/notes.md "Eval results".
-const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { paraphrase: true, negatives: true }, "fixture-heldout": { paraphrase: true, falseFlags: true, negatives: true } };
+const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { paraphrase: true, negatives: true }, "fixture-heldout": { falseFlags: true, negatives: true } };
 const STOP = new Set("the a an of to for and or in on is are do does how what which when where who with from that this it we our can i my be".split(" "));
 
 describe("Facet eval (golden-docs vs docs-vault)", () => {
@@ -62,6 +63,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     await cp(FIXTURE, tempDir, { recursive: true });
     // trial knobs: EVAL_RERANK=1 turns the cross-encoder on, EVAL_MODEL swaps the embedder (see notes.md "Phase 6")
     if (process.env.EVAL_RERANK) await writeFile(join(tempDir, "vault.schema.yml"), `rerank:\n  enabled: true\n${process.env.EVAL_RERANK_MODEL ? `  model: ${process.env.EVAL_RERANK_MODEL}\n` : ""}`);
+    await gitHistory(tempDir); // every doc committed 10 days ago, so the decay git fallback leaves these splits' ranking alone
     const server = await createServer(tempDir, { watch: false, waitForReady: true, model: process.env.EVAL_MODEL });
     const [ct, st] = InMemoryTransport.createLinkedPair();
     await server.connect(st);

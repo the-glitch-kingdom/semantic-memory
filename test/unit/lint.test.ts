@@ -17,6 +17,15 @@ describe("lintVault", () => {
     await cleanupTempDir(tempDir);
   });
 
+  it("counts notes with no last_verified without adding findings", async () => {
+    const base = await lintVault(tempDir);
+    await seed(tempDir, "unverified.md", "---\ntitle: U\ntype: note\n---\nbody");
+    await seed(tempDir, "verified.md", "---\ntitle: V\ntype: note\nlast_verified: 2999-01-01\n---\nbody");
+    const after = await lintVault(tempDir);
+    expect(after.counts.noLastVerified).toBe(base.counts.noLastVerified + 1);
+    expect(after.byRule.stale).toHaveLength(base.byRule.stale.length);
+  });
+
   it("returns findings grouped by rule", async () => {
     await seed(
       tempDir,

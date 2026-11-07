@@ -6,10 +6,10 @@
       "archiveHits": 0
     },
     "search_hybrid": {
-      "answeredAt1": 39,
+      "answeredAt1": 38,
       "archiveHits": 0,
-      "answeredFlagged": 3,
-      "meanBytes": 4132,
+      "answeredFlagged": 2,
+      "meanBytes": 4575,
       "expandedAt1": 28,
       "multiExpandedAt1": 7
     },
@@ -29,15 +29,15 @@
   "splits": {
     "fixture-train": {
       "search_semantic": 39,
-      "search_hybrid": 39
+      "search_hybrid": 38
     },
     "fixture-heldout": {
       "search_semantic": 23,
-      "search_hybrid": 22
+      "search_hybrid": 25
     },
     "real-train": {
       "search_semantic": 14,
-      "search_hybrid": 20
+      "search_hybrid": 21
     },
     "real-heldout": {
       "search_semantic": 12,
@@ -75,16 +75,16 @@
       },
       "search_hybrid": {
         "all": {
-          "at1": 39,
-          "at3": 51
+          "at1": 38,
+          "at3": 52
         },
         "exact": {
-          "at1": 12,
+          "at1": 11,
           "at3": 13
         },
         "multi": {
           "at1": 5,
-          "at3": 10
+          "at3": 11
         },
         "nofield": {
           "at1": 2,
@@ -129,7 +129,7 @@
       },
       "search_hybrid": {
         "all": {
-          "at1": 22,
+          "at1": 25,
           "at3": 29
         },
         "exact": {
@@ -138,19 +138,19 @@
         },
         "multi": {
           "at1": 2,
-          "at3": 6
+          "at3": 5
         },
         "nofield": {
-          "at1": 1,
+          "at1": 2,
           "at3": 2
         },
         "paraphrase": {
-          "at1": 12,
+          "at1": 13,
           "at3": 13
         },
         "symptom": {
-          "at1": 3,
-          "at3": 3
+          "at1": 4,
+          "at3": 4
         }
       }
     },
@@ -175,7 +175,7 @@
       },
       "search_hybrid": {
         "all": {
-          "at1": 20,
+          "at1": 21,
           "at3": 26
         },
         "exact": {
@@ -187,7 +187,7 @@
           "at3": 8
         },
         "paraphrase": {
-          "at1": 4,
+          "at1": 5,
           "at3": 7
         }
       }
@@ -226,7 +226,7 @@
         },
         "paraphrase": {
           "at1": 9,
-          "at3": 14
+          "at3": 15
         }
       }
     }

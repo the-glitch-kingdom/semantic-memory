@@ -31,7 +31,7 @@ Fixes issue #41: on a hewtd docs corpus `search_hybrid` was no better than grep 
 
 ## What changed
 
-- **Hybrid is real hybrid.** BM25 and vector lists fused by reciprocal rank; graph boost seeded from the top 5 semantic hits by path (it used to seed on `.includes(whole query)` and never fired).
+- **Hybrid is real hybrid.** BM25 and vector lists fused by reciprocal rank; graph boost seeded from the top 5 semantic hits by path (it used to seed on `.includes(whole query)` and never fired). The boost was removed in v1.11.0.
 - **Typed link graph.** Markdown links, wikilinks, `related_docs`, `cites`, `same-incident` and `supersedes` edges; tag edges off by default; `INDEX.md`/`REGISTRY.md` hubs left out. `backlinks`, `forwardlinks`, `graph_path`, `search_graph` take `types`.
 - **Archive exclusion that works.** `path_class.exclude` default `**/archive/**` with `dot: true`; the old `archive/**` rule missed nested and dot-dir archives. Byte-identical live/archived copies collapse to the live one.
 - **Abstention and a smaller payload.** `confidence` and `no_strong_match` on results; ~600-char excerpt instead of whole chunks (`full: true` restores); `related` on the #1 result.

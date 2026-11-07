@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { cp, mkdtemp, readFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -45,6 +45,18 @@ describe("docs fixture through the MCP client and the CLI search", () => {
       expect(cli, q).toEqual(mcp);
     }
   }, 240_000);
+
+  it("CLI search marks its hits stale while a live process holds the index lock", async () => {
+    const searcher = await openSearch(dir);
+    const lock = join(dir, ".semantic-sidekick-index", "index.lock");
+    await writeFile(lock, JSON.stringify({ pid: process.pid, at: Date.now() }));
+    try {
+      expect((await searcher.search("how do I rotate API keys", 3)).every((h) => h.stale)).toBe(true);
+    } finally {
+      await rm(lock);
+    }
+    expect((await searcher.search("how do I rotate API keys", 3)).some((h) => h.stale)).toBe(false);
+  });
 
   it("every search and graph tool answers with the documented shape", async () => {
     const sem = await call("search_semantic", { query: "how do I rotate API keys", limit: 3 });

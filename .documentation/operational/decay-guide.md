@@ -28,7 +28,7 @@ Decay keys on the `last_verified` frontmatter date. That date is set at note cre
   "decay": { "multiplier": 0.35, "age_days": 300, "effective_half_life": 180, "reason": "type=gotcha" } }
 ```
 
-Fresh notes have no block. A low `multiplier` on a note that's still relevant is your signal to re-verify.
+Fresh notes have no block. Since v1.11 a note with no usable `last_verified` also carries a compact block `{ multiplier, age_days, source }` even at multiplier 1; `source` is `last_verified`, `git`, `mtime`, `penalty` or `fresh`. A low `multiplier` on a note that's still relevant is your signal to re-verify.
 
 **For one note, on demand:**
 
@@ -83,11 +83,16 @@ decay:
 
 restores byte-identical pre-v1.3 ranking. Everything else about the vault is unchanged.
 
+## Notes with no `last_verified` (v1.11+)
+
+A missing, unparseable or future `last_verified` no longer ranks at full weight. The note is aged by `decay.missing_last_verified` (default `git`: the date of its last commit, read once per index build or reconcile). `mtime` uses the stored `last_updated` chain, then the file mtime; `penalty` applies the flat `decay.missing_penalty` (0.85); `fresh` restores the old no-decay behaviour. `git` and `mtime` fall back to the penalty when they have no date (non-git vault, untracked or edited-since-commit file). `last_validated` is not verification (hewtd stamps it for frontmatter checks) and is never read. `lint_vault` reports how many notes lack `last_verified` (`counts.noLastVerified`). Switching a vault to `git` needs a `--reindex`. See the [v1.11.0 changelog](../changelog/v1-11-0-boost-decay-fallback.md).
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| A note isn't decaying at all | No `last_verified`, or it's in the future | Add a `last_verified` date; decay fails open (1.0) without one |
+| A note isn't decaying at all | `missing_last_verified: fresh`, a vault older than v1.11, or a git date under a day old | Add a `last_verified` date, or set `missing_last_verified: git` and `--reindex` |
+| Every note without `last_verified` dropped after upgrading to v1.11 | The `git` age fallback is the new default | Intended; `verify_note` them, or set `decay.missing_last_verified: fresh` |
 | `decay-trace` says "no last_verified (fail open)" but the note has one | (Pre-1.3.0 only) unquoted YAML date parsed as a non-string | Upgrade to ≥1.3.0 — `normalizeVerifiedDate` handles Date objects |
 | A note decays despite `evergreen: true` | `last_verified` is >365 days old (evergreen expired) | `verify_note` it to re-affirm |
 | Everything decayed at once after import | Bulk-imported notes share one old `last_verified` | `verify_note` the ones you've confirmed, or raise half-lives |

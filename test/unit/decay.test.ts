@@ -38,18 +38,28 @@ describe("computeDecay", () => {
     expect(r.reason).toMatch(/never decays/);
   });
 
-  it("fails open (1.0) when last_verified is missing", () => {
-    const r = computeDecay({ type: "note", config: cfg(), nowMs: NOW });
+  it("fresh mode fails open (1.0) when last_verified is missing", () => {
+    const r = computeDecay({ type: "note", config: cfg({ missing_last_verified: "fresh" }), nowMs: NOW });
+    expect(r.source).toBe("fresh");
     expect(r.multiplier).toBe(1.0);
   });
 
-  it("fails open (1.0) when last_verified is in the future", () => {
-    const r = computeDecay({ type: "note", last_verified: daysAgo(-30), config: cfg(), nowMs: NOW });
+  it("fresh mode keeps the v1.10.0 results for missing, unparseable and future dates (#49 check 2)", () => {
+    const c = cfg({ missing_last_verified: "fresh" });
+    const r = (last_verified?: string) => computeDecay({ type: "note", last_verified, fallback_date: daysAgo(900), config: c, nowMs: NOW });
+    expect(r()).toMatchObject({ multiplier: 1, age_days: 0, reason: "no last_verified (fail open)" });
+    expect(r("nope")).toMatchObject({ multiplier: 1, age_days: 0, reason: "unparseable last_verified (fail open)" });
+    expect(r(daysAgo(-30))).toMatchObject({ multiplier: 1, reason: "last_verified in the future (fail open)" });
+    expect(r(daysAgo(-30)).age_days).toBeCloseTo(-30, 5);
+  });
+
+  it("fresh mode fails open (1.0) when last_verified is in the future", () => {
+    const r = computeDecay({ type: "note", last_verified: daysAgo(-30), config: cfg({ missing_last_verified: "fresh" }), nowMs: NOW });
     expect(r.multiplier).toBe(1.0);
   });
 
-  it("fails open (1.0) on an unparseable last_verified", () => {
-    const r = computeDecay({ type: "note", last_verified: "not-a-date", config: cfg(), nowMs: NOW });
+  it("fresh mode fails open (1.0) on an unparseable last_verified", () => {
+    const r = computeDecay({ type: "note", last_verified: "not-a-date", config: cfg({ missing_last_verified: "fresh" }), nowMs: NOW });
     expect(r.multiplier).toBe(1.0);
   });
 
@@ -87,5 +97,54 @@ describe("computeDecay", () => {
     });
     expect(hot.effective_half_life).toBeGreaterThan(base.effective_half_life);
     expect(hot.multiplier).toBeGreaterThan(base.multiplier);
+  });
+});
+
+describe("computeDecay missing_last_verified", () => {
+  const mode = (m: DecayConfig["missing_last_verified"]) => cfg({ missing_last_verified: m });
+
+  it("git and mtime age a note by the fallback date, same as an equal last_verified (400 days)", () => {
+    const want = computeDecay({ type: "note", last_verified: daysAgo(400), config: cfg(), nowMs: NOW });
+    for (const m of ["git", "mtime"] as const) {
+      const r = computeDecay({ type: "note", fallback_date: daysAgo(400), config: mode(m), nowMs: NOW });
+      expect(r.multiplier).toBeCloseTo(want.multiplier, 10);
+      expect(r.source).toBe(m);
+    }
+    expect(want.source).toBe("last_verified");
+  });
+
+  it("takes the penalty with no fallback date, and in penalty mode even with one", () => {
+    for (const r of [
+      computeDecay({ type: "note", config: mode("git"), nowMs: NOW }),
+      computeDecay({ type: "note", config: mode("mtime"), nowMs: NOW }),
+      computeDecay({ type: "note", fallback_date: daysAgo(1), config: mode("penalty"), nowMs: NOW }),
+    ]) {
+      expect(r.multiplier).toBe(0.85);
+      expect(r.source).toBe("penalty");
+    }
+  });
+
+  it("unparseable and future last_verified use the fallback too; a future fallback is no date", () => {
+    expect(computeDecay({ type: "note", last_verified: "nope", fallback_date: daysAgo(365), config: mode("git"), nowMs: NOW }).multiplier).toBeCloseTo(0.5, 2);
+    expect(computeDecay({ type: "note", last_verified: daysAgo(-9), fallback_date: daysAgo(365), config: mode("git"), nowMs: NOW }).source).toBe("git");
+    expect(computeDecay({ type: "note", fallback_date: daysAgo(-9), config: mode("git"), nowMs: NOW }).source).toBe("penalty");
+  });
+
+  it("a usable last_verified wins over the fallback; a never-decays type ignores it", () => {
+    expect(computeDecay({ type: "note", last_verified: daysAgo(10), fallback_date: daysAgo(900), config: cfg(), nowMs: NOW }).source).toBe("last_verified");
+    expect(computeDecay({ type: "source", fallback_date: daysAgo(900), config: cfg(), nowMs: NOW }).multiplier).toBe(1);
+  });
+
+  it("loadDecayConfig defaults to git / 0.85 and rejects bad values", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { loadDecayConfig } = await import("../../src/core/decay.js");
+    const d = mkdtempSync(join(tmpdir(), "decaycfg-"));
+    expect(loadDecayConfig(d).missing_last_verified).toBe("git");
+    writeFileSync(join(d, "vault.schema.yml"), "decay:\n  missing_last_verified: mtime\n  missing_penalty: 0.5\n");
+    expect(loadDecayConfig(d)).toMatchObject({ missing_last_verified: "mtime", missing_penalty: 0.5 });
+    writeFileSync(join(d, "vault.schema.yml"), "decay:\n  missing_last_verified: sometimes\n  missing_penalty: 7\n");
+    expect(loadDecayConfig(d)).toMatchObject({ missing_last_verified: "git", missing_penalty: 0.85 });
   });
 });

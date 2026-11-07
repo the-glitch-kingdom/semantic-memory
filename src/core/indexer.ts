@@ -15,7 +15,7 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 5; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs
+export const INDEX_SCHEMA_VERSION = 6; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept)
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];

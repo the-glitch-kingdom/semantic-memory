@@ -7,6 +7,7 @@ import { startEval } from "./harness.js";
 import { runFacetEval, formatArm, parseGolden, facetRank, hnswRecall, type FacetCase, type ArmMetrics } from "./eval.js";
 import { glob } from "glob";
 import { cleanupTempDir } from "../setup.js";
+import { gitHistory } from "./git-history.js";
 
 /**
  * The same facet eval over this repo's own .documentation (the in-process twin of scripts/retrieval-eval/real-corpus.mjs, which runs the
@@ -25,7 +26,7 @@ describe("Facet eval (real corpus: .documentation)", () => {
   let recall: number;
 
   beforeAll(async () => {
-    env = await startEval(DOCS, "sp-real-eval-");
+    env = await startEval(DOCS, "sp-real-eval-", (dir) => gitHistory(dir));
     for (const [name, file] of [["real-train", "real-corpus.jsonl"], ["real-heldout", "real-corpus-heldout.jsonl"]] as const) {
       const cases = parseGolden(await readFile(join(HERE, file), "utf-8")) as unknown as FacetCase[];
       splits[name] = { cases, arms: {

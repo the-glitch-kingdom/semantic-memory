@@ -89,6 +89,16 @@ function alive(pid: number): boolean {
   }
 }
 
+/** True while a live process holds the write lock: the committed index being read is about to be replaced. */
+export async function indexRebuilding(indexPath: string): Promise<boolean> {
+  try {
+    const holder = JSON.parse(await readFile(join(indexPath, "index.lock"), "utf-8")) as { pid?: number; at?: number };
+    return !!holder.pid && alive(holder.pid) && Date.now() - (holder.at ?? 0) <= LOCK_STALE_MS;
+  } catch {
+    return false;
+  }
+}
+
 /** One writer per index dir. Returns false when a live process holds the lock; a dead or very old holder is taken over. */
 export async function withLock(indexPath: string, fn: () => Promise<void>): Promise<boolean> {
   const lock = join(indexPath, "index.lock");

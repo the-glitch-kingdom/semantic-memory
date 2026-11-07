@@ -1,0 +1,9 @@
+// Decay golden set for test/fixtures/decay-vault (boost-decay-fallback Phase 2). Each question has one answer doc (recent last_verified) and a twin that is
+// equally relevant but older: tier unverified = twin has no last_verified (git/file age 800 days), tier old-verified = twin's last_verified is 400 days old (control, decays today).
+// Written before any ranking was run against it. Facets match the answer doc only.
+{"id":"d07","tier":"unverified","q":"How many calls per minute may one client send to the public API?","facets":["120 requests per minute"],"answer":"ops/public-api-throttle.md","twin":"ops/api-request-ceiling.md"}
+{"id":"d08","tier":"unverified","q":"Which verbosity do services log at when nobody configured one?","facets":["at the warn level"],"answer":"ops/service-log-verbosity.md","twin":"ops/default-logging-level.md"}
+{"id":"d09","tier":"unverified","q":"How long is a freshly issued TLS certificate good for?","facets":["valid for 60 days"],"answer":"ops/tls-certificate-lifetime.md","twin":"ops/certificate-validity-window.md"}
+{"id":"d10","tier":"unverified","q":"At what backlog size does the on-call engineer get paged for a queue?","facets":["more than 5000 messages"],"answer":"ops/queue-backlog-paging.md","twin":"ops/queue-depth-alerting.md"}
+{"id":"d11","tier":"old-verified","q":"How soon after issue does a customer have to pay an invoice?","facets":["within 15 days"],"answer":"ops/invoice-payment-terms.md","twin":"ops/billing-due-dates.md"}
+{"id":"d12","tier":"old-verified","q":"What is the longest edge of a generated preview image?","facets":["at most 256 pixels"],"answer":"ops/preview-image-size.md","twin":"ops/thumbnail-dimensions.md"}

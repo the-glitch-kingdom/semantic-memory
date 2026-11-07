@@ -39,7 +39,7 @@ Since v1.9.0 `search_hybrid` is the tool to ask a question with. This guide cove
 2. **Lexical arm**: an in-house BM25 index (`src/core/bm25.ts`, no dependency). Each chunk is indexed with its doc's field text (v1.10: `title`, `purpose`, `summary`, `description`, `keywords`, `tags`, `symptoms`) and path tokens (split on `/ . - _`) prepended; the returned text is unchanged. A chunk counts only when it matches at least `min(2, query terms)` query terms.
 3. **Boosts on each list before fusion**: `load_priority`, confidence decay, usage boost and `path_class` multipliers.
 4. **Score fusion** per doc (best chunk): `0.7 * cosine + 0.3 * bm25 / max(bm25 over candidates)`. With no BM25 hits the order is pure cosine. Rank-only RRF was replaced because it let a weak lexical arm displace a strong #1 ([KB fact](../knowledge-base/facts/rank-only-rrf-lets-a-weak-arm-displace-a-strong-first.md)). The 0.7 weight was swept on the train splits only and left at 0.7.
-5. **Graph boost**: x1.3 for a doc linked to one of the top 5 semantic hits.
+5. **Graph boost**: removed in v1.11.0 (see Trials below).
 6. **Content-hash dedup**: a live doc and a byte-identical archived copy collapse to the live one.
 7. **Optional cross-encoder rerank** (off by default, below).
 
@@ -57,7 +57,7 @@ Each result carries `path`, `title` (the doc's frontmatter or parsed title), `ma
 - **`no_strong_match: true`** appears on every result when the best cosine is under 0.36 AND the best BM25 score is under 0.8 x the index's threshold. Read it as "weak match, verify before citing", not "not documented". `search_semantic` has no BM25 arm, so cosine alone decides. The results are still returned.
 - **Calibration:** the BM25 threshold is derived per index, not a constant: `bm25SelfTop` in `meta.json` is the median top BM25 score of each titled doc's title used as its own query (up to 200 docs), 5.72 on the fixture and 12.24 on `.documentation/`. 0.36 and 0.8 were chosen on the train splits only (all 24 train negatives flagged, 3/59 answerable flagged). On the held-out sets the targets were missed: fixture false flags 26%, real held-out 7 of 8 negatives flagged. Re-check on your own corpus before relying on it.
 - **`related`** on the #1 result lists up to 3 linked docs that match on their own (cosine plus lexical bonus >= 0.50). It is skipped when #1 is `no_strong_match`.
-- **`_meta.stale`** means the index was loaded from disk (including an older-format index during an upgrade) and the first reconcile has not finished; results may lag recent edits.
+- **Stale marker** (v1.11): when the index was loaded from disk (including an older-format index during an upgrade) and the first reconcile has not finished, `search_hybrid`, `search_semantic` and `search_text` end with a separate `[stale: ...]` text block; re-run to confirm. `_meta.stale` is also set, but Claude Code does not show `_meta` to the model ([KB fact](../knowledge-base/facts/mcp-meta-is-not-shown-to-the-model.md)).
 
 ## Knobs (`vault.schema.yml`)
 
@@ -109,7 +109,7 @@ ranking:
 ```
 
 - **Object symptoms** (hit-em-with-the-docs playbooks) are read through `symptom_keys`; `user_phrase` may be a string or a list. `error_pattern` is regex text, so it feeds BM25 only. `target`, `cites` and `severity` are never indexed. Field contract: see the [configuration reference](../reference/configuration-reference.md#index_fields-vaultschemayml---v1100).
-- **`meta_weight` 0.8** was picked on train: accuracy is flat within one case from 0.7 to 1.1, while abstention is not (metadata chunks of unrelated notes raise a negative's best cosine; 0.8 is the highest weight that kept every real-train negative flagged).
+- **`meta_weight` 0.8** was picked on train: accuracy is flat within one case from 0.7 to 1.1, while abstention is not (metadata chunks of unrelated notes raise a negative's best cosine; 0.8 is the highest weight that kept every real-train negative flagged). Re-measured in v1.11.0 on train (including a metadata-rich subset): 1.0 gained one case on real train (noise) and lost 1 to 2 negatives; raise it only where `purpose` / `symptoms` are good and missed answers cost more than missed abstentions.
 - **Coverage bias.** Docs with no fields get no metadata chunks, so a purpose-carrying neighbour can outrank them. The eval's `nofield` tier measures it (held-out 2 -> 1 in v1.10.0). `get_stats` / `lint_vault` report `fieldCoverage`; if a field is rare in your corpus, fill it in before trusting the channel.
 - A field-list change re-parses the corpus; vectors are keyed by text, so only changed metadata embeds. `meta_weight` is search-time only.
 - `generated: true` docs are never indexed or returned, and are not graph nodes.
@@ -123,6 +123,8 @@ Recorded so nobody repeats them (train splits; held-out read afterwards, same di
 - **Answer packet** (#45 section 2): top-3 coverage 0.92 with and without. Not built. The `broad_query` flag is not built either; the read-top-3 / search-each-step guidance covers it.
 - **Embedding `error_pattern`**: identical train tables, so BM25 only. **Dropping `alert_name` from vectors**: lost a symptom case, kept.
 - **Field-term BM25 weight** (field text at 0.5 / 0.25 of a body term): no fixture change, real train -1; reverted. **`BM25_FRACTION` 0.9-1.2, `NO_STRONG_MATCH_BELOW` 0.38-0.40**: no train gain, false flags rose; unchanged. `COSINE_WEIGHT` 0.7-0.9: arms pull opposite ways; kept 0.7.
+- **Graph boost** (v1.11.0; hybrid answer @1, fixture train / held-out, real train / held-out): 1.0 = 38 / 25 / 22 / 14, 1.1 = 38 / 24 / 23 / 14, the old 1.3 = 39 / 22 / 21 / 13. Train chose 1.0 (the real-train +1 for 1.1 is noise), so the boost is removed.
+- **Abstention at 0.45** flags every train negative but falsely flags 22% / 31% / 11% of answerable questions (fixture train / held-out, real train), over the 10% ceiling. A top-1/top-2 gap rule and a stricter BM25 rule added no negative within the ceiling. 0.36 kept.
 - Open: the lexical paraphrase gap (path-token and title matches beating the body answer) and abstention on the held-out sets.
 
 ## Graph edges

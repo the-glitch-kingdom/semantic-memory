@@ -89,12 +89,22 @@ describe("upgrading an index written by an older release", () => {
       client = await connect(dir);
       const search = async () => {
         const res = await client!.callTool({ name: "search_hybrid", arguments: { query: "microservices architecture" } });
-        return { text: (res.content as { text: string }[])[0].text, meta: (res as any)._meta };
+        const blocks = res.content as { text: string }[];
+        return { text: blocks[0].text, note: blocks.at(-1)!.text, meta: (res as any)._meta };
       };
       await waitFor(async () => !(await search()).text.startsWith("Indexing in progress"));
       const during = await search();
+      // the marker is in the text an agent reads (not only _meta), on every search tool, as a trailing block so the
+      // first block stays parseable JSON
+      expect(during.note).toMatch(/^\[stale: /);
       expect(JSON.parse(during.text).length).toBeGreaterThan(0);
       expect(during.meta?.stale).toBe(true);
+      for (const [name, args] of [["search_semantic", { query: "microservices" }], ["search_text", { pattern: "microservices" }]] as const) {
+        const r = await client!.callTool({ name, arguments: args });
+        const blocks = r.content as { text: string }[];
+        expect(blocks.at(-1)!.text, name).toMatch(/^\[stale: /);
+        expect(blocks[0].text, name).not.toMatch(/^\[stale: /);
+      }
       await waitFor(async () => embedded.length > 0); // the rebuild is now parked at its embedding step
 
       release();

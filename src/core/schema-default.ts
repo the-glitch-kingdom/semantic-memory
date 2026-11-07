@@ -81,6 +81,13 @@ lint:
 # them lower (floored). Set enabled: false for byte-identical pre-v1.3 ranking.
 decay:
   enabled: true
+  # A note with no usable last_verified (missing, unparseable, in the future) is aged by:
+  #   git      the date of its last git commit (one "git log" per index build); no repo, or an untracked or edited
+  #            file, takes missing_penalty. last_validated is never read: it is not verification.
+  #   mtime    its last_updated/updated/date/lastmod, else the file mtime
+  #   penalty  flat missing_penalty        fresh  no decay (the behaviour before v1.11)
+  missing_last_verified: git
+  missing_penalty: 0.85
   default_half_life_days: 365   # multiplier = 0.5 ^ (age_days / half_life)
   per_type:
     decision: 365
