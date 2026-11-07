@@ -86,11 +86,11 @@ Sources:
         convert it to a real gate (`KNOWN` map in `test/retrieval-eval/docs-eval.test.ts`, `it.fails` in
         `real-corpus-eval.test.ts`)
   - [x] Tests; eval (multi-doc tier especially, keyword and symptom tiers must not drop); raise floors; commit -- `test/unit/rank.test.ts`, `search-guidance.test.ts`; fixture-train floors raised
-- [ ] Phase 5: Release prep v1.10.0
-  - [ ] Bump all five version fields (package.json, both in `.claude-plugin/marketplace.json`,
+- [x] Phase 5: Release prep v1.10.0
+  - [x] Bump all five version fields (package.json, both in `.claude-plugin/marketplace.json`,
         `.claude-plugin/plugin.json`, AGENTS.md frontmatter), then `npm install --package-lock-only --ignore-scripts`
-  - [ ] Offline tarball builds near the expected size
-  - [ ] v1.9.1 was merged but never published (user, 2026-11-06: publish only after this plan). npm goes 1.9.0 ->
+  - [x] Offline tarball builds near the expected size (531 MiB / 556.7 MB, expected ~0.55 GB; sha256 3649d5b0...)
+  - [x] (changelog/README wording lands in Phase 8) v1.9.1 was merged but never published (user, 2026-11-06: publish only after this plan). npm goes 1.9.0 ->
         1.10.0: the v1.10.0 changelog says it includes v1.9.1, the v1.9.1 changelog is marked "not published
         separately; shipped in 1.10.0", and README's version/status line names 1.10.0
 - [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -186,6 +186,8 @@ Sources:
   split gate and failed on the new baseline; reduced to its answered@1-flag ceiling.
 
 ## Status
+**Phase 5 done** (all five version fields 1.10.0, lockfile updated, offline tarball 531 MiB). Next: Phase 6 cleanup.
+
 **Phase 4 done** (coverage helper + link prior shared by MCP and CLI, shipped off because train showed no gain; guidance in four places; lexical-arm sweeps recorded; numbers in notes.md). Next: Phase 5 (release prep v1.10.0).
 
 ---

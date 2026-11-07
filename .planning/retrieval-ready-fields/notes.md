@@ -190,3 +190,7 @@ Guidance added to the `search_hybrid` description, `serverInstructions`, `skills
 `skills/vault-first/SKILL.md`; `test/unit/search-guidance.test.ts` pins all four; skill evals unchanged and green.
 Floors raised in `baseline.json` for fixture train (hybrid all 34/43 -> 39/51, paraphrase 11/14 -> 14/20, symptom 4/4 -> 6/6;
 semantic paraphrase 12/15 -> 18/21). `npm run eval`: 39 passed, 6 expected-fail.
+
+### Phase 5 (release prep)
+Offline tarball semantic-sidekick-offline-1.10.0-c8327aff08-x64.tgz: 531 MiB (556,711,236 bytes), sha256 3649d5b03e6f1cccea353694fd1ab711a08f4ce6e1ae11538f02840159948b30. Built with --allow-dirty (version bump uncommitted at build time, so manifest gitSha is c8327af). Rebuild after final commit before publishing.
+Phase 5 gate: skill-eval concurrency flake under load, passed alone (22/22); lint, build, eval green.
