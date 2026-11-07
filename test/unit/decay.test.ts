@@ -44,6 +44,15 @@ describe("computeDecay", () => {
     expect(r.multiplier).toBe(1.0);
   });
 
+  it("fresh mode keeps the v1.10.0 results for missing, unparseable and future dates (#49 check 2)", () => {
+    const c = cfg({ missing_last_verified: "fresh" });
+    const r = (last_verified?: string) => computeDecay({ type: "note", last_verified, fallback_date: daysAgo(900), config: c, nowMs: NOW });
+    expect(r()).toMatchObject({ multiplier: 1, age_days: 0, reason: "no last_verified (fail open)" });
+    expect(r("nope")).toMatchObject({ multiplier: 1, age_days: 0, reason: "unparseable last_verified (fail open)" });
+    expect(r(daysAgo(-30))).toMatchObject({ multiplier: 1, reason: "last_verified in the future (fail open)" });
+    expect(r(daysAgo(-30)).age_days).toBeCloseTo(-30, 5);
+  });
+
   it("fresh mode fails open (1.0) when last_verified is in the future", () => {
     const r = computeDecay({ type: "note", last_verified: daysAgo(-30), config: cfg({ missing_last_verified: "fresh" }), nowMs: NOW });
     expect(r.multiplier).toBe(1.0);

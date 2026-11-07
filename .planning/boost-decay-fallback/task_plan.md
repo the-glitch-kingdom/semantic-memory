@@ -73,33 +73,33 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   - [x] Remove trial knobs and sweep scripts; dead-code check over the branch diff (`tsc --noUnusedLocals`, grep) -- no scratch files committed; the only unused locals (cli/index.ts isLocalForm, indexer.ts relative) pre-date the branch and are left
   - [x] If the graph boost is a plain ×1.0 after Phase 3, either keep it as a named constant with a one-line why, or
         remove it with its tests. Decide and record.
-- [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review of `git diff main...HEAD`. Look for:
+- [x] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review of `git diff main...HEAD`. Look for:
     - per-query git calls
     - git dates leaking across content changes
     - `last_validated` being read
     - the decay block missing in the CLI
     - the stale marker missing on any `search_*` tool
     - floors lowered without a record
-  - [ ] Unit (`test/unit/decay.test.ts`):
+  - [x] Unit (`test/unit/decay.test.ts`):
     - each mode
     - missing / unparseable / future `last_verified`
     - `source` in the result
     - `fresh` mode byte-identical to v1.10.0 (#49 check 2)
     - 400-day git age equals 400-day `last_verified` (#49 check 1)
-  - [ ] Integration:
+  - [x] Integration:
     - the git pass runs once per build, and no query spawns git (spy on `child_process`; #49 check 4)
     - a non-git vault falls back to the penalty
     - an untracked file falls back to the penalty
     - the `decay` block names the source (#49 check 3)
     - the stale marker is visible in `search_hybrid`, `search_semantic` and `search_text` text during an upgrade
-  - [ ] Regression: on the decay fixture, the verified doc ranks above its unverified twin. Fixture held-out
+  - [x] Regression: on the decay fixture, the verified doc ranks above its unverified twin. Fixture held-out
         paraphrase hybrid ≥ semantic is a real gate.
-  - [ ] Prove a gate fails: lower a constant in a scratch edit, see the floors fail, revert
-  - [ ] Full suite: `npm run lint && npm run build && npm test && npm run eval`. Re-run known timing flakes alone and
+  - [x] Prove a gate fails: lower a constant in a scratch edit, see the floors fail, revert
+  - [x] Full suite: `npm run lint && npm run build && npm test && npm run eval`. Re-run known timing flakes alone and
         record them.
-  - [ ] Offline tarball `--verify`; smoke install
-  - [ ] Write an answer to each #48 and #49 acceptance item in notes.md, missed ones included
+  - [x] Offline tarball `--verify`; smoke install
+  - [x] Write an answer to each #48 and #49 acceptance item in notes.md, missed ones included
 - [ ] Phase 9: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New `.documentation/changelog/v1-11-0-boost-decay-fallback.md` (`npx hewtd integrate -a`): before/after tables
         per split, the decay default change and how to restore it (`missing_last_verified: fresh`), missed targets
@@ -170,6 +170,8 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   mcp-tools-reference.md, cli-reference.md): update them there.
 
 ## Errors Encountered
+- Phase 8 flakes under load (all pass alone, 31/31): freshness-scale warm start, hook-multi-source SessionStart, skill-eval concurrency.
+- Phase 8 review: CLI search in `fresh` mode now applies decay (v1.10.0 skipped it), so `fresh` is not exact for the CLI; the `decay` block also gains `source`. Kept for parity with search_hybrid.
 - Phase 7 flake: hook-failure Jev-hang budget failed in the full run, 14/14 alone.
 - Phase 4 ceiling raised: docs-vault `search_hybrid.meanBytes` 3831 -> 4575. Every result of a vault without `last_verified` now carries a
   compact git `decay` block (+744 B mean). Measured, deliberate; the block could not be dropped (plan: attached when a fallback is used).
@@ -187,7 +189,7 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
 - Phase 4: search-parity failed in the first full run (CLI skipped decay, order diverged once ranking depended on it); fixed in code, see Decisions.
 
 ## Status
-**Currently in Phase 8** - Validate
+**Currently in Phase 9** - Documentation
 
 ---
 

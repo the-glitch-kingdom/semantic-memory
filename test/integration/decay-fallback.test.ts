@@ -100,6 +100,17 @@ describe("decay git fallback", () => {
     expect(logs()).toHaveLength(2);
   }, 120_000);
 
+  it("a git date does not survive a content change: editing an indexed, committed note drops it to the penalty", async () => {
+    const dir = vault({ "a.md": body("alpha"), "b.md": body("beta") });
+    commit(dir, 400, "a.md", "b.md");
+    const ctx = await open(dir);
+    expect(decay(ctx, "a.md")!.source).toBe("git");
+    await writeFile(join(dir, "a.md"), body("alpha") + "\nEdited after the commit.\n");
+    await ctx.reconcileNow();
+    expect(decay(ctx, "a.md")).toMatchObject({ source: "penalty", multiplier: 0.85 });
+    expect(decay(ctx, "b.md")!.source).toBe("git");
+  }, 120_000);
+
   it("the CLI search ranks by the same decay and returns the same block", async () => {
     const dir = vault({ "old.md": body("alpha"), "other.md": body("beta") });
     commit(dir, 400, "old.md");

@@ -137,3 +137,34 @@ Only one more negative can be won (fixture train 11 -> 12; real train is already
 Result: negative. No rule flags the missing negative while keeping fixture-train false flags <= 5; the closest (B, T 0.45, f 0.75) reaches 12/12 with
 12/57 false flags (21%). Rule A never adds a negative. Shipped 0.36 kept. Held-out as measured for the shipped rule: fixture 7/8 negatives, 7 false flags
 of 36 answerable; real 7/8, 2 of 27 (the existing KNOWN held-out gates); single 0.45 would give fixture 8/8 with 10 false flags, real 7/8 with 2.
+
+### Phase 8: review and validation
+Review of `git diff main...HEAD` (adversarial). Findings:
+- Per-query git: none. `gitCommitDates` is only called from `sync()` in context.ts, once per build or per reconcile that has changes (gated on docs that need a date). Test spies a `git` on PATH: 1 log at build, 2 after a changing reconcile, 2 after a no-op reconcile, unchanged over 5 queries.
+- Git date across a content change: no leak (bytes are compared by blob id; a changed doc is re-parsed so it carries no old date). Was only tested for an edit made before the first index; added a regression for edit after index then reconcile -> penalty (passes, no code change needed).
+- `last_validated`: not read anywhere in `src` (grep: comments only); test uses `penalty` mode and checks source.
+- CLI vs MCP: both go through `decayForDoc`, so the block shape is identical (checked by `decay-fallback.test.ts` CLI case and search-parity). Stale marker differs by design: MCP prefixes `[stale: ...]` on `search_hybrid`, `search_semantic`, `search_text`, `search_graph` (name prefix); the CLI sets `stale: true` on hits while a live process holds `index.lock`.
+- Fresh mode vs v1.10.0: the MCP ranking and the `computeDecay` results are the same (multiplier, age_days, reason strings, now pinned by a new unit test), BUT two deliberate differences exist: (1) decayed blocks gain a `source` field; (2) the CLI search used to skip decay entirely and now applies it, so in `fresh` mode CLI order can differ from v1.10.0 for notes with an old `last_verified` (it now matches `search_hybrid`; search-parity requires it). Not byte-identical for the CLI. Recorded, not changed.
+- Floors: every drop is in Errors Encountered with measurements (Phase 3 boost; meanBytes ceiling raised in Phase 4). No unrecorded drop.
+- Not covered: the stale marker on `search_graph` has no test; `mtime` and `penalty` not measured on the eval splits.
+
+Gate-failure proofs (scratch edits, reverted, `git status` clean): default `missing_last_verified: fresh` -> decay-eval train twin gate, the git-source gate and the loadDecayConfig unit test fail. `NO_STRONG_MATCH_BELOW` 0.36 -> 0.20 -> 2 eval gates fail (held-out false-flag ceiling, real-train negatives).
+
+Full suite after review (lint, build, test, eval): eval 46 pass + 5 expected fail; test 869 pass with 3 load flakes (freshness-scale warm start, hook-multi-source SessionStart, skill-eval concurrency), all 31 pass alone.
+Offline tarball (built from 908672c, before the boost-removal refactor; rebuilt from the merge commit before publishing): extracted, `install-offline.sh --prefix` installs 1.11.0, `--verify` OK (9986 files match).
+
+#### Acceptance, #48
+- GRAPH_BOOST 1.3 -> 1.0: done, and then removed outright (no-op). Fixture held-out hybrid @1 22 -> 25, real held-out 13 -> 14; fixture-train 39 -> 38 and real train 21 -> 22 (hybrid @1). Cost: one fixture-train exact, one held-out multi @3.
+- Held-out paraphrase hybrid >= semantic: met (13 = 13), now a real gate.
+- Stale marker in response text: met for search_hybrid/semantic/text (integration test) and the CLI (hits + hook line). search_graph has the marker but no test.
+- `meta_weight` default: kept 0.8 (train did not support 1.0); docs guidance is Phase 9. Missed ask: none, it was "measure and document".
+- Abstention 0.45: not adopted (22% / 31% / 11% false flags); no two-feature rule beat 0.36 on train. Negative result, as planned.
+- Ranking (#45) stays off.
+#### Acceptance, #49
+- Check 1 (400-day git age = 400-day last_verified): met, unit test (toBeCloseTo 10 digits) and integration (git date 400d).
+- Check 2 (`fresh` restores v1.10.0): met for MCP ranking and scores; NOT exact for the CLI search (now applies decay) and the block gains `source`. Stated above.
+- Check 3 (decay block names the source, also at multiplier 1): met for MCP and CLI.
+- Check 4 (no query spawns git; one pass per build): met (spy test).
+- Non-git vault and untracked file take the penalty: met. Verified doc beats its unverified twin on the fixture: 6/6 train and held-out, hybrid and semantic.
+- Lint reports notes without `last_verified` (count `noLastVerified`), severity unchanged: met; it is a count, not per-note findings.
+- Limits that remain (documented in Decisions): `git` needs a --reindex when switched to; a no-byte-change commit dates an edited doc only at the next reconcile with changes; shallow clones.
