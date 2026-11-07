@@ -58,6 +58,8 @@ export interface EnrichedResult {
 export interface ServerContext {
   notesPath: string;
   indexPath: string;
+  /** Where search/read telemetry is appended: the index dir when read-only, else undefined (the session dir). */
+  telemetryDir?: string;
   options: ServerOptions;
 
   indexer: Indexer;
@@ -644,6 +646,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   return {
     notesPath,
     indexPath,
+    telemetryDir: options.readOnly ? indexPath : undefined,
     options,
     indexer,
     embedder,

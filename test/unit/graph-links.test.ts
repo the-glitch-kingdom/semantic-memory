@@ -64,8 +64,14 @@ describe("typed edges", () => {
 
   it("findPath follows link edges, not tag edges, unless asked", () => {
     expect(g.findPath("c.md", "b.md")).toEqual(["c.md", "a.md", "b.md"]);
-    expect(g.findPath("b.md", "c.md")).toBeNull();
+    expect(g.findPath("b.md", "c.md", undefined, "out")).toBeNull();
     expect(g.findPath("b.md", "c.md", ["tag"])).toEqual(["b.md", "c.md"]);
+  });
+
+  it("findPath direction: any walks against a link, in only walks against, out only forwards", () => {
+    expect(g.findPath("b.md", "c.md")).toEqual(["b.md", "a.md", "c.md"]);
+    expect(g.findPath("b.md", "c.md", undefined, "in")).toEqual(["b.md", "a.md", "c.md"]);
+    expect(g.findPath("c.md", "b.md", undefined, "in")).toBeNull();
   });
 
   it("a live doc wins a wikilink over an archived copy of the same name", () => {

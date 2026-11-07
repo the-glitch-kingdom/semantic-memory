@@ -110,3 +110,6 @@ values keep train false flags lowest (T_cos 0.38 gives 8/59, 0.36 gives 3/59). f
     The false-flag gate there runs as `it.fails` (`KNOWN["fixture-heldout"].falseFlags`), as does real held-out `negatives`.
 - Answer@1 and ranking unchanged by this phase (abstention does not reorder). Gates added to `gates.ts` for every split: all negatives flagged; answerable false flags <= 10%.
 - Wording: tool descriptions, `serverInstructions` and the UserPromptSubmit hook now say "weak match, verify before citing", not "not documented".
+
+## Eval results: Phase 6
+Tool fixes only, no ranking change. `npm run eval` green (37 passed, 4 expected fail, unchanged). Link precision/recall stay 1.0 with `include_excluded: true`; the `search_text` eval arm is unchanged (answered@1 0, an exact-phrase tool).

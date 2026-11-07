@@ -83,7 +83,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     fullBytes = (await runFacetEval(cases, tool("search_hybrid", { full: true }), textOf)).meanBytes;
 
     const truth: Record<string, string[]> = JSON.parse(await readFile(join(HERE, "docs-graph-truth.json"), "utf-8"));
-    const paths = async (tl: string, path: string) => (await call(tl, { path })).parsed.map((n: any) => n.path);
+    const paths = async (tl: string, path: string) => (await call(tl, { path, include_excluded: true })).parsed.map((n: any) => n.path);
     forwardlinks = await scoreLinks(truth, (p) => paths("forwardlinks", p));
     backlinks = await scoreLinks(invertLinks(truth), (p) => paths("backlinks", p));
 

@@ -21,7 +21,7 @@ async function logSearch(ctx: ServerContext, tool: string, query: string, enrich
     ...(r.decay ? { decay: r.decay.multiplier } : {}),
   }));
   recordSearchForCorrelation(ctx.notesPath, results.map((r) => r.path));
-  await appendEvent(ctx.notesPath, { kind: "search", tool, query, results });
+  await appendEvent(ctx.notesPath, { kind: "search", tool, query, results }, undefined, ctx.telemetryDir);
 }
 
 /** Context expansion: the #1 result's direct link neighbours that the search also found and that clear the confidence bar. */

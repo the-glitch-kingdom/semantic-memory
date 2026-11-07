@@ -169,6 +169,11 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
       "properties": {
+        "include_excluded": {
+          "default": false,
+          "description": "Also return notes under path_class.exclude (archive by default). Asking for the 'supersedes' type includes them too",
+          "type": "boolean",
+        },
         "limit": {
           "default": 50,
           "type": "number",
@@ -308,6 +313,11 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
       "properties": {
+        "include_excluded": {
+          "default": false,
+          "description": "Also return notes under path_class.exclude (archive by default). Asking for the 'supersedes' type includes them too",
+          "type": "boolean",
+        },
         "limit": {
           "default": 50,
           "type": "number",
@@ -366,11 +376,21 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "get_stats",
   },
   {
-    "description": "Find the shortest path between two notes over link, wikilink, related, cites and same-incident edges (pass types to change)",
+    "description": "Find the shortest path (in either link direction unless \`direction\` says otherwise) between two notes over link, wikilink, related, cites and same-incident edges (pass types to change)",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
       "properties": {
+        "direction": {
+          "default": "any",
+          "description": "out: follow links forwards; in: against them; any (default): either way",
+          "enum": [
+            "out",
+            "in",
+            "any",
+          ],
+          "type": "string",
+        },
         "from": {
           "type": "string",
         },
