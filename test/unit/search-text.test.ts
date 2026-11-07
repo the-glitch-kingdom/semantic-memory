@@ -78,4 +78,12 @@ describe("TextSearch", () => {
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].snippet).toContain("RabbitMQ");
   });
+
+  it("ranks by match count, then density, not path order", () => {
+    const t = new TextSearch();
+    const d = (path: string, content: string) => ({ path, title: path, content, tags: [] }) as any;
+    t.setDocuments([d("a.md", "needle"), d("b.md", "needle needle needle"), d("c.md", "needle needle")]);
+    expect(t.search({ pattern: "needle" }).map((r) => r.path)).toEqual(["b.md", "c.md", "a.md"]);
+    expect(t.search({ pattern: "needle", regex: true, limit: 1 }).map((r) => [r.path, r.score])).toEqual([["b.md", 3]]);
+  });
 });

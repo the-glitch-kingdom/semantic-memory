@@ -1,10 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
-import { fuseRrf } from "../../core/bm25.js";
+import { fuseScores } from "../../core/bm25.js";
 import { applyGraphBoost } from "../../core/graph-boost.js";
 import { RERANK_TOP } from "../../core/reranker.js";
-import { excerpt, isWeak, standaloneConfidence, withConfidence, NO_STRONG_MATCH_BELOW } from "../../core/confidence.js";
+import { excerpt, isWeak, standaloneConfidence, withConfidence, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
@@ -21,16 +21,16 @@ async function logSearch(ctx: ServerContext, tool: string, query: string, enrich
     ...(r.decay ? { decay: r.decay.multiplier } : {}),
   }));
   recordSearchForCorrelation(ctx.notesPath, results.map((r) => r.path));
-  await appendEvent(ctx.notesPath, { kind: "search", tool, query, results });
+  await appendEvent(ctx.notesPath, { kind: "search", tool, query, results }, undefined, ctx.telemetryDir);
 }
 
 /** Context expansion: the #1 result's direct link neighbours that the search also found and that clear the confidence bar. */
 function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { confidence: number })[]) {
   const near = new Set([...ctx.graph.forwardlinks(path), ...ctx.graph.backlinks(path)].map((n) => n.path));
   return scored
-    .filter((r) => r.path !== path && near.has(r.path) && standaloneConfidence(r) >= NO_STRONG_MATCH_BELOW)
+    .filter((r) => r.path !== path && near.has(r.path) && standaloneConfidence(r) >= RELATED_MIN_CONFIDENCE)
     .slice(0, RELATED_MAX)
-    .map((r) => ({ path: r.path, title: r.title, confidence: standaloneConfidence(r) }));
+    .map((r) => ({ path: r.path, title: ctx.enrichResult(r).title, confidence: standaloneConfidence(r) }));
 }
 
 /**
@@ -38,12 +38,12 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
  * and a ~600-char excerpt around the match; `full` keeps the whole enriched result. A weak top result marks every
  * returned result `no_strong_match` (the response is an array, so the flag rides on its items).
  */
-function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean) {
+function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null) {
   const scored = withConfidence(ranked);
   const page = scored.slice(0, limit);
-  const weak = isWeak(page);
+  const weak = isWeak(scored, bm25Min);
   return page.map((r, i) => {
-    const { cosine: _c, lexical: _l, ...e } = ctx.enrichResult(r);
+    const { cosine: _c, lexical: _l, bm25: _b, ...e } = ctx.enrichResult(r);
     const out = full
       ? e
       : {
@@ -69,7 +69,7 @@ const fullArg = z.boolean().optional().default(false).describe("Return the whole
 export function registerSearchTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
     "search_semantic",
-    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the top result is weak every result has `no_strong_match: true` (the vault does not document it). `full: true` returns whole chunks and frontmatter fields.",
+    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -96,7 +96,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
       if (tier) results = results.filter((r) => docByPath.get(r.path)?.tier === tier);
       if (domain) results = results.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
-      const enriched = shape(ctx, results, query, limit, full);
+      const enriched = shape(ctx, results, query, limit, full, null); // no lexical arm here: the cosine alone decides
       await logSearch(ctx, "search_semantic", query, enriched);
       return ctx.textResponse(JSON.stringify(enriched, null, 2));
     }
@@ -146,14 +146,15 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) return ctx.textResponse(ctx.indexingMessage());
       const hits = ctx.filterPathClass(vectorIndex.search(await ctx.embedder.embed(concept), GRAPH_SEARCH_SEEDS * 3)).slice(0, GRAPH_SEARCH_SEEDS);
-      const results = ctx.graph.searchGraph(hits.map((h) => h.path), maxDepth, limit, types);
+      const walked = ctx.graph.searchGraph(hits.map((h) => h.path), maxDepth, types?.includes("supersedes") ? limit : Number.MAX_SAFE_INTEGER, types);
+      const results = (types?.includes("supersedes") ? walked : ctx.filterPathClass(walked)).slice(0, limit);
       return ctx.textResponse(JSON.stringify(results, null, 2));
     }
   );
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + lexical + graph search — vector and BM25 results fused by reciprocal rank, re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the top result is weak every result has `no_strong_match: true` (the vault does not document it). `full: true` returns whole chunks and frontmatter fields.",
+    "Combined semantic + lexical + graph search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -172,13 +173,13 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
       const queryEmbed = await ctx.embedder.embed(query);
       await ctx.refreshUsageBoost();
-      // Boosts act on each arm's own scores, before fusion: RRF scores are flat, so a x1.3 on them would reorder far too much.
+      // Boosts act on each arm's own scores, before fusion, so a x1.3 stays a x1.3 on the cosine.
       const adjust = (rs: SearchResult[]) =>
         rs
           .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
           .sort((a, b) => b.score - a.score);
       const semanticResults = adjust(applyGraphBoost(vectorIndex.search(queryEmbed, limit * 3), ctx.graph));
-      let hybrid = fuseRrf(semanticResults, adjust(ctx.bm25.search(query, limit * 3)));
+      let hybrid = fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3)));
       hybrid = ctx.filterPathClass(hybrid);
 
       hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);
@@ -188,7 +189,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
 
       if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
-      const enriched = shape(ctx, hybrid, query, limit, full);
+      const enriched = shape(ctx, hybrid, query, limit, full, ctx.bm25Min());
       await logSearch(ctx, "search_hybrid", query, enriched);
       return ctx.textResponse(JSON.stringify(enriched, null, 2));
     }

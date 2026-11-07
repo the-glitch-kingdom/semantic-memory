@@ -6,6 +6,7 @@ import { buildContext, type ServerContext } from "../../src/mcp/context.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../../src/mcp/server.js";
+import { BM25_FRACTION, bm25SelfTop } from "../../src/core/bm25.js";
 import { filesMatchMeta, readMeta } from "../../src/core/index-store.js";
 import { createTempVault, cleanupTempDir } from "../setup.js";
 import { INDEX_SCHEMA_VERSION } from "../../src/core/indexer.js";
@@ -71,6 +72,25 @@ describe("index freshness without a watcher", () => {
     expect(await top(ctx, "zebra striped handshakes")).toBe("orphan.md");
   }, 180_000);
 
+  it("the BM25 abstention reference is committed to meta.json, rebuilt after an edit, and adopted on load", async () => {
+    const { ctx } = await track();
+    await ctx.flushIndex();
+    const index = join(dir, ".semantic-sidekick-index");
+    const stored = (await readMeta(index))!.bm25SelfTop!;
+    expect(stored).toBeGreaterThan(0);
+    expect(ctx.bm25Min()).toBeCloseTo(stored * BM25_FRACTION, 6);
+
+    const reloaded = await buildContext(dir, NOW);
+    open_.push(reloaded);
+    expect(await reloaded.tryLoadCachedIndex()).toBe(true);
+    expect(reloaded.bm25Min()).toBeCloseTo(stored * BM25_FRACTION, 6);
+
+    await writeFile(join(dir, "orphan.md"), "# Orphan\n\nThe zebra migration protocol uses striped handshakes.\n");
+    await ctx.ensureFresh();
+    await ctx.flushIndex();
+    expect((await readMeta(index))!.bm25SelfTop).toBe(bm25SelfTop(ctx.bm25, ctx.getDocuments()));
+  }, 180_000);
+
   it("picks up new files and drops deleted ones from search", async () => {
     const { ctx } = await track();
     await writeFile(join(dir, "fresh.md"), "# Fresh\n\nPelican logistics for the harbour cranes.\n");
@@ -120,7 +140,7 @@ describe("index freshness without a watcher", () => {
     expect(await top(second.ctx, "quokka telemetry rollups")).toBe("orphan.md");
   }, 180_000);
 
-  it("a schemaVersion bump re-parses every file but embeds nothing whose text is unchanged", async () => {
+  it("a schemaVersion bump serves the old index (stale), then re-parses every file but embeds nothing whose text is unchanged", async () => {
     const first = await track();
     await first.ctx.flushIndex();
     const metaPath = join(dir, ".semantic-sidekick-index", "meta.json");
@@ -129,9 +149,12 @@ describe("index freshness without a watcher", () => {
     const ctx = await buildContext(dir, NOW);
     open_.push(ctx);
     const parsed = vi.spyOn(ctx.indexer, "indexFile");
-    expect(await ctx.tryLoadCachedIndex()).toBe(false);
+    expect(await ctx.tryLoadCachedIndex()).toBe(true);
+    expect(ctx.isStale()).toBe(true);
+    expect(ctx.getDocuments().length).toBe(first.ctx.getDocuments().length); // answering from the old index
     const spy = vi.spyOn(ctx.embedder, "embedBatch");
-    await ctx.fullIndex();
+    await ctx.reconcileNow();
+    expect(ctx.isStale()).toBe(false);
     expect(parsed).toHaveBeenCalledTimes(first.ctx.getDocuments().length);
     expect(spy).not.toHaveBeenCalled();
     await ctx.flushIndex();

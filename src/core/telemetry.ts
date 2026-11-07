@@ -36,6 +36,11 @@ export interface SelectionEvent {
 
 export type TelemetryEvent = (SearchEvent | SelectionEvent) & { ts?: string };
 
+/** Where a --read-only server logs, so the notes tree stays clean; readSelectionLog reads it alongside the legacy path. */
+export function indexSelectionLogPath(vaultPath: string): string {
+  return join(vaultPath, ".semantic-sidekick-index", LOG_FILE);
+}
+
 /** Absolute path to the selection log for a given vault. */
 export function selectionLogPath(vaultPath: string): string {
   return join(deriveSessionDir(vaultPath), LOG_FILE);
@@ -62,15 +67,15 @@ export function telemetryEnabled(vaultPath: string): boolean {
  * Append one event. Fire-and-forget: respects the opt-out and NEVER throws — a
  * telemetry failure must not affect the tool call that triggered it.
  */
-export async function appendEvent(vaultPath: string, event: TelemetryEvent, nowIso?: string): Promise<void> {
+export async function appendEvent(vaultPath: string, event: TelemetryEvent, nowIso?: string, dirOverride?: string): Promise<void> {
   try {
     if (!telemetryEnabled(vaultPath)) return;
-    const dir = deriveSessionDir(vaultPath);
+    const dir = dirOverride ?? deriveSessionDir(vaultPath);
     await mkdir(dir, { recursive: true });
     // only the free-text query: note_path feeds usage-boost citation counts and must stay intact
     const safe = event.kind === "search" ? { ...event, query: redact(event.query, "broad").text } : event;
     const line = JSON.stringify({ ts: nowIso ?? new Date().toISOString(), ...safe });
-    await appendFile(selectionLogPath(vaultPath), line + "\n", "utf-8");
+    await appendFile(join(dir, LOG_FILE), line + "\n", "utf-8");
   } catch {
     // fire-and-forget
   }
@@ -96,20 +101,20 @@ export function wasRecentlySearched(vaultPath: string, notePath: string, nowMs?:
 /** Read the selection log (oldest→newest). Returns [] if absent/unreadable. */
 export async function readSelectionLog(vaultPath: string, opts: { limit?: number } = {}): Promise<TelemetryEvent[]> {
   try {
-    const p = selectionLogPath(vaultPath);
-    if (!existsSync(p)) return [];
-    const raw = await readFile(p, "utf-8");
-    const events = raw
-      .split("\n")
-      .filter((l) => l.trim())
-      .map((l) => {
+    // legacy location first, then the index dir (--read-only servers write there)
+    const events: TelemetryEvent[] = [];
+    for (const p of [selectionLogPath(vaultPath), indexSelectionLogPath(vaultPath)]) {
+      if (!existsSync(p)) continue;
+      const raw = await readFile(p, "utf-8");
+      for (const l of raw.split("\n")) {
+        if (!l.trim()) continue;
         try {
-          return JSON.parse(l) as TelemetryEvent;
+          events.push(JSON.parse(l) as TelemetryEvent);
         } catch {
-          return null;
+          /* skip a torn line */
         }
-      })
-      .filter((e): e is TelemetryEvent => e !== null);
+      }
+    }
     return opts.limit ? events.slice(-opts.limit) : events;
   } catch {
     return [];

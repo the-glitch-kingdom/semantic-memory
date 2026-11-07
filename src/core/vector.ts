@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { SearchResult } from "./types.js";
 
+const EF_SEARCH = 100;
+
 interface ChunkMeta {
   docPath: string;
   chunkIndex: number;
@@ -76,6 +78,8 @@ export class VectorIndex {
     if (!this.index || this.live === 0) return [];
 
     const numResults = Math.min(k, this.live);
+    // hnswlib searches at ef=10 unless told otherwise (recall 0.93 on real vectors); set per search so a loaded, grown or rebuilt index all get it
+    this.index.setEf(Math.max(EF_SEARCH, numResults));
     const result = this.index.searchKnn(Array.from(queryEmbedding), numResults);
 
     const seen = new Set<string>();

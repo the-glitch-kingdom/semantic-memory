@@ -8,11 +8,12 @@
 //   missing     current chunks with no stored vector
 //   orphans     stored vectors no current chunk references
 //   indexMismatch  chunks in the committed HNSW metadata that differ from the files on disk (either direction)
+//   hnswRecall  mean recall@24 of VectorIndex.search against exact cosine over the stored vectors, for the eval questions (gate >= 0.97)
 //   coldStartMs createServer() to first search answer with the cache as found on disk
 import { createHash } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { Embedder, Indexer } from "../../dist/core/index.js";
+import { Embedder, Indexer, VectorIndex } from "../../dist/core/index.js";
 import { createServer } from "../../dist/mcp/server.js";
 
 const notes = resolve(process.argv[2] ?? "");
@@ -66,5 +67,18 @@ await embedder.init();
 let stale = 0;
 for (const c of picked) if (cos(stored.get(c.key), await embedder.embed(c.text)) < 0.99) stale++;
 
-console.log(JSON.stringify({ chunks: chunks.length, sampled: picked.length, staleShare: picked.length ? stale / picked.length : 0, missing, orphans, indexMismatch, coldStartMs }, null, 2));
+// HNSW recall: a fresh index over the stored vectors vs brute-force cosine, docs of the top-24 chunks (best chunk per doc, as search dedups)
+const withVec = chunks.filter((c) => stored.has(c.key));
+const hnswIndex = new VectorIndex(stored.get(withVec[0].key).length);
+hnswIndex.build(withVec.map((c) => stored.get(c.key)), withVec.map((c, i) => ({ docPath: c.path, chunkIndex: i, text: c.text })));
+const questions = ["real-corpus.jsonl", "real-corpus-heldout.jsonl"].flatMap((f) =>
+  readFileSync(new URL(`../../test/retrieval-eval/${f}`, import.meta.url), "utf8").split("\n").filter((l) => l.startsWith("{")).map((l) => JSON.parse(l).q));
+let recallSum = 0;
+for (const q of questions) {
+  const qv = await embedder.embed(q);
+  const exact = new Set(withVec.map((c) => ({ p: c.path, s: cos(qv, stored.get(c.key)) })).sort((a, b) => b.s - a.s).slice(0, 24).map((e) => e.p));
+  recallSum += hnswIndex.search(qv, 24).filter((r) => exact.has(r.path)).length / exact.size;
+}
+
+console.log(JSON.stringify({ chunks: chunks.length, sampled: picked.length, staleShare: picked.length ? stale / picked.length : 0, missing, orphans, indexMismatch, hnswRecall: Number((recallSum / questions.length).toFixed(3)), coldStartMs }, null, 2));
 process.exit(0);

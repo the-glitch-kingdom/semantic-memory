@@ -11,26 +11,26 @@ export class TextSearch {
   search(options: SearchTextOptions): SearchResult[] {
     const { pattern, regex, caseSensitive, pathGlob, tagFilter, limit = 20 } = options;
 
-    let matcher: (text: string) => { matched: boolean; index: number };
+    let matcher: (text: string) => { count: number; index: number };
 
     if (regex) {
-      const flags = caseSensitive ? "g" : "gi";
-      const re = new RegExp(pattern, flags);
+      const re = new RegExp(pattern, caseSensitive ? "g" : "gi");
       matcher = (text) => {
-        re.lastIndex = 0;
-        const m = re.exec(text);
-        return { matched: !!m, index: m?.index ?? -1 };
+        const all = [...text.matchAll(re)];
+        return { count: all.length, index: all[0]?.index ?? -1 };
       };
     } else {
       const needle = caseSensitive ? pattern : pattern.toLowerCase();
       matcher = (text) => {
         const haystack = caseSensitive ? text : text.toLowerCase();
         const idx = haystack.indexOf(needle);
-        return { matched: idx >= 0, index: idx };
+        let count = 0;
+        for (let i = idx; i >= 0 && needle; i = haystack.indexOf(needle, i + needle.length)) count++;
+        return { count, index: idx };
       };
     }
 
-    const results: SearchResult[] = [];
+    const results: (SearchResult & { density: number })[] = [];
 
     for (const doc of this.documents) {
       // Path filter
@@ -42,8 +42,8 @@ export class TextSearch {
         if (!hasTag) continue;
       }
 
-      const { matched, index } = matcher(doc.content);
-      if (!matched) continue;
+      const { count, index } = matcher(doc.content);
+      if (count === 0) continue;
 
       const snippetStart = Math.max(0, index - 80);
       const snippetEnd = Math.min(doc.content.length, index + 120);
@@ -52,13 +52,14 @@ export class TextSearch {
       results.push({
         path: doc.path,
         title: doc.title,
-        score: 1.0,
+        score: count,
+        density: count / Math.max(doc.content.length, 1),
         snippet: (snippetStart > 0 ? "..." : "") + snippet + (snippetEnd < doc.content.length ? "..." : ""),
       });
-
-      if (results.length >= limit) break;
     }
 
-    return results;
+    // Most matches first; the tie goes to the denser (shorter-for-the-same-count) doc, BM25's length normalisation.
+    results.sort((a, b) => b.score - a.score || b.density - a.density || a.path.localeCompare(b.path));
+    return results.slice(0, limit).map(({ density: _d, ...r }) => r);
   }
 }

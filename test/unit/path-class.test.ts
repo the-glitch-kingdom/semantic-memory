@@ -7,6 +7,8 @@ import {
   isExcludedPath,
   loadPathClassConfig,
   DEFAULT_PATH_CLASS_CONFIG,
+  filterPathClass,
+  indexExclude,
   type PathClassConfig,
 } from "../../src/core/path-class.js";
 
@@ -21,7 +23,7 @@ describe("pathClassMultiplier", () => {
   });
 
   it("returns 1 when disabled", () => {
-    expect(pathClassMultiplier("archive/old.md", { enabled: false, rules: cfg.rules })).toBe(1);
+    expect(pathClassMultiplier("archive/old.md", { ...cfg, enabled: false })).toBe(1);
   });
 
   it("first matching rule wins", () => {
@@ -82,5 +84,32 @@ describe("loadPathClassConfig", () => {
       expect(isExcludedPath(p, DEFAULT_PATH_CLASS_CONFIG), p).toBe(true);
       expect(isExcludedPath(p, { ...DEFAULT_PATH_CLASS_CONFIG, exclude: [] }), p).toBe(false);
     }
+  });
+});
+
+describe("results.exclude", () => {
+  it("drops generated hubs and reports from results, even with path_class off", () => {
+    const rs = [{ path: "guide.md" }, { path: "a/INDEX.md" }, { path: "reports/link-check-2026.md" }, { path: "reports/audit.md" }];
+    const kept = (c: PathClassConfig) => filterPathClass(rs, c).map((r) => r.path);
+    expect(kept(DEFAULT_PATH_CLASS_CONFIG)).toEqual(["guide.md", "reports/audit.md"]);
+    expect(kept({ ...DEFAULT_PATH_CLASS_CONFIG, enabled: false })).toEqual(["guide.md", "reports/audit.md"]);
+    expect(kept({ ...DEFAULT_PATH_CLASS_CONFIG, resultsExclude: [] })).toHaveLength(4);
+  });
+
+  it("is read from vault.schema.yml independently of path_class", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "sp-pc-"));
+    try {
+      await writeFile(join(dir, "vault.schema.yml"), "results:\n  exclude:\n    - \"**/generated/**\"\n", "utf-8");
+      const c = loadPathClassConfig(dir);
+      expect(c.resultsExclude).toEqual(["**/generated/**"]);
+      expect(c.exclude).toEqual(DEFAULT_PATH_CLASS_CONFIG.exclude);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("indexExclude is empty when path_class is disabled", () => {
+    expect(indexExclude(DEFAULT_PATH_CLASS_CONFIG)).toEqual(["**/archive/**"]);
+    expect(indexExclude({ ...DEFAULT_PATH_CLASS_CONFIG, enabled: false })).toEqual([]);
   });
 });

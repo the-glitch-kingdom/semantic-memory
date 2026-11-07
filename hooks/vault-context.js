@@ -209,7 +209,7 @@ export function formatContextBlock(source, query, hits) {
       lines.push(`  > ${snip}`);
     }
   }
-  if (shown.every((h) => h.no_strong_match)) lines.push(`\nNo strong match: these are the nearest notes, not an answer. If the prompt is a project lookup, say "not documented" instead of answering from them.`);
+  if (shown.every((h) => h.no_strong_match)) lines.push(`\nWeak match: these are the nearest notes, verify they answer the prompt before citing them, and say so if they do not.`);
   lines.push("");
   lines.push(`Instructions: Apply cite-or-deflect ONLY to project prose lookups (how/why/where does X work here) — cite the hit paths, or say "not in vault". For meta/tool/debug/status/directive/conversational prompts, ignore this block silently. Do NOT narrate "X unrelated" or "not in vault" on those.`);
   lines.push(`</vault-context>`);

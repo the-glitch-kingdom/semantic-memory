@@ -6,11 +6,11 @@ import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
-import { Bm25Index, fuseRrf } from "../core/bm25.js";
+import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
-import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
-import { readConsistentMeta } from "../core/index-store.js";
+import { loadPathClassConfig, indexExclude, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
+import { readConsistentMeta, readMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
 export interface SearchCliOptions {
@@ -58,7 +58,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
 
   // Prefer the parsed-doc cache the server committed — avoids re-parsing 500+ files on every hook call.
   // Read-only: a cache from another parser version or caught mid-commit is not used, and nothing is written here.
-  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath) : null;
+  const committed = existsSync(indexPath) ? await readConsistentMeta(indexPath, indexExclude(loadPathClassConfig(notesPath))) : null;
   let documents = committed ? await indexer.loadDocsCache(indexPath) : null;
   if (!documents) {
     documents = await indexer.indexAll();
@@ -106,8 +106,10 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
 
   const docByPath = new Map(docs.map((d) => [d.path, d]));
   const bm25 = new Bm25Index();
-  for (const d of docs) bm25.addDoc(d.path, d.chunks);
+  for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
   const pathClass = loadPathClassConfig(notesPath);
+  const selfTop = (await readMeta(indexPath))?.bm25SelfTop ?? bm25SelfTop(bm25, docs);
+  const bm25Min = selfTop === null ? null : selfTop * BM25_FRACTION;
   return {
     async search(query, limit = 8) {
       const queryEmbed = await embedder.embed(query);
@@ -123,17 +125,18 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
             return { ...r, score };
           })
           .sort((a, b) => b.score - a.score);
-      const ranked = withConfidence(
+      const all = withConfidence(
         filterPathClass(
-          fuseRrf(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))),
+          fuseScores(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))),
           pathClass
         )
-      ).slice(0, limit);
-      const weak = isWeak(ranked);
+      );
+      const weak = isWeak(all, bm25Min);
+      const ranked = all.slice(0, limit);
 
       return ranked.map((r) => ({
         path: r.path,
-        title: r.title ?? docByPath.get(r.path)?.title,
+        title: docByPath.get(r.path)?.title ?? r.title,
         score: r.score,
         confidence: r.confidence,
         snippet: excerpt(r.matchedChunk ?? r.snippet, query),

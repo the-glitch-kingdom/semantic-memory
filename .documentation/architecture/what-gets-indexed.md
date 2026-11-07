@@ -32,6 +32,7 @@ That single line is the source of truth for "what gets indexed." Everything foll
 - ✅ **Symlinked files** → indexed (`follow: true`)
 - ❌ **Files outside `<vault>`** → not indexed (e.g. `.planning/`, `node_modules/`, source code, anything in your project root unless your project root IS the vault)
 - ❌ **Files NOT ending in `.md`** → not indexed (no `.txt`, `.org`, `.rst`, `.pdf`, `.json`, `.yaml`, etc.)
+- ❌ **Paths matching `path_class.exclude`** (default `**/archive/**`, v1.9.1) → no chunks, vectors or BM25 entries. They stay in the doc cache and the graph (frontmatter and links only) so `supersedes` edges resolve, and an explicit `search_text` `pathGlob` can still reach them. `results.exclude` globs (hubs, `reports/link-check-*.md`) are indexed but never returned.
 - ❌ **Files inside `<vault>/.semantic-sidekick-index/`** → not indexed (excluded by lint glob; would create circular reference if included)
 - ❌ **`<vault>/vault.schema.yml`** → not indexed by the search indexer (it's the schema definition, read separately by `lintVault`)
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "Measured floor for docs-eval.test.ts (Phase 8: context expansion on #1; 35 answerable cases, 6 negatives). Raise at the end of each phase; never lower (answeredFlagged and meanBytes are ceilings).",
+  "_comment": "Measured floor for docs-eval.test.ts and real-corpus-eval.test.ts. arms: fixture train split (35 answerable, 12 negatives). splits: answer@1 per split, the v1.9.0 numbers recorded by v191-ranking-regression Phase 2. Raise at the end of each phase; never lower (answeredFlagged and meanBytes are ceilings). Real-corpus floors sit 1 below the best run: the HNSW graph is random per build.",
   "arms": {
     "search_semantic": {
       "answeredAt1": 22,
@@ -8,7 +8,7 @@
     "search_hybrid": {
       "answeredAt1": 23,
       "archiveHits": 0,
-      "answeredFlagged": 2,
+      "answeredFlagged": 1,
       "meanBytes": 4132,
       "expandedAt1": 25,
       "multiExpandedAt1": 4
@@ -25,5 +25,24 @@
   "backlinks": {
     "precision": 1.0,
     "recall": 1.0
-  }
+  },
+  "splits": {
+    "fixture-train": {
+      "search_semantic": 22,
+      "search_hybrid": 23
+    },
+    "fixture-heldout": {
+      "search_semantic": 17,
+      "search_hybrid": 13
+    },
+    "real-train": {
+      "search_semantic": 12,
+      "search_hybrid": 16
+    },
+    "real-heldout": {
+      "search_semantic": 10,
+      "search_hybrid": 10
+    }
+  },
+  "hnswRecallMin": 0.97
 }

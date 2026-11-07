@@ -135,10 +135,12 @@ The suite points at `/home/tmarlette/workspace/the-glitch-kingdom/sidekick-test-
 | File | Covers |
 |---|---|
 | `retrieval-eval/docs-eval.test.ts` (`npm run eval`) | Three arms (`search_semantic`, `search_hybrid`, `search_text`) over `test/fixtures/docs-vault` with `golden.jsonl` (answer facets, negatives, archive hits, payload bytes), graph precision/recall vs `docs-graph-truth.json`; fails below the floors in `baseline.json`. Also its own CI step. |
+| `retrieval-eval/golden-docs-heldout.jsonl`, `real-corpus-heldout.jsonl`, `real-corpus-eval.test.ts`, `gates.ts` (v1.9.1) | Held-out splits (fixture and `.documentation/`), never used to tune. Shared gates per split: hybrid @1 >= semantic @1 - 1, paraphrase hybrid >= semantic, all negatives flagged, answerable false flags <= 10%, HNSW recall@k >= 0.97 vs exact cosine. Gates still missed run as `it.fails` (`KNOWN` in the test files) and flip red when fixed. |
 | `retrieval-eval/real-corpus.jsonl` + `scripts/retrieval-eval/real-corpus.mjs` | Own questions against this repo's `.documentation/` through the production launch; before/after benchmark, not a CI gate. |
 | `scripts/retrieval-eval/stale-audit.mjs` | Re-embeds a sample of chunks and compares with stored vectors (stale %, missing, orphans, index vs disk). |
 | `scripts/retrieval-eval/mine-selection.mjs` | Drafts eval questions from `selection.jsonl` (search then read follow-ups); output is for hand review. |
 | `integration/freshness.test.ts`, `freshness-scale.test.ts` | Edit mid-session, edit while down, touch-all re-embeds nothing, schemaVersion bump, mixed commit recovery, zero inotify watches, two processes, edit during reconcile, 1,000-doc warm start under 1 s. |
+| `unit/{vector-ef,confidence}.test.ts`, `integration/{index-upgrade,read-only-clean-tree,links-exclude}.test.ts`, `unit/{search-text,graph-links}.test.ts` (v1.9.1) | `setEf`, `fuseScores`, confidence without margin, per-index BM25 threshold, v1.7.2 and v1.9.0 index upgrade (re-embeds only the edited chunk, serves stale), read-only server leaves `git status` clean, excluded notes in links and `graph_path`, `search_text` order, `graph_path` directions. |
 | `unit/{reconcile,bm25,graph-links,graph-knowledge,path-class,reranker}.test.ts`, `unit/search-parity.test.ts` | Diff branches and throttle, BM25, link extraction and typed edges, archive globs, rerank fallback, CLI and MCP same order on the golden questions. |
 
 ## Running subsets

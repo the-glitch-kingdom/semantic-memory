@@ -1,31 +1,31 @@
 import { tokenize } from "./bm25.js";
 import type { SearchResult } from "./types.js";
 
-/** A top result under this is `no_strong_match`. Calibrated on the docs-vault eval (notes.md "Phase 7"). */
-export const NO_STRONG_MATCH_BELOW = 0.5;
+/** Calibrated on the train splits (notes.md "Phase 5"): a query whose best cosine is under this and has no BM25 evidence is `no_strong_match`. */
+export const NO_STRONG_MATCH_BELOW = 0.36;
+/** A neighbour of the top hit must reach this confidence to ride along as `related`. */
+export const RELATED_MIN_CONFIDENCE = 0.5;
 const LEXICAL_BONUS = 0.1;
 export const EXCERPT_CHARS = 600;
 
-/**
- * Confidence in 0..1 per result: its vector cosine, plus its margin over the best other result's cosine
- * (a lone strong hit scores above a crowd of similar ones), plus a bonus when BM25 also returned it
- * (two or more rare query terms in one chunk). Call on the whole ranked list, not a page of it.
- * Shortcut: the cross-encoder score is not folded in (it is off by default and has no calibration data).
- */
-export function withConfidence<T extends Pick<SearchResult, "cosine" | "lexical">>(results: T[]): (T & { confidence: number })[] {
-  const cos = results.map((r) => r.cosine ?? 0);
-  return results.map((r, i) => {
-    const other = Math.max(0, ...cos.filter((_, j) => j !== i));
-    const raw = cos[i] + (cos[i] - other) + (r.lexical ? LEXICAL_BONUS : 0);
-    return { ...r, confidence: Math.round(Math.min(1, Math.max(0, raw)) * 100) / 100 };
-  });
-}
-
-/** Confidence without the margin term: a neighbour of the top hit is judged on its own match, not on how far it trails #1. */
+/** Confidence in 0..1 per result: its vector cosine, plus a bonus when BM25 also returned it (two or more rare query terms in one chunk). */
 export const standaloneConfidence = (r: Pick<SearchResult, "cosine" | "lexical">): number =>
   Math.round(Math.min(1, Math.max(0, (r.cosine ?? 0) + (r.lexical ? LEXICAL_BONUS : 0))) * 100) / 100;
 
-export const isWeak = (results: { confidence: number }[]): boolean => results.length > 0 && results[0].confidence < NO_STRONG_MATCH_BELOW;
+export const withConfidence = <T extends Pick<SearchResult, "cosine" | "lexical">>(results: T[]): (T & { confidence: number })[] =>
+  results.map((r) => ({ ...r, confidence: standaloneConfidence(r) }));
+
+/**
+ * `no_strong_match`: the best cosine is under NO_STRONG_MATCH_BELOW AND the best raw BM25 score is under `bm25Min`
+ * (null = no lexical reference for this index, so only the cosine decides). Either arm's strong evidence keeps the answer.
+ * Call on the whole ranked list; empty is not weak.
+ */
+export function isWeak(results: Pick<SearchResult, "cosine" | "bm25">[], bm25Min: number | null): boolean {
+  if (results.length === 0) return false;
+  const cos = Math.max(...results.map((r) => r.cosine ?? 0));
+  const bm = Math.max(...results.map((r) => r.bm25 ?? 0));
+  return cos < NO_STRONG_MATCH_BELOW && (bm25Min === null || bm < bm25Min);
+}
 
 /** `max` chars of `text` centred on the first query term it contains (the start when none matches). */
 export function excerpt(text: string, query: string, max = EXCERPT_CHARS): string {

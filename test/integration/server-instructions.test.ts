@@ -29,7 +29,7 @@ describe("server instructions and the always-loaded search tool", () => {
     expect(text).toContain(`indexes ${where} (markdown, read-only)`);
     expect(text).toContain("call search_hybrid here before grepping");
     expect(text).toContain("no_strong_match");
-    expect(text).toContain("not documented");
+    expect(text).toContain("weak match: verify");
     expect(text).not.toContain("synthesize_note");
     expect(text.length).toBeLessThan(4096); // Claude Code truncates server instructions past 4,096 chars
     await client.close();

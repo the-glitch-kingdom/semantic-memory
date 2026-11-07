@@ -106,6 +106,15 @@ path_class:
   exclude:
     - "**/archive/**"
 
+# Index and search results (v1.9.1). path_class.exclude docs are not indexed: they are graph nodes
+# only (frontmatter and links, no chunks, vectors or BM25), so "supersedes" edges still resolve.
+# results.exclude docs are indexed and linked but never returned by a search.
+results:
+  exclude:
+    - "**/INDEX.md"
+    - "**/REGISTRY.md"
+    - "**/reports/link-check-*.md"
+
 # Knowledge graph (v1.9). Generated hub files link to everything, which makes every
 # note a neighbour of every other: they are left out of the graph.
 graph:

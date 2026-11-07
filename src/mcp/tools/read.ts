@@ -20,7 +20,7 @@ export function registerReadTools(server: McpServer, ctx: ServerContext): void {
         note_path: path,
         via: "read_note",
         correlated: wasRecentlySearched(ctx.notesPath, path),
-      });
+      }, undefined, ctx.telemetryDir);
       if (section) {
         const extracted = extractSection(content, section);
         return ctx.textResponse(extracted ?? `Section "${section}" not found in ${path}. Read without \`section\` for the full note.`);

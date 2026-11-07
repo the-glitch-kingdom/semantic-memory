@@ -34,6 +34,8 @@ export interface SearchResult {
   cosine?: number;
   /** the lexical (BM25) arm also returned this doc */
   lexical?: boolean;
+  /** raw BM25 score of the doc's best chunk, before any boost (kept through fusion) */
+  bm25?: number;
   /** 0..1, see core/confidence.ts */
   confidence?: number;
   /** cross-encoder logit, set only on results the reranker scored */

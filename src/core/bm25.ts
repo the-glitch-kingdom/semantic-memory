@@ -2,7 +2,6 @@ import type { SearchResult } from "./types.js";
 
 const K1 = 1.2;
 const B = 0.75;
-export const RRF_K = 60;
 
 const STOP = new Set(
   "a an the and or but of to in on at by for with from as is are was were be been it its this that these those do does did how what which when where who why can could should would will we our you your i my not no if then than so there their they them has have had into about after before over under".split(" ")
@@ -23,6 +22,10 @@ interface Chunk {
  * Scoring walks every chunk that shares a term with the query: fine for a docs vault (thousands of
  * chunks); shortcut: no inverted index, add one if a vault passes ~50k chunks.
  */
+/** Doc-level text every chunk is also indexed under: a symptom-style query often matches the title or file name, not the chunk. */
+export const bm25Fields = (d: { path: string; title?: string; purpose?: string }): string =>
+  `${d.title ?? ""} ${d.purpose ?? ""} ${d.path.replace(/[/.\-_]+/g, " ")}`;
+
 export class Bm25Index {
   private byDoc = new Map<string, Chunk[]>();
   private df = new Map<string, number>();
@@ -51,10 +54,11 @@ export class Bm25Index {
     this.byDoc.delete(docPath);
   }
 
-  addDoc(docPath: string, texts: string[]): void {
+  /** `fields` (title, purpose, path words) is indexed with every chunk but is not part of the chunk text returned. */
+  addDoc(docPath: string, texts: string[], fields = ""): void {
     this.removeDoc(docPath);
     const chunks = texts.map((text): Chunk => {
-      const tokens = tokenize(text);
+      const tokens = tokenize(`${fields} ${text}`);
       const tf = new Map<string, number>();
       for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
       for (const t of tf.keys()) this.df.set(t, (this.df.get(t) ?? 0) + 1);
@@ -95,33 +99,44 @@ export class Bm25Index {
     return [...best]
       .sort((a, b) => b[1].score - a[1].score)
       .slice(0, k)
-      .map(([path, { score, text }]) => ({ path, title: path, score, snippet: text.slice(0, 200), matchedChunk: text }));
+      .map(([path, { score, text }]) => ({ path, title: path, score, snippet: text.slice(0, 200), matchedChunk: text, bm25: score }));
   }
 }
 
+/** Weight of the vector cosine in the fused score; BM25 (scaled to its best candidate) gets the rest. Tuned on the train splits only. */
+export const COSINE_WEIGHT = 0.7;
+
 /**
- * Reciprocal-rank fusion of the vector and lexical lists (one result per doc each). The fused score is
- * scaled so a doc ranked first by both arms scores 1.0. A doc keeps the chunk of the arm that ranked it higher
- * (vector on a tie), so each doc appears once with its best chunk across both arms.
+ * Doc-level score fusion of the vector and lexical lists (one result per doc each, scores already boosted):
+ * `COSINE_WEIGHT * vector + (1 - COSINE_WEIGHT) * bm25 / max(bm25)`. Rank-only RRF let a weak second arm displace a
+ * correct vector #1; here a doc needs real lexical evidence to move. Pure vector order when BM25 returns nothing.
+ * A doc keeps the vector arm's chunk (the lexical one only when the vector arm missed the doc).
  */
-export function fuseRrf(vector: SearchResult[], lexical: SearchResult[]): SearchResult[] {
-  const fused = new Map<string, { r: SearchResult; rrf: number; rank: number; cosine?: number; lexical?: boolean }>();
-  const add = (list: SearchResult[], lexical: boolean) =>
-    list.forEach((r, rank) => {
-      const w = 1 / (RRF_K + rank + 1);
-      const hit = fused.get(r.path);
-      if (!hit) fused.set(r.path, { r, rrf: w, rank, cosine: r.cosine, lexical });
-      else {
-        hit.rrf += w;
-        hit.cosine ??= r.cosine;
-        hit.lexical ||= lexical;
-        if (rank < hit.rank) Object.assign(hit, { r, rank });
-      }
-    });
-  add(vector, false);
-  add(lexical, true);
-  // cosine and the lexical flag belong to the doc, not to whichever arm's chunk won
-  return [...fused.values()]
-    .map(({ r, rrf, cosine, lexical }) => ({ ...r, cosine, lexical, score: (rrf * (RRF_K + 1)) / 2 }))
-    .sort((a, b) => b.score - a.score);
+export function fuseScores(vector: SearchResult[], lexical: SearchResult[]): SearchResult[] {
+  const top = Math.max(0, ...lexical.map((r) => r.score));
+  if (top === 0) return vector;
+  const fused = new Map<string, SearchResult>();
+  for (const r of lexical) fused.set(r.path, { ...r, score: ((1 - COSINE_WEIGHT) * r.score) / top, lexical: true });
+  for (const r of vector) {
+    const hit = fused.get(r.path);
+    fused.set(r.path, { ...r, score: COSINE_WEIGHT * r.score + (hit?.score ?? 0), lexical: hit ? true : undefined, bm25: hit?.bm25 });
+  }
+  return [...fused.values()].sort((a, b) => b.score - a.score);
+}
+
+/** Most docs a self-query reference samples: enough for a stable median, bounded so a large vault commits fast. */
+const SELF_QUERY_MAX = 200;
+/** Share of the self-query median a query's best BM25 score must reach to count as lexical evidence. Calibrated on the train splits only. */
+export const BM25_FRACTION = 0.8;
+
+/**
+ * Corpus-scaled BM25 reference with no labelled data: the median top score of each doc's title used as its own query
+ * (an evenly spaced sample of titled docs). BM25 magnitudes depend on the corpus (idf, chunk lengths), so a constant
+ * cannot transfer between vaults; the same share of this median does. Null when no doc has a scoring title.
+ */
+export function bm25SelfTop(index: Bm25Index, docs: { title?: string }[]): number | null {
+  const titled = docs.filter((d) => d.title);
+  const step = Math.max(1, Math.ceil(titled.length / SELF_QUERY_MAX));
+  const tops = titled.filter((_, i) => i % step === 0).map((d) => index.search(d.title!, 1)[0]?.score ?? 0).filter((s) => s > 0).sort((a, b) => a - b);
+  return tops.length ? tops[Math.floor(tops.length / 2)] : null;
 }

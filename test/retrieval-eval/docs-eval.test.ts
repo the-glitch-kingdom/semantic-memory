@@ -8,8 +8,9 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { glob } from "glob";
 import { createServer } from "../../src/mcp/server.js";
 import { cleanupTempDir } from "../setup.js";
+import { splitGates } from "./gates.js";
 import {
-  runFacetEval, scoreLinks, invertLinks, facetRank, formatArm, parseGolden,
+  runFacetEval, scoreLinks, invertLinks, facetRank, formatArm, parseGolden, hnswRecall,
   type FacetCase, type ArmFn, type ArmMetrics, type LinkMetrics,
 } from "./eval.js";
 
@@ -21,12 +22,17 @@ import {
  */
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
 const HERE = import.meta.dirname;
+// Gates v1.9.0 fails, run as expected failures until Phase 4 (score fusion) fixes them; see .planning/v191-ranking-regression/notes.md "Eval results".
+const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": {}, "fixture-heldout": { atOne: true, paraphrase: true, falseFlags: true } };
 const STOP = new Set("the a an of to for and or in on is are do does how what which when where who with from that this it we our can i my be".split(" "));
 
 describe("Facet eval (golden-docs vs docs-vault)", () => {
   let client: Client;
   let tempDir: string;
   const arms: Record<string, ArmMetrics> = {};
+  const heldArms: Record<string, ArmMetrics> = {};
+  let heldCases: FacetCase[];
+  let recall: number;
   let backlinks: LinkMetrics;
   let forwardlinks: LinkMetrics;
   let cases: FacetCase[];
@@ -70,20 +76,26 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     arms.search_semantic = await runFacetEval(cases, tool("search_semantic"), textOf);
     arms.search_hybrid = await runFacetEval(cases, tool("search_hybrid"), textOf);
     arms.search_text = await runFacetEval(cases, text, textOf);
+    heldCases = parseGolden(await readFile(join(HERE, "golden-docs-heldout.jsonl"), "utf-8")) as unknown as FacetCase[];
+    heldArms.search_semantic = await runFacetEval(heldCases, tool("search_semantic"), textOf);
+    heldArms.search_hybrid = await runFacetEval(heldCases, tool("search_hybrid"), textOf);
+    recall = await hnswRecall(tempDir, [...cases, ...heldCases].map((c) => c.q), 24);
     fullBytes = (await runFacetEval(cases, tool("search_hybrid", { full: true }), textOf)).meanBytes;
 
     const truth: Record<string, string[]> = JSON.parse(await readFile(join(HERE, "docs-graph-truth.json"), "utf-8"));
-    const paths = async (tl: string, path: string) => (await call(tl, { path })).parsed.map((n: any) => n.path);
+    const paths = async (tl: string, path: string) => (await call(tl, { path, include_excluded: true })).parsed.map((n: any) => n.path);
     forwardlinks = await scoreLinks(truth, (p) => paths("forwardlinks", p));
     backlinks = await scoreLinks(invertLinks(truth), (p) => paths("backlinks", p));
 
     process.stderr.write(
       "\nFacet eval\n" + Object.entries(arms).map(([n, m]) => formatArm(n, m)).join("\n") +
+      "\nHeld-out (golden-docs-heldout)\n" + Object.entries(heldArms).map(([n, m]) => formatArm(n, m)).join("\n") +
+      `\n  hnsw recall@24 vs exact cosine=${recall.toFixed(3)}` +
       `\n  search_hybrid full:true mean-payload=${fullBytes}B` +
       `\n  forwardlinks precision=${forwardlinks.precision.toFixed(3)} recall=${forwardlinks.recall.toFixed(3)}` +
       `\n  backlinks    precision=${backlinks.precision.toFixed(3)} recall=${backlinks.recall.toFixed(3)}\n\n`
     );
-    if (process.env.EVAL_OUT) await writeFile(process.env.EVAL_OUT, JSON.stringify({ arms, fullBytes, forwardlinks, backlinks }, null, 2));
+    if (process.env.EVAL_OUT) await writeFile(process.env.EVAL_OUT, JSON.stringify({ arms, heldArms, recall, fullBytes, forwardlinks, backlinks }, null, 2));
   }, 180_000);
 
   afterAll(async () => {
@@ -98,6 +110,27 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     for (const c of cases.filter((c) => c.tier !== "negative")) {
       expect(facetRank(c.facets!, live, (p) => texts.get(p)!), c.id).not.toBeNull();
     }
+  });
+
+  it("every held-out case is answerable from the fixture's live docs", () => {
+    const live = glob.sync("**/*.md", { cwd: FIXTURE }).filter((p) => !/(^|\/)archive\//.test(p));
+    const texts = new Map(live.map((p) => [p, readFileSync(join(FIXTURE, p), "utf-8")]));
+    for (const c of heldCases.filter((c) => c.tier !== "negative")) expect(facetRank(c.facets!, live, (p) => texts.get(p)!), c.id).not.toBeNull();
+  });
+
+  it("the held-out set keeps its size: >= 20 answerable (>= 10 paraphrase) and >= 8 negatives; train has >= 12 negatives", () => {
+    const n = (cs: FacetCase[], t: (c: FacetCase) => boolean) => cs.filter(t).length;
+    expect(n(heldCases, (c) => c.tier !== "negative")).toBeGreaterThanOrEqual(20);
+    expect(n(heldCases, (c) => c.tier === "paraphrase")).toBeGreaterThanOrEqual(10);
+    expect(n(heldCases, (c) => c.tier === "negative")).toBeGreaterThanOrEqual(8);
+    expect(n(cases, (c) => c.tier === "negative")).toBeGreaterThanOrEqual(12);
+  });
+
+  splitGates("fixture train", () => arms as any, baseline.splits["fixture-train"], KNOWN["fixture-train"]);
+  splitGates("fixture held-out", () => heldArms as any, baseline.splits["fixture-heldout"], KNOWN["fixture-heldout"]);
+
+  it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {
+    expect(recall).toBeGreaterThanOrEqual(baseline.hnswRecallMin);
   });
 
   it("answer@1 never drops below the recorded baseline, per arm", () => {

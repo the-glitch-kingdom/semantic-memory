@@ -172,8 +172,8 @@ export class GraphBuilder {
       .map((e) => this.nodeToGraphNode(this.graph.target(e)));
   }
 
-  /** Shortest directed path over the given edge types (breadth-first). */
-  findPath(from: string, to: string, types: EdgeType[] = LINK_EDGE_TYPES): string[] | null {
+  /** Shortest path over the given edge types (breadth-first). `skip` bars intermediate notes (excluded paths). `direction`: follow links "out", against them ("in"), or either ("any"). */
+  findPath(from: string, to: string, types: EdgeType[] = LINK_EDGE_TYPES, direction: "out" | "in" | "any" = "any", skip?: (path: string) => boolean): string[] | null {
     if (!this.graph.hasNode(from) || !this.graph.hasNode(to)) return null;
     const prev = new Map<string, string | null>([[from, null]]);
     for (let queue = [from]; queue.length; ) {
@@ -184,9 +184,11 @@ export class GraphBuilder {
           for (let p: string | null = to; p !== null; p = prev.get(p)!) path.unshift(p);
           return path;
         }
-        for (const e of this.graph.filterOutEdges(n, (_e, a) => types.includes(a.type))) {
-          const t = this.graph.target(e);
-          if (!prev.has(t)) {
+        const ok = (_e: string, a: Record<string, any>) => types.includes(a.type);
+        const edges = [...(direction === "in" ? [] : this.graph.filterOutEdges(n, ok)), ...(direction === "out" ? [] : this.graph.filterInEdges(n, ok))];
+        for (const e of edges) {
+          const t = this.graph.opposite(n, e);
+          if (!prev.has(t) && (t === to || !skip?.(t))) {
             prev.set(t, n);
             next.push(t);
           }

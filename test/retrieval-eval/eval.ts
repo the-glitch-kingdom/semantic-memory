@@ -150,6 +150,8 @@ export interface ArmMetrics {
   negativesFlagged: number;
   /** Cases answered at @1 whose response carried no_strong_match (the cost of abstaining). */
   answeredFlagged: number;
+  /** Answerable cases (any rank) whose response carried no_strong_match, out of the answerable total. */
+  answerableFlagged: number;
 }
 
 /** Rank (1-based) at which the facets are first all covered by live (non-archive) results, or null. */
@@ -170,6 +172,7 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
   let bytes = 0;
   let negativesFlagged = 0;
   let answeredFlagged = 0;
+  let answerableFlagged = 0;
   for (const c of cases) {
     const { results, bytes: b, weak, related } = await arm(c.q, maxK);
     const top = results.slice(0, maxK);
@@ -181,6 +184,7 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
       continue;
     }
     const rank = facetRank(c.facets ?? [], top.map((r) => r.path), textOf);
+    if (weak) answerableFlagged++;
     if (weak && rank === 1) answeredFlagged++;
     const expanded = top.length > 0 && facetRank(c.facets ?? [], [top[0].path, ...(related ?? [])], textOf) !== null;
     for (const key of [c.tier, "all"]) {
@@ -190,7 +194,7 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
       for (const k of FACET_KS) if (rank !== null && rank <= k) t.at[k]++;
     }
   }
-  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length), negativesFlagged, answeredFlagged };
+  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length), negativesFlagged, answeredFlagged, answerableFlagged };
 }
 
 export interface LinkMetrics {
@@ -219,9 +223,33 @@ export function invertLinks(forward: Record<string, string[]>): Record<string, s
 }
 
 export function formatArm(name: string, m: ArmMetrics): string {
-  const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  flagged: negatives ${m.negativesFlagged}/${m.negativeTop.length}, answered@1 ${m.answeredFlagged}  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
+  const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  flagged: negatives ${m.negativesFlagged}/${m.negativeTop.length}, answered@1 ${m.answeredFlagged}, answerable ${m.answerableFlagged}  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
   for (const [tier, t] of Object.entries(m.tiers).sort()) {
     lines.push(`    ${tier.padEnd(11)} (${String(t.n).padStart(2)}): ${FACET_KS.map((k) => `@${k}=${t.at[k]}/${t.n}`).join("  ")}  #1+related=${t.expandedAt1}/${t.n}`);
   }
   return lines.join("\n");
+}
+
+/**
+ * Recall of the HNSW index against exact cosine over the same chunks: for each query, the docs of the exact top-k chunks
+ * (best chunk per doc, as VectorIndex.search dedups) against the docs `VectorIndex.search` returns. Mean over queries.
+ */
+export async function hnswRecall(notesDir: string, queries: string[], k: number): Promise<number> {
+  const { Indexer, Embedder, VectorIndex } = await import("../../src/core/index.js");
+  const docs = await new Indexer(notesDir).indexAll();
+  const chunks = docs.flatMap((d) => d.chunks.map((text, chunkIndex) => ({ docPath: d.path, chunkIndex, text })));
+  const embedder = new Embedder();
+  await embedder.init();
+  const vecs = await embedder.embedBatch(chunks.map((c) => c.text));
+  const index = new VectorIndex(vecs[0].length);
+  index.build(vecs, chunks);
+  const cos = (a: Float32Array, b: Float32Array) => { let d = 0, x = 0, y = 0; for (let i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; } return d / Math.sqrt(x * y); };
+  let sum = 0;
+  for (const q of queries) {
+    const qv = await embedder.embed(q);
+    const exact = new Set(vecs.map((v, i) => ({ doc: chunks[i].docPath, s: cos(qv, v) })).sort((a, b) => b.s - a.s).slice(0, k).map((e) => e.doc));
+    const got = index.search(qv, k).map((r) => r.path);
+    sum += got.filter((p) => exact.has(p)).length / exact.size;
+  }
+  return sum / queries.length;
 }

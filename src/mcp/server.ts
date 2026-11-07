@@ -94,7 +94,7 @@ export function serverInstructions(notesPath: string, readOnly = false): string 
     `This server indexes ${where} (markdown${readOnly ? ", read-only" : ""}) for semantic search. ` +
     `For a question about what ${where} says, call search_hybrid here before grepping or opening files there, ` +
     `then read_note the hits; search_text finds exact strings. ` +
-    `If the results carry no_strong_match: true, the vault does not document it: say "not documented" instead of answering from them.` +
+    `If the results carry no_strong_match: true, it is a weak match: verify the notes answer the question before citing them, and say so if they do not.` +
     (readOnly ? "" : " Write research, decisions and gotchas here with synthesize_note.")
   );
 }

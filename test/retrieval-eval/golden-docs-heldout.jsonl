@@ -1,0 +1,33 @@
+// Held-out golden set for test/fixtures/docs-vault (v191-ranking-regression Phase 2). Written before any ranking change in that plan and never used to
+// choose weights or thresholds; tuning uses golden-docs.jsonl only. Questions are our own. Paraphrase queries describe a symptom and share no key terms with their answer doc.
+{"id":"h01","tier":"paraphrase","q":"Why does last month's fine-grained data look coarser than yesterday's?","facets":["1-minute rollups"]}
+{"id":"h02","tier":"paraphrase","q":"Nobody was woken at night when the most severe kind of rule tripped","facets":["paging webhook"]}
+{"id":"h03","tier":"paraphrase","q":"Big uploads from the boat get refused","facets":["8 KB"]}
+{"id":"h04","tier":"paraphrase","q":"Older firmware keeps being turned away since we upgraded the platform","facets":["Dropped support for schema=2"]}
+{"id":"h05","tier":"paraphrase","q":"Entries from a boat whose clock runs ahead are discarded by the server","facets":["rejects any ts_utc"]}
+{"id":"h06","tier":"paraphrase","q":"The queue keeps piling up and adding more consumers changes nothing","facets":["add partitions first"]}
+{"id":"h07","tier":"paraphrase","q":"Who is allowed to delete the accounts of other staff?","facets":["user management"]}
+{"id":"h08","tier":"paraphrase","q":"Records of selected ships must survive the nightly purge while lawyers are involved","facets":["nightly deletion\\s+job skips"]}
+{"id":"h09","tier":"paraphrase","q":"Charts built from five-month-old engine data load slowly","facets":["queried on demand"]}
+{"id":"h10","tier":"paraphrase","q":"A crew member can look at screens but must not change anything","facets":["deckhand: read-only"]}
+{"id":"h11","tier":"paraphrase","q":"Does the old secret die the moment I issue a new one?","facets":["grace period of 24 hours"]}
+{"id":"h12","tier":"paraphrase","q":"A release goes wrong while only a few ships run it; how do I watch for that?","facets":["tidewatch fleet status"]}
+{"id":"h13","tier":"paraphrase","q":"The final reading from a ship is recorded twice whenever its link is re-established","facets":["counted twice"]}
+{"id":"e01","tier":"exact","q":"What does TIDEWATCH_GRACE_HOURS default to?","facets":["TIDEWATCH_GRACE_HOURS \\| 24"]}
+{"id":"e02","tier":"exact","q":"What is the default of TIDEWATCH_BATCH_SIZE?","facets":["TIDEWATCH_BATCH_SIZE \\| 500"]}
+{"id":"e03","tier":"exact","q":"How many partitions does the Harbor Queue topic have?","facets":["48 partitions"]}
+{"id":"e04","tier":"exact","q":"Which consumer group drains the queue?","facets":["pier-workers"]}
+{"id":"e05","tier":"exact","q":"Which header selects the telemetry layout?","facets":["schema=3"]}
+{"id":"e06","tier":"exact","q":"How long does the warm tier keep compressed objects?","facets":["Warm \\(90 days\\)"]}
+{"id":"m01","tier":"multi","q":"What is the batch size setting and what happens to a payload after its retries run out?","facets":["TIDEWATCH_BATCH_SIZE","harbor\\.dlq"]}
+{"id":"m02","tier":"multi","q":"Which tier keeps data for 90 days and for how long is position history held for the regulator?","facets":["Warm \\(90 days\\)","kept for 7 years"]}
+{"id":"m03","tier":"multi","q":"Who can edit rules and which severity wakes someone up?","facets":["engineer: dashboards plus rule editing","paging webhook"]}
+{"id":"m04","tier":"multi","q":"At what backlog does the soak test fail and at what backlog do I add workers?","facets":["fails if consumer backlog","exceeds 10,000 messages"]}
+{"id":"n01","tier":"negative","q":"How do I enable two-factor authentication for the mobile app?"}
+{"id":"n02","tier":"negative","q":"What uptime percentage do we promise customers in the SLA?"}
+{"id":"n03","tier":"negative","q":"How do I export readings to a spreadsheet?"}
+{"id":"n04","tier":"negative","q":"Which cloud region hosts the production cluster?"}
+{"id":"n05","tier":"negative","q":"How do I translate the dashboard into Spanish?"}
+{"id":"n06","tier":"negative","q":"What price per liter do our vessels pay for fuel?"}
+{"id":"n07","tier":"negative","q":"How do I set up Terraform for the staging network?"}
+{"id":"n08","tier":"negative","q":"Who designed the company logo?"}

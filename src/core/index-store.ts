@@ -18,12 +18,15 @@ export interface IndexMeta {
   model: string;
   dimensions: number;
   totalChunks: number;
+  /** median top BM25 score of title self-queries (bm25SelfTop): the corpus scale for the no_strong_match lexical threshold; absent in older indexes */
+  bm25SelfTop?: number | null;
   indexedAt: string;
   /** size + mtime of each commit file as written; a reader that sees anything else caught a half-finished commit */
   files: Record<string, { size: number; mtimeMs: number }>;
 }
 
-export const ignoreGlobsHash = (): string => sha256(JSON.stringify(IGNORE_GLOBS)).slice(0, 16);
+/** Everything that decides which files are indexed: a change re-parses the corpus. */
+export const ignoreGlobsHash = (exclude: string[]): string => sha256(JSON.stringify([IGNORE_GLOBS, exclude])).slice(0, 16);
 
 export async function readMeta(indexPath: string): Promise<IndexMeta | null> {
   try {
@@ -37,12 +40,12 @@ export const metaMtime = async (indexPath: string): Promise<number> =>
   stat(join(indexPath, "meta.json")).then((s) => s.mtimeMs, () => 0);
 
 /** Parsed docs, edges and chunk text are only valid for the parser that wrote them. */
-export function parserMatches(meta: IndexMeta | null): boolean {
+export function parserMatches(meta: IndexMeta | null, exclude: string[]): boolean {
   return (
     !!meta &&
     meta.schemaVersion === INDEX_SCHEMA_VERSION &&
     JSON.stringify(meta.chunker) === JSON.stringify(CHUNKER) &&
-    meta.ignoreGlobs === ignoreGlobsHash()
+    meta.ignoreGlobs === ignoreGlobsHash(exclude)
   );
 }
 
@@ -62,9 +65,9 @@ export async function filesMatchMeta(indexPath: string, meta: IndexMeta): Promis
 }
 
 /** Meta plus consistency, for readers that never write (the CLI/hook search path). */
-export async function readConsistentMeta(indexPath: string): Promise<IndexMeta | null> {
+export async function readConsistentMeta(indexPath: string, exclude: string[]): Promise<IndexMeta | null> {
   const meta = await readMeta(indexPath);
-  return meta && parserMatches(meta) && (await filesMatchMeta(indexPath, meta)) ? meta : null;
+  return meta && parserMatches(meta, exclude) && (await filesMatchMeta(indexPath, meta)) ? meta : null;
 }
 
 const LOCK_STALE_MS = 10 * 60_000;
@@ -114,7 +117,7 @@ export async function withLock(indexPath: string, fn: () => Promise<void>): Prom
 export async function commitIndex(
   indexPath: string,
   expectedGeneration: number,
-  info: Pick<IndexMeta, "model" | "dimensions" | "totalChunks">,
+  info: Pick<IndexMeta, "model" | "dimensions" | "totalChunks" | "ignoreGlobs" | "bm25SelfTop">,
   write: (stageDir: string) => Promise<void>
 ): Promise<IndexMeta | null> {
   const stage = join(indexPath, `.stage-${process.pid}-${Math.random().toString(36).slice(2)}`);
@@ -135,7 +138,6 @@ export async function commitIndex(
       const meta: IndexMeta = {
         schemaVersion: INDEX_SCHEMA_VERSION,
         chunker: CHUNKER,
-        ignoreGlobs: ignoreGlobsHash(),
         generation: expectedGeneration + 1,
         ...info,
         indexedAt: new Date().toISOString(),

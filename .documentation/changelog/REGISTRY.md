@@ -16,7 +16,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 21 |
+| Documents | 22 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -36,16 +36,16 @@ purpose: Quick reference for changelog documentation
 ## Recently Updated
 
 - [v1.9.0 — retrieval and graph quality, index freshness](v1-9-0-retrieval-graph-quality.md) - 2026-11-06
+- [v1.9.1 — ranking regression fix](v1-9-1-ranking-regression.md) - 2026-11-06
 - [v1.8.0 — skill loop auto mode, dedup, and retiring old entries](v1-8-0-skill-loop-auto.md) - 2026-11-03
 - [v1.7.1 — skill loop queue fixes](v1-7-1-skill-loop-queue-fixes.md) - 2026-10-28
 - [v1.7.2 — sessions use the indexed docs](v1-7-2-vault-context-sources.md) - 2026-10-28
-- [v1.7.0 — the skill loop and jev mode](v1-7-0-skill-loop-and-jev-mode.md) - 2026-10-25
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 21 |
+| active | 22 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
