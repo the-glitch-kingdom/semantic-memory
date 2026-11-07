@@ -13,6 +13,8 @@ const golden = JSON.parse(readFileSync(join(__dirname, "../fixtures/minilm-vecto
   batch: number[][];
 };
 const same = (a: Float32Array, b: number[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+// batched ONNX output with padding is not bit-exact across CPUs (CI); a pooling change moves components by far more than 1e-5
+const close = (a: Float32Array, b: number[]) => a.length === b.length && a.every((x, i) => Math.abs(x - b[i]) < 1e-5);
 
 describe("MiniLM vectors are unchanged by the pooling work", () => {
   it("embed, embedBatch and (no prompt) embedQuery equal vectors recorded before the change", async () => {
@@ -20,9 +22,9 @@ describe("MiniLM vectors are unchanged by the pooling work", () => {
     await e.init();
     expect(e.getPooling()).toBe("mean");
     expect(e.getQueryPrompt()).toBe("");
-    expect(same(await e.embed(golden.texts[0]), golden.single)).toBe(true);
-    expect(same(await e.embedQuery(golden.texts[0]), golden.single)).toBe(true);
-    (await e.embedBatch(golden.texts)).forEach((v, i) => expect(same(v, golden.batch[i])).toBe(true));
+    expect(close(await e.embed(golden.texts[0]), golden.single)).toBe(true);
+    expect(close(await e.embedQuery(golden.texts[0]), golden.single)).toBe(true);
+    (await e.embedBatch(golden.texts)).forEach((v, i) => expect(close(v, golden.batch[i])).toBe(true));
   });
 });
 
@@ -32,9 +34,9 @@ describe("query prompt", () => {
     await e.init();
     const t = "kubernetes deployment strategy";
     expect(same(await e.embedQuery(t), Array.from(await e.embed("search_query: " + t)))).toBe(true);
-    expect(same(await e.embed(t), golden.single)).toBe(true);
-    expect(same((await e.embedBatch([t]))[0], golden.single)).toBe(true);
-    expect(same(await e.embedQuery(t), golden.single)).toBe(false);
+    expect(close(await e.embed(t), golden.single)).toBe(true);
+    expect(close((await e.embedBatch([t]))[0], golden.single)).toBe(true);
+    expect(close(await e.embedQuery(t), golden.single)).toBe(false);
   });
 });
 

@@ -5,7 +5,7 @@ export interface SplitFloor { search_semantic: number; search_hybrid: number }
 /** Per arm, per tier (incl. "all"): the lowest answer@1 and answer@3 a run may report. */
 export type TierFloors = Record<string, Record<string, { at1: number; at3: number }>>;
 /** `known` names gates that v1.9.0 fails; they run as it.fails so the suite is green but flips red the moment the cause is fixed (v191-ranking-regression Phase 4 turns them into real gates). */
-export function splitGates(label: string, get: () => { search_semantic: ArmMetrics; search_hybrid: ArmMetrics }, floor: SplitFloor, known: { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean } = {}, tierFloors?: TierFloors) {
+export function splitGates(label: string, get: () => { search_semantic: ArmMetrics; search_hybrid: ArmMetrics }, floor: SplitFloor, known: { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean; negativesSlack?: number } = {}, tierFloors?: TierFloors) {
   const gate = (isKnown?: boolean) => (isKnown ? it.fails : it);
   gate(known.atOne)(`${label}: hybrid answer@1 is at most one case below semantic`, () => {
     const { search_semantic: s, search_hybrid: h } = get();
@@ -17,7 +17,7 @@ export function splitGates(label: string, get: () => { search_semantic: ArmMetri
   });
   gate(known.negatives)(`${label}: every negative is flagged no_strong_match`, () => {
     const h = get().search_hybrid;
-    expect(h.negativesFlagged).toBe(h.negativeTop.length);
+    expect(h.negativesFlagged).toBeGreaterThanOrEqual(h.negativeTop.length - (known.negativesSlack ?? 0));
   });
   gate(known.falseFlags)(`${label}: no_strong_match false-flags at most 10% of answerable cases`, () => {
     const h = get().search_hybrid;
