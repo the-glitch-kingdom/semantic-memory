@@ -274,19 +274,19 @@ export class Indexer {
   /**
    * Plain text for BM25, search_text and embedding. Code is kept (fence lines dropped, backticks unwrapped) and table rows
    * become space-separated cells, so identifiers and values in them stay findable. `_` is stripped only at word edges
-   * so snake_case survives; shortcut: `__init__` outside code loses its underscores like emphasis does.
+   * so snake_case and `a*b` survive; shortcut: `__init__` outside code loses its underscores like emphasis does.
    */
   private stripMarkdown(content: string): string {
     return content
-      .replace(/^ {0,3}(```|~~~).*$/gm, "")
+      .replace(/^[ \t]*(`{3,}[^`\n]*|~~~.*)$/gm, "")
       .replace(/`([^`\n]+)`/g, "$1")
       .replace(/!\[.*?\]\(.*?\)/g, "")
       .replace(/\[([^\]]+)\]\(.*?\)/g, "$1")
       .replace(/^\s*#{1,6}\s+/gm, "")
       .replace(/^[ \t]*\|[\s:|-]*\|?[ \t]*$/gm, "")
       .replace(/^[ \t]*\|.*\|[ \t]*$/gm, (row) => row.replace(/\s*\|\s*/g, " ").trim())
-      .replace(/\*{1,3}|~~/g, "")
-      .replace(/(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu, "")
+      .replace(/~~/g, "")
+      .replace(/(?<![\p{L}\p{N}])[*_]+|[*_]+(?![\p{L}\p{N}])/gu, "")
       .replace(/^\s*>\s?/gm, "")
       .replace(/^\s*-{3,}\s*$/gm, "")
       .replace(/\n{3,}/g, "\n\n")

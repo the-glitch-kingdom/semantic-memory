@@ -101,21 +101,21 @@ Every missed target is stated in the PR.
   - [x] Remove trial knobs, sweep scripts and the losing embed-text variant from Phase 5; dead-code check over the
         branch diff (`tsc --noUnusedLocals`, grep). Pre-existing unused locals are left alone.
         Checked: no env trial knobs or sweep scripts remain (the option (b) switch was reverted in Phase 5); `tsc --noUnusedLocals` output is identical to main (12 pre-existing); every new export is used. Nothing to remove.
-- [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review of `git diff main...HEAD`. Look for:
+- [x] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review of `git diff main...HEAD`. Look for:
     - per-query git calls, or one git process per file
     - body dates leaking across content changes; frontmatter detection differing from `parseFrontmatter`
     - documents embedded with the query prompt, or queries without it
     - pooling or prompt changes that do not force a re-embed
     - in-word text damage left in `stripMarkdown`
     - floors lowered without a record
-  - [ ] Unit:
+  - [x] Unit:
     - `stripMarkdown`: backtick identifier, fenced block, table cell, separator row, `snake_case`, `**bold**`,
       `_emph_`, `a -> b`, nested/unclosed fences
     - CLS vs mean pooling on a hand-built tensor; query prompt applied to queries only
     - body-date walk: frontmatter-only commit skipped, body edit resets, first commit, file edited since commit
     - non-string titles (number, Date, array) through the indexer and `bm25SelfTop`
-  - [ ] Integration:
+  - [x] Integration:
     - #52 acceptance: a doc whose only mention of `check_rls_coverage.py` is in backticks is returned for a query
       naming it; an env var only in a table cell is found by `search_hybrid` and `search_text`; `snake_case_name`
       is one token
@@ -125,12 +125,13 @@ Every missed target is stated in the PR.
       switching pooling forces a re-embed
     - #51: hybrid search and index save with a numeric/date title
     - schema 6 → 7 upgrade: re-embeds once, stale marker while it does, consistent after
-  - [ ] Regression: every eval split at or above its floor; new #52 and #54 cases pass as real gates
-  - [ ] Prove a gate fails: revert one stripMarkdown rule in a scratch edit, see the #52 gate fail, revert
-  - [ ] Full suite: `npm run lint && npm run build && npm test && npm run eval`. Re-run known timing flakes alone and
+  - [x] Regression: every eval split at or above its floor; new #52 and #54 cases pass as real gates
+  - [x] Prove a gate fails: revert one stripMarkdown rule in a scratch edit, see the #52 gate fail, revert
+  - [x] Full suite: `npm run lint && npm run build && npm test && npm run eval`. Re-run known timing flakes alone and
         record them.
-  - [ ] Offline tarball `--verify`; smoke install
-  - [ ] Write an answer to each #52, #53, #54 acceptance item and each remaining #51 item in notes.md, missed ones
+  - [x] Offline tarball `--verify`; smoke install
+        Installed to a scratch prefix, verify OK (9988 files), --version 1.12.0.
+  - [x] Write an answer to each #52, #53, #54 acceptance item and each remaining #51 item in notes.md, missed ones
         included
 - [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New `.documentation/changelog/v1-12-0-index-text-pooling-body-dates.md` (`npx hewtd integrate -a`):
@@ -175,6 +176,7 @@ Every missed target is stated in the PR.
   through one `git cat-file --batch`, comparing `parseFrontmatter(...).content` (exported from indexer.ts); a delete (zero blob) ends the walk.
 
 ## Errors Encountered
+- Phase 9: full `npm test` failed skill-eval concurrency under load; 22/22 alone. stripMarkdown fixed (in-word `*`, indented fences); no floor changed. Missed #52 target: paraphrase @1 within one question (real held-out semantic -2); real-train hybrid negatives 9/12.
 - Phase 6: full `npm test` failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency under load; all pass alone (38/38). No floor changed.
 - Phase 5: full `npm test` failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency under load; all pass alone (38/38). `npm run eval`: 56 passed, 6 expected-fail.
 - Phase 5 floors lowered (measured, kept code text lowers some prose-only tiers; baseline.json): fixture-train semantic paraphrase @1 18->17, @3 21->20; fixture-heldout semantic paraphrase @3 16->15, semantic symptom @1 3->2, hybrid symptom @1 4->3; real-train semantic paraphrase @3 6->5, hybrid all @3 26->25, paraphrase @1 5->4, @3 7->6; real-heldout semantic all @3 18->16, paraphrase @1 8->6, @3 12->10. hybrid meanBytes ceiling 4575->4750 (excerpts now carry code).
@@ -184,7 +186,7 @@ Every missed target is stated in the PR.
 - Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 9** - Validate
+**Currently in Phase 10** - Documentation
 
 ---
 

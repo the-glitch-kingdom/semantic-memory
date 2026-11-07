@@ -164,4 +164,42 @@ describe("decay git fallback", () => {
     expect(decay(ctx, "a.md")).toMatchObject({ source: "git" });
     expect(embedBatch).not.toHaveBeenCalled();
   }, 120_000);
+  // #54: the date is the last BODY change, read with one git log and at most one cat-file per build, never per query
+  const fm = (extra: string, text: string) => `---\ntitle: T\n${extra}---\n${body(text)}`;
+  it("a frontmatter-only commit today still decays as the 400-day body; a body edit resets the age", async () => {
+    const calls = gitSpy();
+    const dir = vault({ "a.md": fm("", "alpha"), "b.md": fm("", "beta") });
+    commit(dir, 400, "a.md", "b.md");
+    await writeFile(join(dir, "a.md"), fm("owner: ops\n", "alpha"));
+    await writeFile(join(dir, "b.md"), fm("owner: ops\n", "beta") + "\nrevised\n");
+    commit(dir, 0, "a.md", "b.md");
+    const ctx = await open(dir);
+    const spawned = (cmd: string) => calls().filter((c) => c.includes(cmd));
+    expect(spawned("log")).toHaveLength(1);
+    expect(spawned("cat-file").length).toBeLessThanOrEqual(1);
+    expect(decay(ctx, "a.md")).toMatchObject({ source: "git" });
+    expect(decay(ctx, "a.md")!.age_days).toBeGreaterThanOrEqual(399);
+    expect(decay(ctx, "b.md")!.age_days).toBeLessThan(2); // its body changed today
+    const before = calls().length;
+    for (let i = 0; i < 5; i++) decay(ctx, "a.md");
+    expect(calls()).toHaveLength(before);
+  }, 120_000);
+
+  it("a schema 6 index (newest-commit dates) is re-dated by body on upgrade", async () => {
+    const dir = vault({ "a.md": fm("", "alpha") });
+    commit(dir, 400, "a.md");
+    await writeFile(join(dir, "a.md"), fm("owner: ops\n", "alpha"));
+    commit(dir, 0, "a.md");
+    const first = await open(dir);
+    await first.flushIndex();
+    const metaPath = join(dir, ".semantic-sidekick-index", "meta.json");
+    const docsPath = join(dir, ".semantic-sidekick-index", "docs.cache.json");
+    await writeFile(metaPath, JSON.stringify({ ...JSON.parse(await readFile(metaPath, "utf-8")), schemaVersion: 6 }));
+    await writeFile(docsPath, JSON.stringify(JSON.parse(await readFile(docsPath, "utf-8")).map((d: Record<string, unknown>) => ({ ...d, gitDate: new Date().toISOString() }))));
+    const ctx = await buildContext(dir, { reconcileThrottleMs: 0 });
+    open_.push(ctx);
+    await ctx.tryLoadCachedIndex();
+    await ctx.fullIndex();
+    expect(decay(ctx, "a.md")!.age_days).toBeGreaterThanOrEqual(399);
+  }, 120_000);
 });
