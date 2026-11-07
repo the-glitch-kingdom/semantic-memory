@@ -96,6 +96,20 @@ age, multiplier < 0.6, source git, both splits. unverified 4/4 and old-verified 
 real train 21/27, real held-out 15/23, #52 code-vault as in Baselines); no ranking code besides decay input changed.
 Unit: test/unit/git-body-dates.test.ts (frontmatter-only skipped, body edit resets, first commit, delete/restore). PATH-spy (one log, <=1 cat-file) is Phase 9.
 
+## Eval results: Phase 5 (indexed text, #52)
+Option (a) = same kept text for BM25 and vectors (chosen). Option (b) = fenced block contents dropped from the text (inline code, tables kept); measured with a scratch env switch on stripMarkdown (reverted), so BM25 also lost the fence text in (b).
+| split | arm | before | (a) | (b) |
+|---|---|---|---|---|
+| code-vault train | semantic / hybrid / search_text | 9 / 9 / 2 of 10 | 10 / 10 / 10 | 10 / 10 / (not read) |
+| code-vault held-out | semantic / hybrid / search_text | 5 / 6 / 2 of 10 | 10 / 10 / 10 | 9 / 10 / (not read) |
+| fixture train (57) @1 | semantic / hybrid | 39 / 38 | 42 / 43 | 42 / 43 |
+| fixture held-out (36) @1 | semantic / hybrid | 23 / 25 | 25 / 26 | 25 / 26 |
+| real train (27) @1 | semantic / hybrid | 15 / 21 | 19 / 22 | 19 / 20 |
+| real held-out (27) @1 | semantic / hybrid | 13 / 15 | 12 / 17 | 10 / 17 |
+The fixture docs-vault has no fenced blocks, so (a) and (b) are identical there. Choice from TRAIN only: (a) ties or wins (real train hybrid 22 vs 20); held-out shown as measured and also favours (a). No second chunk text, no extra vectors.
+Cold build of a copy of .documentation (one run each, load-noisy): v1.11 text 14.9 s, (a) 29.5 s, (b) 36.7 s (first run included a model load); more chunks than before because code is kept.
+Regressions under (a) (floors lowered, see plan Errors Encountered): some prose tiers lose 1 case; real-train hybrid negatives flagged 12/12 -> 9/12 (known failure now); real held-out semantic paraphrase 8->6 @1. `npm run eval` all other gates pass.
+
 ## Append-Only Log
 ### 2026-11-07
 - Plan written; one plan for #51 leftovers + #52 + #53 + #54 (shared schema bump and re-embed).

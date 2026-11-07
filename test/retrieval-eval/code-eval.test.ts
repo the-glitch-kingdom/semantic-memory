@@ -57,10 +57,10 @@ describe("Indexed-text eval (identifiers in code, tables and snake_case)", () =>
     for (const s of ["train", "heldout"]) for (const t of TIERS) expect(table[s].search_hybrid.filter((r) => r.tier === t).length, `${s} ${t}`).toBeGreaterThanOrEqual(2);
   });
 
-  // #52 gates: expected to fail on v1.11.0 (stripMarkdown drops the text); Phase 5 turns them into real gates.
+  // #52 gates: on v1.11.0 stripMarkdown dropped this text and all six failed; the kept text makes them real gates.
   for (const s of ["train", "heldout"]) {
     for (const arm of ["search_text", "search_hybrid", "search_semantic"]) {
-      it.fails(`${s}: ${arm} ranks the doc first when its identifier sits only in code, a table or snake_case`, () => {
+      it(`${s}: ${arm} ranks the doc first when its identifier sits only in code, a table or snake_case`, () => {
         expect(first(s, arm, CODE), arm).toBe(true);
       });
     }

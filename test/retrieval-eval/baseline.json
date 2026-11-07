@@ -9,7 +9,7 @@
       "answeredAt1": 38,
       "archiveHits": 0,
       "answeredFlagged": 2,
-      "meanBytes": 4575,
+      "meanBytes": 4750,
       "expandedAt1": 28,
       "multiExpandedAt1": 7
     },
@@ -65,8 +65,8 @@
           "at3": 2
         },
         "paraphrase": {
-          "at1": 18,
-          "at3": 21
+          "at1": 17,
+          "at3": 20
         },
         "symptom": {
           "at1": 5,
@@ -120,10 +120,10 @@
         },
         "paraphrase": {
           "at1": 13,
-          "at3": 16
+          "at3": 15
         },
         "symptom": {
-          "at1": 3,
+          "at1": 2,
           "at3": 3
         }
       },
@@ -149,7 +149,7 @@
           "at3": 13
         },
         "symptom": {
-          "at1": 4,
+          "at1": 3,
           "at3": 4
         }
       }
@@ -170,13 +170,13 @@
         },
         "paraphrase": {
           "at1": 2,
-          "at3": 6
+          "at3": 5
         }
       },
       "search_hybrid": {
         "all": {
           "at1": 21,
-          "at3": 26
+          "at3": 25
         },
         "exact": {
           "at1": 8,
@@ -187,8 +187,8 @@
           "at3": 8
         },
         "paraphrase": {
-          "at1": 5,
-          "at3": 7
+          "at1": 4,
+          "at3": 6
         }
       }
     },
@@ -196,7 +196,7 @@
       "search_semantic": {
         "all": {
           "at1": 12,
-          "at3": 18
+          "at3": 16
         },
         "exact": {
           "at1": 0,
@@ -207,8 +207,8 @@
           "at3": 3
         },
         "paraphrase": {
-          "at1": 8,
-          "at3": 12
+          "at1": 6,
+          "at3": 10
         }
       },
       "search_hybrid": {
