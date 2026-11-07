@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { lintVault } from "../../core/lint.js";
+import { fieldCoverage } from "../../core/fields.js";
 
 type LintCheck = "schema" | "provenance" | "stale" | "broken_links" | "code_symbols" | "decay_candidates" | "alias_conflicts" | "decoys" | "secrets" | "skills";
 const ALL_CHECKS: LintCheck[] = ["schema", "provenance", "stale", "broken_links"];
@@ -80,8 +81,9 @@ export function registerLintTools(server: McpServer, ctx: ServerContext): void {
         checkSecrets: !!checks?.includes("secrets"),
         checkSkills: !!checks?.includes("skills"),
       });
+      const coverage = fieldCoverage(ctx.getDocuments(), ctx.fields); // retrievability: how many notes carry each indexed field
       if (!checks || checks.length === 0) {
-        return ctx.textResponse(JSON.stringify(report, null, 2));
+        return ctx.textResponse(JSON.stringify({ ...report, fieldCoverage: coverage }, null, 2));
       }
       const requested = new Set<LintCheck>(checks.length > 0 ? checks : ALL_CHECKS);
       const filteredByRule: Record<string, unknown[]> = {};
@@ -98,6 +100,7 @@ export function registerLintTools(server: McpServer, ctx: ServerContext): void {
         JSON.stringify(
           {
             ...report,
+            fieldCoverage: coverage,
             findings: filteredFindings,
             byRule: filteredByRule,
             counts: {

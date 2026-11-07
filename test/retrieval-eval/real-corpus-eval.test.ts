@@ -56,12 +56,13 @@ describe("Facet eval (real corpus: .documentation)", () => {
     const h = splits["real-heldout"].cases;
     expect(h.filter((c) => c.tier !== "negative").length).toBeGreaterThanOrEqual(20);
     expect(h.filter((c) => c.tier === "paraphrase").length).toBeGreaterThanOrEqual(10);
+    expect(h.filter((c) => c.tier === "multi").length).toBeGreaterThanOrEqual(6);
     expect(h.filter((c) => c.tier === "negative").length).toBeGreaterThanOrEqual(8);
     expect(splits["real-train"].cases.filter((c) => c.tier === "negative").length).toBeGreaterThanOrEqual(12);
   });
 
-  splitGates("real train", () => splits["real-train"].arms as any, baseline.splits["real-train"], KNOWN["real-train"]);
-  splitGates("real held-out", () => splits["real-heldout"].arms as any, baseline.splits["real-heldout"], KNOWN["real-heldout"]);
+  splitGates("real train", () => splits["real-train"].arms as any, baseline.splits["real-train"], KNOWN["real-train"], baseline.tiers["real-train"]);
+  splitGates("real held-out", () => splits["real-heldout"].arms as any, baseline.splits["real-heldout"], KNOWN["real-heldout"], baseline.tiers["real-heldout"]);
 
   // v1.9.0 searched at hnswlib's default ef=10 (recall 0.929 here); VectorIndex.search sets ef >= 100.
   it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {

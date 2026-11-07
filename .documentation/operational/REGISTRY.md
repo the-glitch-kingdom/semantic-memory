@@ -35,7 +35,7 @@ purpose: Quick reference for operational documentation
 
 ## Recently Updated
 
-- [Retrieval Tuning Guide](retrieval-tuning-guide.md) - 2026-11-06
+- [Retrieval Tuning Guide](retrieval-tuning-guide.md) - 2026-11-07
 - [The skill loop — learned skills between sessions](skill-loop.md) - 2026-11-03
 - [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) - 2026-10-28
 - [Modes Guide](modes-guide.md) - 2026-10-28

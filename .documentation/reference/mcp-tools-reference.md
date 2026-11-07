@@ -5,7 +5,7 @@ domains: [reference]
 audience: [developers]
 tags: [mcp, tools, api, reference, tools-catalog, v1.7.0, v1.7.2]
 status: active
-last_updated: '2026-10-28'
+last_updated: '2026-11-07'
 version: '1.7.2'
 purpose: All 44 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check, the v1.7 opt-in `skills` lint check, and the v1.7.2 server instructions and always-loaded `search_hybrid`.
 load_priority: 9
@@ -73,7 +73,7 @@ Traversal around a concept: seeds are the top 5 semantic hits of the concept (v1
 ### `search_hybrid` ⭐
 Vector + BM25 lexical results fused by score (`0.7 * cosine + 0.3 * normalised BM25`, v1.9.1; was reciprocal rank), then boosted x1.3 for 1-hop link neighbours of the top 5 semantic hits. **The default for most queries.** See the [retrieval tuning guide](../operational/retrieval-tuning-guide.md).
 **Args:** `{ query, limit?=10, full?=false, [date/status/tier/domain filters] }`
-**v1.9.0 result shape:** each item is `{ path, title, score, confidence, snippet (~600-char excerpt), decay?, usage? }`; `full: true` returns the old whole-chunk shape plus `confidence`. When the match is weak every item has `no_strong_match: true` (v1.9.1: best cosine under 0.36 and no strong BM25 hit; a weak match, verify before citing, not proof the corpus lacks it). `title` is the doc's frontmatter title. The #1 item carries up to 3 `related` docs (linked, each a match on its own; skipped when weak). While the first reconcile after a warm start is running, `_meta.stale` is true. Archived notes are excluded (`path_class.exclude`); a byte-identical live/archived pair returns the live one.
+**v1.9.0 result shape:** each item is `{ path, title, score, confidence, snippet (~600-char excerpt), decay?, usage? }`; `full: true` returns the old whole-chunk shape plus `confidence`. When the match is weak every item has `no_strong_match: true` (v1.9.1: best cosine under 0.36 and no strong BM25 hit; a weak match, verify before citing, not proof the corpus lacks it). `title` is the doc's frontmatter title. **v1.10.0:** an item carries `matched: { field, text }` when a metadata chunk (a `purpose` / `summary` / `description` or symptom phrase) won; its `snippet` stays the best body chunk. `generated: true` notes are never returned. **Guidance (also in the tool description and server instructions):** for a broad or end-to-end question read the top 3 excerpts, and search each step separately. The #1 item carries up to 3 `related` docs (linked, each a match on its own; skipped when weak). While the first reconcile after a warm start is running, `_meta.stale` is true. Archived notes are excluded (`path_class.exclude`); a byte-identical live/archived pair returns the live one.
 **Notes:** SessionStart vault-context hook calls this. **v1.7.2:** the one tool kept out of Claude Code's tool
 search (`_meta` `anthropic/alwaysLoad`); the doc-search redirect names it when it denies a grep of an indexed folder.
 **v1.3+ confidence decay:** same decay down-weighting and `decay` block as `search_semantic`. `search_text`/`search_graph` are unaffected — decay only applies to the two ranked/semantic tools.
@@ -197,7 +197,7 @@ Manage the speaker profile — the model of how THIS human communicates.
 Run lint rules across the vault. Default returns the full report.
 **Args:** `{ pathGlob?, checks? }`
 **v1.1+ checks filter:** when `checks: ["schema"|"provenance"|"stale"|"broken_links"][]` is provided, only the requested rules are returned in `byRule` and `findings`. Subsumes the four `find_*` tools below.
-**Returns:** `{ findings, byRule, counts, schemaPath }`. With `checks`, `counts.errors` / `counts.warnings` count only the returned findings (v1.6.1+; before, they counted the full lint).
+**Returns:** `{ findings, byRule, counts, schemaPath }` plus (v1.10.0) `fieldCoverage`, the same per-field coverage as `get_stats`. With `checks`, `counts.errors` / `counts.warnings` count only the returned findings (v1.6.1+; before, they counted the full lint).
 
 **Opt-in checks — never included in the default (no-`checks`) report:**
 
@@ -269,7 +269,7 @@ Force `INDEX.md` regen.
 ## System (2) — always available
 
 ### `get_stats`
-Vault + index stats: note count, chunks, embedding dims, graph density, model, indexedAt, state (ready/stale/indexing/empty).
+Vault + index stats: note count, chunks, embedding dims, graph density, model, indexedAt, state (ready/stale/indexing/empty), and (v1.10.0) `fieldCoverage: { docs, fields }`, the share of searchable notes carrying each indexed frontmatter field.
 
 ### `reindex` — (v1.9.0: forces a full rebuild; day to day the index reconciles itself before searches)  actually a write op but no readOnly gate (rebuilds derived state)
 Force full reindex. Blocks until ready.

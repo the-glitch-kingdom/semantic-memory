@@ -4,17 +4,19 @@ import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
 import { Reranker, loadRerankConfig } from "../core/reranker.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
-import { VectorIndex } from "../core/vector.js";
+import { VectorIndex, docChunks } from "../core/vector.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop } from "../core/bm25.js";
+import { loadIndexFields, type IndexFields } from "../core/fields.js";
+import { loadRanking, type RankingConfig } from "../core/rank.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { computeDecay, loadDecayConfig, normalizeVerifiedDate, type DecayConfig } from "../core/decay.js";
-import { pathClassMultiplier, filterPathClass as filterPathClassBy, indexExclude, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
+import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
-import { commitIndex, filesMatchMeta, ignoreGlobsHash, metaMtime, parserMatches, readMeta } from "../core/index-store.js";
+import { commitIndex, filesMatchMeta, ignoreGlobsHash, metaMtime, parserInputs, parserMatches, readMeta } from "../core/index-store.js";
 import type { IndexedDocument, IndexState } from "../core/types.js";
 
 export interface ServerOptions {
@@ -63,6 +65,11 @@ export interface ServerContext {
   options: ServerOptions;
 
   indexer: Indexer;
+  /** `index_fields` from vault.schema.yml */
+  fields: IndexFields;
+  /** `ranking` from vault.schema.yml: whole-doc coverage and link prior */
+  ranking: RankingConfig;
+  isExcluded(path: string): boolean;
   embedder: Embedder;
   /** null when `rerank.enabled` is off (vault.schema.yml) */
   reranker: Reranker | null;
@@ -139,6 +146,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   await mkdir(indexPath, { recursive: true });
 
   const indexer = new Indexer(notesPath);
+  const fields = loadIndexFields(notesPath);
   const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized);
   const rerankConfig = loadRerankConfig(notesPath);
   const reranker = rerankConfig.enabled ? new Reranker(rerankConfig.model) : null;
@@ -238,7 +246,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     for (let attempt = 0; attempt < 2; attempt++) {
       const meta = await readMeta(indexPath);
       if (!meta) return false;
-      const older = !parserMatches(meta, indexExclude(getPathClassConfig()));
+      const older = !parserMatches(meta, parserInputs(getPathClassConfig(), fields));
       if (older && !allowOlder) return false;
       if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions()) {
         process.stderr.write(`Model changed (${meta.model} → ${embedder.getModel()}), forcing reindex\n`);
@@ -249,7 +257,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
         await new Promise((r) => setTimeout(r, 100)); // a commit may be mid-rename
         continue;
       }
-      const tempVector = new VectorIndex(embedder.getDimensions());
+      const tempVector = new VectorIndex(embedder.getDimensions(), fields.meta_weight);
       const docs = await indexer.loadDocsCache(indexPath);
       let loadedManifest: Manifest | null = older ? {} : null;
       try {
@@ -328,9 +336,9 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
     const cache = await getVectors();
     const unseen = new Map<string, string>();
-    for (const doc of parsed) for (const text of doc.chunks) if (!cache.has(vectorKey(text))) unseen.set(vectorKey(text), text);
+    for (const doc of parsed) for (const { text } of docChunks(doc)) if (!cache.has(vectorKey(text))) unseen.set(vectorKey(text), text);
 
-    const totalChunks = parsed.reduce((n, d) => n + d.chunks.length, 0);
+    const totalChunks = parsed.reduce((n, d) => n + docChunks(d).length, 0);
     const toEmbed = [...unseen.entries()];
     indexProgress = { embedded: totalChunks - toEmbed.length, total: totalChunks };
     if (toEmbed.length > 0) {
@@ -357,7 +365,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     // From here on everything is synchronous: a search never sees a half-applied change.
     selfTopCache = undefined;
     const byPath = new Map(rebuild ? [] : documents.map((d) => [d.path, d] as const));
-    const vec = rebuild || !vectorIndex ? new VectorIndex(embedder.getDimensions()) : vectorIndex;
+    const vec = rebuild || !vectorIndex ? new VectorIndex(embedder.getDimensions(), fields.meta_weight) : vectorIndex;
     if (rebuild) bm25.clear();
     for (const path of [...plan.gone, ...parsed.map((d) => d.path)]) {
       vec.removeDoc(path);
@@ -367,18 +375,16 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     for (const doc of parsed) {
       byPath.set(doc.path, doc);
       bm25.addDoc(doc.path, doc.chunks, bm25Fields(doc));
-      vec.addChunks(
-        doc.chunks.map((t) => cache.get(vectorKey(t))!),
-        doc.chunks.map((text, chunkIndex) => ({ docPath: doc.path, chunkIndex, text }))
-      );
+      const chunks = docChunks(doc);
+      vec.addChunks(chunks.map((c) => cache.get(vectorKey(c.text))!), chunks);
     }
     const docs = [...byPath.values()];
     let next = vec;
     if (vec.deletedRatio() > COMPACT_RATIO) {
       // markDelete leaves the node in the graph; past this ratio a rebuild from cached vectors is cheaper than carrying them
-      const chunks = docs.flatMap((d) => d.chunks.map((text, chunkIndex) => ({ docPath: d.path, chunkIndex, text })));
+      const chunks = docs.flatMap(docChunks);
       if (chunks.every((c) => cache.has(vectorKey(c.text)))) {
-        next = new VectorIndex(embedder.getDimensions());
+        next = new VectorIndex(embedder.getDimensions(), fields.meta_weight);
         next.build(chunks.map((c) => cache.get(vectorKey(c.text))!), chunks);
       }
     }
@@ -413,7 +419,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     if (!dirty) return;
 
     if (vectorsLoaded) {
-      const live = new Set(documents.flatMap((d) => d.chunks.map(vectorKey)));
+      const live = new Set(documents.flatMap((d) => docChunks(d).map((c) => vectorKey(c.text))));
       for (const key of vectors.keys()) {
         if (!live.has(key)) {
           vectors.delete(key);
@@ -431,8 +437,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       {
         model: embedder.getModel(),
         dimensions: embedder.getDimensions(),
-        totalChunks: docs.reduce((n, d) => n + d.chunks.length, 0),
-        ignoreGlobs: ignoreGlobsHash(indexExclude(getPathClassConfig())),
+        totalChunks: docs.reduce((n, d) => n + docChunks(d).length, 0),
+        ignoreGlobs: ignoreGlobsHash(parserInputs(getPathClassConfig(), fields)),
         bm25SelfTop: selfTop(),
       },
       async (stage) => {
@@ -591,7 +597,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   }
 
   function filterPathClass<T extends { path: string; matchedChunk?: string }>(results: T[]): T[] {
-    return filterPathClassBy(results, getPathClassConfig());
+    return filterPathClassBy(results, getPathClassConfig()).filter((r) => !docByPath.get(r.path)?.generated);
   }
 
   // Usage-feedback boost (v1.5). Config is process-cached; the citation snapshot
@@ -654,6 +660,9 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     graph,
     textSearch,
     bm25,
+    fields,
+    ranking: loadRanking(notesPath),
+    isExcluded: (p) => isExcludedPath(p, getPathClassConfig()),
     bm25Min: () => {
       const top = selfTop();
       return top === null ? null : top * BM25_FRACTION;

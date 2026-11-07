@@ -34,7 +34,7 @@ purpose: Complete listing of operational documentation
 | [Jev mode — closed-set decisions through jev-loop](jev-mode.md) | active | 2026-10-25 | 728 |
 | [Lexicon & Query Expansion — Operating Guide](lexicon-guide.md) | active | 2026-07-10 | 988 |
 | [Modes Guide](modes-guide.md) | active | 2026-10-28 | 1,113 |
-| [Retrieval Tuning Guide](retrieval-tuning-guide.md) | active | 2026-11-06 | 606 |
+| [Retrieval Tuning Guide](retrieval-tuning-guide.md) | active | 2026-11-07 | 606 |
 | [Session Paging & Speaker Profile — Operating Guide](session-paging-guide.md) | active | 2026-07-11 | 1,110 |
 | [Sessions guide — verification-gated work units](sessions-guide.md) | active | 2026-05-09 | 1,375 |
 | [The skill loop — learned skills between sessions](skill-loop.md) | active | 2026-11-03 | 1,427 |

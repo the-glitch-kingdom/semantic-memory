@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { CHUNKER, IGNORE_GLOBS, INDEX_SCHEMA_VERSION } from "./indexer.js";
 import { sha256 } from "./reconcile.js";
+import { indexExclude, type PathClassConfig } from "./path-class.js";
+import type { IndexFields } from "./fields.js";
 
 /**
  * Files that must all come from one commit. embeddings.json is not one of them: it is keyed by
@@ -24,6 +26,12 @@ export interface IndexMeta {
   /** size + mtime of each commit file as written; a reader that sees anything else caught a half-finished commit */
   files: Record<string, { size: number; mtimeMs: number }>;
 }
+
+/** Which docs are indexed and which fields feed them: the inputs of `ignoreGlobsHash`. `meta_weight` is a search-time knob and is not one. */
+export const parserInputs = (pathClass: PathClassConfig, fields: IndexFields): string[] => [
+  ...indexExclude(pathClass),
+  JSON.stringify([fields.lexical, fields.vector, fields.symptom_keys]),
+];
 
 /** Everything that decides which files are indexed: a change re-parses the corpus. */
 export const ignoreGlobsHash = (exclude: string[]): string => sha256(JSON.stringify([IGNORE_GLOBS, exclude])).slice(0, 16);

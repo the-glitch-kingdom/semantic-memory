@@ -47,3 +47,26 @@
 {"id":"n10","tier":"negative","q":"Which Docker base image do the gateways run on?"}
 {"id":"n11","tier":"negative","q":"How do I set up Grafana panels for request latency?"}
 {"id":"n12","tier":"negative","q":"What is the onboarding checklist for a new shipping partner?"}
+// field-eval additions (retrieval-ready-fields Phase 2): symptom/nofield tiers, overview multi-doc cases. Our own questions, written against the new fixture docs before any ranking run.
+{"id": "t01", "tier": "symptom", "q": "the live screen shows readings from an hour old", "facets": ["consumers evict"]}
+{"id": "t02", "tier": "symptom", "q": "charts are empty for yesterday's date", "facets": ["rollup --day"]}
+{"id": "t03", "tier": "symptom", "q": "what does ERR_ROLLUP_MISSING mean", "facets": ["rollup --day"]}
+{"id": "t04", "tier": "symptom", "q": "HarborBacklogHigh fired, what do I do", "facets": ["consumers evict"]}
+{"id": "t05", "tier": "paraphrase", "q": "What happens to data collected while a ship had no internet for a week?", "facets": ["replays them oldest first"]}
+{"id": "t06", "tier": "paraphrase", "q": "Where can a new operator look up what the abbreviations mean?", "facets": ["Pier-worker: a queue consumer"]}
+{"id": "t07", "tier": "paraphrase", "q": "How do I stop a vessel from running up a huge satellite bill?", "facets": ["sat_budget_mb"]}
+{"id": "t08", "tier": "paraphrase", "q": "A gateway cannot connect any more and the broker complains about its identity", "facets": ["certs renew"]}
+{"id": "b01", "tier": "nofield", "q": "How big can a gateway log file get before it rolls over?", "facets": ["log_max_mb"]}
+{"id": "b02", "tier": "nofield", "q": "How many requests per minute can one key make?", "facets": ["600 requests per minute"]}
+{"id": "o01", "tier": "multi", "q": "Walk me through the whole journey of a sensor reading from the boat to the screen", "facets": ["gateway on each vessel buffers", "Beacon engine checks", "hot, warm and cold"]}
+{"id": "o02", "tier": "multi", "q": "Give me a one-page summary of the platform covering collecting, processing, alerts, storage and access", "facets": ["Workers validate every reading", "only what their role allows"]}
+{"id": "o03", "tier": "multi", "q": "How do the main parts of the system fit together?", "facets": ["five stages", "Beacon engine checks"]}
+{"id": "o04", "tier": "multi", "q": "A vessel was offline for days, how does it catch up and where do payloads that keep failing end up?", "facets": ["replays them oldest first", "harbor\\.dlq"]}
+{"id": "q01", "tier": "paraphrase", "q": "How long do we hold on to the nightly copies of the rule database?", "facets": ["kept 14 days"]}
+{"id": "q02", "tier": "paraphrase", "q": "What is the largest number of queue-draining processes the topic can support?", "facets": ["ceiling is 24 workers"]}
+{"id": "q03", "tier": "symptom", "q": "the on-call pager stayed silent although the same rule triggered again ten minutes later", "facets": ["cooldown of 15 minutes"]}
+{"id": "q04", "tier": "paraphrase", "q": "In which measurement units are vessel positions and velocities saved?", "facets": ["nautical miles"]}
+{"id": "q05", "tier": "paraphrase", "q": "Can a user switch the dashboard to a dark look?", "facets": ["light or dark theme"]}
+{"id": "q06", "tier": "symptom", "q": "messages pile up on the queue and nobody is draining them fast enough", "facets": ["exceeds 10,000 messages"]}
+{"id": "q07", "tier": "paraphrase", "q": "What is the longest the pipeline waits before pushing out a partial batch?", "facets": ["TIDEWATCH_FLUSH_MS"]}
+{"id": "q08", "tier": "paraphrase", "q": "Which role may change alert conditions but cannot manage accounts?", "facets": ["engineer: dashboards plus rule editing"]}

@@ -7,6 +7,7 @@ import { readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { basename, join, relative, posix } from "node:path";
 import type { IndexedDocument } from "./types.js";
+import { buildFields, loadIndexFields, type IndexFields } from "./fields.js";
 import { isExcludedPath, loadPathClassConfig, type PathClassConfig } from "./path-class.js";
 
 const DOCS_CACHE_FILE = "docs.cache.json";
@@ -14,7 +15,7 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 4; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks
+export const INDEX_SCHEMA_VERSION = 5; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -43,10 +44,12 @@ export class Indexer {
   private notesPath: string;
   private processor: any;
   private pathClass: PathClassConfig;
+  private fields: IndexFields;
 
   constructor(notesPath: string) {
     this.notesPath = notesPath;
     this.pathClass = loadPathClassConfig(notesPath);
+    this.fields = loadIndexFields(notesPath);
     this.processor = unified().use(remarkParse).use(remarkWikiLink);
   }
 
@@ -107,21 +110,15 @@ export class Indexer {
     const plainText = this.stripMarkdown(content);
     const chunks = this.chunkText(plainText);
 
-    // Symptom-keyed indexing (v1.4 Phase 5). Each verbatim `symptoms:` phrase is
-    // added as its own chunk, so a terse symptom query ("it hangs after reindex")
-    // matches the note directly — the fix for asymmetric retrieval (query-shaped
-    // keys stored alongside document-shaped content). Synthetic child chunks point
-    // at the same note path; no index-format change.
-    const symptoms = Array.isArray(frontmatter.symptoms)
-      ? (frontmatter.symptoms as unknown[]).filter((s): s is string => typeof s === "string" && s.trim().length > 0).map((s) => s.trim())
-      : [];
-    // excluded docs (archive by default) stay graph nodes so supersedes edges resolve, but are never embedded or searched
-    const allChunks = isExcludedPath(relativePath, this.pathClass) ? [] : symptoms.length > 0 ? [...chunks, ...symptoms] : chunks;
-
     const title =
       (frontmatter.title as string) ||
       headers[0] ||
       basename(relativePath, ".md");
+
+    // excluded docs (archive by default) stay graph nodes so supersedes edges resolve; both kinds are never embedded or searched
+    const generated = frontmatter.generated === true;
+    const hidden = generated || isExcludedPath(relativePath, this.pathClass);
+    const fields = hidden ? { lexical: "", meta: [] } : buildFields(frontmatter, title, this.fields);
 
     // Resolve modification time: prefer frontmatter date fields over fs.stat
     // Supports hit-em-with-the-docs (last_updated) and common alternatives
@@ -162,7 +159,10 @@ export class Indexer {
       mdLinks,
       tags,
       headers,
-      chunks: allChunks,
+      chunks: hidden ? [] : chunks,
+      ...(fields.meta.length > 0 && { meta: fields.meta }),
+      ...(fields.lexical && { fieldText: fields.lexical }),
+      ...(generated && { generated }),
       mtime,
       ...(loadPriority !== undefined && { loadPriority }),
       ...(status !== undefined && { status }),

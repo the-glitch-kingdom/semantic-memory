@@ -5,7 +5,7 @@ domains: [reference]
 audience: [developers]
 tags: [config, settings, env-vars, tunables, gitignore, v1.7.0]
 status: active
-last_updated: '2026-10-28'
+last_updated: '2026-11-07'
 version: '1.7.2'
 purpose: Every config file, env var, schema field, and tunable. Includes v1.2 .gitignore additions, v1.1+ runtime state files, the v1.3 decay schema block, the v1.3.1 telemetry block, the v1.4.0 path_class + tools.conditional schema blocks, the SEMANTIC_MEMORY_INJECT_MIN_SCORE env var, the lexicon-cache.json state file, the v1.5.0 usage_boost schema block + dossier-cache.json state file, the v1.5.2 per-session capture-pending format and multi-path hook discovery, the v1.6 failure-hook env vars and failure-shown.json, the v1.7 skill-loop and jev-mode env vars, repo config file and state files, and the v1.7.2 server-name rule, doc-search redirect switch and doc-search-redirect.json.
 load_priority: 7
@@ -426,6 +426,41 @@ results:
 ```
 
 - **`exclude`** — globs removed from search results (semantic, hybrid, graph seeds, text search) even when `path_class.enabled` is false. Unlike `path_class.exclude` these notes are still indexed. Default: the `graph.exclude_hubs` list plus generated link-check reports.
+
+### `index_fields` (vault.schema.yml) — 🆕 v1.10.0
+
+```yaml
+index_fields:
+  lexical: [title, purpose, summary, description, keywords, tags, symptoms]
+  vector: [purpose, summary, description, symptoms]
+  symptom_keys: [user_phrase, error_pattern, alert_name]
+  meta_weight: 0.8
+```
+
+- **`lexical`** — frontmatter fields added to every chunk's BM25 text. **`vector`** — fields embedded as extra metadata chunks. **`symptom_keys`** — keys read from object-form `symptoms` (`error_pattern` is regex text: BM25 only). Unknown fields are ignored. A list change re-parses the corpus; only changed metadata embeds.
+- **`meta_weight`** — a note's vector score is `max(best body cosine, meta_weight x best metadata cosine)`; search-time only.
+- Notes with `generated: true` are never indexed, returned or made graph nodes.
+
+Field contract (the shape hit-em-with-the-docs writes and semantic-memory reads; see its frontmatter reference):
+
+| Field | Shape | Used for |
+|---|---|---|
+| `title` | string | BM25; result `title` |
+| `purpose` (fallbacks `summary`, `description`) | string | BM25 + metadata vector |
+| `keywords`, `tags` | list | BM25 (tags also graph) |
+| `symptoms` | string list, or objects with `user_phrase` (string or list), `error_pattern`, `alert_name` | BM25; phrases and `alert_name` also embedded; `target`, `severity` not indexed; `cites` are graph edges |
+| `generated: true` | bool | excluded from search and graph |
+
+### `ranking` (vault.schema.yml) — 🆕 v1.10.0
+
+```yaml
+ranking:
+  coverage_weight: 0       # score *= 1 + coverage_weight * (idf-weighted share of query terms found in the note)
+  link_prior: 1            # score *= link_prior for notes with >= link_prior_min_links outgoing links
+  link_prior_min_links: 5
+```
+
+Applied to fused `search_hybrid` candidates, in MCP and CLI alike. Off by default: neither gained an answer on our train splits (see the [tuning guide](../operational/retrieval-tuning-guide.md)). Try 0.3 / 1.1 and measure before enabling; 0.6 over-weights checklists.
 
 ### `rerank` (vault.schema.yml) — 🆕 v1.9+
 

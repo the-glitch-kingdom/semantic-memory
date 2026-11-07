@@ -109,7 +109,7 @@ symptoms:
 
 Good symptoms are the exact text an agent sees: the exit code line, the error class and message (`staged content different`, `PermissionError: [Errno 13]`, `ERR_MODULE_NOT_FOUND`), without paths or ids that change per run. Two or three per fact is plenty.
 
-**In a hit-em-with-the-docs tree (`.documentation/`), don't use string `symptoms:` on facts.** There, `symptoms:` is hewtd's playbook field, a list of objects with `error_pattern` / `user_phrase` / `alert_name`, a `target` and `cites`. A string list fails `hewtd audit` with `symptoms.0: Expected object, received string`. semantic-memory 1.6.1 reads only string symptoms, so hewtd's objects are not symptom-keyed yet (a planned follow-up). Until then, put the literal error strings in the fact's `tags:` and in its title or first `## Claim` line. This repo's facts do that. It hasn't been measured separately: the 0.44 → 0.75 result above is for string `symptoms:`.
+**In a hit-em-with-the-docs tree (`.documentation/`), use the object form.** There, `symptoms:` is hewtd's playbook field, a list of objects with `error_pattern` / `user_phrase` (a string or a list) / `alert_name`, a `target` and `cites`; a string list fails `hewtd audit` with `symptoms.0: Expected object, received string`. Since v1.10.0 semantic-memory indexes the objects: `user_phrase` and `error_pattern` feed BM25, `user_phrase` and `alert_name` are also embedded; `target`, `cites` and `severity` are not indexed. Put the literal error in `error_pattern` and the user's words in `user_phrase`. No `tags:` workaround is needed. The 0.44 → 0.75 result above is for string `symptoms:`; the fixture's symptom tier (hybrid @1 0 → 6 of 6 on train) covers the object form.
 
 ## Running it next to another PostToolUseFailure hook
 

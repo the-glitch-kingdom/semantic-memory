@@ -32,3 +32,7 @@
 {"id":"n06","tier":"negative","q":"What does the enterprise pricing tier cost per seat?"}
 {"id":"n07","tier":"negative","q":"How do I sync the vault with Dropbox?"}
 {"id":"n08","tier":"negative","q":"Which Python version does the project require?"}
+// field-eval additions (retrieval-ready-fields Phase 2). Never tuned on.
+{"id": "xh20", "tier": "multi", "q": "Tell me everything about how modes work, including the incident one and what is captured when leaving one", "facets": ["Transition capture", "incident mode"]}
+{"id": "xh21", "tier": "multi", "q": "What did the big v1 refactor change in the server layout, and which tools became shims?", "facets": ["organizational refactor", "deprecation shims"]}
+{"id": "xh22", "tier": "multi", "q": "What storage names stay the same after the rebrand, and how is a session finish gated?", "facets": ["Storage layout PRESERVED", "Hard gate semantics"]}

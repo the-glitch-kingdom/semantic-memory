@@ -7,11 +7,26 @@ import type { SearchResult } from "./types.js";
 
 const EF_SEARCH = 100;
 
-interface ChunkMeta {
+export interface ChunkMeta {
   docPath: string;
   chunkIndex: number;
   text: string;
+  /** metadata chunk (purpose, symptom phrase...); absent on body chunks and on indexes from before it existed */
+  kind?: "meta";
+  field?: string;
 }
+
+/** Every chunk a doc contributes to the vector index: body chunks, then its metadata chunks. */
+export const docChunks = (d: { path: string; chunks: string[]; meta?: { field: string; text: string }[] }): ChunkMeta[] => [
+  ...d.chunks.map((text, chunkIndex) => ({ docPath: d.path, chunkIndex, text })),
+  ...(d.meta ?? []).map((m, i) => ({ docPath: d.path, chunkIndex: d.chunks.length + i, text: m.text, kind: "meta" as const, field: m.field })),
+];
+
+const cosineOf = (a: ArrayLike<number>, b: ArrayLike<number>): number => {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  return na && nb ? dot / Math.sqrt(na * nb) : 0;
+};
 
 export class VectorIndex {
   private index: InstanceType<typeof HierarchicalNSW> | null = null;
@@ -21,7 +36,7 @@ export class VectorIndex {
   private labelsByDoc = new Map<string, number[]>();
   private live = 0;
 
-  constructor(dimensions: number) {
+  constructor(dimensions: number, private metaWeight = 1) {
     this.dimensions = dimensions;
   }
 
@@ -82,24 +97,44 @@ export class VectorIndex {
     this.index.setEf(Math.max(EF_SEARCH, numResults));
     const result = this.index.searchKnn(Array.from(queryEmbedding), numResults);
 
-    const seen = new Set<string>();
-    const results: SearchResult[] = [];
-
+    // per doc: the best body chunk and the best metadata chunk (neighbours come nearest first)
+    const docs = new Map<string, { body?: { cos: number; m: ChunkMeta }; meta?: { cos: number; m: ChunkMeta } }>();
     for (let i = 0; i < result.neighbors.length; i++) {
-      const idx = result.neighbors[i];
-      const meta = this.chunkMeta[idx];
-      if (!meta || seen.has(meta.docPath)) continue;
-      seen.add(meta.docPath);
+      const m = this.chunkMeta[result.neighbors[i]];
+      if (!m) continue;
+      const slot = docs.get(m.docPath) ?? {};
+      const kind = m.kind === "meta" ? "meta" : "body";
+      slot[kind] ??= { cos: 1 - result.distances[i], m };
+      docs.set(m.docPath, slot);
+    }
 
+    const results: SearchResult[] = [];
+    for (const [path, { body: found, meta }] of docs) {
+      const weighted = meta ? this.metaWeight * meta.cos : -Infinity;
+      let body = found;
+      // the excerpt always comes from the body: when a metadata chunk wins and no body chunk was a near neighbour, find the doc's best one
+      if (meta && weighted > (body?.cos ?? -Infinity) && !body) {
+        for (const label of this.labelsByDoc.get(path) ?? []) {
+          const m = this.chunkMeta[label];
+          if (!m || m.kind === "meta") continue;
+          const cos = cosineOf(this.index.getPoint(label), queryEmbedding);
+          if (!body || cos > body.cos) body = { cos, m };
+        }
+      }
+      const win = weighted > (found?.cos ?? -Infinity);
+      const score = win ? weighted : found!.cos;
+      const text = (body ?? meta!).m.text;
       results.push({
-        path: meta.docPath,
-        title: meta.docPath,
-        score: 1 - result.distances[i],
-        cosine: 1 - result.distances[i],
-        snippet: meta.text.slice(0, 200),
-        matchedChunk: meta.text,
+        path,
+        title: path,
+        score,
+        cosine: score,
+        snippet: text.slice(0, 200),
+        matchedChunk: text,
+        ...(win && { matched: { field: meta!.m.field ?? "meta", text: meta!.m.text } }),
       });
     }
+    results.sort((a, b) => b.score - a.score);
 
     return results;
   }
