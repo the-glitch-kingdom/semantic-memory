@@ -93,15 +93,17 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
         (compares the matched chunk text itself, which is what the hash is of; only bites when exclusion is opted out)
   - [x] Bump `schemaVersion` (parsing and edges changed) so caches re-parse without re-embedding
   - [x] Re-run eval, record numbers, raise CI floor
-- [ ] Phase 5: Lexical arm and fusion (issue Phase 2, part 1)
-  - [ ] BM25 over chunks in `src/core/bm25.ts` (no new dependency; tokenizer, k1=1.2, b=0.75),
+- [x] Phase 5: Lexical arm and fusion (issue Phase 2, part 1)
+  - [x] BM25 over chunks in `src/core/bm25.ts` (no new dependency; tokenizer, k1=1.2, b=0.75),
         updated per doc by `reconcile()`
-  - [ ] Reciprocal-rank fusion (k=60) of BM25 + vector in `search_hybrid`; `search_semantic` stays
+        (stoplist added, and a chunk must match >= min(2, query terms) terms: see notes.md "Phase 5")
+  - [x] Reciprocal-rank fusion (k=60) of BM25 + vector in `search_hybrid` (graph boost, priority, decay and path-class act on each arm before fusion,
+        since RRF scores are flat); `search_semantic` stays
         vector-only so the two arms remain comparable
-  - [ ] Confirm `symptoms:` chunks are indexed for hewtd playbooks/facts (v1.4 already adds them);
+  - [x] Confirm `symptoms:` chunks are indexed for hewtd playbooks/facts (v1.4 already adds them);
         add a fixture case proving a symptom-phrased query hits its fact @1
-  - [ ] Doc-level aggregation check: one result per doc with its best chunk across both arms
-  - [ ] Re-run eval, record numbers, raise CI floor
+  - [x] Doc-level aggregation check: one result per doc with its best chunk across both arms
+  - [x] Re-run eval, record numbers, raise CI floor
 - [ ] Phase 6: Rerank and embedder evaluation (issue Phase 2, part 2)
   - [ ] Cross-encoder rerank of the fused top ~30 (`Xenova/ms-marco-MiniLM-L-6-v2` through the
         existing transformers/ONNX stack in `src/core/embedder.ts`); config `rerank.enabled`
@@ -268,15 +270,20 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 4: `types` filter exists on the MCP tools `backlinks`/`forwardlinks`/`graph_path`; the CLI has no such subcommands (the tool help in `cli/index.ts` documents it). `findPath` is now a small BFS over the typed edges, so `graphology-shortest-path` is unused (dependency left in package.json; drop it in Phase 10).
 - Phase 4: the boost seeds are the top 5 semantic docs; two linked seeds boost each other. Graph config (hub globs) is read at server start, so a change needs a restart.
 
+- Phase 5: the CLI `search` (hooks path) stays vector + graph boost: it reads `docs.cache.json` with no BM25 index, so its order can differ from
+  `search_hybrid` until Phase 11's CLI/MCP same-order regression decides whether to build BM25 there too.
+- Phase 5: fused scores are scaled so a doc ranked first by both arms is 1.0; they are not cosine, so Phase 7 calibrates confidence on its own signals.
+
 ## Errors Encountered
 - Phase 2: `test/unit/skill-eval.test.ts` concurrency case ("never exceed 5 live claude processes") and one other timing test failed in 2 of 3 full runs under load, passed alone and on the 3rd full run. Unrelated to this work (process-timing based); not touched.
 - Phase 3: `hook-failure.test.ts` "Jev error or hang" (3209 ms vs a 3000 ms budget) failed once under the full-suite load, passed alone. Unrelated (hook process timing).
 - Phase 3: sorting the file listing changed which of two equal-length graph paths wins, so the `graph_path` golden snapshot (project-overview -> user-service) now goes via api-gateway instead of microservices; both are shortest paths. Snapshot updated.
 - Phase 3: reconcile parsed files in completion order, so HNSW insertion order varied and one `docs-eval` run failed once (approximate-NN tie flips); fixed by keeping `plan.parse` order. 6 consecutive eval runs green after.
+- Phase 5: full-suite runs under load failed profile-mcp, e2e meta.json and skill-eval concurrency in turn; each passes alone or on rerun (skill-eval concurrency fails alone too under load); the 3rd full run was 749/749. Unrelated timing.
 - Phase 4: one full run failed `e2e/new-features.test.ts` "should write meta.json with model info" and the skill-eval concurrency case; both pass alone and in the next two full runs (load timing, unrelated).
 
 ## Status
-**Currently in Phase 5** (lexical arm and fusion). Phase 4 (graph and ranking fixes) done; numbers in notes.md "Phase 4".
+**Currently in Phase 6** (rerank and embedder evaluation). Phase 5 (lexical fusion) done; numbers in notes.md "Phase 5".
 
 ---
 

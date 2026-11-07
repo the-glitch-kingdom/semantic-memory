@@ -135,3 +135,21 @@ Not measured: the real production `.mcp.json` launch (Phase 11), Windows/macOS.
 - Negative top scores are still 0.14 to 0.45: abstention is Phase 7.
 - minimatch: `**/archive/**` does not match `.documentation/archive/a.md` without `{ dot: true }` (asserted in `graph-links.test.ts`).
 - `INDEX_SCHEMA_VERSION` 1 -> 2: caches re-parse, vectors are kept.
+
+### Phase 5 (BM25 + RRF in search_hybrid; fixture grew to 35 answerable cases: 2 symptom-phrased cases s01/s02, both hit @1 in every vector arm)
+
+| arm | @1 | @3 | @8 | exact @1 | paraphrase @1 | negative top scores |
+|---|---|---|---|---|---|---|
+| search_semantic (vector only, unchanged) | 22/35 | 32/35 | 34/35 | 11/15 | 9/12 | 0.31 0.25 0.14 0.31 0.15 0.36 |
+| search_hybrid (before this phase, 35-case set) | 22/35 | 32/35 | 34/35 | 11/15 | 9/12 | |
+| search_hybrid (BM25 + RRF) | 23/35 | 30/35 | 34/35 | 12/15 | 9/12 | 0.50 0.50 0.50 0.50 0.94 0.97 |
+| search_text (grep) | 6/35 | 15/35 | 25/35 | 2/15 | 3/12 | |
+
+- Tuning path (each full eval on the fixture): plain RRF with the graph boost applied after fusion: @1 15/35 (RRF scores are flat,
+  a x1.3 boost jumps many ranks), so boosts/priority/decay/path-class now act on each arm's list before fusion. Stopword-less BM25: 19 -> 22
+  with a stoplist. Lexical weight 0.3 / 0.5 / 0.7 gave identical results (RRF k=60 is flat; any rank-1 lexical hit lifts a doc many places),
+  so no weight option. Short `symptoms:` chunks score high on one incidental query word; requiring >= min(2, query terms) matched terms per chunk
+  took @1 22 -> 23 and paraphrase @3 9 -> 10 of 12 (semantic: 12).
+- Cost: hybrid @3 is 30/35 vs 32/35 for vector alone (paraphrase queries get incidental lexical hits). Phase 6 rerank is where that is expected to be recovered.
+- Negative top scores in hybrid are not comparable to cosine (RRF scale, 1.0 = ranked first by both arms): abstention is Phase 7.
+- Floors raised: semantic 22, hybrid 23, text 6.

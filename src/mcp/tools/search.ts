@@ -1,7 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
+import { fuseRrf } from "../../core/bm25.js";
 import { applyGraphBoost } from "../../core/graph-boost.js";
+import type { SearchResult } from "../../core/types.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
 /**
@@ -104,7 +106,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + graph search — vector results re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block.",
+    "Combined semantic + lexical + graph search — vector and BM25 results fused by reciprocal rank, re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -122,12 +124,13 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
       const queryEmbed = await ctx.embedder.embed(query);
       await ctx.refreshUsageBoost();
-      const semanticResults = vectorIndex.search(queryEmbed, limit * 3);
-
-      let hybrid = applyGraphBoost(semanticResults, ctx.graph).map((r) =>
-        ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) })))
-      );
-      hybrid.sort((a, b) => b.score - a.score);
+      // Boosts act on each arm's own scores, before fusion: RRF scores are flat, so a x1.3 on them would reorder far too much.
+      const adjust = (rs: SearchResult[]) =>
+        rs
+          .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
+          .sort((a, b) => b.score - a.score);
+      const semanticResults = adjust(applyGraphBoost(vectorIndex.search(queryEmbed, limit * 3), ctx.graph));
+      let hybrid = fuseRrf(semanticResults, adjust(ctx.bm25.search(query, limit * 3)));
       hybrid = ctx.filterPathClass(hybrid);
 
       hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);

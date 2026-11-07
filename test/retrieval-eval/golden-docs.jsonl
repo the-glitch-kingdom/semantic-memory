@@ -33,6 +33,8 @@
 {"id":"m06","tier":"multi","q":"Which roles exist and how often must service keys be replaced?","facets":["deckhand","replaced every 90 days"]}
 {"id":"m07","tier":"multi","q":"How long does a release canary run and which command inspects fleet state?","facets":["for 48 hours","fleet status"]}
 {"id":"m08","tier":"multi","q":"What changed about alert repeat intervals in release 2.0 and what is the interval now?","facets":["from 5 to 15 minutes","cooldown of 15 minutes"]}
+{"id":"s01","tier":"exact","q":"vessel track zigzags backwards","facets":["chrony","GPS pulse"]}
+{"id":"s02","tier":"exact","q":"totals double after a gateway reconnects","facets":["retain flag"]}
 {"id":"n01","tier":"negative","q":"How do I configure SAML for the billing portal?"}
 {"id":"n02","tier":"negative","q":"What is the recipe for the crew canteen fish stew?"}
 {"id":"n03","tier":"negative","q":"How do I tune GPU memory for the image recognition model?"}

@@ -4,6 +4,7 @@ import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
+import { Bm25Index } from "../core/bm25.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
@@ -62,6 +63,7 @@ export interface ServerContext {
   embedder: Embedder;
   graph: GraphBuilder;
   textSearch: TextSearch;
+  bm25: Bm25Index;
   crud: NoteCrud;
   frontmatterManager: FrontmatterManager;
   tagManager: TagManager;
@@ -136,6 +138,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     isArchived: (p) => isExcludedPath(p, getPathClassConfig()),
   });
   const textSearch = new TextSearch();
+  const bm25 = new Bm25Index();
   const crud = new NoteCrud(notesPath);
   const frontmatterManager = new FrontmatterManager(notesPath);
   const tagManager = new TagManager(notesPath);
@@ -192,6 +195,12 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     graph.buildFromDocuments(docs);
   }
 
+  /** Whole-index load or rebuild: drop the lexical index and refill it from these docs. */
+  function resetBm25(docs: IndexedDocument[]) {
+    bm25.clear();
+    for (const d of docs) bm25.addDoc(d.path, d.chunks);
+  }
+
   /** Adopt what another process (or an earlier run) committed. False leaves the current state alone. */
   async function loadFromDisk(): Promise<boolean> {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -219,6 +228,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       manifest = loadedManifest;
       vectorIndex = tempVector;
       generation = meta.generation;
+      resetBm25(docs);
       setDocuments(docs);
       return true;
     }
@@ -310,12 +320,15 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     // From here on everything is synchronous: a search never sees a half-applied change.
     const byPath = new Map(rebuild ? [] : documents.map((d) => [d.path, d] as const));
     const vec = rebuild || !vectorIndex ? new VectorIndex(embedder.getDimensions()) : vectorIndex;
+    if (rebuild) bm25.clear();
     for (const path of [...plan.gone, ...parsed.map((d) => d.path)]) {
       vec.removeDoc(path);
+      bm25.removeDoc(path);
       byPath.delete(path);
     }
     for (const doc of parsed) {
       byPath.set(doc.path, doc);
+      bm25.addDoc(doc.path, doc.chunks);
       vec.addChunks(
         doc.chunks.map((t) => cache.get(vectorKey(t))!),
         doc.chunks.map((text, chunkIndex) => ({ docPath: doc.path, chunkIndex, text }))
@@ -587,6 +600,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     embedder,
     graph,
     textSearch,
+    bm25,
     crud,
     frontmatterManager,
     tagManager,

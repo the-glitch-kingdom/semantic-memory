@@ -1,12 +1,12 @@
 {
-  "_comment": "Measured floor for docs-eval.test.ts (Phase 4: typed link edges, hub and archive exclusion, seeded graph boost). Raise at the end of each phase; never lower.",
+  "_comment": "Measured floor for docs-eval.test.ts (Phase 5: BM25 + RRF in search_hybrid; 35 answerable cases). Raise at the end of each phase; never lower.",
   "arms": {
     "search_semantic": {
-      "answeredAt1": 20,
+      "answeredAt1": 22,
       "archiveHits": 0
     },
     "search_hybrid": {
-      "answeredAt1": 20,
+      "answeredAt1": 23,
       "archiveHits": 0
     },
     "search_text": {
