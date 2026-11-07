@@ -136,3 +136,6 @@ Real corpus through the production launch (`node dist/cli/index.js --notes <copy
 - Acceptance targets: MET hnsw >= 0.97, exclusion before indexing, upgrade from v1.7.2 and v1.9.0 formats (re-embeds only changed chunks, serves stale), search_text order, graph_path reverse, read-only clean tree, train abstention, real train @1 >= 0.75 not met (0.71).
   MISSED: @1 >= 0.75 on fixture held-out (0.57) and real held-out (0.46); fixture held-out hybrid within 1 of semantic (13 vs 17) and paraphrase (8 vs 12); held-out abstention (fixture 26% false flags, real 7/8 negatives).
 - Validation: lint, build, 819 tests pass, eval 37 pass + 4 expected fail; smoke-install PASS; offline tarball 556,696,360 B, install --verify OK. Load flakes (freshness-scale, hook-failure, skill-eval) pass alone.
+
+## Eval results: Phase 10
+Documentation only; no code or ranking change. Numbers copied into .documentation/changelog/v1-9-1-ranking-regression.md from Phase 9 above.

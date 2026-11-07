@@ -31,7 +31,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 21 | Release notes per version and phase |
+| [Changelog](#changelog) | 22 | Release notes per version and phase |
 | [Operational](#operational) | 16 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 6 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -235,6 +235,7 @@ purpose: Navigation hub for all documentation
 | [v1.7.2 — sessions use the indexed docs](changelog/v1-7-2-vault-context-sources.md) | reference | active | 2026-10-28 |
 | [v1.8.0 — skill loop auto mode, dedup, and retiring old entries](changelog/v1-8-0-skill-loop-auto.md) | reference | active | 2026-11-03 |
 | [v1.9.0 — retrieval and graph quality, index freshness](changelog/v1-9-0-retrieval-graph-quality.md) | reference | active | 2026-11-06 |
+| [v1.9.1 — ranking regression fix](changelog/v1-9-1-ranking-regression.md) | reference | active | 2026-11-06 |
 
 ---
 

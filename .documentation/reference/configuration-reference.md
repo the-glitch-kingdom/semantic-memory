@@ -399,7 +399,7 @@ path_class:
 
 - **`enabled`** — master switch for path-class down-weighting.
 - **`rules`** — ordered list of `{ glob, multiplier }`. `glob` matches against the note's vault-relative path; `multiplier` scales the ranking score the same way `decay`'s multiplier does. **First matching rule wins** — rules are evaluated in list order and later rules are not consulted once one matches (no stacking multiple rules on one note).
-- **`exclude`** (v1.9.0) — globs whose notes are dropped from `search_semantic`, `search_hybrid`, `search_graph` and `search_text` (unless it is given an explicit `pathGlob`). Default `**/archive/**`; set `exclude: []` to keep archived notes (down-weighted by `rules`). Globs match with `dot: true`, so `.documentation/archive/` is covered; the pre-1.9 default `archive/**` matched only a top-level folder.
+- **`exclude`** (v1.9.0; indexing since v1.9.1) — globs whose notes are never indexed (no chunks, vectors or BM25 entries; they stay graph-only nodes so `supersedes` edges resolve) and are dropped from `search_semantic`, `search_hybrid`, `search_graph` and `search_text` (unless it is given an explicit `pathGlob`). Editing the list re-parses the corpus on the next start. Default `**/archive/**`; set `exclude: []` to keep archived notes (down-weighted by `rules`). Globs match with `dot: true`, so `.documentation/archive/` is covered; the pre-1.9 default `archive/**` matched only a top-level folder.
 - **Related env var:** `SEMANTIC_MEMORY_INJECT_MIN_SCORE` (default `0.35`) score-gates the `<vault-context>` hook injection — results scoring below this threshold, after decay + `path_class` + `load_priority` are applied, are not injected into the prompt/session-start context regardless of the hook's top-K limit. See [Environment variables](#environment-variables) above.
 
 See [mcp-tools-reference.md](./mcp-tools-reference.md) for the search tools this affects.
@@ -414,6 +414,18 @@ graph:
 ```
 
 Generated hub files link to every note and made every note a neighbour of every other, so matching files are left out of the graph (not nodes, so not traversed, ranked by degree or counted). Read at server start: restart after changing it.
+
+### `results` (vault.schema.yml) — 🆕 v1.9.1
+
+```yaml
+results:
+  exclude:
+    - "**/INDEX.md"
+    - "**/REGISTRY.md"
+    - "**/reports/link-check-*.md"
+```
+
+- **`exclude`** — globs removed from search results (semantic, hybrid, graph seeds, text search) even when `path_class.enabled` is false. Unlike `path_class.exclude` these notes are still indexed. Default: the `graph.exclude_hubs` list plus generated link-check reports.
 
 ### `rerank` (vault.schema.yml) — 🆕 v1.9+
 

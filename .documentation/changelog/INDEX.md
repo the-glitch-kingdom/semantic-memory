@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 21
+- **Total Documents:** 22
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -46,6 +46,7 @@ purpose: Complete listing of changelog documentation
 | [v1.7.2 — sessions use the indexed docs](v1-7-2-vault-context-sources.md) | active | 2026-10-28 | 485 |
 | [v1.8.0 — skill loop auto mode, dedup, and retiring old entries](v1-8-0-skill-loop-auto.md) | active | 2026-11-03 | 565 |
 | [v1.9.0 — retrieval and graph quality, index freshness](v1-9-0-retrieval-graph-quality.md) | active | 2026-11-06 | 735 |
+| [v1.9.1 — ranking regression fix](v1-9-1-ranking-regression.md) | active | 2026-11-06 | 766 |
 
 ## Keywords
 

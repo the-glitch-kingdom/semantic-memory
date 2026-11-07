@@ -61,7 +61,7 @@ Vector similarity search over chunk embeddings.
 **v1.5+ usage-feedback ranking:** results cited (via `read_note`) after a prior search earn a bounded rank boost (composes multiplicatively with decay + path_class + load_priority). Boosted results carry a `usage: { citations, multiplier }` block. See [configuration-reference.md](./configuration-reference.md#usage_boost-vaultschemayml).
 
 ### `search_text`
-Keyword search over full note content. Honours `path_class.exclude` unless `pathGlob` is given (v1.9.0).
+Keyword search over full note content. Honours `path_class.exclude` and `results.exclude` unless `pathGlob` is given (v1.9.0). v1.9.1: ranked by number of matches, then match density (it was alphabetical); the limit applies after the sort.
 **Args:** `{ pattern, regex?=false, caseSensitive?=false, pathGlob?, tagFilter?, limit?=20, modifiedAfter?, modifiedBefore?, status?, tier?, domain? }`
 **Use when:** exact strings, regex patterns, or identifier searches.
 
@@ -71,9 +71,9 @@ Traversal around a concept: seeds are the top 5 semantic hits of the concept (v1
 **Use when:** "what's connected to this?" questions; end-to-end topic mapping.
 
 ### `search_hybrid` ⭐
-Vector + BM25 lexical results fused by reciprocal rank, then boosted x1.3 for 1-hop link neighbours of the top 5 semantic hits. **The default for most queries.** See the [retrieval tuning guide](../operational/retrieval-tuning-guide.md).
+Vector + BM25 lexical results fused by score (`0.7 * cosine + 0.3 * normalised BM25`, v1.9.1; was reciprocal rank), then boosted x1.3 for 1-hop link neighbours of the top 5 semantic hits. **The default for most queries.** See the [retrieval tuning guide](../operational/retrieval-tuning-guide.md).
 **Args:** `{ query, limit?=10, full?=false, [date/status/tier/domain filters] }`
-**v1.9.0 result shape:** each item is `{ path, title, score, confidence, snippet (~600-char excerpt), decay?, usage? }`; `full: true` returns the old whole-chunk shape plus `confidence`. When the top confidence is under 0.50 every item has `no_strong_match: true` (the corpus does not document it). The #1 item carries up to 3 `related` docs (linked, each a match on its own; skipped when weak). While the first reconcile after a warm start is running, `_meta.stale` is true. Archived notes are excluded (`path_class.exclude`); a byte-identical live/archived pair returns the live one.
+**v1.9.0 result shape:** each item is `{ path, title, score, confidence, snippet (~600-char excerpt), decay?, usage? }`; `full: true` returns the old whole-chunk shape plus `confidence`. When the match is weak every item has `no_strong_match: true` (v1.9.1: best cosine under 0.36 and no strong BM25 hit; a weak match, verify before citing, not proof the corpus lacks it). `title` is the doc's frontmatter title. The #1 item carries up to 3 `related` docs (linked, each a match on its own; skipped when weak). While the first reconcile after a warm start is running, `_meta.stale` is true. Archived notes are excluded (`path_class.exclude`); a byte-identical live/archived pair returns the live one.
 **Notes:** SessionStart vault-context hook calls this. **v1.7.2:** the one tool kept out of Claude Code's tool
 search (`_meta` `anthropic/alwaysLoad`); the doc-search redirect names it when it denies a grep of an indexed folder.
 **v1.3+ confidence decay:** same decay down-weighting and `decay` block as `search_semantic`. `search_text`/`search_graph` are unaffected — decay only applies to the two ranked/semantic tools.
@@ -246,9 +246,9 @@ All lint tools accept `{ pathGlob? }` to scope to a subset.
 
 Since v1.9.0 these follow typed edges: `types` (any of `link`, `wikilink`, `related`, `cites`, `same-incident`, `supersedes`, `tag`; default is everything except `supersedes` and `tag`). Backlinks and forwardlinks differ for a one-way link; hub files (`INDEX.md`, `REGISTRY.md`) are not nodes.
 
-### `backlinks` — `{ path, limit?=50, types? }` — notes that link TO this one (markdown links, wikilinks, `related_docs`, cites).
-### `forwardlinks` — `{ path, limit?=50, types? }` — notes this one links to.
-### `graph_path` — `{ from, to, types? }` — shortest path over the link-type edges.
+### `backlinks` — `{ path, limit?=50, types?, include_excluded?=false }` — notes that link TO this one (markdown links, wikilinks, `related_docs`, cites). v1.9.1: notes under `path_class.exclude` are skipped unless `include_excluded` is true or `types` asks for `supersedes`.
+### `forwardlinks` — `{ path, limit?=50, types?, include_excluded?=false }` — notes this one links to; same exclusion rule as `backlinks`.
+### `graph_path` — `{ from, to, types?, direction?='any' }` — shortest path over the link-type edges. v1.9.1: `direction` is `out`, `in` or `any` (it only followed out-edges); archived notes do not bridge live ones unless `supersedes` is asked for.
 ### `graph_statistics` — `{}` — most-connected nodes, orphans, density.
 
 ## Log / Maintenance (3)

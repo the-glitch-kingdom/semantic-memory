@@ -73,6 +73,20 @@ load_priority: 9
 - **Cause (1.8.0 and earlier):** each semantic-memory server held one inotify watch per file and directory. See the [KB fact](../knowledge-base/facts/chokidar-holds-one-inotify-watch-per-file.md).
 - **Fix:** upgrade to 1.9.0 and restart the session; it holds none.
 
+## v1.9.1 ranking and upgrade issues (issue #43)
+
+### A `--read-only` server leaves files in my notes tree (dirty `git status`)
+- **Cause (1.9.0 and earlier):** the search/read selection log was written to `<notes>/.claude/.semantic-memory/selection.jsonl`, and read-only did not gate it. A broad `.gitignore` rule could hide it.
+- **Fix:** upgrade to 1.9.1; it writes `.semantic-sidekick-index/selection.jsonl` instead. Delete the stray `.claude/` folder under the notes tree if you do not want it.
+
+### After upgrading, searches say `_meta.stale: true` for a while
+- **Cause:** the old index is served while the first reconcile re-parses the corpus. v1.9.1 re-keys old vectors by chunk text, so only changed chunks are re-embedded (v1.9.0 re-embedded everything and answered "Indexing in progress").
+- **Fix:** none needed; it clears when the reconcile finishes. If it re-embeds the whole corpus, the model name changed or the chunk text changed.
+
+### `no_strong_match` is set on a question the docs answer, or missing on one they do not
+- **Cause:** the rule is best cosine < 0.36 AND best BM25 below 0.8 x the per-index threshold. Symptom-style questions with no shared words fall under both; on the held-out sets this was 26% of answerable fixture questions, and one of 8 negatives escaped on the real corpus. See the [retrieval tuning guide](../operational/retrieval-tuning-guide.md).
+- **Fix:** treat it as "weak match, verify before citing". Rephrase with the doc's words.
+
 ## v1.6.1 release-audit issues
 
 ### A note's YAML block shows up as its title or search snippet (`title: x purpose: …`)
