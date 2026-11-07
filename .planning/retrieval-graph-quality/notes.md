@@ -213,3 +213,17 @@ Shipped: `confidence = clamp(cos + (cos - best other cos) + 0.1 if BM25 agrees, 
 - The two false abstains are paraphrase cases whose cosine is 0.25-0.28; the results are still returned, only marked, so the cost is an answer the model hedges.
 - Payload (mean bytes per tool response, 8 results per case): `search_hybrid` 6,285 B with `full: true` (old shape + confidence) -> 4,112 B default (-35%); the excerpt, not the metadata, is most of what remains.
 - Gate: eval green on 3 runs, `baseline.json` gets `search_hybrid.answeredFlagged` 2 (ceiling) and `meanBytes` 4112 (ceiling); @1 floors unchanged (22 / 23 / 6), hybrid @1 still 23.
+
+### Phase 8 (graph as knowledge; fixture eval, 35 answerable + 6 negative)
+
+| measure | before | after |
+|---|---|---|
+| hybrid @1 / @3 / @8 | 23 / 30 / 34 | 23 / 30 / 34 (ranking untouched: expansion adds `related`, not ranked hits) |
+| hybrid #1 + `related` answers all facets, all tiers | 23/35 | 25/35 |
+| same, multi-doc tier | 2/8 | 4/8 (m02 storage-tiers, m03 ingest-pipeline) |
+| exact / paraphrase with `related` | 12/15, 9/12 | 12/15, 9/12 (no change, no regression) |
+| mean search_hybrid payload | 4,112 B | 4,132 B (+20 B: `related` entries) |
+| negatives flagged / correct @1 flagged | 6/6, 2 | 6/6, 2 |
+
+- First try (neighbour must clear the regular confidence >= 0.50) added nothing: #2 results carry a negative margin term (m02 storage-tiers 0.46, m03 ingest-pipeline 0.49, m08 changelog 0.34). With the margin dropped (`standaloneConfidence`) the same bar adds m02 and m03 only; m01/m04/m06/m07/m08 stay at #1-only. The fixture has no cites/incident/archived_from content, so the new edge types are covered by unit tests (`test/unit/graph-knowledge.test.ts`), not by the eval.
+- Gate: `baseline.json` hybrid `expandedAt1` 25, `multiExpandedAt1` 4 (floors), `meanBytes` ceiling 4132; @1 floors unchanged.

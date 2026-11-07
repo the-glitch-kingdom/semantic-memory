@@ -42,7 +42,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   };
   const tool = (name: string, extra: Record<string, unknown> = {}): ArmFn => async (q, limit) => {
     const { parsed, bytes } = await call(name, { query: q, limit, ...extra });
-    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match) };
+    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match), related: (parsed[0]?.related ?? []).map((r: any) => r.path) };
   };
   // the "grep" arm: every content word of the question as one alternation, in the tool's own order
   const text: ArmFn = async (q, limit) => {
@@ -115,6 +115,12 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   it("the trimmed payload is smaller than full:true", () => {
     expect(arms.search_hybrid.meanBytes).toBeLessThan(fullBytes);
     expect(arms.search_hybrid.meanBytes).toBeLessThanOrEqual(baseline.arms.search_hybrid.meanBytes);
+  });
+
+  it("the #1 result plus its related neighbours answer at least as many cases as the baseline, multi-doc especially", () => {
+    const h = arms.search_hybrid.tiers;
+    expect(h.all.expandedAt1).toBeGreaterThanOrEqual(baseline.arms.search_hybrid.expandedAt1);
+    expect(h.multi.expandedAt1).toBeGreaterThanOrEqual(baseline.arms.search_hybrid.multiExpandedAt1);
   });
 
   it("archive hits never rise above the recorded baseline", () => {

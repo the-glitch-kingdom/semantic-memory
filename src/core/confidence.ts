@@ -21,6 +21,10 @@ export function withConfidence<T extends Pick<SearchResult, "cosine" | "lexical"
   });
 }
 
+/** Confidence without the margin term: a neighbour of the top hit is judged on its own match, not on how far it trails #1. */
+export const standaloneConfidence = (r: Pick<SearchResult, "cosine" | "lexical">): number =>
+  Math.round(Math.min(1, Math.max(0, (r.cosine ?? 0) + (r.lexical ? LEXICAL_BONUS : 0))) * 100) / 100;
+
 export const isWeak = (results: { confidence: number }[]): boolean => results.length > 0 && results[0].confidence < NO_STRONG_MATCH_BELOW;
 
 /** `max` chars of `text` centred on the first query term it contains (the start when none matches). */

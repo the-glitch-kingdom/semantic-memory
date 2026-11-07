@@ -1,5 +1,5 @@
 {
-  "_comment": "Measured floor for docs-eval.test.ts (Phase 7: confidence, no_strong_match, trimmed payload; 35 answerable cases, 6 negatives). Raise at the end of each phase; never lower (answeredFlagged and meanBytes are ceilings).",
+  "_comment": "Measured floor for docs-eval.test.ts (Phase 8: context expansion on #1; 35 answerable cases, 6 negatives). Raise at the end of each phase; never lower (answeredFlagged and meanBytes are ceilings).",
   "arms": {
     "search_semantic": {
       "answeredAt1": 22,
@@ -9,7 +9,9 @@
       "answeredAt1": 23,
       "archiveHits": 0,
       "answeredFlagged": 2,
-      "meanBytes": 4112
+      "meanBytes": 4132,
+      "expandedAt1": 25,
+      "multiExpandedAt1": 4
     },
     "search_text": {
       "answeredAt1": 6,

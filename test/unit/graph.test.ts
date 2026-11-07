@@ -64,7 +64,7 @@ describe("GraphBuilder", () => {
   });
 
   it("should search graph by concept", () => {
-    const results = graph.searchGraph("microservices");
+    const results = graph.searchGraph(["microservices.md"]);
     expect(results.length).toBeGreaterThan(0);
     const paths = results.map((r) => r.path);
     expect(paths).toContain("microservices.md");

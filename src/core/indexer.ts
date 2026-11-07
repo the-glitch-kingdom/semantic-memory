@@ -13,7 +13,7 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 2; // 2: markdown links (mdLinks)
+export const INDEX_SCHEMA_VERSION = 3; // 2: markdown links (mdLinks); 3: cites, archivedFrom
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -141,6 +141,14 @@ export class Indexer {
       ? (frontmatter.related_docs as string[]).filter((v) => typeof v === "string")
       : undefined;
 
+    // hewtd playbooks cite facts per symptom: `symptoms: [{ text, cites: [fact-id] }]`; a top-level `cites` is read too
+    const citeSources: unknown[] = [
+      ...(Array.isArray(frontmatter.symptoms) ? (frontmatter.symptoms as any[]).map((s) => s?.cites) : []),
+      frontmatter.cites,
+    ];
+    const cites = [...new Set(citeSources.flatMap((c) => (Array.isArray(c) ? c : [])).filter((c): c is string => typeof c === "string" && c.length > 0))];
+    const archivedFrom = typeof frontmatter.archived_from === "string" ? frontmatter.archived_from : undefined;
+
     return {
       path: relativePath,
       title,
@@ -158,6 +166,8 @@ export class Indexer {
       ...(domains !== undefined && { domains }),
       ...(purpose !== undefined && { purpose }),
       ...(relatedDocs !== undefined && { relatedDocs }),
+      ...(cites.length > 0 && { cites }),
+      ...(archivedFrom !== undefined && { archivedFrom }),
     };
   }
 

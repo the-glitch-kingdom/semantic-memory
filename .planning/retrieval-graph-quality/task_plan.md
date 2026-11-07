@@ -128,14 +128,15 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
         "not documented" on `no_strong_match`
   - [x] Re-run eval, record numbers (payload bytes too), raise CI floor
         (`baseline.json`: hybrid `answeredFlagged` <= 2, `meanBytes` <= 4112; answered@1 floors unchanged)
-- [ ] Phase 8: Graph as knowledge (issue Phase 3)
-  - [ ] Edge types `cites` (hewtd fact ids in playbook `symptoms[].cites`), `supersedes`
+- [x] Phase 8: Graph as knowledge (issue Phase 3)
+  - [x] Edge types `cites` (hewtd fact ids in playbook `symptoms[].cites`), `supersedes`
         (`archived_from` frontmatter), `same-incident` (files under one `incidents/<id>/` folder)
-  - [ ] Context expansion: after rerank, attach the #1 doc's direct link neighbours that also pass
+        (cites/same-incident are default link types; supersedes is opt-in via `types`; see notes.md "Phase 8")
+  - [x] Context expansion: after rerank, attach the #1 doc's direct link neighbours that also pass
         the confidence bar (as `related` on the #1 result, not as extra ranked hits)
-  - [ ] `search_graph` reworked: semantic seeding + directed link edges, hub exclusion, no degree
+  - [x] `search_graph` reworked: semantic seeding + directed link edges, hub exclusion, no degree
         tiebreak; `graph_path` over link edges only by default
-  - [ ] Bump `schemaVersion`; re-run eval (multi-doc tier especially), record numbers, raise CI floor
+  - [x] Bump `schemaVersion`; re-run eval (multi-doc tier especially), record numbers, raise CI floor
 - [ ] Phase 9: Release prep v1.9.0
   - [ ] Bump all five version fields (package.json, both in `.claude-plugin/marketplace.json`,
         `.claude-plugin/plugin.json`, AGENTS.md frontmatter), then
@@ -281,7 +282,12 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 
 - Phase 7: `no_strong_match` rides on every returned item (the tool response is an array, so a body field would change its shape); `confidence` and the flag exist on `search_semantic` and the CLI too, calibrated on `search_hybrid` only (the CLI has no BM25 arm, so its confidence reads lower). `search_text` keeps its old shape. Trimmed payload fields: path/title/score/confidence/snippet (600-char excerpt) plus `decay`/`usage` when present.
 
+- Phase 8: context expansion judges a neighbour by `standaloneConfidence` (cosine + lexical bonus, no margin term). The regular confidence subtracts the gap to #1, so a relevant #2 never reached the 0.50 bar (multi-doc expansion added 0). `related` rides on the #1 result only, max 3, skipped when #1 is `no_strong_match`.
+- Phase 8: `search_graph` seeds from the top 5 semantic hits of the concept (embedding call), then walks link-type edges in both directions; archive hits are dropped from the seeds by `path_class.exclude`. The CLI has no search_graph, so no CLI change. `graph_path` was already link-only by default (Phase 4); it gains the new types and a tool description update.
+- Phase 8: `cites` reads `symptoms[].cites` (hewtd object form) and a top-level `cites:` list; the fact id is the target file's basename. The schema-version bump is 2 -> 3.
+
 ## Errors Encountered
+- Phase 8: full-suite runs failed `e2e/new-features` meta.json and `hook-failure` Jev-hang timing under load; both pass alone (same flakes as earlier phases). Three snapshots (`related` key, new `types` enum) were updated on purpose.
 - Phase 7: full-suite runs failed `skill-eval` concurrency and `hook-failure` Jev-hang timing under load average 16-19; both pass alone (skill-eval confirmed on a clean stash too). Unrelated.
 - Phase 6: full-suite runs failed `skill-eval` concurrency, `hook-failure` Jev-hang timing and `profile-mcp` in turn under load average 12-16; each passes alone or on rerun (same flakes as Phases 2-5). Unrelated.
 - Phase 2: `test/unit/skill-eval.test.ts` concurrency case ("never exceed 5 live claude processes") and one other timing test failed in 2 of 3 full runs under load, passed alone and on the 3rd full run. Unrelated to this work (process-timing based); not touched.
@@ -292,7 +298,7 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 4: one full run failed `e2e/new-features.test.ts` "should write meta.json with model info" and the skill-eval concurrency case; both pass alone and in the next two full runs (load timing, unrelated).
 
 ## Status
-**Currently in Phase 8** (graph as knowledge). Phase 7 (confidence, abstention and payload size) done: threshold 0.50, 6/6 negatives flagged, 2 of 23 correct @1 hits flagged; numbers in notes.md "Phase 7".
+**Currently in Phase 9** (release prep v1.9.0). Phase 8 (graph as knowledge) done: new edge types, `related` on the #1 result (multi-doc #1+related 2/8 -> 4/8), `search_graph` seeded semantically; numbers in notes.md "Phase 8".
 
 ---
 

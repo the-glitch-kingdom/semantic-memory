@@ -1,5 +1,4 @@
 import Graph from "graphology";
-import { bfsFromNode } from "graphology-traversal";
 import type { IndexedDocument, GraphNode, GraphStats, EdgeType } from "./types.js";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -8,7 +7,7 @@ import { parse as parseYaml } from "yaml";
 import { minimatch } from "minimatch";
 
 /** Edges that mean "this note points at that note"; tag edges only mean "same topic" and are opt-in. */
-export const LINK_EDGE_TYPES: EdgeType[] = ["link", "wikilink", "related"];
+export const LINK_EDGE_TYPES: EdgeType[] = ["link", "wikilink", "related", "cites", "same-incident"];
 export const DEFAULT_EXCLUDE_HUBS = ["**/INDEX.md", "**/REGISTRY.md"];
 
 export interface GraphOptions {
@@ -103,6 +102,35 @@ export class GraphBuilder {
       }
     }
 
+    // cites: playbook -> the fact ids its symptoms cite (a fact id is the file's basename)
+    for (const doc of documents) {
+      for (const id of doc.cites ?? []) {
+        const target = pathLookup.get(id.replace(/\.md$/, "").split("/").pop()!.toLowerCase());
+        if (target && target !== doc.path && !this.graph.hasEdge(doc.path, target)) {
+          this.graph.addEdge(doc.path, target, { type: "cites", weight: 1.0 });
+        }
+      }
+    }
+
+    // supersedes: the live doc at `archived_from` -> the archived copy that says where it came from
+    for (const doc of documents) {
+      if (doc.archivedFrom && doc.archivedFrom !== doc.path && this.graph.hasNode(doc.archivedFrom) && !this.graph.hasEdge(doc.archivedFrom, doc.path)) {
+        this.graph.addEdge(doc.archivedFrom, doc.path, { type: "supersedes", weight: 1.0 });
+      }
+    }
+
+    // same-incident: files under one `incidents/<id>/` folder (both directions)
+    const incidents = new Map<string, string[]>();
+    for (const doc of documents) {
+      const dir = /(^|\/)incidents\/[^/]+\/[^/]+\.md$/.test(doc.path) ? doc.path.slice(0, doc.path.lastIndexOf("/")) : null;
+      if (dir) incidents.set(dir, [...(incidents.get(dir) ?? []), doc.path]);
+    }
+    for (const files of incidents.values()) {
+      for (const a of files) {
+        for (const b of files) if (a !== b && !this.graph.hasEdge(a, b)) this.graph.addEdge(a, b, { type: "same-incident", weight: 1.0 });
+      }
+    }
+
     // Add tag-based edges (weight 0.5) — capped at TAG_EDGE_MAX_DOCS per tag.
     // Generic tags shared by many docs (e.g. "api", "testing") create noise;
     // only specific tags (e.g. "qdrant", "celery") create meaningful connections.
@@ -169,47 +197,35 @@ export class GraphBuilder {
     return null;
   }
 
-  searchGraph(concept: string, maxDepth = 2, limit = 20): GraphNode[] {
-    const lc = concept.toLowerCase();
-
-    const directMatches = new Set<string>(
-      this.graph.nodes().filter((n) => {
-        const attrs = this.graph.getNodeAttributes(n);
-        const title = typeof attrs.title === "string" ? attrs.title : String(attrs.title ?? "");
-        return (
-          n.toLowerCase().includes(lc) ||
-          title.toLowerCase().includes(lc) ||
-          (attrs.tags as string[] | undefined)?.some((t) => t.toLowerCase().includes(lc))
-        );
-      })
-    );
-
-    const visited = new Set<string>();
-    for (const start of directMatches) {
-      bfsFromNode(this.graph, start, (_node, _attr, depth) => {
-        if (visited.size >= limit * 3) return true; // gather 3x limit before ranking
-        visited.add(_node);
-        return depth >= maxDepth;
-      });
+  /**
+   * Notes connected to the `seeds` (the paths of the concept's best semantic hits), nearest first: the seeds in
+   * their given order, then each ring of link-type neighbours (either direction) out to `maxDepth`. Hubs are not
+   * nodes, so they never carry a walk; deprecated/archived nodes go last. There is no degree tiebreak: a
+   * well-connected note is not a better answer.
+   */
+  searchGraph(seeds: string[], maxDepth = 2, limit = 20, types: EdgeType[] = LINK_EDGE_TYPES): GraphNode[] {
+    const depthOf = new Map<string, number>();
+    let ring = seeds.filter((s) => this.graph.hasNode(s));
+    ring.forEach((s) => depthOf.set(s, 0));
+    const order = [...ring];
+    for (let depth = 1; depth <= maxDepth && ring.length; depth++) {
+      const next: string[] = [];
+      for (const n of ring) {
+        for (const e of [...this.graph.filterOutEdges(n, (_e, a) => types.includes(a.type)), ...this.graph.filterInEdges(n, (_e, a) => types.includes(a.type))]) {
+          const m = this.graph.opposite(n, e);
+          if (!depthOf.has(m)) {
+            depthOf.set(m, depth);
+            next.push(m);
+            order.push(m);
+          }
+        }
+      }
+      ring = next;
     }
-
-    // Sort: direct matches first, then by loadPriority desc, then by degree desc
-    // deprecated/archived nodes sort to the end
-    const ranked = [...visited].sort((a, b) => {
-      const aAttrs = this.graph.getNodeAttributes(a);
-      const bAttrs = this.graph.getNodeAttributes(b);
-      const aDeprecated = aAttrs.status === "deprecated" || aAttrs.status === "archived" ? 1 : 0;
-      const bDeprecated = bAttrs.status === "deprecated" || bAttrs.status === "archived" ? 1 : 0;
-      if (aDeprecated !== bDeprecated) return aDeprecated - bDeprecated;
-      const aDirect = directMatches.has(a) ? 0 : 1;
-      const bDirect = directMatches.has(b) ? 0 : 1;
-      if (aDirect !== bDirect) return aDirect - bDirect;
-      const aPriority = (aAttrs.loadPriority as number | undefined) ?? 5;
-      const bPriority = (bAttrs.loadPriority as number | undefined) ?? 5;
-      if (aPriority !== bPriority) return bPriority - aPriority;
-      return this.graph.degree(b) - this.graph.degree(a);
-    });
-
+    const retired = (n: string) => ["deprecated", "archived"].includes(this.graph.getNodeAttribute(n, "status") as string) ? 1 : 0;
+    const prio = (n: string) => (this.graph.getNodeAttribute(n, "loadPriority") as number | undefined) ?? 5;
+    // Array.sort is stable: equal keys keep seed / walk order
+    const ranked = [...order].sort((a, b) => retired(a) - retired(b) || depthOf.get(a)! - depthOf.get(b)! || (depthOf.get(a) ? prio(b) - prio(a) : 0));
     return ranked.slice(0, limit).map((n) => this.nodeToGraphNode(n));
   }
 

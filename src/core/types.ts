@@ -17,6 +17,10 @@ export interface IndexedDocument {
   tier?: string;           // guide | standard | example | reference | admin
   domains?: string[];      // domain categories e.g. ["api", "security"]
   purpose?: string;        // one-sentence summary for richer search context
+  /** knowledge-base fact ids from `symptoms[].cites` / `cites`; absent in caches from before schemaVersion 3 */
+  cites?: string[];
+  /** vault path this doc was archived from (`archived_from`) */
+  archivedFrom?: string;
   relatedDocs?: string[];  // explicit related doc paths from frontmatter (related_docs field)
 }
 
@@ -52,7 +56,8 @@ export interface GraphNode {
 }
 
 /** `link` = markdown link, `related` = frontmatter related_docs, `tag` = shared rare tag */
-export type EdgeType = "link" | "wikilink" | "related" | "tag";
+/** `cites` = playbook symptom -> knowledge-base fact, `supersedes` = live doc -> its archived copy (`archived_from`), `same-incident` = files under one `incidents/<id>/` */
+export type EdgeType = "link" | "wikilink" | "related" | "tag" | "cites" | "supersedes" | "same-incident";
 
 export interface GraphEdge {
   source: string;

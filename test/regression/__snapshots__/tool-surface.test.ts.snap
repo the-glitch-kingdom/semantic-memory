@@ -177,12 +177,15 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related; add 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
               "wikilink",
               "related",
+              "cites",
+              "same-incident",
+              "supersedes",
               "tag",
             ],
             "type": "string",
@@ -313,12 +316,15 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related; add 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
               "wikilink",
               "related",
+              "cites",
+              "same-incident",
+              "supersedes",
               "tag",
             ],
             "type": "string",
@@ -360,7 +366,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "get_stats",
   },
   {
-    "description": "Find the shortest path between two notes over link, wikilink and related edges (pass types to change)",
+    "description": "Find the shortest path between two notes over link, wikilink, related, cites and same-incident edges (pass types to change)",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -372,12 +378,15 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related; add 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
               "wikilink",
               "related",
+              "cites",
+              "same-incident",
+              "supersedes",
               "tag",
             ],
             "type": "string",
@@ -954,7 +963,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "rename_tag",
   },
   {
-    "description": "Graph traversal — find notes connected to a concept via wikilinks, related_docs, and specific tags. Results ranked by directness, load_priority, and degree.",
+    "description": "Graph traversal — the notes closest to a concept by meaning (its top semantic hits), then the notes they link to or are linked from (links, wikilinks, related_docs, cited facts, same incident), nearest first. Hub files are skipped and there is no popularity tiebreak. Pass types to change the edges followed (e.g. add 'tag').",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -969,6 +978,22 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
         "maxDepth": {
           "default": 2,
           "type": "number",
+        },
+        "types": {
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident)",
+          "items": {
+            "enum": [
+              "link",
+              "wikilink",
+              "related",
+              "cites",
+              "same-incident",
+              "supersedes",
+              "tag",
+            ],
+            "type": "string",
+          },
+          "type": "array",
         },
       },
       "required": [
