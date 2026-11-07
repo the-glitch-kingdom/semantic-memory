@@ -1,0 +1,41 @@
+// Golden set for test/fixtures/docs-vault (retrieval-graph-quality Phase 2). Written for that fixture; facets are
+// case-insensitive regexes. Paraphrase queries share no key terms with their answer doc.
+{"id":"e01","tier":"exact","q":"What does the harbor.dlq topic receive?","facets":["harbor\\.dlq"]}
+{"id":"e02","tier":"exact","q":"What is the default value of TIDEWATCH_FLUSH_MS?","facets":["TIDEWATCH_FLUSH_MS"]}
+{"id":"e03","tier":"exact","q":"How do I run tidewatch keys rotate for the ingest scope?","facets":["keys rotate --scope ingest"]}
+{"id":"e04","tier":"exact","q":"How long is the Beacon cooldown before an alert can fire again?","facets":["cooldown of 15 minutes"]}
+{"id":"e05","tier":"exact","q":"How many days does the hot storage tier keep data?","facets":["Hot \\(7 days\\)"]}
+{"id":"e06","tier":"exact","q":"What is the maximum payload size of a telemetry message?","facets":["at most 8 KB"]}
+{"id":"e07","tier":"exact","q":"What share of vessels receives the canary of an edge agent release?","facets":["canary of 5%"]}
+{"id":"e08","tier":"exact","q":"When should I add more pier-workers?","facets":["exceeds 10,000 messages"]}
+{"id":"e09","tier":"exact","q":"Which role has full administration rights?","facets":["harbormaster: full administration"]}
+{"id":"e10","tier":"exact","q":"How long are passenger manifest records kept?","facets":["manifest data is deleted after 30 days"]}
+{"id":"e11","tier":"exact","q":"How many messages does a worker batch before flushing?","facets":["reaches 500 messages"]}
+{"id":"e12","tier":"exact","q":"Which severities can a Beacon rule carry?","facets":["advisory, warning or critical"]}
+{"id":"e13","tier":"exact","q":"What does the --from flag of tidewatch replay take?","facets":["replay --from <timestamp>"]}
+{"id":"p01","tier":"paraphrase","q":"Where do poison items wind up after repeated unsuccessful handling attempts?","facets":["harbor\\.dlq"]}
+{"id":"p02","tier":"paraphrase","q":"The boat trail on the map zigzags into the past","facets":["chrony"]}
+{"id":"p03","tier":"paraphrase","q":"How often should credentials be swapped for fresh ones?","facets":["replaced every 90 days"]}
+{"id":"p04","tier":"paraphrase","q":"Undo a faulty software release on the ships","facets":["fleet rollback"]}
+{"id":"p05","tier":"paraphrase","q":"How frequently does the monitor re-examine conditions?","facets":["every 30 seconds"]}
+{"id":"p06","tier":"paraphrase","q":"Totals are inflated whenever a unit comes back online","facets":["Never set retain"]}
+{"id":"p07","tier":"paraphrase","q":"How many years must we hold on to where boats have been, for the authorities?","facets":["kept for 7 years"]}
+{"id":"p08","tier":"paraphrase","q":"Which login standard do staff use to get in?","facets":["OIDC"]}
+{"id":"p09","tier":"paraphrase","q":"Exercise the system with a day of recorded traffic played back faster","facets":["20x speed"]}
+{"id":"p10","tier":"paraphrase","q":"Which version stopped accepting the old wire format?","facets":["Dropped support for schema=2"]}
+{"id":"p11","tier":"paraphrase","q":"How do I pause erasure because of a lawsuit?","facets":["legal hold"]}
+{"id":"p12","tier":"paraphrase","q":"What kind of disk serves the freshest reads?","facets":["SSD"]}
+{"id":"m01","tier":"multi","q":"Ingest returns 401 after a key change, so how long did the previous credential stay valid and which command issues the replacement?","facets":["HTTP 401","grace period of 24 hours"]}
+{"id":"m02","tier":"multi","q":"How long is passenger data kept compared with position history, and which tier holds the latter long-term?","facets":["after 30 days","Cold \\(7 years\\)"]}
+{"id":"m03","tier":"multi","q":"Which fields does a telemetry message carry and how many are batched per flush?","facets":["engine_rpm","reaches 500 messages"]}
+{"id":"m04","tier":"multi","q":"When a critical rule fires who is notified and how often can it repeat?","facets":["paging webhook","cooldown of 15 minutes"]}
+{"id":"m05","tier":"multi","q":"Which environment variable controls retries and where does the failed traffic go?","facets":["TIDEWATCH_DLQ_RETRIES","harbor\\.dlq"]}
+{"id":"m06","tier":"multi","q":"Which roles exist and how often must service keys be replaced?","facets":["deckhand","replaced every 90 days"]}
+{"id":"m07","tier":"multi","q":"How long does a release canary run and which command inspects fleet state?","facets":["for 48 hours","fleet status"]}
+{"id":"m08","tier":"multi","q":"What changed about alert repeat intervals in release 2.0 and what is the interval now?","facets":["from 5 to 15 minutes","cooldown of 15 minutes"]}
+{"id":"n01","tier":"negative","q":"How do I configure SAML for the billing portal?"}
+{"id":"n02","tier":"negative","q":"What is the recipe for the crew canteen fish stew?"}
+{"id":"n03","tier":"negative","q":"How do I tune GPU memory for the image recognition model?"}
+{"id":"n04","tier":"negative","q":"What is the on-call phone number for the harbormaster?"}
+{"id":"n05","tier":"negative","q":"How does the platform take credit card payments for ticket sales?"}
+{"id":"n06","tier":"negative","q":"Describe the Kubernetes autoscaling policy for the web frontend"}

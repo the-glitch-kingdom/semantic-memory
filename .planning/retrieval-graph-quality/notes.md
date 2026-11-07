@@ -51,3 +51,31 @@ Tests to rewrite: `test/integration/watcher.test.ts`, `test/integration/stale-in
 
 ## Eval results
 (baseline and per-phase numbers go here)
+
+### Phase 2 baseline (v1.8.0 code, fixture `test/fixtures/docs-vault`, 21 docs; 39 cases: 13 exact, 12 paraphrase, 8 multi-doc, 6 negative)
+
+Answered@k = every facet regex matched by a non-archive result in the top k (counts out of 33 answerable).
+
+| arm | @1 | @3 | @8 | exact @1 | paraphrase @1 | multi @1 | archive hits (top 8, 39 q) | mean payload |
+|---|---|---|---|---|---|---|---|---|
+| search_semantic | 19/33 (0.58) | 30/33 | 32/33 | 9/13 | 8/12 | 2/8 | 8 | 5983 B |
+| search_hybrid | 19/33 (0.58) | 30/33 | 32/33 | 9/13 | 8/12 | 2/8 | 8 | 5983 B |
+| search_text (grep) | 7/33 (0.21) | 11/33 | 22/33 | 3/13 | 4/12 | 0/8 | 24 | 1544 B |
+
+- Hybrid is identical to semantic on every case: the dead graph boost (issue finding) reproduces.
+- Negative top scores (semantic = hybrid): 0.31 0.25 0.14 0.31 0.15 0.36; no abstention signal exists yet.
+  search_text returns hits for 4 of 6 negatives (any shared word matches).
+- Archive hits are not zero even with the 0.3 down-weight (8 in the top 8 over 39 queries).
+- Graph vs hand-written truth (`docs-graph-truth.json`, 19 source docs): forwardlinks precision 0.271 /
+  recall 0.791; backlinks precision 0.271 / recall 0.791 (tag edges and hub INDEX/REGISTRY links are the
+  false positives; recall is only wikilinks, markdown links are missed).
+- Stale-vector audit (`scripts/retrieval-eval/stale-audit.mjs`, this repo's `.documentation/` copy, 137 docs / 255 chunks,
+  128 sampled): clean 0% stale, 0 missing, 0 orphans, cold start (createServer with `waitForReady`, to first
+  answer) 1352 ms. After inserting a paragraph into 10 docs while no server ran: 8.6% of sampled vectors
+  stale (cos < 0.99), restart cold start 1839 ms (full re-parse). Small edits barely move the cosine (an
+  edit to one sentence of a 1-chunk doc stayed above 0.99), so 0.99 under-reports; the audit is a floor.
+- Selection mining (`mine-selection.mjs`) tested on a synthetic log only (no real log used); output is for hand review.
+- Note: `docs.cache.json` is not re-saved on a cached startup, so the audit reads chunks from disk, not the cache.
+
+The CI floor (`test/retrieval-eval/baseline.json`) equals these numbers: @1 19/19/7, archive hits 8/8/24,
+link precision 0.271, recall 0.791 (floored to 3 decimals).

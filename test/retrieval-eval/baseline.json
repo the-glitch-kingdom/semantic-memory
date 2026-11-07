@@ -1,0 +1,25 @@
+{
+  "_comment": "Measured floor for docs-eval.test.ts (Phase 2, v1.8.0 code). Raise at the end of each phase; never lower.",
+  "arms": {
+    "search_semantic": {
+      "answeredAt1": 19,
+      "archiveHits": 8
+    },
+    "search_hybrid": {
+      "answeredAt1": 19,
+      "archiveHits": 8
+    },
+    "search_text": {
+      "answeredAt1": 7,
+      "archiveHits": 24
+    }
+  },
+  "forwardlinks": {
+    "precision": 0.271,
+    "recall": 0.791
+  },
+  "backlinks": {
+    "precision": 0.271,
+    "recall": 0.791
+  }
+}

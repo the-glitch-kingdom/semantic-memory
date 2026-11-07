@@ -110,3 +110,104 @@ export function formatReport(m: EvalMetrics): string {
   }
   return lines.join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// Facet eval (retrieval-graph-quality Phase 2): answer-facet scoring, negatives,
+// archive hits, payload size, and graph link precision/recall.
+// ---------------------------------------------------------------------------
+
+export interface FacetCase {
+  id: string;
+  tier: "exact" | "paraphrase" | "multi" | "negative";
+  q: string;
+  /** Regexes (case-insensitive). The case is answered at k when every one matches the text of some non-archive result in the top k. */
+  facets?: string[];
+}
+
+export interface ArmResponse {
+  results: { path: string; score: number }[];
+  /** Size of the tool response, in bytes. */
+  bytes: number;
+}
+export type ArmFn = (q: string, limit: number) => Promise<ArmResponse>;
+
+export const ARCHIVE_RE = /(^|\/)archive\//;
+export const FACET_KS = [1, 3, 8];
+
+export interface ArmMetrics {
+  /** answered counts out of `n` answerable cases, per tier and overall: { tier: { n, at: { "1": count, ... } } } */
+  tiers: Record<string, { n: number; at: Record<number, number> }>;
+  /** Top score of each negative case (null when the arm returned nothing). */
+  negativeTop: (number | null)[];
+  /** Results under an archive/ folder across the top 8 of every case, negatives included. */
+  archiveHits: number;
+  meanBytes: number;
+}
+
+/** Rank (1-based) at which the facets are first all covered by live (non-archive) results, or null. */
+export function facetRank(facets: string[], paths: string[], textOf: (p: string) => string): number | null {
+  const res = facets.map((f) => new RegExp(f, "i"));
+  for (let k = 1; k <= paths.length; k++) {
+    const live = paths.slice(0, k).filter((p) => !ARCHIVE_RE.test(p));
+    if (res.every((re) => live.some((p) => re.test(textOf(p))))) return k;
+  }
+  return null;
+}
+
+export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: string) => string): Promise<ArmMetrics> {
+  const maxK = Math.max(...FACET_KS);
+  const tiers: ArmMetrics["tiers"] = {};
+  const negativeTop: (number | null)[] = [];
+  let archiveHits = 0;
+  let bytes = 0;
+  for (const c of cases) {
+    const { results, bytes: b } = await arm(c.q, maxK);
+    const top = results.slice(0, maxK);
+    bytes += b;
+    archiveHits += top.filter((r) => ARCHIVE_RE.test(r.path)).length;
+    if (c.tier === "negative") {
+      negativeTop.push(top.length ? top[0].score : null);
+      continue;
+    }
+    const rank = facetRank(c.facets ?? [], top.map((r) => r.path), textOf);
+    for (const key of [c.tier, "all"]) {
+      const t = (tiers[key] ??= { n: 0, at: Object.fromEntries(FACET_KS.map((k) => [k, 0])) });
+      t.n++;
+      for (const k of FACET_KS) if (rank !== null && rank <= k) t.at[k]++;
+    }
+  }
+  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length) };
+}
+
+export interface LinkMetrics {
+  precision: number;
+  recall: number;
+}
+
+/** Micro-averaged precision/recall of a link tool against `truth` (doc -> expected paths), over the docs in `truth`. */
+export async function scoreLinks(truth: Record<string, string[]>, links: (path: string) => Promise<string[]>): Promise<LinkMetrics> {
+  let tp = 0;
+  let returned = 0;
+  let expected = 0;
+  for (const [doc, want] of Object.entries(truth)) {
+    const got = new Set(await links(doc));
+    returned += got.size;
+    expected += want.length;
+    tp += want.filter((p) => got.has(p)).length;
+  }
+  return { precision: returned ? tp / returned : 1, recall: expected ? tp / expected : 1 };
+}
+
+export function invertLinks(forward: Record<string, string[]>): Record<string, string[]> {
+  const inv: Record<string, string[]> = Object.fromEntries(Object.keys(forward).map((p) => [p, []]));
+  for (const [from, tos] of Object.entries(forward)) for (const to of tos) (inv[to] ??= []).push(from);
+  return inv;
+}
+
+export function formatArm(name: string, m: ArmMetrics): string {
+  const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
+  for (const [tier, t] of Object.entries(m.tiers).sort()) {
+    lines.push(`    ${tier.padEnd(11)} (${String(t.n).padStart(2)}): ${FACET_KS.map((k) => `@${k}=${t.at[k]}/${t.n}`).join("  ")}`);
+  }
+  return lines.join("\n");
+}

@@ -18,26 +18,26 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
   - [x] Verify the index-freshness comment in `src/` and on live server processes
   - [x] Comment on #41 with the verification summary and the plan link (posted 2026-11-06:
         https://github.com/the-glitch-kingdom/semantic-memory/issues/41#issuecomment-6700867183)
-- [ ] Phase 2: Make retrieval measurable (issue Phase 0)
-  - [ ] Add a hewtd-shaped fixture vault `test/fixtures/docs-vault/`: nested `.documentation/<domain>/`,
+- [x] Phase 2: Make retrieval measurable (issue Phase 0)
+  - [x] Add a hewtd-shaped fixture vault `test/fixtures/docs-vault/`: nested `.documentation/<domain>/`,
         a `.documentation/archive/` with a byte-identical copy of a live doc, generated `INDEX.md` /
         `REGISTRY.md` hubs, markdown `](x.md)` links (with `#anchors` and `../` paths), a few
         wikilinks, `symptoms:` frontmatter, tags shared by < 15 docs
-  - [ ] Extend `test/retrieval-eval/eval.ts`: answer-facet scoring (`facets: [regex]` per case,
+  - [x] Extend `test/retrieval-eval/eval.ts`: answer-facet scoring (`facets: [regex]` per case,
         a hit = a returned doc's text matches), `negative: true` cases, archive-hit count, payload bytes
-  - [ ] Golden set for the new fixture: our own questions, written fresh for the fixture's content
+  - [x] Golden set for the new fixture: our own questions, written fresh for the fixture's content
         (none taken from the issue's benchmark), across exact / paraphrase / multi-doc / negative
         tiers, ~40 cases; paraphrase cases share no key terms with their answer doc
-  - [ ] Arm runner: same cases through `search_semantic`, `search_hybrid`, `search_text`, so each
+  - [x] Arm runner: same cases through `search_semantic`, `search_hybrid`, `search_text`, so each
         phase reports a per-arm @1/@3/@8 table
-  - [ ] Graph eval: backlink/forwardlink precision+recall against the links written in the fixture
-  - [ ] Freshness audit `scripts/retrieval-eval/stale-audit.mjs`: re-embed a chunk sample, report the
+  - [x] Graph eval: backlink/forwardlink precision+recall against the links written in the fixture
+  - [x] Freshness audit `scripts/retrieval-eval/stale-audit.mjs`: re-embed a chunk sample, report the
         share with cosine < 0.99 to the stored vector, orphan vector count, cold-start ms
-  - [ ] `scripts/retrieval-eval/mine-selection.mjs`: build labelled queries from `selection.jsonl`
+  - [x] `scripts/retrieval-eval/mine-selection.mjs`: build labelled queries from `selection.jsonl`
         (search followed by `read_note` of a result = implicit label); output reviewed by hand before
         it enters golden.jsonl, never auto-merged
-  - [ ] Record the baseline numbers in notes.md (retrieval + freshness)
-  - [ ] CI gate: `npm run eval` in `.github/workflows/ci.yml`, failing if @1 drops below the recorded
+  - [x] Record the baseline numbers in notes.md (retrieval + freshness)
+  - [x] CI gate: `npm run eval` in `.github/workflows/ci.yml`, failing if @1 drops below the recorded
         baseline (floor raised at the end of each phase)
 - [ ] Phase 3: Index freshness: pull-based reconcile replaces the watcher (issue comment)
   - [ ] Embeddings keyed by chunk content hash (sha256 of the chunk text), not `path:chunkIndex`
@@ -236,14 +236,21 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Abstention is a numeric threshold, not a Jev call: it is arithmetic on scores, which Jev does not do.
 - Rerank and embedder changes are hypotheses gated by the eval; nothing becomes default without a
   measured @1 gain.
+- Phase 2 fixture root is the `.documentation/` content itself (`test/fixtures/docs-vault/` mirrors what
+  hewtd writes inside `.documentation/`), not a vault containing a `.documentation/` dir: the indexer's
+  `glob("**/*.md")` has no `dot: true`, so a dot-dir under the notes path is never indexed. The archive
+  cases are the top-level `archive/` plus the nested `security/archive/`.
+- Phase 2 gate lives in `test/retrieval-eval/baseline.json` (answered@1 count per arm, archive hits, link
+  precision/recall), enforced by `docs-eval.test.ts`; `npm run eval` is also its own CI step. Text arm =
+  every content word of the question as one regex alternation, in `search_text`'s own order (it has no ranking).
 - Plans are in `.gitignore` (`.planning/`) but tracked plans are force-added (`git add -f`), as the
   existing plans are.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: `test/unit/skill-eval.test.ts` concurrency case ("never exceed 5 live claude processes") and one other timing test failed in 2 of 3 full runs under load, passed alone and on the 3rd full run. Unrelated to this work (process-timing based); not touched.
 
 ## Status
-**Currently in Phase 2** - verification posted on #41; building the eval harness.
+**Currently in Phase 3** (index freshness). Phase 2 eval harness done; baseline in notes.md and `test/retrieval-eval/baseline.json`.
 
 ---
 
