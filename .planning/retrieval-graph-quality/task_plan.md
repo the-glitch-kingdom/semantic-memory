@@ -183,7 +183,9 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
   - [x] Failure paths: reranker model missing offline (falls back to fused order, logs once);
         embedder model mismatch re-embeds; malformed `path_class`/`graph` config falls back;
         unreadable file during reconcile skipped, not fatal; stale lockfile taken over
-  - [x] Eval: targets met (@1 >= 0.80, negatives abstain, backlink precision >= 95%, 0 archive hits)
+  - [x] Eval: targets measured. Met: negatives abstain (6/6 fixture, 6/6 real corpus), backlink
+        precision 1.0, 0 archive hits. MISSED: answer@1 0.66 fixture / 0.625 real corpus vs 0.80
+        (rerank, the remaining lever, rejected on latency in Phase 6); left open on #41
   - [x] Benchmark on a real hewtd corpus (this repo's `.documentation/`) through the production
         `.mcp.json` launch, with our own question set written against those docs (~30 questions,
         same four tiers, kept in `test/retrieval-eval/real-corpus.jsonl`); before (v1.8.0) vs after
