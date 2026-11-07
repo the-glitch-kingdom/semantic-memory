@@ -92,13 +92,6 @@ describe("applyGraphBoost", () => {
     expect(out.find((r) => r.path === "far.md")!.score).toBeCloseTo(0.5);
     expect(out.find((r) => r.path === "s1.md")!.score).toBeCloseTo(1); // a seed is not boosted by being a seed
   });
-
-  it("changes the order when a top hit has a linked neighbour just below it", () => {
-    const g = new GraphBuilder();
-    g.buildFromDocuments([doc("top.md", { mdLinks: ["near.md"] }), doc("near.md"), doc("other.md")]);
-    const out = applyGraphBoost([{ path: "top.md", score: 0.9 }, { path: "other.md", score: 0.5 }, { path: "near.md", score: 0.45 }], g);
-    expect(out.sort((a, b) => b.score - a.score).map((r) => r.path)).toEqual(["top.md", "near.md", "other.md"]);
-  });
 });
 
 describe("archive globs", () => {

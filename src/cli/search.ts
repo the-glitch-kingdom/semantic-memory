@@ -12,7 +12,7 @@ import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from ".
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
-import { parserInputs, readConsistentMeta, readMeta } from "../core/index-store.js";
+import { indexRebuilding, parserInputs, readConsistentMeta, readMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
 export interface SearchCliOptions {
@@ -33,6 +33,8 @@ export interface SearchHit {
   /** 0..1 */
   confidence?: number;
   no_strong_match?: true;
+  /** a server is rebuilding the index this hit came from */
+  stale?: true;
 }
 
 export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
@@ -137,6 +139,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
         )
       );
       const weak = isWeak(all, bm25Min);
+      const stale = await indexRebuilding(indexPath);
       const ranked = all.slice(0, limit);
 
       return ranked.map((r) => ({
@@ -147,6 +150,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
         snippet: excerpt(r.matchedChunk ?? r.snippet, query),
         ...(r.matched && { matched: r.matched }),
         ...(weak && { no_strong_match: true as const }),
+        ...(stale && { stale: true as const }),
       }));
     },
   };

@@ -73,3 +73,17 @@ is a real gate from the start (it will catch a regression); only train carries t
 Age source per result: `decay` blocks are absent at baseline (no `source` yet; none attached at multiplier 1), the eval
 records `decay.{multiplier,source}` per result path (`ArmResponse.decay`) and prints the sources seen (`sources=[]` now).
 Full suite: lint, build, eval green; one known flake (hook-failure Jev-hang timing) passed alone 14/14.
+
+### Phase 3: GRAPH_BOOST 1.0 (hybrid @1 / @3, one run each)
+| split | shipped 1.3 | 1.0 | 1.1 |
+|---|---|---|---|
+| fixture train (57) | 39 / 51 | 38 / 52 | 38 / 52 |
+| fixture held-out (36) | 22 / 29 | 25 / 29 | 24 / 28 |
+| real train (27) | 21 / 26 | 22 / 27 | 23 / 27 |
+| real held-out (27) | 13 / 22 | 14 / 23 | 14 / 22 |
+
+Train re-check (the only choice input): 1.0 = 1.1 on fixture train, 1.1 is +1 on real train (noise). 1.0 kept; held-out
+reported as measured (not used). Semantic arm unchanged everywhere. Hybrid held-out paraphrase 13 = semantic 13.
+Negatives flagged: fixture train 11/12, held-out 7/8, real train 12/12, held-out 7/8 (unchanged). Answerable false
+flags (fixture train / held-out): 5 / 7 at 1.3, 5 / 7 at 1.0 per the eval's `answerable` column.
+Decay fixture: unchanged from Phase 2 (train hybrid 4/6, held-out 6/6).

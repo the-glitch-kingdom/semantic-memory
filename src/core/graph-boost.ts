@@ -1,6 +1,6 @@
 import type { GraphBuilder } from "./graph.js";
 
-export const GRAPH_BOOST = 1.3;
+export const GRAPH_BOOST = 1.0;
 export const GRAPH_BOOST_SEEDS = 5;
 
 /**

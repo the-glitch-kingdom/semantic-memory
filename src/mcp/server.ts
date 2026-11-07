@@ -17,6 +17,8 @@ import { useMinimalToolSurface } from "../core/tools-config.js";
 
 export type { ServerOptions } from "./context.js";
 
+const STALE_NOTE = "[stale: an older index is answering while it refreshes; re-run the search to confirm]";
+
 export async function createServer(notesPath: string, options: ServerOptions = {}) {
   const ctx = await buildContext(notesPath, options);
 
@@ -40,7 +42,11 @@ export async function createServer(notesPath: string, options: ServerOptions = {
       await ctx.ensureFresh();
       const res = await handler(...a);
       if (mutates) ctx.invalidate();
-      return ctx.isStale() && res && typeof res === "object" ? { ...res, _meta: { ...res._meta, stale: true } } : res;
+      if (!ctx.isStale() || !res || typeof res !== "object") return res;
+      // _meta is not shown to the model in Claude Code, so a search also says it in the text it reads
+      const first = (res as any).content?.[0];
+      const marked = String(args[0]).startsWith("search_") && first?.type === "text" ? [{ ...first, text: `${STALE_NOTE}\n${first.text}` }, ...(res as any).content.slice(1)] : (res as any).content;
+      return { ...res, content: marked, _meta: { ...(res as any)._meta, stale: true } };
     };
     return registerTool(...args);
   };

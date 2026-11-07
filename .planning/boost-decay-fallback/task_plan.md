@@ -29,13 +29,13 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
         measured. Keep the existing splits unaffected when decay falls back.
   - [x] Eval reports the age source per result, so the Phase 4 checks can assert on it
   - [x] Re-record the shipped baseline for all four splits in notes.md (the #48 sweep numbers are the reference)
-- [ ] Phase 3: Graph boost and the stale marker (#48)
-  - [ ] `GRAPH_BOOST` 1.3 → 1.0 in `src/core/graph-boost.ts`. Keep the helper and seeds in place (the boost is now a
+- [x] Phase 3: Graph boost and the stale marker (#48)
+  - [x] `GRAPH_BOOST` 1.3 → 1.0 in `src/core/graph-boost.ts`. Keep the helper and seeds in place (the boost is now a
         no-op multiplier). Re-check on train that 1.0 is not worse than 1.1, and record both.
-  - [ ] Re-measure every split. Raise floors that went up. Convert `it.fails` gates that now pass (expected: fixture
+  - [x] Re-measure every split. Raise floors that went up. Convert `it.fails` gates that now pass (expected: fixture
         held-out "hybrid paraphrase ≥ semantic"). Record each floor that drops (expected: fixture-train exact @1,
         fixture held-out multi @3).
-  - [ ] Stale marker: while the old index answers, the `search_*` text responses carry a visible line or field (e.g.
+  - [x] Stale marker: while the old index answers, the `search_*` text responses carry a visible line or field (e.g.
         `"stale": true` plus "index refreshing, re-run to confirm"), not only `_meta`. The MCP server and the CLI get
         the same behaviour. Add a test in `test/integration/freshness.test.ts` or `index-upgrade.test.ts`.
 - [ ] Phase 4: Decay age fallback (#49)
@@ -138,11 +138,24 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
 - Phase 2: the existing splits get a temp-vault git history with every doc committed 10 days ago (`git-history.ts`), so
   the Phase 4 git fallback gives all docs the same ~1.0 multiplier. Measured identical to before (39/22/21/13 hybrid @1).
 
+- Phase 3: boost 1.0 vs 1.1 on train: fixture-train 38 vs 38, real-train 22 vs 23 (+1, inside the 1-case HNSW noise
+  on the real corpus). Kept 1.0 (the #48 ask; held-out was not used to choose it). The helper and seeds stay as a ×1.0
+  no-op; Phase 7 decides whether to remove them. Its "order changes" unit test was deleted (it asserts a >1 boost).
+- Phase 3 stale marker: MCP `search_*` text gets a leading `[stale: ...]` line (the JSON follows on the next line);
+  `_meta.stale` stays. CLI: a live index.lock holder means the committed index is about to be replaced, so hits carry
+  `stale: true` (output stays a JSON array for the hook) and `hooks/vault-context.js` adds a "Stale:" line to the block.
+
 ## Errors Encountered
-- [Error]: [Resolution]
+- Phase 3 floors dropped, all from the boost 1.3 → 1.0 change (measured, see notes.md): fixture-train hybrid all @1
+  39 → 38 and exact @1 12 → 11; fixture held-out hybrid multi @3 6 → 5. Raised: fixture-train hybrid @3 51 → 52, multi
+  @3 10 → 11; held-out hybrid all @1 22 → 25, nofield @1 1 → 2, paraphrase @1 12 → 13 and @3 13 → 13, symptom; real-train
+  hybrid @1 20 → 21 (and tier floors); real-held-out paraphrase @3 14 → 15. `answeredFlagged` ceiling 3 → 2, `meanBytes`
+  ceiling 4132 → 3831.
+- Phase 3: the `it.fails` "fixture held-out hybrid paraphrase ≥ semantic" passes (13 = 13) and is now a real gate.
+- Phase 3 flake: hook-failure "Jev error or hang" budget (3876 ms > 3000) under suite load; 25/25 alone.
 
 ## Status
-**Currently in Phase 3** - graph boost and the stale marker (#48)
+**Currently in Phase 4** - decay age fallback (#49)
 
 ---
 
