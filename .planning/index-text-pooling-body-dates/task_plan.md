@@ -133,25 +133,25 @@ Every missed target is stated in the PR.
         Installed to a scratch prefix, verify OK (9988 files), --version 1.12.0.
   - [x] Write an answer to each #52, #53, #54 acceptance item and each remaining #51 item in notes.md, missed ones
         included
-- [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New `.documentation/changelog/v1-12-0-index-text-pooling-body-dates.md` (`npx hewtd integrate -a`):
+- [x] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New `.documentation/changelog/v1-12-0-index-text-pooling-body-dates.md` (`npx hewtd integrate -a`):
         before/after tables per split, the one-time re-embed on upgrade, the body-date rule, measured model results,
         missed targets; `CHANGELOG.md` entry
-  - [ ] `.documentation/reference/configuration-reference.md`: `embedding.pooling`, `embedding.query_prompt`, and the
+  - [x] `.documentation/reference/configuration-reference.md`: `embedding.pooling`, `embedding.query_prompt`, and the
         `git` decay rule change
-  - [ ] Decay guide (`.documentation/operational/decay-guide.md`): body-change dating, frontmatter-only commits, the
+  - [x] Decay guide (`.documentation/operational/decay-guide.md`): body-change dating, frontmatter-only commits, the
         uncommitted-edit penalty (#51 note)
-  - [ ] `.documentation/operational/retrieval-tuning-guide.md`: what the indexed text keeps, the embed-text choice and
+  - [x] `.documentation/operational/retrieval-tuning-guide.md`: what the indexed text keeps, the embed-text choice and
         its numbers, how to try another embedder (pooling, prompt, re-embed)
-  - [ ] Tool reference (`.documentation/reference/mcp-tools-reference.md`): `search_hybrid` description, `search_text`
+  - [x] Tool reference (`.documentation/reference/mcp-tools-reference.md`): `search_hybrid` description, `search_text`
         now matches code and table text
-  - [ ] KB fact (gotcha): a numeric or date YAML `title` is not a string (`title: 2024`), and code that assumes it is
+  - [x] KB fact (gotcha): a numeric or date YAML `title` is not a string (`title: 2024`), and code that assumes it is
         throws; quote it or coerce it
-  - [ ] KB fact (gotcha): sentence-transformers models declare their pooling and query prompt in their own config;
+  - [x] KB fact (gotcha): sentence-transformers models declare their pooling and query prompt in their own config;
         mean-pooling a CLS model or skipping its query prompt quietly lowers retrieval
-  - [ ] `README.md` version/status line; `npx hewtd maintain --quick`; regenerate AGENTS.md with
+  - [x] `README.md` version/status line; `npx hewtd maintain --quick`; regenerate AGENTS.md with
         `regenerate_contract`, passing projectRoot
-  - [ ] Tick the last boxes so `/plan-status` reads COMPLETE
+  - [x] Tick the last boxes so `/plan-status` reads COMPLETE
 
 ## Key Questions
 1. Embedded text for #52: the same kept text, or prose plus inline identifiers without long code blocks? (Phase 5,
@@ -176,6 +176,8 @@ Every missed target is stated in the PR.
   through one `git cat-file --batch`, comparing `parseFrontmatter(...).content` (exported from indexer.ts); a delete (zero blob) ends the walk.
 
 ## Errors Encountered
+- Phase 10: the new docs (they are part of the real-corpus eval, which reads .documentation) made the real held-out "every negative flagged" it.fails gate pass (8/8, twice); it is now a real gate (KNOWN real-heldout negatives removed). Corpus-dependent: a later docs change could flip it back. Full npm test: hook-failure Jev-hang flaked under load, 14/14 alone. npm run eval: 57 passed, 5 expected fail.
+- Phase 10: regenerate_contract (force) run by the already-running MCP server reverted the search_hybrid line to the old "graph proximity" wording (that server runs the pre-branch build); AGENTS.md was restored with git checkout, so it keeps the new wording and version 1.12.0. After the release build the generated line comes from the new code. npx hewtd integrate -a strips fact-tier fields (id, confidence, provenance...); re-added by hand to the two KB facts.
 - Phase 9: full `npm test` failed skill-eval concurrency under load; 22/22 alone. stripMarkdown fixed (in-word `*`, indented fences); no floor changed. Missed #52 target: paraphrase @1 within one question (real held-out semantic -2); real-train hybrid negatives 9/12.
 - Phase 6: full `npm test` failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency under load; all pass alone (38/38). No floor changed.
 - Phase 5: full `npm test` failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency under load; all pass alone (38/38). `npm run eval`: 56 passed, 6 expected-fail.
@@ -186,7 +188,7 @@ Every missed target is stated in the PR.
 - Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 10** - Documentation
+**COMPLETE** - all phases done
 
 ---
 

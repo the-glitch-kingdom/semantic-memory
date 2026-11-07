@@ -31,7 +31,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 24 | Release notes per version and phase |
+| [Changelog](#changelog) | 25 | Release notes per version and phase |
 | [Operational](#operational) | 16 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 6 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -222,6 +222,7 @@ purpose: Navigation hub for all documentation
 | [v1.1 — brain-absorption](changelog/v1-1-brain-absorption.md) | reference | active | 2026-05-09 |
 | [v1.10.0 — retrieval-ready fields](changelog/v1-10-0-retrieval-fields.md) | reference | active | 2026-11-07 |
 | [v1.11.0 — graph boost removed, decay age fallback, stale marker](changelog/v1-11-0-boost-decay-fallback.md) | reference | active | 2026-11-07 |
+| [v1.12.0 — code stays in the indexed text, pooling and query prompt from the model config, git decay by body change](changelog/v1-12-0-index-text-pooling-body-dates.md) | reference | active | 2026-11-07 |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](changelog/v1-2-3-hygiene-completion.md) | reference | active | 2026-07-10 |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](changelog/v1-2-state-consolidation.md) | reference | active | 2026-05-09 |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 |

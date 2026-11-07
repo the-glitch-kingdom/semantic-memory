@@ -2,6 +2,26 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.12.0] - 2026-11-07 — Code stays in the indexed text, pooling and query prompt from the model config, git decay by body change
+
+Issues #51 to #54. Full tables, misses and upgrade note: `.documentation/changelog/v1-12-0-index-text-pooling-body-dates.md`.
+
+### Changed
+
+- **Indexed text keeps code (#52).** Inline code, fenced code and table cells stay in the text used for BM25, vectors and `search_text`; `snake_case_name` is one token. Code-vault answer first (10 cases per split): search_text 2 to 10, hybrid 9 to 10 (train) and 6 to 10 (held-out), semantic 9 to 10 and 5 to 10.
+- **Pooling and query prompt (#53)** come from the model's own config, with `embedding.pooling` / `embedding.query_prompt` and `serve --pooling` / `--query-prompt` overrides. Only queries get the prompt. MiniLM is unchanged and stays the default; bge-small and arctic-s did not beat it on our splits.
+- **Git decay date is the last body change (#54).** A frontmatter-only commit no longer resets a note's age (400-day body plus a touch today now decays as 400 days). Computed at index time, no per-query git calls. A note edited since its last commit still takes `decay.missing_penalty`.
+- **Fixes (#51).** A numeric or date `title` no longer throws `s.toLowerCase is not a function` in `search_hybrid`; refresh errors log their stack; "graph proximity" removed from the `search_hybrid` description.
+- **Index schema 7: the first start after upgrading re-embeds everything once** (the old index answers with the `[stale: ...]` marker meanwhile). A CLS-model user gets one more reindex.
+
+### Measured
+
+Hybrid answer @1 (v1.11.0 to v1.12.0): fixture train 38 to 43, fixture held-out 25 to 26, real train 21 to 22, real held-out 15 to 17. Semantic: 39 to 42, 23 to 25, 15 to 19, 13 to 12.
+
+### Missed targets
+
+Paraphrase @1 within one question (#52) is not met: real held-out semantic paraphrase 8 to 6, fixture-train semantic 18 to 17, real-train hybrid 5 to 4 (floors lowered). Real-train hybrid negatives flagged 12/12 to 9/12 (known failure). Cold index time roughly doubled on a code-heavy docs tree. nomic-embed prefixes are not supported. A body unchanged for over 20 commits is dated at the 20th.
+
 ## [1.11.0] - 2026-11-07 — Notes with no `last_verified` age by git, graph boost removed, stale marker the agent can see
 
 Issues #48 and #49. Full tables, misses and opt-out: `.documentation/changelog/v1-11-0-boost-decay-fallback.md`.

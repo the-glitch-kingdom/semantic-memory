@@ -87,6 +87,10 @@ restores byte-identical pre-v1.3 ranking. Everything else about the vault is unc
 
 A missing, unparseable or future `last_verified` no longer ranks at full weight. The note is aged by `decay.missing_last_verified` (default `git`: the date of its last commit, read once per index build or reconcile). `mtime` uses the stored `last_updated` chain, then the file mtime; `penalty` applies the flat `decay.missing_penalty` (0.85); `fresh` restores the old no-decay behaviour. `git` and `mtime` fall back to the penalty when they have no date (non-git vault, untracked or edited-since-commit file). `last_validated` is not verification (hewtd stamps it for frontmatter checks) and is never read. `lint_vault` reports how many notes lack `last_verified` (`counts.noLastVerified`). Switching a vault to `git` needs a `--reindex`. See the [v1.11.0 changelog](../changelog/v1-11-0-boost-decay-fallback.md).
 
+### Git dates follow the last body change (v1.12+)
+
+In `git` mode the date is the last commit that changed the note's **body** (the text after the frontmatter), not the last commit that touched the file. A bulk frontmatter-only commit (a `last_validated` stamp, a tag edit) does not reset the age; a body edit does, and a note's first commit counts as a body change. The walk reads at most 20 commits back per note (a body unchanged longer is dated at the 20th, so it decays slightly less than it should), through one `git cat-file --batch`, at index time only; no git call runs per query. The `decay` block still reports `source: "git"`; `age_days` is the body age. **Uncommitted edits:** a note whose bytes differ from its newest commit gets the flat `decay.missing_penalty` (0.85) until it is committed. The index schema is 7, so the first start after upgrading re-dates every note. See the [v1.12.0 changelog](../changelog/v1-12-0-index-text-pooling-body-dates.md).
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

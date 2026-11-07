@@ -356,7 +356,7 @@ decay:
 - **`enabled`** — master switch. `false` reproduces pre-v1.3 ranking byte-for-byte.
 - **`default_half_life_days`** — half-life used for any type not listed in `per_type`. Multiplier formula: `0.5 ^ (age_days / half_life)`.
 - **`per_type`** — per-note-type half-life override, keyed by frontmatter `type`. `null` for a type means it never decays (e.g. `source`).
-- **`missing_last_verified`** (v1.11+, default `git`) — `git` | `mtime` | `penalty` | `fresh`: the age source for a note whose `last_verified` is missing, unparseable or future. `fresh` restores v1.10.0. `last_validated` is never read. Details: [decay guide](../operational/decay-guide.md).
+- **`missing_last_verified`** (v1.11+, default `git`) — `git` | `mtime` | `penalty` | `fresh`: the age source for a note whose `last_verified` is missing, unparseable or future. `fresh` restores v1.10.0. `last_validated` is never read. v1.12: `git` is the date of the last commit that changed the note's body, so a frontmatter-only commit does not reset it. Details: [decay guide](../operational/decay-guide.md).
 - **`missing_penalty`** (v1.11+, default 0.85) — multiplier for `penalty`, and when `git` or `mtime` has no date.
 - **`floor`** — minimum multiplier a decayed note can reach; decay ranks down, never to zero.
 - **`hotness_boost`** — opt-in, off by default. When `enabled: true`, extends the effective half-life for heavily-backlinked notes, up to `cap`×.
@@ -368,6 +368,20 @@ decay:
 Unquoted YAML dates in frontmatter (e.g. `last_verified: 2026-01-01`) are handled correctly — parsed as a `Date` and normalized, not treated as a string parse error.
 
 **CLI debugging:** `semantic-memory decay-config --notes <path>` prints the active config; `semantic-memory decay-trace <notePath> --notes <path>` prints the calculation for one note. See [cli-reference.md](./cli-reference.md).
+
+### `embedding` (vault.schema.yml) — 🆕 v1.12.0
+Overrides for what the embedding model declares in its own `1_Pooling/config.json` and `config_sentence_transformers.json`. Both keys are optional; leave them out to use the model's config (MiniLM: mean pooling, no prompt).
+
+```yaml
+embedding:
+  pooling: cls            # mean | cls
+  query_prompt: "Represent this sentence for searching relevant passages: "
+```
+
+- **`pooling`** — how token vectors become one vector. A CLS model (bge, arctic) mean-pooled quietly retrieves worse.
+- **`query_prompt`** — text put in front of every query (never a document). `serve --pooling` and `--query-prompt` override the schema; the schema overrides the model config.
+- The index records both. Changing either, or the model, forces a reindex on the next start (a prompt-only change keeps the document vectors). A CLI `search` against an index built with other settings refuses with a mismatch.
+- Offline with the model's config files not cached, pooling falls back to mean with no prompt and the next online start reindexes. `nomic-embed-text-v1.5` also needs a document prefix, which is not configurable; it is not supported.
 
 ### `telemetry` (vault.schema.yml) — 🆕 v1.3.1+
 
