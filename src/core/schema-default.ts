@@ -113,6 +113,13 @@ graph:
     - "**/INDEX.md"
     - "**/REGISTRY.md"
 
+# Cross-encoder rerank of the top 30 fused search_hybrid results (v1.9). Off by default: it
+# adds ~0.7 s per search on CPU and the model (~90 MB) downloads on first use. See the
+# retrieval-tuning guide for the measured trade-off. Falls back to the fused order if the model is unavailable.
+rerank:
+  enabled: false
+  model: "Xenova/ms-marco-MiniLM-L-6-v2"
+
 # Usage-feedback ranking (v1.5). Boosts notes that get CITED after retrieval (per
 # the local selection log) so load-bearing knowledge floats up. Bounded by cap to
 # stop a feedback runaway; composes multiplicatively with decay + path_class +

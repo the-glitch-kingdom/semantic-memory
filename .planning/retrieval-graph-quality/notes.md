@@ -153,3 +153,44 @@ Not measured: the real production `.mcp.json` launch (Phase 11), Windows/macOS.
 - Cost: hybrid @3 is 30/35 vs 32/35 for vector alone (paraphrase queries get incidental lexical hits). Phase 6 rerank is where that is expected to be recovered.
 - Negative top scores in hybrid are not comparable to cosine (RRF scale, 1.0 = ranked first by both arms): abstention is Phase 7.
 - Floors raised: semantic 22, hybrid 23, text 6.
+
+### Phase 6 (rerank and embedder trials; fixture eval, 35 answerable cases, baseline hybrid @1 23 / @3 30 / @8 34)
+
+Machine was loaded (load average 12-16 on 8 cores) during every latency number, so latencies are pessimistic; the ratios between rows are the signal.
+Latency = `search_hybrid` through an in-process MCP client on the fixture, 35 warm queries (script in the session scratchpad, not committed); base (no rerank) is p50 5 ms / p95 30 ms.
+
+Cross-encoder `Xenova/ms-marco-MiniLM-L-6-v2` (fp32 ONNX unless noted), `EVAL_RERANK=1 npm run eval`:
+
+| variant | hybrid @1 / @3 / @8 | p50 / p95 ms | cold first query |
+|---|---|---|---|
+| no rerank (baseline) | 23 / 30 / 34 | 5 / 30 | 12 ms |
+| rerank top 30, len 512, order by rerank score only | 24 / 31 / 32 | 675 / 775 | 860 ms |
+| same, blended by RRF with the fused rank (weight 1.0) | 24 / 31 / 33 | not measured | |
+| same, blend weight 0.5 | 24 / 31 / 34 | not measured | |
+| top 30, len 256 | not run | 728 / 883 | 1,001 ms |
+| top 10, len 256 | not run | 477 / 687 | 1,012 ms |
+| top 30, len 256, int8 | not run | 478 / 715 | 1,992 ms |
+| top 30, len 128, int8 | not run | 248 / 346 | 621 ms |
+| top 15, len 128, int8 | not run | 222 / 356 | 660 ms |
+| top 10, len 128, int8 | 22 or less (fails the @1 floor of 23) | 148 / 235 | 511 ms |
+| top 5, len 128, int8 | 23 / 31 / 34 (no gain) | 140 / 227 | 344 ms |
+
+- Decision: reranker stays OFF by default (`rerank.enabled: false`). The only variants that raise @1 (+1 case of 35, within noise) cost 0.7 s per search, 4.5x the 150 ms bar;
+  every variant fast enough to approach the bar loses the gain. Time is inference (10 pairs x 160 tokens = ~400 ms under load; tokenizing is 1-6 ms), not setup.
+- The code path stays (config `rerank.enabled` / `rerank.model` in vault.schema.yml, fallback to the fused order if the model cannot load) and is tested in `test/unit/reranker.test.ts`.
+  Because it is not default, `scripts/build-offline-tarball.sh` and the expected tarball size (~0.55 GB) are unchanged. Pure rerank order was kept (blending gave no extra @1).
+- Hybrid @8 falls 34 -> 32 with pure rerank order (top-30 re-scored, the answer sometimes pushed out of the top 8): another reason not to default it.
+
+Embedder trials (all 384-d, fp32, same index shape; `EVAL_MODEL=<name> npm run eval`, fresh embedding of the fixture):
+
+| embedder | pooling / query prefix | semantic @1 / @3 / @8 | hybrid @1 / @3 / @8 | negative top cosine |
+|---|---|---|---|---|
+| all-MiniLM-L6-v2 (default) | mean | 22 / 32 / 34 | 23 / 30 / 34 | 0.14-0.36 |
+| BAAI/bge-small-en-v1.5 | CLS | 22 / 30 / 33 | 21 / 28 / 34 | 0.53-0.66 |
+| BAAI/bge-small-en-v1.5 | CLS + "Represent this sentence for searching relevant passages: " | 22 / 30 / 33 | 20 / 27 / 32 | 0.52-0.67 |
+| thenlper/gte-small | mean | 24 / 32 / 32 | 19 / 26 / 33 | 0.76-0.83 |
+
+- Decision: default embedder unchanged. gte-small is +2 @1 on the vector arm alone but -4 on `search_hybrid` (the product's main arm; its compressed cosine range
+  of 0.7-0.85 makes the fixed x1.3 graph boost and the min-term gate act differently), and both alternatives raise negative cosines to 0.5-0.8, which
+  makes Phase 7's abstention harder. The CLS-pooling and prefix changes used for bge were a throwaway patch to `embedder.ts`, reverted: no trial code ships.
+- The trial models (bge, gte, the cross-encoder, ~0.4 GB) were deleted from `~/.semantic-sidekick/models` after the runs so the offline tarball does not pick them up.

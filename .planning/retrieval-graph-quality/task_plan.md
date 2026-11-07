@@ -104,17 +104,18 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
         add a fixture case proving a symptom-phrased query hits its fact @1
   - [x] Doc-level aggregation check: one result per doc with its best chunk across both arms
   - [x] Re-run eval, record numbers, raise CI floor
-- [ ] Phase 6: Rerank and embedder evaluation (issue Phase 2, part 2)
-  - [ ] Cross-encoder rerank of the fused top ~30 (`Xenova/ms-marco-MiniLM-L-6-v2` through the
+- [x] Phase 6: Rerank and embedder evaluation (issue Phase 2, part 2)
+  - [x] Cross-encoder rerank of the fused top ~30 (`Xenova/ms-marco-MiniLM-L-6-v2` through the
         existing transformers/ONNX stack in `src/core/embedder.ts`); config `rerank.enabled`
-  - [ ] Measure p50/p95 latency and cold start; keep it on by default only if @1 rises and p95
-        stays under 150 ms warm
-  - [ ] If default on: bundle the reranker in `scripts/build-offline-tarball.sh` model cache and
-        update the expected tarball size
-  - [ ] Embedder trial: `bge-small-en-v1.5` and `gte-small` (384-d, same index shape) vs
+        (`src/core/reranker.ts`, wired in `search_hybrid`; tested in `test/unit/reranker.test.ts`)
+  - [x] Measure p50/p95 latency and cold start; keep it on by default only if @1 rises and p95
+        stays under 150 ms warm (measured: @1 +1 but p50 675 / p95 775 ms: stays OFF, see notes.md "Phase 6")
+  - [x] If default on: bundle the reranker in `scripts/build-offline-tarball.sh` model cache and
+        update the expected tarball size (not applicable: rerank is off by default)
+  - [x] Embedder trial: `bge-small-en-v1.5` and `gte-small` (384-d, same index shape) vs
         `all-MiniLM-L6-v2`; switch the default only if the eval improves (a switch re-embeds through
-        Phase 3's `model` stamp)
-  - [ ] Record every trial's numbers in notes.md, including the losers
+        Phase 3's `model` stamp) (neither won: gte-small hybrid @1 19, bge-small 21 vs 23; default unchanged)
+  - [x] Record every trial's numbers in notes.md, including the losers
 - [ ] Phase 7: Confidence, abstention and payload size (issue Phase 2, part 3)
   - [ ] `confidence` on each result from rerank score, rare-term lexical overlap and top-1/top-2 margin
   - [ ] `no_strong_match: true` on the response when confidence is under a threshold calibrated on
@@ -274,7 +275,10 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
   `search_hybrid` until Phase 11's CLI/MCP same-order regression decides whether to build BM25 there too.
 - Phase 5: fused scores are scaled so a doc ranked first by both arms is 1.0; they are not cosine, so Phase 7 calibrates confidence on its own signals.
 
+- Phase 6: the reranker is shipped as an opt-in code path (config + tests + fallback), not default, because no variant met both @1 up and p95 < 150 ms; `rerank` block added to the default `vault.schema.yml` template (`enabled: false`). `EVAL_RERANK` / `EVAL_MODEL` / `EVAL_RERANK_MODEL` env knobs in `docs-eval.test.ts` reproduce the trials.
+
 ## Errors Encountered
+- Phase 6: full-suite runs failed `skill-eval` concurrency, `hook-failure` Jev-hang timing and `profile-mcp` in turn under load average 12-16; each passes alone or on rerun (same flakes as Phases 2-5). Unrelated.
 - Phase 2: `test/unit/skill-eval.test.ts` concurrency case ("never exceed 5 live claude processes") and one other timing test failed in 2 of 3 full runs under load, passed alone and on the 3rd full run. Unrelated to this work (process-timing based); not touched.
 - Phase 3: `hook-failure.test.ts` "Jev error or hang" (3209 ms vs a 3000 ms budget) failed once under the full-suite load, passed alone. Unrelated (hook process timing).
 - Phase 3: sorting the file listing changed which of two equal-length graph paths wins, so the `graph_path` golden snapshot (project-overview -> user-service) now goes via api-gateway instead of microservices; both are shortest paths. Snapshot updated.
@@ -283,7 +287,7 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 4: one full run failed `e2e/new-features.test.ts` "should write meta.json with model info" and the skill-eval concurrency case; both pass alone and in the next two full runs (load timing, unrelated).
 
 ## Status
-**Currently in Phase 6** (rerank and embedder evaluation). Phase 5 (lexical fusion) done; numbers in notes.md "Phase 5".
+**Currently in Phase 7** (confidence, abstention and payload size). Phase 6 (rerank and embedder trials) done: both stay at their defaults; numbers in notes.md "Phase 6".
 
 ---
 

@@ -53,7 +53,9 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   beforeAll(async () => {
     tempDir = await mkdtemp(join(tmpdir(), "sp-docs-eval-"));
     await cp(FIXTURE, tempDir, { recursive: true });
-    const server = await createServer(tempDir, { watch: false, waitForReady: true });
+    // trial knobs: EVAL_RERANK=1 turns the cross-encoder on, EVAL_MODEL swaps the embedder (see notes.md "Phase 6")
+    if (process.env.EVAL_RERANK) await writeFile(join(tempDir, "vault.schema.yml"), `rerank:\n  enabled: true\n${process.env.EVAL_RERANK_MODEL ? `  model: ${process.env.EVAL_RERANK_MODEL}\n` : ""}`);
+    const server = await createServer(tempDir, { watch: false, waitForReady: true, model: process.env.EVAL_MODEL });
     const [ct, st] = InMemoryTransport.createLinkedPair();
     await server.connect(st);
     client = new Client({ name: "docs-eval", version: "1.0.0" });

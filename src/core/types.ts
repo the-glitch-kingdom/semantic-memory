@@ -26,6 +26,8 @@ export interface SearchResult {
   score: number;
   snippet: string;
   matchedChunk?: string;
+  /** cross-encoder logit, set only on results the reranker scored */
+  rerankScore?: number;
   mtime?: string;
   loadPriority?: number;
   status?: string;

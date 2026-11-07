@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { fuseRrf } from "../../core/bm25.js";
 import { applyGraphBoost } from "../../core/graph-boost.js";
+import { RERANK_TOP } from "../../core/reranker.js";
 import type { SearchResult } from "../../core/types.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
@@ -139,6 +140,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (tier) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.tier === tier);
       if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
 
+      if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
       const enriched = hybrid.slice(0, limit).map((r) => ctx.enrichResult(r));
       await logSearch(ctx, "search_hybrid", query, enriched);
       return ctx.textResponse(JSON.stringify(enriched, null, 2));

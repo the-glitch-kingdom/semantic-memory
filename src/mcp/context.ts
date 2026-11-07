@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
+import { Reranker, loadRerankConfig } from "../core/reranker.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { Bm25Index } from "../core/bm25.js";
@@ -61,6 +62,8 @@ export interface ServerContext {
 
   indexer: Indexer;
   embedder: Embedder;
+  /** null when `rerank.enabled` is off (vault.schema.yml) */
+  reranker: Reranker | null;
   graph: GraphBuilder;
   textSearch: TextSearch;
   bm25: Bm25Index;
@@ -133,6 +136,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   const indexer = new Indexer(notesPath);
   const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized);
+  const rerankConfig = loadRerankConfig(notesPath);
+  const reranker = rerankConfig.enabled ? new Reranker(rerankConfig.model) : null;
   const graph = new GraphBuilder({
     excludeHubs: loadExcludeHubs(notesPath),
     isArchived: (p) => isExcludedPath(p, getPathClassConfig()),
@@ -598,6 +603,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     options,
     indexer,
     embedder,
+    reranker,
     graph,
     textSearch,
     bm25,
