@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { minimatch } from "minimatch";
 import { Indexer } from "../../src/core/indexer.js";
 import { GraphBuilder, loadExcludeHubs, DEFAULT_EXCLUDE_HUBS } from "../../src/core/graph.js";
-import { applyGraphBoost, GRAPH_BOOST } from "../../src/core/graph-boost.js";
 import { DEFAULT_PATH_CLASS_CONFIG, filterPathClass, isExcludedPath, loadPathClassConfig } from "../../src/core/path-class.js";
 import type { IndexedDocument } from "../../src/core/types.js";
 
@@ -78,19 +77,6 @@ describe("typed edges", () => {
     const gg = new GraphBuilder({ isArchived: (p) => p.startsWith("archive/") });
     gg.buildFromDocuments([doc("x.md", { wikilinks: ["t"] }), doc("archive/t.md"), doc("live/t.md")]);
     expect(gg.forwardlinks("x.md").map((n) => n.path)).toEqual(["live/t.md"]);
-  });
-});
-
-describe("applyGraphBoost", () => {
-  it("boosts only link neighbours of the top 5 hits (linked hits boost each other)", () => {
-    const g = new GraphBuilder();
-    const names = ["s1", "s2", "s3", "s4", "s5"].map((n) => `${n}.md`);
-    g.buildFromDocuments([...names.map((n) => doc(n, n === "s1.md" ? { mdLinks: ["near.md"] } : {})), doc("near.md"), doc("far.md")]);
-    const ranked = [...names, "far.md", "near.md"].map((path, i) => ({ path, score: 1 - i * 0.1 }));
-    const out = applyGraphBoost(ranked, g);
-    expect(out.find((r) => r.path === "near.md")!.score).toBeCloseTo(0.4 * GRAPH_BOOST);
-    expect(out.find((r) => r.path === "far.md")!.score).toBeCloseTo(0.5);
-    expect(out.find((r) => r.path === "s1.md")!.score).toBeCloseTo(1); // a seed is not boosted by being a seed
   });
 });
 

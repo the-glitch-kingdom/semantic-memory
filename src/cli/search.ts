@@ -9,7 +9,6 @@ import { TextSearch } from "../core/search-text.js";
 import { loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
-import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { decayForDoc, loadDecayConfig, type DecayBlock } from "../core/decay.js";
 import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
@@ -139,7 +138,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
           .sort((a, b) => b.score - a.score);
       const all = withConfidence(
         filterPathClass(
-          applyCoverage(fuseScores(adjust(applyGraphBoost(semantic, graph)), adjust(bm25.search(query, limit * 3))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
+          applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, limit * 3))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
           pathClass
         )
       );

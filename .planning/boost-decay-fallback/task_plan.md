@@ -69,9 +69,9 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   - [x] Bump all five version fields (`package.json`, both in `.claude-plugin/marketplace.json`,
         `.claude-plugin/plugin.json`, `AGENTS.md` frontmatter), then `npm install --package-lock-only --ignore-scripts`
   - [x] Offline tarball builds (531M, gitSha 908672c2ab, --allow-dirty; it is rebuilt from the merge commit before publishing)
-- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove trial knobs and sweep scripts; dead-code check over the branch diff (`tsc --noUnusedLocals`, grep)
-  - [ ] If the graph boost is a plain ×1.0 after Phase 3, either keep it as a named constant with a one-line why, or
+- [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove trial knobs and sweep scripts; dead-code check over the branch diff (`tsc --noUnusedLocals`, grep) -- no scratch files committed; the only unused locals (cli/index.ts isLocalForm, indexer.ts relative) pre-date the branch and are left
+  - [x] If the graph boost is a plain ×1.0 after Phase 3, either keep it as a named constant with a one-line why, or
         remove it with its tests. Decide and record.
 - [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review of `git diff main...HEAD`. Look for:
@@ -165,7 +165,12 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
 - Phase 5: `meta_weight` stays 0.8 (train: 1.0 = +1 @1 on real train, noise, and -1/-2 negatives flagged). Abstention stays the single 0.36 cutoff: two rules
   tried on train (top1-top2 gap; stricter-BM25 cutoff), neither adds a negative within the 10% false-flag ceiling. No code changed; numbers in notes.md.
 
+- Phase 7: graph boost REMOVED (not kept as a x1.0 constant): `src/core/graph-boost.ts`, both `applyGraphBoost` call sites and its unit test deleted. At 1.0 it did
+  per-query graph lookups for no effect; eval output is unchanged (46 pass, 5 expected fail). Phase 9 docs still mention it (CHANGELOG.md, v1-9-0 changelog,
+  mcp-tools-reference.md, cli-reference.md): update them there.
+
 ## Errors Encountered
+- Phase 7 flake: hook-failure Jev-hang budget failed in the full run, 14/14 alone.
 - Phase 4 ceiling raised: docs-vault `search_hybrid.meanBytes` 3831 -> 4575. Every result of a vault without `last_verified` now carries a
   compact git `decay` block (+744 B mean). Measured, deliberate; the block could not be dropped (plan: attached when a fallback is used).
 - Phase 4: the three `decay.test.ts` fail-open tests now run in `fresh` mode (the default changed); `fresh` stays byte-for-byte the old
@@ -182,7 +187,7 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
 - Phase 4: search-parity failed in the first full run (CLI skipped decay, order diverged once ranking depended on it); fixed in code, see Decisions.
 
 ## Status
-**Currently in Phase 7** - Cleanup
+**Currently in Phase 8** - Validate
 
 ---
 

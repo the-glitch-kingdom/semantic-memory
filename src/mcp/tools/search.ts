@@ -3,7 +3,6 @@ import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { applyCoverage } from "../../core/rank.js";
 import { fuseScores } from "../../core/bm25.js";
-import { applyGraphBoost } from "../../core/graph-boost.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { excerpt, isWeak, standaloneConfidence, withConfidence, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
@@ -180,7 +179,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
         rs
           .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
           .sort((a, b) => b.score - a.score);
-      const semanticResults = adjust(applyGraphBoost(vectorIndex.search(queryEmbed, limit * 3), ctx.graph));
+      const semanticResults = adjust(vectorIndex.search(queryEmbed, limit * 3));
       let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
       hybrid = ctx.filterPathClass(hybrid);
 
