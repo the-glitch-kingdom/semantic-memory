@@ -108,3 +108,32 @@ Decay fixture (answer ranked first), unverified twin is 800 days old in git:
 | held-out | hybrid | 6/6 | 4/4 | 2/2 | 6/6 |
 Sources seen: `last_verified`, `git`. The train `it.fails` is now a real gate; a new gate asserts the twin's block names `git`.
 Not measured: `mtime` and `penalty` on the splits (the fixture history is built for git; both covered by unit and integration tests).
+
+### Phase 5: `meta_weight` and abstention (train chose; held-out reported as measured; shipped code, boost 1.0, decay `git`)
+Method: scratch dump of per-query top cosines, BM25 and the weak flag from `search_hybrid` (reverted, nothing kept), then offline analysis. `meta_weight` run
+twice (0.8, 1.0). "Metadata-rich" = every doc that matches any facet of the case carries `purpose` or `symptoms` in its frontmatter
+(fixture train 11 of 57 answerable cases, real train 18 of 27).
+
+`meta_weight` (hybrid, train only):
+| split | subset | 0.8 @1 / @3 | 1.0 @1 / @3 | negatives flagged 0.8 / 1.0 | answerable false flags 0.8 / 1.0 |
+|---|---|---|---|---|---|
+| fixture train | all 57 | 38 / 52 | 38 / 51 | 11/12 / 9/12 | 5 / 4 |
+| fixture train | metadata-rich 11 | 11 / 11 | 11 / 11 | | |
+| real train | all 27 | 22 / 27 | 23 / 27 | 12/12 / 11/12 | 0 / 0 |
+| real train | metadata-rich 18 | 14 / 18 | 15 / 18 | | |
+Reading: 1.0 gains 1 case @1 on real train (inside the 1-case noise) and nothing on the fixture's rich subset, and loses 1 and 2 negatives (the
+abstention cost seen in the #48 sweep). 0.8 stays. Held-out as measured (not used): @1 0.8 vs 1.0 = fixture 25 vs 23 of 36, real 15 vs 15 of 27;
+negatives 7/8 vs 6/8 on both. Doc guidance to write: 0.8 was best or equal on every split here; raising it is only worth trying on a corpus
+whose notes carry good `purpose`/`symptoms` and where missed answers cost more than a missed "no match"; re-measure with the abstention eval.
+
+Abstention (train only; ceiling: answerable false flags <= 10%, i.e. <= 5 of 57 and <= 2 of 27). Baseline: negatives 11/12 and 12/12, false flags 5/57 and 0/27.
+Only one more negative can be won (fixture train 11 -> 12; real train is already 12/12).
+| rule | fixture train neg / ff | real train neg / ff |
+|---|---|---|
+| shipped: cos < 0.36 and BM25 weak | 11 / 5 | 12 / 0 |
+| single cutoff 0.45 | 12 / 14 (25%) | 12 / 3 (11%) |
+| A gap: also weak if cos < T and top1-top2 cosine gap < g (T 0.40-0.55, g 0.01-0.05, 16 pairs) | 11 in every pair; ff 5-12 | 12; ff 0-1 |
+| B lexical: also weak if cos < T and best BM25 < f x bm25Min (T 0.40-0.50, f 0.25-0.75, 9 pairs) | 11 in 8 of 9; 12 only at T 0.45 f 0.75 (ff 12) and T 0.50 f 0.75 (ff 19) | 12; ff 0-2 |
+Result: negative. No rule flags the missing negative while keeping fixture-train false flags <= 5; the closest (B, T 0.45, f 0.75) reaches 12/12 with
+12/57 false flags (21%). Rule A never adds a negative. Shipped 0.36 kept. Held-out as measured for the shipped rule: fixture 7/8 negatives, 7 false flags
+of 36 answerable; real 7/8, 2 of 27 (the existing KNOWN held-out gates); single 0.45 would give fixture 8/8 with 10 false flags, real 7/8 with 2.

@@ -57,11 +57,11 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
         re-reads git dates without re-embedding.
   - [x] Measure on the decay fixture and on all four splits. The verified doc must beat its unverified twin, and no
         split @1 may drop by more than noise (1 case on the real corpus).
-- [ ] Phase 5: `meta_weight` and abstention, measured (#48)
-  - [ ] `meta_weight`: measure 0.8 vs 1.0 on train with a metadata-rich subset, i.e. questions whose answer docs
+- [x] Phase 5: `meta_weight` and abstention, measured (#48)
+  - [x] `meta_weight`: measure 0.8 vs 1.0 on train with a metadata-rich subset, i.e. questions whose answer docs
         carry `purpose`/`symptoms`. The default stays 0.8 unless train shows otherwise. Document when to raise it,
         stating only what was measured.
-  - [ ] Abstention: on train only, try at most two rules beyond a single cosine cutoff (e.g. cutoff by top-1 vs
+  - [x] Abstention: on train only, try at most two rules beyond a single cosine cutoff (e.g. cutoff by top-1 vs
         top-2 gap, or by meta vs body cosine). Adopt one only if it flags more negatives on train while keeping
         answerable false flags ≤ 10% on every train split. Otherwise keep 0.36 and record the 0.45 sweep (notes.md)
         as the negative result. Report held-out as measured.
@@ -162,6 +162,9 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   carry the same `decay` block. The `decay` CLI command also prints `source` (it has no git date, so it shows the penalty).
 - Phase 4 lint: `LintReport.counts.noLastVerified` (a count; no findings, severity unchanged).
 
+- Phase 5: `meta_weight` stays 0.8 (train: 1.0 = +1 @1 on real train, noise, and -1/-2 negatives flagged). Abstention stays the single 0.36 cutoff: two rules
+  tried on train (top1-top2 gap; stricter-BM25 cutoff), neither adds a negative within the 10% false-flag ceiling. No code changed; numbers in notes.md.
+
 ## Errors Encountered
 - Phase 4 ceiling raised: docs-vault `search_hybrid.meanBytes` 3831 -> 4575. Every result of a vault without `last_verified` now carries a
   compact git `decay` block (+744 B mean). Measured, deliberate; the block could not be dropped (plan: attached when a fallback is used).
@@ -174,11 +177,12 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   ceiling 4132 → 3831.
 - Phase 3: the `it.fails` "fixture held-out hybrid paraphrase ≥ semantic" passes (13 = 13) and is now a real gate.
 - Phase 3 flake: hook-failure "Jev error or hang" budget (3876 ms > 3000) under suite load; 25/25 alone.
+- Phase 5 flake under load (avg 17): skill-eval concurrency failed once in the full run, passed alone 22/22 x3.
 - Phase 4 flakes under suite load (all passed alone, 38/38): freshness-scale warm start, hook-failure Jev-hang budget, skill-eval concurrency.
 - Phase 4: search-parity failed in the first full run (CLI skipped decay, order diverged once ranking depended on it); fixed in code, see Decisions.
 
 ## Status
-**Currently in Phase 5** - `meta_weight` and abstention, measured (#48)
+**Currently in Phase 6** - Release prep v1.11.0
 
 ---
 
