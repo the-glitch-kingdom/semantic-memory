@@ -92,10 +92,11 @@ Every missed target is stated in the PR.
         Done: the rsync of the model cache already carries them (init() fetches them during the warm step); build-offline-tarball.sh now fails if either is missing. The tarball itself was not rebuilt here (Phase 7/9).
   - [x] Measure `BAAI/bge-small-en-v1.5` and `Snowflake/snowflake-arctic-embed-s` against MiniLM on all splits (train
         and held-out, reported as measured). No default change.
-- [ ] Phase 7: Release prep v1.12.0
-  - [ ] Bump all five version fields (`package.json`, both in `.claude-plugin/marketplace.json`,
+- [x] Phase 7: Release prep v1.12.0
+  - [x] Bump all five version fields (`package.json`, both in `.claude-plugin/marketplace.json`,
         `.claude-plugin/plugin.json`, `AGENTS.md` frontmatter), then `npm install --package-lock-only --ignore-scripts`
-  - [ ] Offline tarball builds (`--allow-dirty` here; rebuilt from the merge commit before publishing)
+  - [x] Offline tarball builds (`--allow-dirty` here; rebuilt from the merge commit before publishing)
+        Built semantic-sidekick-offline-1.12.0-d361527ab4-x64.tgz, 922M, sha256 7143fb33...5397, verify OK (10016 files), model configs present. Size is 922M not ~0.55G because the host model cache also holds bge-small, arctic-s/xs and the reranker from the Phase 6 comparison; rebuild from a clean cache before publishing. Not install-tested.
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove trial knobs, sweep scripts and the losing embed-text variant from Phase 5; dead-code check over the
         branch diff (`tsc --noUnusedLocals`, grep). Pre-existing unused locals are left alone.
@@ -182,7 +183,7 @@ Every missed target is stated in the PR.
 - Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 7** - Release prep v1.12.0
+**Currently in Phase 8** - Cleanup
 
 ---
 
