@@ -65,10 +65,10 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
         top-2 gap, or by meta vs body cosine). Adopt one only if it flags more negatives on train while keeping
         answerable false flags ≤ 10% on every train split. Otherwise keep 0.36 and record the 0.45 sweep (notes.md)
         as the negative result. Report held-out as measured.
-- [ ] Phase 6: Release prep v1.11.0
-  - [ ] Bump all five version fields (`package.json`, both in `.claude-plugin/marketplace.json`,
+- [x] Phase 6: Release prep v1.11.0
+  - [x] Bump all five version fields (`package.json`, both in `.claude-plugin/marketplace.json`,
         `.claude-plugin/plugin.json`, `AGENTS.md` frontmatter), then `npm install --package-lock-only --ignore-scripts`
-  - [ ] Offline tarball builds (it is rebuilt from the merge commit before publishing)
+  - [x] Offline tarball builds (531M, gitSha 908672c2ab, --allow-dirty; it is rebuilt from the merge commit before publishing)
 - [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove trial knobs and sweep scripts; dead-code check over the branch diff (`tsc --noUnusedLocals`, grep)
   - [ ] If the graph boost is a plain ×1.0 after Phase 3, either keep it as a named constant with a one-line why, or
@@ -182,7 +182,7 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
 - Phase 4: search-parity failed in the first full run (CLI skipped decay, order diverged once ranking depended on it); fixed in code, see Decisions.
 
 ## Status
-**Currently in Phase 6** - Release prep v1.11.0
+**Currently in Phase 7** - Cleanup
 
 ---
 
