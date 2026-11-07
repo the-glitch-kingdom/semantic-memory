@@ -256,3 +256,6 @@ run by `scripts/retrieval-eval/real-corpus.mjs` through the production launch (`
 - Stale audit on a 1,000-doc tree after an edit: 0% stale, 0 missing, 0 index/disk mismatch (`freshness-scale.test.ts`).
 - Offline tarball `semantic-sidekick-offline-1.9.0-*-x64.tgz` built in 44 s, 532 MB; extracted, installed with `--prefix`, `--verify` exit 0 ("10660 files match"). `scripts/smoke-install.sh`: SMOKE PASS (v1.9.0).
 - Known limit found and not fixed (pre-existing): `stripMarkdown` removes table rows and inline code before indexing, so `search_text` and the vectors never see config-table names such as `TIDEWATCH_FLUSH_MS`.
+
+### Phase 12 (documentation)
+No new measurements. Tables in `.documentation/changelog/v1-9-0-retrieval-graph-quality.md` and `CHANGELOG.md` are copied from the Phase 2, 3, 4, 7, 8 and 11 sections above. Doc health after `hewtd maintain --quick`: see the plan.

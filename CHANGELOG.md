@@ -2,6 +2,41 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.9.0] - 2026-11-06 — Search finds the right doc first, and the index matches the files
+
+Issue #41: on a docs corpus `search_hybrid` was no better than grep, backlinks equalled forwardlinks, archived copies
+outranked live docs, and edits never reached the vectors. Full tables: `.documentation/changelog/v1-9-0-retrieval-graph-quality.md`;
+tuning: `.documentation/operational/retrieval-tuning-guide.md`.
+
+### Added
+
+- **BM25 lexical arm** fused with the vector arm by reciprocal rank in `search_hybrid`; graph boost seeded from the top 5 semantic hits.
+- **Typed link graph**: markdown links, `cites`, `same-incident` and `supersedes` edges beside wikilinks and `related_docs`; `types` filter on `backlinks`, `forwardlinks`, `graph_path`, `search_graph`.
+- **`confidence`, `no_strong_match`** (top confidence under 0.50), `related` on the #1 result, `full: true` for the old payload.
+- **Pull-based reconcile** with `manifest.json`, content-hash vectors, `schemaVersion`/`generation`, atomic saves and `index.lock`.
+- **Opt-in cross-encoder rerank** (`rerank.enabled`, off), `graph.exclude_hubs`, `path_class.exclude`.
+- **Retrieval eval** (`npm run eval`, CI floor in `baseline.json`), stale-vector audit and real-corpus scripts under `scripts/retrieval-eval/`.
+
+### Changed
+
+- `search_semantic`/`search_hybrid` return a ~600-char excerpt plus `confidence` instead of whole chunks (mean payload 5,983 B to 4,132 B on the fixture, 16,711 B to 6,391 B on a real corpus).
+- `search_graph` seeds semantically and no longer favours hubs; tag edges and `INDEX.md`/`REGISTRY.md` are off by default.
+- Archived notes are excluded by default (`**/archive/**`, matched with `dot: true`).
+- The CLI `search` fuses BM25 too, so hooks and `search_hybrid` agree.
+- `--no-watch` and the `Watcher` export are deprecated no-ops until v2.0.0. Index schema version 3: one re-parse after upgrade, vectors kept.
+
+### Fixed
+
+- Edits never reaching vectors (reuse keyed `path:index` with no text check), orphan vectors, a full reindex on any change, changes during a reindex dropped, staleness judged by chunk count only, non-atomic saves and no cross-process lock.
+- A debounced save lost when stdin closed; `ready` reported before the index was committed.
+- One inotify watch per file and directory (629 held for 537 files).
+
+### Measured
+
+Fixture (21 docs): hybrid answer @1 19/33 to 23/35 (25/35 with `related`), archive hits 8 to 0, negatives flagged 6/6, backlinks precision 0.271 to 1.000, recall 0.791 to 1.000.
+Real corpus (137 docs): @1 13/24 to 15/24, @8 21 to 23, negatives flagged 0/6 to 6/6. Cold start 1,352 to 431 ms, 10 docs edited while down 8.6% stale vectors to 0%, warm start 1,409 to 844 ms, inotify watches 629 to 0.
+Target missed: answer @1 stayed under the 0.80 goal (62.5% real corpus, 66% fixture); the answer is usually rank 2 to 5.
+
 ## [1.8.0] - 2026-11-03 — The skill loop judges existing skills, and can apply its own changes
 
 1.7's reviewer could draft a new skill, or patch a learned skill that was used and then failed; duplicates were only

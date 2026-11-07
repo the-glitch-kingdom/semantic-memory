@@ -189,33 +189,33 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
         same four tiers, kept in `test/retrieval-eval/real-corpus.jsonl`); before (v1.8.0) vs after
   - [x] `npm run lint && npm run build && npm test && npm run eval` all green; `scripts/smoke-install.sh`
   - [x] Offline tarball install + `--verify` on the built tarball
-- [ ] Phase 12: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New `.documentation/operational/retrieval-tuning-guide.md` (fusion, rerank, confidence,
+- [x] Phase 12: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New `.documentation/operational/retrieval-tuning-guide.md` (fusion, rerank, confidence,
         `no_strong_match`, path_class exclude, hub globs, how to run the eval) via `npx hewtd integrate -a`
-  - [ ] New `.documentation/changelog/v1-9-0-retrieval-graph-quality.md` with the before/after tables
+  - [x] New `.documentation/changelog/v1-9-0-retrieval-graph-quality.md` with the before/after tables
         (retrieval and freshness)
-  - [ ] New KB fact (gotcha): minimatch `**` skips dot-dirs, so `**/archive/**` misses
+  - [x] New KB fact (gotcha): minimatch `**` skips dot-dirs, so `**/archive/**` misses
         `.documentation/archive/` without `{ dot: true }`; `## Instead` + `verify_command`
-  - [ ] New KB fact (gotcha): chokidar holds one inotify watch per file plus one per directory
+  - [x] New KB fact (gotcha): chokidar holds one inotify watch per file plus one per directory
         (measured 629 = 537 files + 92 dirs), and counts differ between processes on the same tree;
         `## Instead`: pull-based reconcile; `verify_command` counting `/proc/<pid>/fdinfo` inotify lines
-  - [ ] Update `.documentation/architecture/indices-and-storage.md` (manifest, content-hash vectors,
+  - [x] Update `.documentation/architecture/indices-and-storage.md` (manifest, content-hash vectors,
         `generation`/`schemaVersion`, atomic save, lockfile, BM25 index)
-  - [ ] Update `.documentation/architecture/mcp-internals.md` (reconcile lifecycle, no watcher,
+  - [x] Update `.documentation/architecture/mcp-internals.md` (reconcile lifecycle, no watcher,
         `stale: true`) and `what-gets-indexed.md` (markdown links, edge types, ignore globs)
-  - [ ] Update `.documentation/reference/mcp-tools-reference.md` (search_hybrid, backlinks,
+  - [x] Update `.documentation/reference/mcp-tools-reference.md` (search_hybrid, backlinks,
         forwardlinks, graph_path, search_graph: types filter, confidence, no_strong_match, payload, stale)
-  - [ ] Update `.documentation/reference/configuration-reference.md` (path_class.exclude, graph.exclude_hubs,
+  - [x] Update `.documentation/reference/configuration-reference.md` (path_class.exclude, graph.exclude_hubs,
         rerank, embedder, reconcile throttle)
-  - [ ] Update `.documentation/reference/cli-reference.md` (search, backlinks options; `--no-watch` deprecated)
-  - [ ] Update `.documentation/testing/tests-and-validation.md` (eval harness, CI gate, stale audit,
+  - [x] Update `.documentation/reference/cli-reference.md` (search, backlinks options; `--no-watch` deprecated)
+  - [x] Update `.documentation/testing/tests-and-validation.md` (eval harness, CI gate, stale audit,
         mining script)
-  - [ ] Update `.documentation/troubleshooting/troubleshooting.md` (archive results, "not documented",
+  - [x] Update `.documentation/troubleshooting/troubleshooting.md` (archive results, "not documented",
         stale results after edits, lockfile left behind)
-  - [ ] Update `.documentation/deployment/release-process.md` / runbook if the tarball size changes
-  - [ ] Update `README.md`; regenerate `AGENTS.md` via `regenerate_contract`
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md/REGISTRY.md
-  - [ ] Close #41 from the PR body (`Fixes #41`)
+  - [x] Update `.documentation/deployment/release-process.md` / runbook if the tarball size changes (tarball 532 MB, inside the ~0.55 GB expectation: release-process.md unchanged; runbook gained the stale `index.lock` entry)
+  - [x] Update `README.md`; regenerate `AGENTS.md` via `regenerate_contract`
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md/REGISTRY.md
+  - [x] Close #41 from the PR body (`Fixes #41`) (to do when the PR is opened by the orchestrator; nothing to commit)
 
 ## Key Questions
 1. Does the archive leak in the issue come from the nested/dot-dir glob miss, or did the 0.3 down-weight
@@ -289,6 +289,9 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 8: `cites` reads `symptoms[].cites` (hewtd object form) and a top-level `cites:` list; the fact id is the target file's basename. The schema-version bump is 2 -> 3.
 
 ## Errors Encountered
+- Phase 12: full run had `hook-failure` Jev-hang timing fail once under load (passes alone, same known flake); lint, build, eval green.
+- Phase 12: `hewtd integrate -a` placed the two facts under `troubleshooting/`; moved them to `knowledge-base/facts/` by hand (where the other facts live) and re-ran `hewtd maintain --quick`.
+- Phase 12: the `regenerate_contract` MCP tool defaulted to the test vault's parent and rewrote `../sidekick-test-vault/AGENTS.md` (outside the repo, not under git); re-run with `projectRoot` for this repo. No other effect.
 - Phase 11 review: `get_stats`/search reported `indexState: ready` after a forced rebuild before the index was committed to disk, which is the cause of the recurring `e2e/new-features` "meta.json" flake noted in Phases 4, 5 and 8 (not load timing). `fullIndex` now sets ready only after `save()`.
 - Phase 11 review: a debounced save (2 s after a reconcile that found changes) was dropped when the client closed stdin or the process got SIGTERM, so the next start re-parsed and re-embedded the same files. `startServer` now flushes the index (bounded to 3 s) before exiting.
 - Phase 11 review: the CLI `search` (hook path) had no BM25 arm, so its order differed from `search_hybrid`; it now fuses BM25 the same way (same order on all 35 golden questions, `search-parity.test.ts`).
@@ -304,7 +307,7 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 4: one full run failed `e2e/new-features.test.ts` "should write meta.json with model info" and the skill-eval concurrency case; both pass alone and in the next two full runs (load timing, unrelated).
 
 ## Status
-**Currently in Phase 12** (documentation pass). Phase 11 (review and validation) done: review fixes, ten freshness checks, real-corpus benchmark and offline install; numbers in notes.md "Phase 11". Phase 9 (release prep v1.9.0) done. Phase 8 (graph as knowledge) done: new edge types, `related` on the #1 result (multi-doc #1+related 2/8 -> 4/8), `search_graph` seeded semantically; numbers in notes.md "Phase 8".
+**All phases complete** (Phase 12 documentation pass done; open the PR with `Fixes #41`). Phase 11 (review and validation) done: review fixes, ten freshness checks, real-corpus benchmark and offline install; numbers in notes.md "Phase 11". Phase 9 (release prep v1.9.0) done. Phase 8 (graph as knowledge) done: new edge types, `related` on the #1 result (multi-doc #1+related 2/8 -> 4/8), `search_graph` seeded semantically; numbers in notes.md "Phase 8".
 
 ---
 

@@ -65,9 +65,11 @@ Per-vault schema override. If absent, the default from `src/core/schema-default.
 Path retains legacy name through all of v1.x per the v1.0 storage promise. v2.0 will move to `.claude/.semantic-memory/index/`.
 
 - `hnsw.bin`, `hnsw-meta.json` — HNSW vector index.
-- `embeddings.json` — per-chunk vectors, keyed by `<path>:<chunkIndex>`.
+- `embeddings.json` — per-chunk vectors, keyed by a hash of the chunk text (v1.9.0; was `<path>:<chunkIndex>`).
 - `graph.json` — built graph.
-- `meta.json` — model, dimensions, totalChunks, indexedAt.
+- `meta.json` — commit marker, written last: `schemaVersion`, `chunker`, ignore-glob hash, `generation`, model, dimensions, totalChunks, indexedAt, and size+mtime of each commit file.
+- `manifest.json` (v1.9.0) — per file: mtime, size, inode, content hash; what the reconcile diffs against.
+- `index.lock` (v1.9.0) — `{pid, at}` while a process is writing; stale after 10 minutes or a dead pid.
 - `docs.cache.json` — Phase 2 parsed-doc cache (drops hook latency 9x).
 
 ### `<vault>/log.md` — the durable state log (tracked with vault content)
@@ -389,15 +391,43 @@ Down-weights whole path regions in `search_semantic`/`search_hybrid` ranking by 
 path_class:
   enabled: true
   rules:
-    - glob: "archive/**"
+    - glob: "**/archive/**"
       multiplier: 0.3
+  exclude:
+    - "**/archive/**"
 ```
 
 - **`enabled`** — master switch for path-class down-weighting.
 - **`rules`** — ordered list of `{ glob, multiplier }`. `glob` matches against the note's vault-relative path; `multiplier` scales the ranking score the same way `decay`'s multiplier does. **First matching rule wins** — rules are evaluated in list order and later rules are not consulted once one matches (no stacking multiple rules on one note).
+- **`exclude`** (v1.9.0) — globs whose notes are dropped from `search_semantic`, `search_hybrid`, `search_graph` and `search_text` (unless it is given an explicit `pathGlob`). Default `**/archive/**`; set `exclude: []` to keep archived notes (down-weighted by `rules`). Globs match with `dot: true`, so `.documentation/archive/` is covered; the pre-1.9 default `archive/**` matched only a top-level folder.
 - **Related env var:** `SEMANTIC_MEMORY_INJECT_MIN_SCORE` (default `0.35`) score-gates the `<vault-context>` hook injection — results scoring below this threshold, after decay + `path_class` + `load_priority` are applied, are not injected into the prompt/session-start context regardless of the hook's top-K limit. See [Environment variables](#environment-variables) above.
 
 See [mcp-tools-reference.md](./mcp-tools-reference.md) for the search tools this affects.
+
+### `graph` (vault.schema.yml) — 🆕 v1.9+
+
+```yaml
+graph:
+  exclude_hubs:
+    - "**/INDEX.md"
+    - "**/REGISTRY.md"
+```
+
+Generated hub files link to every note and made every note a neighbour of every other, so matching files are left out of the graph (not nodes, so not traversed, ranked by degree or counted). Read at server start: restart after changing it.
+
+### `rerank` (vault.schema.yml) — 🆕 v1.9+
+
+```yaml
+rerank:
+  enabled: false
+  model: "Xenova/ms-marco-MiniLM-L-6-v2"
+```
+
+Cross-encoder re-scoring of the top 30 fused `search_hybrid` results. Off by default: about 0.7 s per search on CPU for +1 case in 35, and a ~90 MB model downloaded on first use (not in the offline tarball). If the model cannot load, the fused order is used. See the [retrieval tuning guide](../operational/retrieval-tuning-guide.md).
+
+### Embedder and reconcile throttle (v1.9)
+
+The default embedder stays `all-MiniLM-L6-v2` (`--model` overrides; a model change forces a reindex). Alternatives were measured and not adopted. The reconcile throttle is `reconcileThrottleMs` (default 2000), a `createServer` option, not a schema field; it bounds how often a search re-stats the tree.
 
 ### `usage_boost` (vault.schema.yml) — 🆕 v1.5+
 

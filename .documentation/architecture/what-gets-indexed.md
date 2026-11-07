@@ -44,9 +44,9 @@ One bad file no longer takes the whole corpus down. Before 1.5.2, `indexAll()` r
 - **Invalid frontmatter** (most often an unquoted colon in a value, e.g. `purpose: Substrate-level: …`) — the body is indexed with empty frontmatter, so the note is still searchable but its `status` / `tier` / `load_priority` etc. are ignored. stderr: `Invalid frontmatter in <file>, indexing body only: …`. Fix: quote the value.
 - **Any other per-file error** (e.g. a dangling symlink) — the file is skipped. stderr: `Skipping <file>: …`.
 
-### What the file watcher reacts to
+### What the reconcile looks at
 
-The same scope: `.md` files anywhere under `<vault>`, except inside `node_modules/`, `.semantic-sidekick-index/` and `.git/`.
+The same scope (v1.9.0 replaced the file watcher with an on-demand reconcile): `.md` files anywhere under `<vault>`, except inside `node_modules/`, `.semantic-sidekick-index/` and `.git/`. The file listing is sorted, so index order and graph resolution are deterministic.
 
 ## What semantic-memory does with each `.md` file
 
@@ -86,14 +86,18 @@ This is why `search_semantic` returns chunks, not whole notes — the chunk that
 | `note` nodes | One per indexed `.md` file | Vertex for every searchable note |
 | `tag` nodes | Created lazily when first encountered | Lets `search_graph` traverse "all notes with tag X" |
 
-| Edge type | Source | Why |
+| Edge type | Source | In default traversal |
 |---|---|---|
-| `wikilink` | Each `[[target]]` in body text | Direct authored connection |
-| `related_doc` | Each entry in frontmatter `related_docs` array | Explicit cross-reference |
-| `tag` | Each tag mentioned (frontmatter or inline) | Concept clustering |
-| `derived_from` | Each entry in frontmatter `derived_from` array | Provenance chain (note → source note) |
+| `link` | Markdown links `[text](x.md)` between indexed notes: relative and `../` paths, `#anchors` stripped, `%20` decoded; external URLs, images and links inside code blocks are skipped (v1.9.0) | yes |
+| `wikilink` | Each `[[target]]` in body text | yes |
+| `related` | Each entry in frontmatter `related_docs` | yes |
+| `cites` | `symptoms[].cites` and a top-level `cites:` list; the target is the fact file with that id as its basename | yes |
+| `same-incident` | Notes sharing an incident folder | yes |
+| `supersedes` | A live note and its `archived_from` copy | opt in |
+| `tag` | Notes sharing a tag | opt in (made backlinks equal forwardlinks) |
+| `derived_from` | Each entry in frontmatter `derived_from` array | provenance chain |
 
-The graph is **derived** — rebuilt fresh from markdown via `graph.buildFromDocuments()` on every full reindex. The watcher rebuilds incrementally on file changes.
+`backlinks`, `forwardlinks`, `graph_path` and `search_graph` take a `types` list to change which edges they follow. Edges are directed: a one-way link shows in `forwardlinks` of the source and `backlinks` of the target only. Hub files (`graph.exclude_hubs`, default `**/INDEX.md`, `**/REGISTRY.md`) and paths in `path_class.exclude` (default `**/archive/**`) are not nodes. The graph is **derived**: rebuilt whole from the parsed docs after every reconcile that found a change.
 
 ## What the lint pass looks at
 
@@ -212,7 +216,7 @@ list_notes({modifiedAfter: "2026-01-01"}) → recent
 
 If a file is in the vault but doesn't appear in `list_notes`, possibilities:
 
-1. The indexer hasn't seen it yet — the watcher catches it on save, full reindex catches it on next run
+1. The indexer hasn't seen it yet — the next search's reconcile catches it (within 2 s), `--reindex` rebuilds everything
 2. Its filename doesn't end in `.md` (extensions are case-sensitive too — `.MD` doesn't match)
 3. It's actually outside the vault (check what `--notes` points at)
 4. Index is `"empty"` or `"loading"` — `get_stats` reveals state

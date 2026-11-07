@@ -3,7 +3,7 @@ title: Changelog Registry
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-11-03'
+last_updated: '2026-11-07'
 version: '1.0.0'
 purpose: Quick reference for changelog documentation
 ---
@@ -16,7 +16,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 20 |
+| Documents | 21 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -35,17 +35,17 @@ purpose: Quick reference for changelog documentation
 
 ## Recently Updated
 
+- [v1.9.0 — retrieval and graph quality, index freshness](v1-9-0-retrieval-graph-quality.md) - 2026-11-06
 - [v1.8.0 — skill loop auto mode, dedup, and retiring old entries](v1-8-0-skill-loop-auto.md) - 2026-11-03
 - [v1.7.1 — skill loop queue fixes](v1-7-1-skill-loop-queue-fixes.md) - 2026-10-28
 - [v1.7.2 — sessions use the indexed docs](v1-7-2-vault-context-sources.md) - 2026-10-28
 - [v1.7.0 — the skill loop and jev mode](v1-7-0-skill-loop-and-jev-mode.md) - 2026-10-25
-- [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) - 2026-10-24
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 20 |
+| active | 21 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
@@ -61,4 +61,4 @@ purpose: Quick reference for changelog documentation
 
 ---
 
-*Last updated: 2026-11-03*
+*Last updated: 2026-11-07*

@@ -70,13 +70,17 @@ Lives inside the vault: `<vault>/.semantic-sidekick-index/`. Created on first `r
 
 `embeddings.json` dominates. If you're tight on disk, this is the file to watch. The model dimension (384 for `all-MiniLM-L6-v2`) and total chunk count are the levers.
 
-### Freshness: startup rebuild and the watcher (v1.5.2+)
+### Freshness: pull-based reconcile (v1.9.0+)
 
-On startup the server loads the cached index and compares `meta.json` `totalChunks` with the chunks of the notes now on disk. A mismatch marks the index `stale`, and since v1.5.2 a stale cache is rebuilt in the background while the stale copy keeps serving (`src/mcp/server.ts`). Before 1.5.2 a stale cache was served indefinitely — the issue #29 symptom: `meta.json` stuck at an old `totalChunks` / `indexedAt` while the folder kept growing.
+Nothing watches the tree. Before a search (at most once per 2 s, `reconcileThrottleMs`) and once after load, the server walks the notes folder and compares each file's `fs.stat` (mtime, size, inode) with `manifest.json`. A file whose stat is unchanged is skipped without being read; one whose stat changed is hashed: same bytes (a `touch`, a `git checkout`) only refreshes the manifest, different bytes or a new file is re-parsed, a missing file is dropped. Frontmatter dates (`last_updated`) are never used. Vectors are keyed by a hash of the chunk text, so only chunks whose text changed are embedded, and HNSW is updated in place (`markDelete` + `addPoint`), compacted by a rebuild past 30% deleted nodes. The graph and BM25 index are rebuilt whole after a change (11-14 ms for 1,000 docs). A search that arrives while the first reconcile is still running is answered from the loaded index with `_meta.stale: true`; an edit made during a reconcile is picked up by the next call.
 
-While the server runs, the file watcher (`src/core/watcher.ts`) reindexes on every `.md` add / change / delete. It watches the notes folder and filters out `node_modules/`, `.semantic-sidekick-index/` and `.git/`; chokidar 4+ has no glob support, so the pre-1.5.2 `watch("**/*.md")` never fired.
+**Index files and commit.** `hnsw.bin`, `hnsw-meta.json`, `graph.json`, `docs.cache.json` and `manifest.json` must come from one commit. `meta.json` records `schemaVersion` (the parser), `chunker`, the ignore-glob hash, a `generation` counter and the size and mtime of each commit file, and is written last, so it is the commit marker. Each file is written to a temp name and renamed. A reader that finds files not matching `meta.json` (a crash or a second process mid-save) treats the index as unusable for that part and rebuilds only what it must. `embeddings.json` is exempt: it is keyed by chunk text, so any version is valid. Bumping `INDEX_SCHEMA_VERSION` (now 3) re-parses everything and re-embeds nothing whose chunk text is unchanged.
 
-Known gap: staleness at startup is detected by chunk count only. A note edited while no server was running that keeps its chunk count is not caught until the next edit or a manual `--reindex`.
+**One writer.** `index.lock` (`{pid, at}`, created exclusively) in the index folder gives one writer per index; a holder that is dead or older than 10 minutes is taken over, and a process that cannot get the lock skips its save and adopts the other's commit on the next reconcile. The CLI `search` path only reads.
+
+**Lexical index.** The BM25 index behind `search_hybrid` is held in memory only and rebuilt from the parsed docs at load (about 1 ms per 100 docs); nothing is stored for it on disk.
+
+Pre-1.9 behaviour (chokidar watcher, chunk-count staleness check, full reindex on any change) is described in the [v1.9.0 changelog](../changelog/v1-9-0-retrieval-graph-quality.md) and the [KB fact on inotify watches](../knowledge-base/facts/chokidar-holds-one-inotify-watch-per-file.md).
 
 ### Resume-on-crash semantics
 

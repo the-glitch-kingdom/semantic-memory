@@ -130,6 +130,17 @@ The suite points at `/home/tmarlette/workspace/the-glitch-kingdom/sidekick-test-
 | `e2e/stdio-server.test.ts` | Server connects over stdio, lists tools. |
 | `e2e/lazy-startup.test.ts` | Index is lazy by default — tools list returns before indexing completes. |
 
+### Retrieval and freshness (v1.9.0)
+
+| File | Covers |
+|---|---|
+| `retrieval-eval/docs-eval.test.ts` (`npm run eval`) | Three arms (`search_semantic`, `search_hybrid`, `search_text`) over `test/fixtures/docs-vault` with `golden.jsonl` (answer facets, negatives, archive hits, payload bytes), graph precision/recall vs `docs-graph-truth.json`; fails below the floors in `baseline.json`. Also its own CI step. |
+| `retrieval-eval/real-corpus.jsonl` + `scripts/retrieval-eval/real-corpus.mjs` | Own questions against this repo's `.documentation/` through the production launch; before/after benchmark, not a CI gate. |
+| `scripts/retrieval-eval/stale-audit.mjs` | Re-embeds a sample of chunks and compares with stored vectors (stale %, missing, orphans, index vs disk). |
+| `scripts/retrieval-eval/mine-selection.mjs` | Drafts eval questions from `selection.jsonl` (search then read follow-ups); output is for hand review. |
+| `integration/freshness.test.ts`, `freshness-scale.test.ts` | Edit mid-session, edit while down, touch-all re-embeds nothing, schemaVersion bump, mixed commit recovery, zero inotify watches, two processes, edit during reconcile, 1,000-doc warm start under 1 s. |
+| `unit/{reconcile,bm25,graph-links,graph-knowledge,path-class,reranker}.test.ts`, `unit/search-parity.test.ts` | Diff branches and throttle, BM25, link extraction and typed edges, archive globs, rerank fallback, CLI and MCP same order on the golden questions. |
+
 ## Running subsets
 
 ```bash

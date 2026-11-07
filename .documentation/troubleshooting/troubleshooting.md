@@ -51,6 +51,28 @@ load_priority: 9
 - **Cause:** an npm 10 arborist bug resolving vitest 4's optional peer dependencies (`#loadPeerSet`).
 - **Fix:** update the affected packages by name (`npm update <pkg> …`, leaving vitest out), and update the vitest chain with npm 11: `npx -y npm@11 update vitest`. npm 11 skips install scripts it hasn't approved, so run `npm rebuild <pkg>` for any it warns about.
 
+## v1.9.0 retrieval and freshness issues (issue #41)
+
+### Archived copies of a doc show up in search results
+- **Cause (pre-1.9.0):** the `archive/**` rule only matched a top-level `archive/`; minimatch's `**` skips dot-dirs, so `.documentation/archive/` never matched. See the [KB fact](../knowledge-base/facts/minimatch-star-star-skips-dot-dirs.md).
+- **Fix:** upgrade; the default `path_class.exclude` is `**/archive/**` with `dot: true`. If you set your own `path_class.exclude: []`, archived notes come back (down-weighted).
+
+### Every result says `no_strong_match: true` for a question the docs do answer
+- **Cause:** the top result's confidence is under 0.50. Deep paraphrases score low on cosine (2 of 23 correct #1 answers on the fixture, 4 of 15 on the real corpus). The results are still returned.
+- **Fix:** rephrase with the doc's own words, or read the top result anyway. If it is wrong for your corpus, see the [retrieval tuning guide](../operational/retrieval-tuning-guide.md) to measure it with your own questions.
+
+### A search just after an edit does not show the edit
+- **Cause:** results carry `_meta.stale: true` while the first reconcile after a warm start runs, and a search inside the 2 s reconcile throttle reuses the last pass. A file that is not `.md`, or sits under `node_modules/`, `.git/` or `.semantic-sidekick-index/`, is never indexed.
+- **Fix:** repeat the search after a couple of seconds. Check `get_stats` for `indexState`; call `reindex` to force a full rebuild.
+
+### `index.lock` is left in `.semantic-sidekick-index/`
+- **Cause:** a server was killed (SIGKILL, power loss) while writing. A lock whose pid is dead, or older than 10 minutes, is taken over automatically on the next save, so this normally needs no action.
+- **Fix:** if saves keep being skipped and `ps` shows no semantic-memory process for that notes folder (the pid in the lock file is not alive), delete the lock: `rm <notes>/.semantic-sidekick-index/index.lock`. Never delete it while a server is running. A half-written commit is detected by `meta.json` (written last) and rebuilt, no manual repair.
+
+### `fs.inotify.max_user_watches` / `ENOSPC` errors from other tools
+- **Cause (1.8.0 and earlier):** each semantic-memory server held one inotify watch per file and directory. See the [KB fact](../knowledge-base/facts/chokidar-holds-one-inotify-watch-per-file.md).
+- **Fix:** upgrade to 1.9.0 and restart the session; it holds none.
+
 ## v1.6.1 release-audit issues
 
 ### A note's YAML block shows up as its title or search snippet (`title: x purpose: …`)
@@ -199,7 +221,7 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 - **Fix:** `semantic-sidekick --notes <vault> --reindex`.
 
 ### Search results are stale (new notes not surfacing)
-- **Cause:** parsed-doc cache is from a prior reindex; watcher didn't catch the add.
+- **Cause:** (1.8.0 and earlier) the parsed-doc cache was from a prior reindex and the watcher didn't catch the add. Since 1.9.0 the index reconciles with the files before searching, so see the v1.9.0 section above.
 - **Check:** `cat <vault>/.semantic-sidekick-index/meta.json` — look at `indexedAt`.
 - **Fix:** `semantic-sidekick --notes <vault> --reindex` rebuilds both the vector index and the parsed-doc cache.
 
