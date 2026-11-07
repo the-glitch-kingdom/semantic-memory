@@ -91,6 +91,7 @@ export class VectorIndex {
         path: meta.docPath,
         title: meta.docPath,
         score: 1 - result.distances[i],
+        cosine: 1 - result.distances[i],
         snippet: meta.text.slice(0, 200),
         matchedChunk: meta.text,
       });

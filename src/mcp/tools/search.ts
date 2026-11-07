@@ -4,6 +4,7 @@ import type { ServerContext } from "../context.js";
 import { fuseRrf } from "../../core/bm25.js";
 import { applyGraphBoost } from "../../core/graph-boost.js";
 import { RERANK_TOP } from "../../core/reranker.js";
+import { excerpt, isWeak, withConfidence } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
@@ -23,10 +24,37 @@ async function logSearch(ctx: ServerContext, tool: string, query: string, enrich
   await appendEvent(ctx.notesPath, { kind: "search", tool, query, results });
 }
 
+/**
+ * Confidence on the whole ranked list, then the page. Default payload is trimmed to path/title/score/confidence
+ * and a ~600-char excerpt around the match; `full` keeps the whole enriched result. A weak top result marks every
+ * returned result `no_strong_match` (the response is an array, so the flag rides on its items).
+ */
+function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean) {
+  const page = withConfidence(ranked).slice(0, limit);
+  const weak = isWeak(page);
+  return page.map((r) => {
+    const { cosine: _c, lexical: _l, ...e } = ctx.enrichResult(r);
+    const out = full
+      ? e
+      : {
+          path: e.path,
+          title: e.title,
+          score: e.score,
+          confidence: e.confidence,
+          snippet: excerpt(e.matchedChunk ?? e.snippet, query),
+          ...((e as any).decay && { decay: (e as any).decay }),
+          ...((e as any).usage && { usage: (e as any).usage }),
+        };
+    return weak ? { ...out, no_strong_match: true } : out;
+  });
+}
+
+const fullArg = z.boolean().optional().default(false).describe("Return the whole result (full matched chunk, frontmatter fields) instead of the trimmed default");
+
 export function registerSearchTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
     "search_semantic",
-    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable.",
+    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the top result is weak every result has `no_strong_match: true` (the vault does not document it). `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -35,8 +63,9 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       status: z.string().optional().describe("Filter by frontmatter status (e.g. 'active', 'draft')"),
       tier: z.string().optional().describe("Filter by frontmatter tier (e.g. 'guide', 'reference')"),
       domain: z.string().optional().describe("Filter by frontmatter domain (e.g. 'api', 'security')"),
+      full: fullArg,
     },
-    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain }) => {
+    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full }) => {
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) {
         return ctx.textResponse(ctx.indexingMessage());
@@ -52,7 +81,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
       if (tier) results = results.filter((r) => docByPath.get(r.path)?.tier === tier);
       if (domain) results = results.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
-      const enriched = results.slice(0, limit).map((r) => ctx.enrichResult(r));
+      const enriched = shape(ctx, results, query, limit, full);
       await logSearch(ctx, "search_semantic", query, enriched);
       return ctx.textResponse(JSON.stringify(enriched, null, 2));
     }
@@ -107,7 +136,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + lexical + graph search — vector and BM25 results fused by reciprocal rank, re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block.",
+    "Combined semantic + lexical + graph search — vector and BM25 results fused by reciprocal rank, re-ranked by graph proximity (1-hop link neighbours of the top semantic hits) and load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the top result is weak every result has `no_strong_match: true` (the vault does not document it). `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -116,8 +145,9 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       status: z.string().optional().describe("Filter by frontmatter status"),
       tier: z.string().optional().describe("Filter by frontmatter tier"),
       domain: z.string().optional().describe("Filter by frontmatter domain"),
+      full: fullArg,
     },
-    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain }) => {
+    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full }) => {
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) {
         return ctx.textResponse(ctx.indexingMessage());
@@ -141,7 +171,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
 
       if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
-      const enriched = hybrid.slice(0, limit).map((r) => ctx.enrichResult(r));
+      const enriched = shape(ctx, hybrid, query, limit, full);
       await logSearch(ctx, "search_hybrid", query, enriched);
       return ctx.textResponse(JSON.stringify(enriched, null, 2));
     }

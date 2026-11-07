@@ -106,7 +106,7 @@ export function reasonFor(source, projectRoot) {
   const tool = (t) => `mcp__${source.name}__${t}`;
   return (
     `${where} is indexed by semantic-memory. Search it with ${tool("search_hybrid")} (by meaning) or ` +
-    `${tool("search_text")} (exact text), then read the hits. If you need this exact search (every literal match), ` +
+    `${tool("search_text")} (exact text), then read the hits (results flagged no_strong_match: true mean the docs do not cover it). If you need this exact search (every literal match), ` +
     `run the same command again and it will go through.`
   );
 }

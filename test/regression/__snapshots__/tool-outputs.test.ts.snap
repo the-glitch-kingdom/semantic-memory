@@ -344,8 +344,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > search_graph > return
 
 exports[`Regression: MCP tool outputs (golden snapshots) > search_hybrid > returns results with stable structural shape 1`] = `
 [
-  "matchedChunk",
-  "mtime",
+  "confidence",
   "path",
   "score",
   "snippet",
@@ -355,8 +354,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > search_hybrid > retur
 
 exports[`Regression: MCP tool outputs (golden snapshots) > search_semantic > returns results with stable structural shape 1`] = `
 [
-  "matchedChunk",
-  "mtime",
+  "confidence",
   "path",
   "score",
   "snippet",

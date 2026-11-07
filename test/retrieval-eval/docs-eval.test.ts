@@ -30,6 +30,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   let backlinks: LinkMetrics;
   let forwardlinks: LinkMetrics;
   let cases: FacetCase[];
+  let fullBytes: number;
   const baseline = JSON.parse(readFileSync(join(HERE, "baseline.json"), "utf-8"));
 
   const call = async (name: string, args: Record<string, unknown>) => {
@@ -39,9 +40,9 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     try { parsed = JSON.parse(text); } catch { /* indexing message */ }
     return { parsed: Array.isArray(parsed) ? parsed : [], bytes: Buffer.byteLength(text) };
   };
-  const tool = (name: string): ArmFn => async (q, limit) => {
-    const { parsed, bytes } = await call(name, { query: q, limit });
-    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes };
+  const tool = (name: string, extra: Record<string, unknown> = {}): ArmFn => async (q, limit) => {
+    const { parsed, bytes } = await call(name, { query: q, limit, ...extra });
+    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match) };
   };
   // the "grep" arm: every content word of the question as one alternation, in the tool's own order
   const text: ArmFn = async (q, limit) => {
@@ -69,6 +70,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     arms.search_semantic = await runFacetEval(cases, tool("search_semantic"), textOf);
     arms.search_hybrid = await runFacetEval(cases, tool("search_hybrid"), textOf);
     arms.search_text = await runFacetEval(cases, text, textOf);
+    fullBytes = (await runFacetEval(cases, tool("search_hybrid", { full: true }), textOf)).meanBytes;
 
     const truth: Record<string, string[]> = JSON.parse(await readFile(join(HERE, "docs-graph-truth.json"), "utf-8"));
     const paths = async (tl: string, path: string) => (await call(tl, { path })).parsed.map((n: any) => n.path);
@@ -77,10 +79,11 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
 
     process.stderr.write(
       "\nFacet eval\n" + Object.entries(arms).map(([n, m]) => formatArm(n, m)).join("\n") +
+      `\n  search_hybrid full:true mean-payload=${fullBytes}B` +
       `\n  forwardlinks precision=${forwardlinks.precision.toFixed(3)} recall=${forwardlinks.recall.toFixed(3)}` +
       `\n  backlinks    precision=${backlinks.precision.toFixed(3)} recall=${backlinks.recall.toFixed(3)}\n\n`
     );
-    if (process.env.EVAL_OUT) await writeFile(process.env.EVAL_OUT, JSON.stringify({ arms, forwardlinks, backlinks }, null, 2));
+    if (process.env.EVAL_OUT) await writeFile(process.env.EVAL_OUT, JSON.stringify({ arms, fullBytes, forwardlinks, backlinks }, null, 2));
   }, 180_000);
 
   afterAll(async () => {
@@ -101,6 +104,17 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     for (const [arm, m] of Object.entries(arms)) {
       expect(m.tiers.all.at[1], arm).toBeGreaterThanOrEqual(baseline.arms[arm].answeredAt1);
     }
+  });
+
+  it("every negative reports no_strong_match and answered@1 cases are flagged no more than the recorded baseline", () => {
+    const h = arms.search_hybrid;
+    expect(h.negativesFlagged).toBe(h.negativeTop.length);
+    expect(h.answeredFlagged).toBeLessThanOrEqual(baseline.arms.search_hybrid.answeredFlagged);
+  });
+
+  it("the trimmed payload is smaller than full:true", () => {
+    expect(arms.search_hybrid.meanBytes).toBeLessThan(fullBytes);
+    expect(arms.search_hybrid.meanBytes).toBeLessThanOrEqual(baseline.arms.search_hybrid.meanBytes);
   });
 
   it("archive hits never rise above the recorded baseline", () => {

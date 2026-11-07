@@ -105,20 +105,23 @@ export class Bm25Index {
  * (vector on a tie), so each doc appears once with its best chunk across both arms.
  */
 export function fuseRrf(vector: SearchResult[], lexical: SearchResult[]): SearchResult[] {
-  const fused = new Map<string, { r: SearchResult; rrf: number; rank: number }>();
-  const add = (list: SearchResult[]) =>
+  const fused = new Map<string, { r: SearchResult; rrf: number; rank: number; cosine?: number; lexical?: boolean }>();
+  const add = (list: SearchResult[], lexical: boolean) =>
     list.forEach((r, rank) => {
       const w = 1 / (RRF_K + rank + 1);
       const hit = fused.get(r.path);
-      if (!hit) fused.set(r.path, { r, rrf: w, rank });
+      if (!hit) fused.set(r.path, { r, rrf: w, rank, cosine: r.cosine, lexical });
       else {
         hit.rrf += w;
+        hit.cosine ??= r.cosine;
+        hit.lexical ||= lexical;
         if (rank < hit.rank) Object.assign(hit, { r, rank });
       }
     });
-  add(vector);
-  add(lexical);
+  add(vector, false);
+  add(lexical, true);
+  // cosine and the lexical flag belong to the doc, not to whichever arm's chunk won
   return [...fused.values()]
-    .map(({ r, rrf }) => ({ ...r, score: (rrf * (RRF_K + 1)) / 2 }))
+    .map(({ r, rrf, cosine, lexical }) => ({ ...r, cosine, lexical, score: (rrf * (RRF_K + 1)) / 2 }))
     .sort((a, b) => b.score - a.score);
 }

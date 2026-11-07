@@ -26,6 +26,12 @@ export interface SearchResult {
   score: number;
   snippet: string;
   matchedChunk?: string;
+  /** raw vector cosine of the matched chunk, before any boost (set by VectorIndex.search, kept through fusion) */
+  cosine?: number;
+  /** the lexical (BM25) arm also returned this doc */
+  lexical?: boolean;
+  /** 0..1, see core/confidence.ts */
+  confidence?: number;
   /** cross-encoder logit, set only on results the reranker scored */
   rerankScore?: number;
   mtime?: string;

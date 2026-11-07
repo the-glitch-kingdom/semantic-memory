@@ -7,6 +7,7 @@ import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
+import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
 import { readConsistentMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
@@ -25,6 +26,9 @@ export interface SearchHit {
   score: number;
   snippet?: string;
   mtime?: string;
+  /** 0..1; the CLI has no BM25 arm, so it reads lower than search_hybrid's */
+  confidence?: number;
+  no_strong_match?: true;
 }
 
 export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
@@ -104,30 +108,31 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
       const queryEmbed = await embedder.embed(query);
       const semantic = vectorIndex.search(queryEmbed, limit * 3);
 
-      const hybrid = filterPathClass(
-        applyGraphBoost(semantic, graph)
-          .map((r) => {
-            const doc = docByPath.get(r.path);
-            let score = r.score * pathClassMultiplier(r.path, pathClass);
-            if (doc?.loadPriority !== undefined) {
-              score *= 1 + (doc.loadPriority - 5) * 0.04;
-            }
-            return { ...r, score };
-          })
-          .sort((a, b) => b.score - a.score),
-        pathClass
+      const ranked = withConfidence(
+        filterPathClass(
+          applyGraphBoost(semantic, graph)
+            .map((r) => {
+              const doc = docByPath.get(r.path);
+              let score = r.score * pathClassMultiplier(r.path, pathClass);
+              if (doc?.loadPriority !== undefined) {
+                score *= 1 + (doc.loadPriority - 5) * 0.04;
+              }
+              return { ...r, score };
+            })
+            .sort((a, b) => b.score - a.score),
+          pathClass
+        )
       ).slice(0, limit);
+      const weak = isWeak(ranked);
 
-      return hybrid.map((r) => {
-        const doc = docByPath.get(r.path);
-        return {
-          path: r.path,
-          title: (r as any).title ?? doc?.title,
-          score: r.score,
-          snippet: (r as any).snippet,
-          mtime: doc?.mtime,
-        };
-      });
+      return ranked.map((r) => ({
+        path: r.path,
+        title: r.title ?? docByPath.get(r.path)?.title,
+        score: r.score,
+        confidence: r.confidence,
+        snippet: excerpt(r.matchedChunk ?? r.snippet, query),
+        ...(weak && { no_strong_match: true as const }),
+      }));
     },
   };
 }

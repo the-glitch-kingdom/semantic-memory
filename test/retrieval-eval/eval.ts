@@ -128,6 +128,8 @@ export interface ArmResponse {
   results: { path: string; score: number }[];
   /** Size of the tool response, in bytes. */
   bytes: number;
+  /** The response carried `no_strong_match`. */
+  weak?: boolean;
 }
 export type ArmFn = (q: string, limit: number) => Promise<ArmResponse>;
 
@@ -142,6 +144,10 @@ export interface ArmMetrics {
   /** Results under an archive/ folder across the top 8 of every case, negatives included. */
   archiveHits: number;
   meanBytes: number;
+  /** Negative cases whose response carried no_strong_match, out of negativeTop.length. */
+  negativesFlagged: number;
+  /** Cases answered at @1 whose response carried no_strong_match (the cost of abstaining). */
+  answeredFlagged: number;
 }
 
 /** Rank (1-based) at which the facets are first all covered by live (non-archive) results, or null. */
@@ -160,23 +166,27 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
   const negativeTop: (number | null)[] = [];
   let archiveHits = 0;
   let bytes = 0;
+  let negativesFlagged = 0;
+  let answeredFlagged = 0;
   for (const c of cases) {
-    const { results, bytes: b } = await arm(c.q, maxK);
+    const { results, bytes: b, weak } = await arm(c.q, maxK);
     const top = results.slice(0, maxK);
     bytes += b;
     archiveHits += top.filter((r) => ARCHIVE_RE.test(r.path)).length;
     if (c.tier === "negative") {
       negativeTop.push(top.length ? top[0].score : null);
+      if (weak) negativesFlagged++;
       continue;
     }
     const rank = facetRank(c.facets ?? [], top.map((r) => r.path), textOf);
+    if (weak && rank === 1) answeredFlagged++;
     for (const key of [c.tier, "all"]) {
       const t = (tiers[key] ??= { n: 0, at: Object.fromEntries(FACET_KS.map((k) => [k, 0])) });
       t.n++;
       for (const k of FACET_KS) if (rank !== null && rank <= k) t.at[k]++;
     }
   }
-  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length) };
+  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length), negativesFlagged, answeredFlagged };
 }
 
 export interface LinkMetrics {
@@ -205,7 +215,7 @@ export function invertLinks(forward: Record<string, string[]>): Record<string, s
 }
 
 export function formatArm(name: string, m: ArmMetrics): string {
-  const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
+  const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  flagged: negatives ${m.negativesFlagged}/${m.negativeTop.length}, answered@1 ${m.answeredFlagged}  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
   for (const [tier, t] of Object.entries(m.tiers).sort()) {
     lines.push(`    ${tier.padEnd(11)} (${String(t.n).padStart(2)}): ${FACET_KS.map((k) => `@${k}=${t.at[k]}/${t.n}`).join("  ")}`);
   }

@@ -194,3 +194,22 @@ Embedder trials (all 384-d, fp32, same index shape; `EVAL_MODEL=<name> npm run e
   of 0.7-0.85 makes the fixed x1.3 graph boost and the min-term gate act differently), and both alternatives raise negative cosines to 0.5-0.8, which
   makes Phase 7's abstention harder. The CLS-pooling and prefix changes used for bge were a throwaway patch to `embedder.ts`, reverted: no trial code ships.
 - The trial models (bge, gte, the cross-encoder, ~0.4 GB) were deleted from `~/.semantic-sidekick/models` after the runs so the offline tarball does not pick them up.
+
+### Phase 7 (confidence, no_strong_match, trimmed payload; fixture eval, 35 answerable + 6 negative cases)
+
+Signals tried on the 41 cases (top hybrid doc): its raw vector cosine, margin over the best other cosine, idf-weighted query-term coverage of its chunk, and "BM25 also returned it".
+No single signal separates: negative top-doc cosines are 0.08-0.36 but correct @1 hits go as low as 0.25 (p01, a deep paraphrase), and margin overlaps the same way.
+A grid over `cosine + w1*margin + w2*coverage + w3*lexical` (threshold 0.20-0.69) gave: 6/6 negatives flagged needs the lexical bonus; best was 1 false abstain on the
+direct-from-semantic margin, 2 once the margin is taken inside the fused list (the shipped definition). Coverage added nothing, so it is not in the formula.
+
+Shipped: `confidence = clamp(cos + (cos - best other cos) + 0.1 if BM25 agrees, 0, 1)`, `no_strong_match` when the top result is under 0.50.
+
+| arm | negatives flagged | correct @1 hits flagged | top confidence, negatives | lowest unflagged correct @1 |
+|---|---|---|---|---|
+| search_hybrid | 6/6 | 2/23 (p01, p04) | 0.11 0.11 0.28 0.34 0.46 0.48 | 0.55 |
+| search_semantic (same formula, no lexical bonus) | 6/6 | 1/23 | not recorded | |
+
+- Margins: highest negative 0.48 vs threshold 0.50 vs lowest unflagged correct @1 0.55. Thin on both sides (6 negatives, 23 hits): re-check on the real corpus in Phase 11.
+- The two false abstains are paraphrase cases whose cosine is 0.25-0.28; the results are still returned, only marked, so the cost is an answer the model hedges.
+- Payload (mean bytes per tool response, 8 results per case): `search_hybrid` 6,285 B with `full: true` (old shape + confidence) -> 4,112 B default (-35%); the excerpt, not the metadata, is most of what remains.
+- Gate: eval green on 3 runs, `baseline.json` gets `search_hybrid.answeredFlagged` 2 (ceiling) and `meanBytes` 4112 (ceiling); @1 floors unchanged (22 / 23 / 6), hybrid @1 still 23.
