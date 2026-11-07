@@ -87,3 +87,24 @@ reported as measured (not used). Semantic arm unchanged everywhere. Hybrid held-
 Negatives flagged: fixture train 11/12, held-out 7/8, real train 12/12, held-out 7/8 (unchanged). Answerable false
 flags (fixture train / held-out): 5 / 7 at 1.3, 5 / 7 at 1.0 per the eval's `answerable` column.
 Decay fixture: unchanged from Phase 2 (train hybrid 4/6, held-out 6/6).
+
+### Phase 4: decay fallback `git` (default), hybrid @1 / @3, one run each
+| split | Phase 3 (fail open) | Phase 4 `git` |
+|---|---|---|
+| fixture train (57) | 38 / 52 | 38 / 52 |
+| fixture held-out (36) | 25 / 29 | 25 / 29 |
+| real train (27) | 22 / 27 | 22 / 27 |
+| real held-out (27) | 14 / 23 | 15 / 23 |
+Semantic arm unchanged (39 / 23 / 15 / 13). Negatives flagged unchanged: 11/12, 7/8, 12/12, 7/8. No split dropped. The eval docs all share one
+10-day-old commit, so they all take the same ~0.98 multiplier (that is what the history was built for); real held-out +1 is inside the
+1-case HNSW noise. docs-vault `meanBytes` 3831 -> 4575 (ceiling raised, see Errors).
+
+Decay fixture (answer ranked first), unverified twin is 800 days old in git:
+| split | arm | all | unverified twin | 400-day-verified twin | Phase 2 baseline (all) |
+|---|---|---|---|---|---|
+| train | semantic | 6/6 | 4/4 | 2/2 | 4/6 |
+| train | hybrid | 6/6 | 4/4 | 2/2 | 4/6 |
+| held-out | semantic | 6/6 | 4/4 | 2/2 | 5/6 |
+| held-out | hybrid | 6/6 | 4/4 | 2/2 | 6/6 |
+Sources seen: `last_verified`, `git`. The train `it.fails` is now a real gate; a new gate asserts the twin's block names `git`.
+Not measured: `mtime` and `penalty` on the splits (the fixture history is built for git; both covered by unit and integration tests).

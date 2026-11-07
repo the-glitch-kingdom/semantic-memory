@@ -11,6 +11,7 @@ import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { applyGraphBoost } from "../core/graph-boost.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
+import { decayForDoc, loadDecayConfig, type DecayBlock } from "../core/decay.js";
 import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
 import { indexRebuilding, parserInputs, readConsistentMeta, readMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
@@ -35,6 +36,8 @@ export interface SearchHit {
   no_strong_match?: true;
   /** a server is rebuilding the index this hit came from */
   stale?: true;
+  /** present when the note is down-weighted or its age came from a fallback; same block as the MCP tools */
+  decay?: DecayBlock;
 }
 
 export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
@@ -115,6 +118,8 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
   const pathClass = loadPathClassConfig(notesPath);
   const ranking = loadRanking(notesPath);
+  const decayConfig = loadDecayConfig(notesPath);
+  const decayOf = (path: string) => (decayConfig.enabled && docByPath.get(path) ? decayForDoc(docByPath.get(path)!, decayConfig) : { multiplier: 1 });
   const selfTop = (await readMeta(indexPath))?.bm25SelfTop ?? bm25SelfTop(bm25, docs);
   const bm25Min = selfTop === null ? null : selfTop * BM25_FRACTION;
   return {
@@ -122,12 +127,12 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
       const queryEmbed = await embedder.embed(query);
       const semantic = vectorIndex.search(queryEmbed, limit * 3);
 
-      // same order as search_hybrid: each arm adjusted, then fused (the CLI skips decay and usage boosts)
+      // same order as search_hybrid: each arm adjusted, then fused (the CLI skips usage boosts)
       const adjust = (rs: SearchHitRaw[]) =>
         rs
           .map((r) => {
             const doc = docByPath.get(r.path);
-            let score = r.score * pathClassMultiplier(r.path, pathClass);
+            let score = r.score * pathClassMultiplier(r.path, pathClass) * decayOf(r.path).multiplier;
             if (doc?.loadPriority !== undefined) score *= 1 + (doc.loadPriority - 5) * 0.04;
             return { ...r, score };
           })
@@ -151,6 +156,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
         ...(r.matched && { matched: r.matched }),
         ...(weak && { no_strong_match: true as const }),
         ...(stale && { stale: true as const }),
+        ...(decayOf(r.path).block && { decay: decayOf(r.path).block }),
       }));
     },
   };

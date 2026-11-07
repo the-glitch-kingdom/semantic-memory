@@ -68,10 +68,16 @@ describe("Decay fixture eval (verified doc vs unverified twin)", () => {
     for (const arm of ["search_semantic", "search_hybrid"]) expect(count(s, arm, "old-verified", (r) => r.beatsTwin), arm).toBe(total(s, arm, "old-verified"));
   });
 
-  // Shipped (v1.10.0): a missing last_verified fails open, so the unverified twin is not down-weighted and train wins only by chance (4 of 6).
-  // Expected failure until Phase 4 (#49) turns it into a real gate. Held-out happened to win every case at baseline (6/6, chance, not decay), so its gate is real from the start.
-  it.fails("train: the recently verified doc beats an unverified twin (git age 800 days)", () => {
+  // v1.10.0 failed open on a missing last_verified, so the twin won by chance (4 of 6 on train); v1.11 ages it by its git date (#49).
+  it("train: the recently verified doc beats an unverified twin (git age 800 days)", () => {
     expect(count("train", "search_hybrid", "unverified", (r) => r.beatsTwin)).toBe(total("train", "search_hybrid", "unverified"));
+  });
+  it("the unverified twin's decay block names the git source", () => {
+    for (const s of ["train", "heldout"]) {
+      const sources = table[s].search_hybrid.filter((r) => r.tier === "unverified").map((r) => r.twinDecay?.source).filter(Boolean);
+      expect(sources.length, s).toBeGreaterThan(0);
+      expect(new Set(sources)).toEqual(new Set(["git"]));
+    }
   });
   it("heldout: the recently verified doc beats an unverified twin (git age 800 days)", () => {
     expect(count("heldout", "search_hybrid", "unverified", (r) => r.beatsTwin)).toBe(total("heldout", "search_hybrid", "unverified"));

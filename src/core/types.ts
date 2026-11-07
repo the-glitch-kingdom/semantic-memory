@@ -17,6 +17,8 @@ export interface IndexedDocument {
   generated?: boolean;
   /** ISO timestamp — prefers frontmatter last_updated/updated/date/lastmod, falls back to fs.stat mtime */
   mtime: string;
+  /** ISO date of the last git commit of these exact bytes (decay `git` mode); absent outside a repo, untracked or edited since the commit */
+  gitDate?: string;
   // Optional fields sourced from frontmatter when present (e.g. hit-em-with-the-docs schema)
   loadPriority?: number;   // 1-10 relevance weight; boosts search scores
   status?: string;         // draft | active | deprecated | archived

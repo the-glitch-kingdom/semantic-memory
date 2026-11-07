@@ -1046,6 +1046,7 @@ program
           age_days: Math.round(d.age_days),
           effective_half_life: d.effective_half_life,
           reason: d.reason,
+          source: d.source,
         },
         null,
         2

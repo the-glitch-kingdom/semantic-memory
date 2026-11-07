@@ -38,24 +38,24 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   - [x] Stale marker: while the old index answers, the `search_*` text responses carry a visible line or field (e.g.
         `"stale": true` plus "index refreshing, re-run to confirm"), not only `_meta`. The MCP server and the CLI get
         the same behaviour. Add a test in `test/integration/freshness.test.ts` or `index-upgrade.test.ts`.
-- [ ] Phase 4: Decay age fallback (#49)
-  - [ ] `decay.missing_last_verified: git | mtime | fresh | penalty` and `decay.missing_penalty` (default 0.85) in
+- [x] Phase 4: Decay age fallback (#49)
+  - [x] `decay.missing_last_verified: git | mtime | fresh | penalty` and `decay.missing_penalty` (default 0.85) in
         `DecayConfig`, `loadDecayConfig` and `schema-default.ts`. Default: `git` (#49's suggestion). It changes
         ranking for existing vaults; `fresh` restores the old behaviour exactly.
-  - [ ] `git` mode: one `git log --name-only --format=%ct` pass per index build or reconcile, not one call per file.
+  - [x] `git` mode: one `git log --name-only --format=%ct` pass per index build or reconcile, not one call per file.
         Store the date with the doc in the index and key it by content hash, so no query calls git. Outside a repo,
         or for an untracked or uncommitted file, fall back to `missing_penalty`.
-  - [ ] `mtime` mode: decide between the raw file mtime (#49) and `resolveMtime`'s chain (`last_updated` first) and
+  - [x] `mtime` mode: decide between the raw file mtime (#49) and `resolveMtime`'s chain (`last_updated` first) and
         record why. Never use `last_validated`: hewtd stamps it for frontmatter validation, not content verification.
-  - [ ] `computeDecay` takes the fallback age and source. Unparseable and future `last_verified` values use the
+  - [x] `computeDecay` takes the fallback age and source. Unparseable and future `last_verified` values use the
         fallback too.
-  - [ ] The `decay` block carries `source` (`last_verified` / `git` / `mtime` / `penalty` / `fresh`) and is attached
+  - [x] The `decay` block carries `source` (`last_verified` / `git` / `mtime` / `penalty` / `fresh`) and is attached
         whenever a fallback was used, even at multiplier 1. MCP and CLI match.
-  - [ ] Lint `stale` rule: report notes with no `last_verified` (count, or `decay_candidates`) instead of skipping
+  - [x] Lint `stale` rule: report notes with no `last_verified` (count, or `decay_candidates`) instead of skipping
         them silently. Keep the severity unchanged.
-  - [ ] The index schema version is bumped only if the stored doc shape changes. Upgrade test: a v1.10.0 index
+  - [x] The index schema version is bumped only if the stored doc shape changes. Upgrade test: a v1.10.0 index
         re-reads git dates without re-embedding.
-  - [ ] Measure on the decay fixture and on all four splits. The verified doc must beat its unverified twin, and no
+  - [x] Measure on the decay fixture and on all four splits. The verified doc must beat its unverified twin, and no
         split @1 may drop by more than noise (1 case on the real corpus).
 - [ ] Phase 5: `meta_weight` and abstention, measured (#48)
   - [ ] `meta_weight`: measure 0.8 vs 1.0 on train with a metadata-rich subset, i.e. questions whose answer docs
@@ -144,8 +144,29 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
 - Phase 3 stale marker: MCP `search_*` text gets a leading `[stale: ...]` line (the JSON follows on the next line);
   `_meta.stale` stays. CLI: a live index.lock holder means the committed index is about to be replaced, so hits carry
   `stale: true` (output stays a JSON array for the hook) and `hooks/vault-context.js` adds a "Stale:" line to the block.
+- Phase 4: `mtime` mode = `doc.mtime` (`resolveMtime`: `last_updated` -> `updated` -> `date` -> `lastmod` -> file mtime), not the raw
+  file mtime #49 names. The raw mtime is rewritten by clone, checkout and rsync, so it dates the copy, not the content;
+  `last_updated` is a content-edit date that hewtd keeps, and it is already stored with the doc (no new field). `last_validated` is
+  never read.
+- Phase 4 git dates: one `git log --relative --raw` per build or reconcile (only when something changed and a doc needs a date),
+  keyed by BLOB ID, not path: a doc gets a git date only when the sha1 blob id of its bytes equals the blob id of its newest commit,
+  so an edited-since-commit file takes the penalty and a date never leaks across a content change. Stored as `gitDate` on the
+  doc; `INDEX_SCHEMA_VERSION` 5 -> 6 (re-parse, vectors kept), which also makes a v1.10.0 index re-read git dates on upgrade.
+  Limits: a commit that changes no bytes dates a previously edited doc only at the next reconcile that has changes (or --reindex);
+  `git` mode is only consulted at build time, so switching a vault to `git` needs a --reindex; shallow clones date old files at the
+  boundary commit.
+- Phase 4: the fallback `decay` block is compact (`multiplier`, `age_days`, `source`; no `reason`/`effective_half_life`): with
+  git as default every result of a vault without `last_verified` carries one.
+- Phase 4: the CLI search used to skip decay (a no-op while missing dates failed open). Now it would diverge from `search_hybrid`
+  (search-parity failed), so it applies the same `decayForDoc` (new, `src/core/decay.ts`, shared with the MCP server) and its hits
+  carry the same `decay` block. The `decay` CLI command also prints `source` (it has no git date, so it shows the penalty).
+- Phase 4 lint: `LintReport.counts.noLastVerified` (a count; no findings, severity unchanged).
 
 ## Errors Encountered
+- Phase 4 ceiling raised: docs-vault `search_hybrid.meanBytes` 3831 -> 4575. Every result of a vault without `last_verified` now carries a
+  compact git `decay` block (+744 B mean). Measured, deliberate; the block could not be dropped (plan: attached when a fallback is used).
+- Phase 4: the three `decay.test.ts` fail-open tests now run in `fresh` mode (the default changed); `fresh` stays byte-for-byte the old
+  behaviour (same multiplier, age and reason strings).
 - Phase 3 floors dropped, all from the boost 1.3 → 1.0 change (measured, see notes.md): fixture-train hybrid all @1
   39 → 38 and exact @1 12 → 11; fixture held-out hybrid multi @3 6 → 5. Raised: fixture-train hybrid @3 51 → 52, multi
   @3 10 → 11; held-out hybrid all @1 22 → 25, nofield @1 1 → 2, paraphrase @1 12 → 13 and @3 13 → 13, symptom; real-train
@@ -153,9 +174,11 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   ceiling 4132 → 3831.
 - Phase 3: the `it.fails` "fixture held-out hybrid paraphrase ≥ semantic" passes (13 = 13) and is now a real gate.
 - Phase 3 flake: hook-failure "Jev error or hang" budget (3876 ms > 3000) under suite load; 25/25 alone.
+- Phase 4 flakes under suite load (all passed alone, 38/38): freshness-scale warm start, hook-failure Jev-hang budget, skill-eval concurrency.
+- Phase 4: search-parity failed in the first full run (CLI skipped decay, order diverged once ranking depended on it); fixed in code, see Decisions.
 
 ## Status
-**Currently in Phase 4** - decay age fallback (#49)
+**Currently in Phase 5** - `meta_weight` and abstention, measured (#48)
 
 ---
 

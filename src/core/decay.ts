@@ -16,8 +16,20 @@ import { parse as parseYaml } from "yaml";
  * but never disappear.
  */
 
+/** Where the age came from. `fresh` = fail open, `penalty` = no usable date, a flat multiplier. */
+export type DecaySource = "last_verified" | "git" | "mtime" | "penalty" | "fresh";
+export type MissingLastVerified = "git" | "mtime" | "fresh" | "penalty";
+const MISSING_MODES: readonly string[] = ["git", "mtime", "fresh", "penalty"];
+
 export interface DecayConfig {
   enabled: boolean;
+  /**
+   * What a note with no usable `last_verified` (missing, unparseable, in the future) is aged by: the date of its last git commit,
+   * its `mtime` (frontmatter `last_updated` chain, else file mtime), `fresh` (no decay: the pre-1.11 behaviour) or a flat `missing_penalty`.
+   * `git` and `mtime` fall back to the penalty when they have no date. `last_validated` is never read: hewtd stamps it for frontmatter checks.
+   */
+  missing_last_verified: MissingLastVerified;
+  missing_penalty: number;
   default_half_life_days: number;
   /** Per-type half-life in days. `null` means "never decays" (e.g. source notes). */
   per_type: Partial<Record<string, number | null>>;
@@ -31,6 +43,8 @@ export interface DecayInput {
   evergreen?: boolean;
   inbound_link_count?: number;
   config: DecayConfig;
+  /** ISO date the config's `git` / `mtime` mode ages a note without a usable `last_verified` by. */
+  fallback_date?: string;
   /** Override "now" — used by tests. */
   nowMs?: number;
 }
@@ -40,6 +54,7 @@ export interface DecayResult {
   age_days: number;
   effective_half_life: number;
   reason: string;
+  source: DecaySource;
   evergreen?: boolean;
 }
 
@@ -58,6 +73,8 @@ export function normalizeVerifiedDate(v: unknown): string | undefined {
 /** The default decay config, mirrored in the default vault schema YAML. */
 export const DEFAULT_DECAY_CONFIG: DecayConfig = {
   enabled: true,
+  missing_last_verified: "git",
+  missing_penalty: 0.85,
   default_half_life_days: 365,
   per_type: {
     decision: 365,
@@ -73,14 +90,14 @@ export const DEFAULT_DECAY_CONFIG: DecayConfig = {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const EVERGREEN_MAX_AGE_DAYS = 365;
 
-function fresh(reason: string, ageDays = 0, halfLife = 0, evergreen?: boolean): DecayResult {
-  return { multiplier: 1.0, age_days: ageDays, effective_half_life: halfLife, reason, evergreen };
+function fresh(reason: string, ageDays = 0, halfLife = 0, evergreen?: boolean, source: DecaySource = "fresh"): DecayResult {
+  return { multiplier: 1.0, age_days: ageDays, effective_half_life: halfLife, reason, source, evergreen };
 }
 
 /**
- * Compute the decay multiplier for one note. Fails open (multiplier 1.0) on any
- * uncertainty — disabled config, missing/invalid/future last_verified — so decay
- * can only ever DOWN-rank a note we're confident is old, never penalize ambiguity.
+ * Compute the decay multiplier for one note. A note with no usable last_verified
+ * (missing, unparseable, future) is aged by `config.missing_last_verified`; `fresh`
+ * fails open (1.0) as before v1.11. A disabled config always does.
  */
 export function computeDecay(input: DecayInput): DecayResult {
   const { config } = input;
@@ -96,18 +113,28 @@ export function computeDecay(input: DecayInput): DecayResult {
     if (typeof perType === "number" && perType > 0) halfLife = perType;
   }
 
-  // Age since last verification. Missing/invalid/future → fail open.
-  if (!input.last_verified) return fresh("no last_verified (fail open)", 0, halfLife);
-  const lastMs = Date.parse(input.last_verified);
-  if (Number.isNaN(lastMs)) return fresh("unparseable last_verified (fail open)", 0, halfLife);
+  // Age since last verification; a missing, unparseable or future date takes the configured fallback.
   const now = input.nowMs ?? Date.now();
-  const ageDays = (now - lastMs) / MS_PER_DAY;
-  if (ageDays <= 0) return fresh("last_verified in the future (fail open)", ageDays, halfLife);
+  let lastMs = input.last_verified ? Date.parse(input.last_verified) : NaN;
+  let ageDays = (now - lastMs) / MS_PER_DAY;
+  let source: DecaySource = "last_verified";
+  if (!(ageDays > 0)) {
+    const why = !input.last_verified ? "no last_verified" : Number.isNaN(lastMs) ? "unparseable last_verified" : "last_verified in the future";
+    const mode = config.missing_last_verified;
+    if (mode === "fresh") return fresh(`${why} (fail open)`, Number.isNaN(ageDays) ? 0 : ageDays, halfLife);
+    const fbMs = mode === "git" || mode === "mtime" ? Date.parse(input.fallback_date ?? "") : NaN;
+    if (!(now - fbMs > 0)) {
+      return { multiplier: config.missing_penalty, age_days: 0, effective_half_life: halfLife, reason: `${why}, no ${mode} date (penalty)`, source: "penalty" };
+    }
+    lastMs = fbMs;
+    ageDays = (now - fbMs) / MS_PER_DAY;
+    source = mode as DecaySource;
+  }
 
   // Evergreen: pinned at 1.0 while its verification is fresh; falls through to
   // normal decay once the evergreen claim is older than a year (forces re-affirmation).
   if (input.evergreen && ageDays < EVERGREEN_MAX_AGE_DAYS) {
-    return fresh("evergreen (verified within 365d)", ageDays, halfLife, true);
+    return fresh("evergreen (verified within 365d)", ageDays, halfLife, true, source);
   }
 
   // Backlink hotness (Phase 7 — feature-flagged off by default): a heavily-linked
@@ -125,7 +152,46 @@ export function computeDecay(input: DecayInput): DecayResult {
     age_days: ageDays,
     effective_half_life: effHalfLife,
     reason: `type=${input.type ?? "default"}`,
+    source,
     evergreen: input.evergreen,
+  };
+}
+
+export interface DecayBlock {
+  multiplier: number;
+  age_days: number;
+  /** what the age came from; `git` / `mtime` / `penalty` mean last_verified was unusable */
+  source: DecaySource;
+  effective_half_life?: number;
+  reason?: string;
+}
+
+/**
+ * Decay for an indexed doc, shared by the MCP server and the CLI so both rank alike. `block` is what an agent is shown: present when
+ * the note is down-weighted or its age came from a fallback (even at 1.0), so healthy results stay clean.
+ */
+export function decayForDoc(
+  doc: { frontmatter?: Record<string, unknown>; gitDate?: string; mtime?: string },
+  config: DecayConfig
+): { multiplier: number; block?: DecayBlock } {
+  const fm = doc.frontmatter ?? {};
+  const d = computeDecay({
+    type: typeof fm.type === "string" ? fm.type : undefined,
+    last_verified: normalizeVerifiedDate(fm.last_verified),
+    evergreen: fm.evergreen === true,
+    config,
+    fallback_date: config.missing_last_verified === "git" ? doc.gitDate : doc.mtime,
+  });
+  if (d.multiplier >= 1 && d.source !== "git" && d.source !== "mtime" && d.source !== "penalty") return { multiplier: d.multiplier };
+  return {
+    multiplier: d.multiplier,
+    block: {
+      multiplier: Math.round(d.multiplier * 1000) / 1000,
+      age_days: Math.round(d.age_days),
+      source: d.source,
+      // a fallback block stays small: with git as the default, every result of a vault without last_verified carries one
+      ...(d.source === "last_verified" ? { effective_half_life: d.effective_half_life, reason: d.reason } : {}),
+    },
   };
 }
 
@@ -150,6 +216,8 @@ export function loadDecayConfig(vaultPath: string): DecayConfig {
     const d = parsed?.decay;
     if (!d || typeof d !== "object") return DEFAULT_DECAY_CONFIG;
     return {
+      missing_last_verified: MISSING_MODES.includes(d.missing_last_verified as string) ? d.missing_last_verified! : DEFAULT_DECAY_CONFIG.missing_last_verified,
+      missing_penalty: typeof d.missing_penalty === "number" && d.missing_penalty > 0 && d.missing_penalty <= 1 ? d.missing_penalty : DEFAULT_DECAY_CONFIG.missing_penalty,
       enabled: typeof d.enabled === "boolean" ? d.enabled : DEFAULT_DECAY_CONFIG.enabled,
       default_half_life_days:
         typeof d.default_half_life_days === "number" ? d.default_half_life_days : DEFAULT_DECAY_CONFIG.default_half_life_days,
