@@ -6,7 +6,7 @@ import { Reranker, loadRerankConfig } from "../core/reranker.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex, docChunks } from "../core/vector.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop } from "../core/bm25.js";
-import { loadIndexFields, type IndexFields } from "../core/fields.js";
+import { loadEmbeddingOverrides, loadIndexFields, type IndexFields } from "../core/fields.js";
 import { loadRanking, type RankingConfig } from "../core/rank.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
@@ -32,6 +32,9 @@ export interface ServerOptions {
   workers?: number;
   batchSize?: number;
   quantized?: boolean;
+  /** overrides embedding.pooling / embedding.query_prompt in vault.schema.yml, which override the model's own config */
+  pooling?: "mean" | "cls";
+  queryPrompt?: string;
   readOnly?: boolean;
   onProgress?: (embedded: number, total: number) => void;
 }
@@ -141,7 +144,11 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   const indexer = new Indexer(notesPath);
   const fields = loadIndexFields(notesPath);
-  const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized);
+  const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized, {
+    ...loadEmbeddingOverrides(notesPath),
+    ...(options.pooling ? { pooling: options.pooling } : {}),
+    ...(options.queryPrompt !== undefined ? { queryPrompt: options.queryPrompt } : {}),
+  });
   const rerankConfig = loadRerankConfig(notesPath);
   const reranker = rerankConfig.enabled ? new Reranker(rerankConfig.model) : null;
   const graph = new GraphBuilder({
@@ -183,7 +190,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   let vectors = new Map<string, Float32Array>();
   let vectorsLoaded = false;
   let vectorsDirty = false;
-  const vectorKey = (text: string) => sha256(`${embedder.getModel()}\0${text}`);
+  // cls vectors get their own keys; mean keeps the pre-1.12 key so MiniLM vectors are reused untouched
+  const vectorKey = (text: string) => sha256(`${embedder.getModel()}${embedder.getPooling() === "cls" ? "\0cls" : ""}\0${text}`);
   /**
    * v1.7.2 and v1.8 keyed vectors `path:chunkIndex`; their hnsw-meta.json holds the text each label was built from.
    * Re-key those to the text key so an upgrade re-embeds only chunks whose text changed. The old keys are pruned at the next save.
@@ -242,8 +250,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       if (!meta) return false;
       const older = !parserMatches(meta, parserInputs(getPathClassConfig(), fields));
       if (older && !allowOlder) return false;
-      if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions()) {
-        process.stderr.write(`Model changed (${meta.model} → ${embedder.getModel()}), forcing reindex\n`);
+      if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions() || (meta.pooling ?? "mean") !== embedder.getPooling() || (meta.queryPrompt ?? "") !== embedder.getQueryPrompt()) {
+        process.stderr.write(`Model, pooling or query prompt changed (${meta.model} → ${embedder.getModel()}, ${meta.pooling ?? "mean"} → ${embedder.getPooling()}), forcing reindex\n`);
         return false;
       }
       // an older index (v1.7.2 and v1.8 wrote no commit record) is only served, never extended: the check is for current ones
@@ -453,6 +461,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       {
         model: embedder.getModel(),
         dimensions: embedder.getDimensions(),
+        pooling: embedder.getPooling(),
+        queryPrompt: embedder.getQueryPrompt(),
         totalChunks: docs.reduce((n, d) => n + docChunks(d).length, 0),
         ignoreGlobs: ignoreGlobsHash(parserInputs(getPathClassConfig(), fields)),
         bm25SelfTop: selfTop(),

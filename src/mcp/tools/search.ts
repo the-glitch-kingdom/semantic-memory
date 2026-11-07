@@ -86,7 +86,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (!vectorIndex) {
         return ctx.textResponse(ctx.indexingMessage());
       }
-      const queryEmbed = await ctx.embedder.embed(query);
+      const queryEmbed = await ctx.embedder.embedQuery(query);
       await ctx.refreshUsageBoost();
       let results = vectorIndex.search(queryEmbed, limit * 3);
       results = results.map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))));
@@ -146,7 +146,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
     async ({ concept, maxDepth, limit, types }) => {
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) return ctx.textResponse(ctx.indexingMessage());
-      const hits = ctx.filterPathClass(vectorIndex.search(await ctx.embedder.embed(concept), GRAPH_SEARCH_SEEDS * 3)).slice(0, GRAPH_SEARCH_SEEDS);
+      const hits = ctx.filterPathClass(vectorIndex.search(await ctx.embedder.embedQuery(concept), GRAPH_SEARCH_SEEDS * 3)).slice(0, GRAPH_SEARCH_SEEDS);
       const walked = ctx.graph.searchGraph(hits.map((h) => h.path), maxDepth, types?.includes("supersedes") ? limit : Number.MAX_SAFE_INTEGER, types);
       const results = (types?.includes("supersedes") ? walked : ctx.filterPathClass(walked)).slice(0, limit);
       return ctx.textResponse(JSON.stringify(results, null, 2));
@@ -172,7 +172,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
         return ctx.textResponse(ctx.indexingMessage());
       }
 
-      const queryEmbed = await ctx.embedder.embed(query);
+      const queryEmbed = await ctx.embedder.embedQuery(query);
       await ctx.refreshUsageBoost();
       // Boosts act on each arm's own scores, before fusion, so a x1.3 stays a x1.3 on the cosine.
       const adjust = (rs: SearchResult[]) =>

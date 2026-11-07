@@ -74,20 +74,23 @@ Every missed target is stated in the PR.
   - [x] `INDEX_SCHEMA_VERSION` 6 → 7 (shared with Phase 4 and 6): chunk text changes, so vectors are re-embedded
         once. Upgrade test: a v6 index re-embeds, keeps serving the old index while it does, and ends consistent.
         Done: INDEX_SCHEMA_VERSION 7; test/integration/index-upgrade.test.ts "schema 6 to 7". Phase 4's gitDate is cleared by the same full rebuild.
-- [ ] Phase 6: Per-model pooling and query prompt (#53)
-  - [ ] On model download, also fetch `1_Pooling/config.json` and `config_sentence_transformers.json` into the model
+- [x] Phase 6: Per-model pooling and query prompt (#53)
+  - [x] On model download, also fetch `1_Pooling/config.json` and `config_sentence_transformers.json` into the model
         cache dir (missing file = mean pooling, no prompt; offline = use what is cached).
-  - [ ] Pooling: `cls` (token 0, then L2-normalize) or `mean`, from the model config; override with
+  - [x] Pooling: `cls` (token 0, then L2-normalize) or `mean`, from the model config; override with
         `embedding.pooling` in `vault.schema.yml` and a CLI flag. Same code path in `embedder.ts` and
         `embed-worker.ts` (share one helper).
-  - [ ] Query prompt: `prompts.query` from the model config (arctic-embed: "Represent this sentence for searching
+        Done: src/core/pooling.ts (`resolveEmbedSettings`, `poolAndNormalizeMany`) used by embedder.ts and embed-worker.ts; `--pooling`, `--query-prompt`, `embedding.pooling`, `embedding.query_prompt`; precedence CLI > schema > model config.
+  - [x] Query prompt: `prompts.query` from the model config (arctic-embed: "Represent this sentence for searching
         relevant passages: "), override `embedding.query_prompt`. Queries only, never documents; every query caller
         (search_semantic, search_hybrid, CLI search, hooks, reranker untouched) goes through one `embedQuery`.
         Check nomic-embed-text-v1.5's `search_query:` / `search_document:` prefixes and handle or document them.
-  - [ ] Index meta records `pooling` and `queryPrompt`; the model-mismatch check (`src/mcp/context.ts:245`) forces a
+  - [x] Index meta records `pooling` and `queryPrompt`; the model-mismatch check (`src/mcp/context.ts:245`) forces a
         re-embed when either changes. MiniLM's vectors are unchanged (mean, no prompt).
-  - [ ] Offline tarball bundles the two config files with the model cache.
-  - [ ] Measure `BAAI/bge-small-en-v1.5` and `Snowflake/snowflake-arctic-embed-s` against MiniLM on all splits (train
+        Done: meta `pooling`/`queryPrompt` (absent = mean, none); cls vectors cached under their own key, mean keeps the old key. Byte-identity tested against test/fixtures/minilm-vectors.json (recorded before the change) and a verbatim copy of the old arithmetic.
+  - [x] Offline tarball bundles the two config files with the model cache.
+        Done: the rsync of the model cache already carries them (init() fetches them during the warm step); build-offline-tarball.sh now fails if either is missing. The tarball itself was not rebuilt here (Phase 7/9).
+  - [x] Measure `BAAI/bge-small-en-v1.5` and `Snowflake/snowflake-arctic-embed-s` against MiniLM on all splits (train
         and held-out, reported as measured). No default change.
 - [ ] Phase 7: Release prep v1.12.0
   - [ ] Bump all five version fields (`package.json`, both in `.claude-plugin/marketplace.json`,
@@ -170,6 +173,7 @@ Every missed target is stated in the PR.
   through one `git cat-file --batch`, comparing `parseFrontmatter(...).content` (exported from indexer.ts); a delete (zero blob) ends the walk.
 
 ## Errors Encountered
+- Phase 6: full `npm test` failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency under load; all pass alone (38/38). No floor changed.
 - Phase 5: full `npm test` failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency under load; all pass alone (38/38). `npm run eval`: 56 passed, 6 expected-fail.
 - Phase 5 floors lowered (measured, kept code text lowers some prose-only tiers; baseline.json): fixture-train semantic paraphrase @1 18->17, @3 21->20; fixture-heldout semantic paraphrase @3 16->15, semantic symptom @1 3->2, hybrid symptom @1 4->3; real-train semantic paraphrase @3 6->5, hybrid all @3 26->25, paraphrase @1 5->4, @3 7->6; real-heldout semantic all @3 18->16, paraphrase @1 8->6, @3 12->10. hybrid meanBytes ceiling 4575->4750 (excerpts now carry code).
 - Phase 5 gate changes: real-train "every negative flagged" is now a known failure (it.fails; hybrid flags 9/12, was 12/12: code tokens raise BM25 scores of off-topic queries). fixture-heldout "hybrid paraphrase >= semantic" is a known failure (semantic rose 13->14, hybrid flat 13). fixture-heldout "every negative flagged" passes now (8/8) and is a real gate. All six #52 it.fails became real gates.
@@ -178,7 +182,7 @@ Every missed target is stated in the PR.
 - Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 6** - Per-model pooling and query prompt (#53)
+**Currently in Phase 7** - Release prep v1.12.0
 
 ---
 

@@ -122,3 +122,18 @@ Regressions under (a) (floors lowered, see plan Errors Encountered): some prose 
 - Fix: `Indexer.indexFile` coerces title (Date -> YYYY-MM-DD, array -> space-joined, number -> String); `bm25SelfTop`
   skips non-string titles. Tests: `test/unit/bm25.test.ts` and `test/integration/non-string-title.test.ts` both fail with
   "s.toLowerCase is not a function" on the unfixed code (checked by stashing the two src files).
+
+## Eval results: Phase 6 (#53 pooling and query prompt)
+Default (MiniLM) after the change: `npm run eval` 56 passed, 6 expected-fail, same as Phase 5; MiniLM vectors byte-identical (test).
+Other models, same code, `EVAL_MODEL=<model> vitest run test/retrieval-eval` (fp32, pooling and prompt read from the model's own config: bge = CLS, no prompt; arctic-s = CLS + "Represent this sentence for searching relevant passages: "). One run each; floors fail for these models by construction, numbers are answer@1 / @3.
+| split | MiniLM sem | bge-small sem | arctic-s sem | MiniLM hyb | bge-small hyb | arctic-s hyb |
+|---|---|---|---|---|---|---|
+| fixture train (57) | 42 / 53 | 39 / 51 | 40 / 53 | 43 / 55 | 40 / 52 | 41 / 53 |
+| fixture held-out (36) | 25 / 31 | 21 / 29 | 24 / 31 | 26 / 30 | 23 / 30 | 25 / 30 |
+| real train (27) | 19 / 23 | 12 / 18 | 12 / 18 | 22 / 25 | 20 / 25 | 18 / 22 |
+| real held-out (27) | 12 / 16 | 6 / 11 | 7 / 12 | 17 / 24 | 13 / 17 | 13 / 20 |
+- Neither model beats MiniLM on any split, with or without the right pooling/prompt. #53's premise (arctic is poor because of pooling and prompt) is only partly supported: with both applied arctic-s is within 1 to 3 on the fixture and still 5 to 7 behind on real semantic. No default change (as planned).
+- Confound: `no_strong_match` thresholds are calibrated on MiniLM scores, so other models flag 0 negatives of 12 and 8 (MiniLM 11/12 and 8/8). Those flag counts say nothing about the models' ranking.
+- Decay and code tiers pass fully for both models (10/10 and 9/9 per arm).
+- nomic-embed-text-v1.5 was not measured (slow on CPU; it needs manual `search_query: ` / `search_document: ` prefixes).
+- Unmeasured: the old no-pooling bge/arctic numbers (mean pooling, no prompt) were not re-run, so the gain from the fix itself is not quantified.

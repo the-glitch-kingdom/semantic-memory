@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
+import type { EmbedSettings } from "./pooling.js";
 import type { IndexedDocument } from "./types.js";
 
 /**
@@ -42,6 +43,19 @@ export function loadIndexFields(vaultPath: string): IndexFields {
     };
   } catch {
     return DEFAULT_INDEX_FIELDS;
+  }
+}
+
+/** `embedding.pooling` / `embedding.query_prompt` in vault.schema.yml: override what the model's own config declares. */
+export function loadEmbeddingOverrides(vaultPath: string): Partial<EmbedSettings> {
+  try {
+    const e = (parseYaml(readFileSync(join(vaultPath, "vault.schema.yml"), "utf-8")) as { embedding?: Record<string, unknown> } | null)?.embedding;
+    return {
+      ...(e?.pooling === "cls" || e?.pooling === "mean" ? { pooling: e.pooling } : {}),
+      ...(typeof e?.query_prompt === "string" ? { queryPrompt: e.query_prompt } : {}),
+    };
+  } catch {
+    return {};
   }
 }
 

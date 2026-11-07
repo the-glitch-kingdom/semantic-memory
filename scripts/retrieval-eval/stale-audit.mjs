@@ -75,7 +75,7 @@ const questions = ["real-corpus.jsonl", "real-corpus-heldout.jsonl"].flatMap((f)
   readFileSync(new URL(`../../test/retrieval-eval/${f}`, import.meta.url), "utf8").split("\n").filter((l) => l.startsWith("{")).map((l) => JSON.parse(l).q));
 let recallSum = 0;
 for (const q of questions) {
-  const qv = await embedder.embed(q);
+  const qv = await embedder.embedQuery(q);
   const exact = new Set(withVec.map((c) => ({ p: c.path, s: cos(qv, stored.get(c.key)) })).sort((a, b) => b.s - a.s).slice(0, 24).map((e) => e.p));
   recallSum += hnswIndex.search(qv, 24).filter((r) => exact.has(r.path)).length / exact.size;
 }

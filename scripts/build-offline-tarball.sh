@@ -283,6 +283,15 @@ if [[ ! -f "${MODEL_CACHE_DIR}/model.onnx" ]]; then
   err "Re-run without --skip-model to warm the cache."
   exit 1
 fi
+# Embedder.init() fetched the pooling + prompt configs next to model.onnx; an air-gapped host cannot, and a model
+# without them is mean-pooled with no query prompt, so a missing file must fail the build, not ship quietly.
+for cfg in 1_Pooling/config.json config_sentence_transformers.json; do
+  if [[ ! -f "${MODEL_CACHE_DIR}/${cfg}" ]]; then
+    err "Expected model config missing: ${MODEL_CACHE_DIR}/${cfg}"
+    err "Re-run without --skip-model (needs network once) to fetch it."
+    exit 1
+  fi
+done
 rsync -a --exclude "*.tmp" "${MODEL_CACHE_ROOT}/" "${STAGE_ROOT}/${TARBALL_BASENAME}/models/"  # *.tmp: partial downloads killed mid-way
 
 # Bundle the installer + helper libs at the tarball root

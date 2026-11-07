@@ -1,5 +1,6 @@
 import { parentPort, workerData } from "node:worker_threads";
 import { AutoTokenizer } from "@huggingface/transformers";
+import { poolAndNormalizeMany, type Pooling } from "./pooling.js";
 
 interface WorkerData {
   modelPath: string;
@@ -7,6 +8,7 @@ interface WorkerData {
   cacheDir: string;
   runtimeLabel: "native" | "wasm";
   batchSize: number;
+  pooling?: Pooling;
 }
 
 interface WorkMessage {
@@ -37,40 +39,7 @@ interface ReadyMessage {
   type: "ready";
 }
 
-const { modelPath, modelName, cacheDir, runtimeLabel, batchSize = 32 } = workerData as WorkerData;
-
-function meanPoolAndNormalizeMany(
-  outputData: Float32Array,
-  maskData: number[],
-  batchSize: number,
-  seqLen: number,
-  hiddenSize: number
-): Float32Array[] {
-  const results: Float32Array[] = [];
-  for (let b = 0; b < batchSize; b++) {
-    const result = new Float32Array(hiddenSize);
-    let maskSum = 0;
-    for (let t = 0; t < seqLen; t++) {
-      const mask = maskData[b * seqLen + t];
-      maskSum += mask;
-      const offset = (b * seqLen + t) * hiddenSize;
-      for (let d = 0; d < hiddenSize; d++) {
-        result[d] += (outputData as Float32Array)[offset + d] * mask;
-      }
-    }
-    if (maskSum > 0) {
-      for (let d = 0; d < hiddenSize; d++) result[d] /= maskSum;
-    }
-    let norm = 0;
-    for (let d = 0; d < hiddenSize; d++) norm += result[d] * result[d];
-    norm = Math.sqrt(norm);
-    if (norm > 0) {
-      for (let d = 0; d < hiddenSize; d++) result[d] /= norm;
-    }
-    results.push(result);
-  }
-  return results;
-}
+const { modelPath, modelName, cacheDir, runtimeLabel, batchSize = 32, pooling = "mean" } = workerData as WorkerData;
 
 async function init() {
   // Resolve ONNX runtime
@@ -144,12 +113,13 @@ async function init() {
         const outputTensor = output[outputName];
         const hiddenSize = outputTensor.dims[outputTensor.dims.length - 1];
 
-        const batchEmbeddings = meanPoolAndNormalizeMany(
+        const batchEmbeddings = poolAndNormalizeMany(
           outputTensor.data as Float32Array,
           flatMaskNums,
           n,
           seqLen,
-          hiddenSize
+          hiddenSize,
+          pooling
         );
 
         for (const emb of batchEmbeddings) {
