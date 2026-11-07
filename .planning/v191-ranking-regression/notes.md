@@ -119,3 +119,20 @@ Offline tarball semantic-sidekick-offline-1.9.1-5e053eeb11-x64.tgz: 557,705,685 
 
 ## Eval results: Phase 8
 No ranking change. npm run eval green (37 pass, 4 expected-fail). Removed unused dep graphology-library.
+
+## Eval results: Phase 9 (review and validation)
+
+Review fix: archived notes could bridge two live notes in `graph_path` (and `direction: any` makes that likelier) and `search_graph` could return them. Both now drop excluded paths unless `supersedes` is requested.
+
+Real corpus through the production launch (`node dist/cli/index.js --notes <copy of .documentation/>`), v1.9.0 = main@448c518 built in a worktree. answer@1 / answerable, hybrid unless noted:
+
+| Set | semantic @1 (v1.9.0 / now) | hybrid @1 v1.9.0 -> now | hybrid @3 | hybrid @8 | paraphrase hyb @1 | negatives flagged | answerable flagged |
+|---|---|---|---|---|---|---|---|
+| real train (24) | 12 / 12 | 13 -> 17 (0.71) | 20 -> 22 | 24 -> 24 | 4 -> 5 | 12/12 -> 12/12 | 4 -> 0 |
+| real held-out (24) | 10 / 10 | 13 -> 11 (0.46) | 20 -> 22 | 23 -> 24 | 11 -> 9 | 8/8 -> 7/8 | 4 -> 0 |
+
+- Real held-out hybrid @1 is 2 BELOW v1.9.0 (13 -> 11) though above semantic (10) and better at @3/@8; paraphrase hybrid @1 fell 11 -> 9. Stable across the eval harness (11) and this launch (11).
+- In-process eval (`npm run eval`): fixture train 22 sem / 23 hyb, fixture held-out 17 sem / 13 hyb (0.57), HNSW recall@24 1.000 fixture / 0.999 real.
+- Acceptance targets: MET hnsw >= 0.97, exclusion before indexing, upgrade from v1.7.2 and v1.9.0 formats (re-embeds only changed chunks, serves stale), search_text order, graph_path reverse, read-only clean tree, train abstention, real train @1 >= 0.75 not met (0.71).
+  MISSED: @1 >= 0.75 on fixture held-out (0.57) and real held-out (0.46); fixture held-out hybrid within 1 of semantic (13 vs 17) and paraphrase (8 vs 12); held-out abstention (fixture 26% false flags, real 7/8 negatives).
+- Validation: lint, build, 819 tests pass, eval 37 pass + 4 expected fail; smoke-install PASS; offline tarball 556,696,360 B, install --verify OK. Load flakes (freshness-scale, hook-failure, skill-eval) pass alone.

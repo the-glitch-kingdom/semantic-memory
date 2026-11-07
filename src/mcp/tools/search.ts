@@ -146,7 +146,8 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) return ctx.textResponse(ctx.indexingMessage());
       const hits = ctx.filterPathClass(vectorIndex.search(await ctx.embedder.embed(concept), GRAPH_SEARCH_SEEDS * 3)).slice(0, GRAPH_SEARCH_SEEDS);
-      const results = ctx.graph.searchGraph(hits.map((h) => h.path), maxDepth, limit, types);
+      const walked = ctx.graph.searchGraph(hits.map((h) => h.path), maxDepth, types?.includes("supersedes") ? limit : Number.MAX_SAFE_INTEGER, types);
+      const results = (types?.includes("supersedes") ? walked : ctx.filterPathClass(walked)).slice(0, limit);
       return ctx.textResponse(JSON.stringify(results, null, 2));
     }
   );

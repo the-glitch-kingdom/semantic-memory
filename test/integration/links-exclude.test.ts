@@ -28,6 +28,14 @@ describe("backlinks / forwardlinks and path_class.exclude", () => {
     expect(await paths("backlinks", { path: "live-x.md" })).not.toContain("archive/old-x.md");
     expect(await paths("backlinks", { path: "live-x.md", include_excluded: true })).toContain("archive/old-x.md");
     expect(JSON.parse(await call("graph_path", { from: "live-x.md", to: "archive/old-x.md", direction: "in" }))).toEqual(["live-x.md", "archive/old-x.md"]);
+
+    // an archived note must not bridge two live ones unless supersedes is asked for
+    await writeFile(join(dir, "live-a.md"), "# Live A\n\nAlpha note.\n");
+    await writeFile(join(dir, "live-b.md"), "# Live B\n\nBeta note.\n");
+    await writeFile(join(dir, "archive", "bridge.md"), "# Bridge\n\nSee [a](../live-a.md) and [b](../live-b.md).\n");
+    await call("reindex", {});
+    expect(await call("graph_path", { from: "live-a.md", to: "live-b.md" })).toBe("No path found");
+    expect(JSON.parse(await call("graph_path", { from: "live-a.md", to: "live-b.md", types: ["link", "supersedes"] }))).toEqual(["live-a.md", "archive/bridge.md", "live-b.md"]);
     await client.close();
   }, 180_000);
 });

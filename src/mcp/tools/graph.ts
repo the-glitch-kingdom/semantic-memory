@@ -38,7 +38,9 @@ export function registerGraphTools(server: McpServer, ctx: ServerContext): void 
     { from: z.string(), to: z.string(), types, direction: z.enum(["out", "in", "any"]).optional().default("any").describe("out: follow links forwards; in: against them; any (default): either way") },
     async ({ from, to, types, direction }) => {
       if (ctx.getDocuments().length === 0 && ctx.getIndexState() !== "ready") return ctx.textResponse(ctx.indexingMessage());
-      const path = ctx.graph.findPath(from, to, types, direction);
+      // archived notes must not bridge two live ones (they link to everything they once superseded)
+      const skip = types?.includes("supersedes") ? undefined : (p: string) => ctx.filterPathClass([{ path: p }]).length === 0;
+      const path = ctx.graph.findPath(from, to, types, direction, skip);
       if (!path) return ctx.textResponse("No path found");
       return ctx.textResponse(JSON.stringify(path));
     }

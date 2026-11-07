@@ -98,24 +98,31 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
   - [x] Remove tuning knobs and trial code that did not ship (grepped branch diff: no console/TODO/debug/commented code; unused dependency `graphology-library` removed, `graphology` kept)
   - [x] No stray eval output committed (git ls-files shows none)
 - [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review of `git diff main...HEAD`; fix real bugs with regression tests
-  - [ ] Check every ticked box in this plan against the code (the v1.9.0 plan ticked an undone item)
-  - [ ] Unit: score fusion (pure-cosine fallback, doc-level best chunk), field BM25, title from frontmatter,
+  - [x] Independent review of `git diff main...HEAD`; fix real bugs with regression tests
+        (found 1: archived notes bridged live ones in `graph_path` (now more likely with direction `any`) and `search_graph` returned them; both skip/filter excluded paths unless `supersedes` is asked for; regression in `links-exclude.test.ts`)
+  - [x] Check every ticked box in this plan against the code (the v1.9.0 plan ticked an undone item)
+        (audited all phases against code/tests; nothing unticked: every ticked box is implemented; Phase 4/5 ticks that carry missed targets are noted as such, the misses are the open boxes below)
+  - [x] Unit: score fusion (pure-cosine fallback, doc-level best chunk), field BM25, title from frontmatter,
         confidence without margin, per-index T_bm25, `setEf`, exclude-before-index, migration re-keying,
         `search_text` ranking, `graph_path` directions, links exclusion, read-only writes nothing in notes
-  - [ ] Integration -- the issue's acceptance checks:
+  - [ ] Integration -- the issue's acceptance checks (measured, see notes.md "Phase 9"; unticked = target missed):
     - [ ] hybrid @1 >= 0.75 on fixture held-out and real-corpus held-out; paraphrase @1 >= semantic's
+          (MISSED: fixture held-out 13/23 = 0.57, real held-out 11/24 = 0.46; paraphrase: fixture held-out 8 < 12 missed, real held-out 9 >= 8 met)
     - [ ] hybrid never below semantic at @1 by more than one case on any split
-    - [ ] HNSW recall@k >= 0.97 vs exact cosine on the eval queries
-    - [ ] indexed chunk count excludes `path_class.exclude` matches
+          (MISSED on fixture held-out only: 13 vs 17; met on the other three splits)
+    - [x] HNSW recall@k >= 0.97 vs exact cosine on the eval queries
+    - [x] indexed chunk count excludes `path_class.exclude` matches
     - [ ] `no_strong_match`: all negatives flagged, answerable false-flag <= 10% after calibration
-    - [ ] upgrade from a v1.7.2-format and a v1.9.0-format index re-embeds only changed chunks and answers
+          (met on both train splits; MISSED on held-out: fixture 26% false flags, real 7/8 negatives)
+    - [x] upgrade from a v1.7.2-format and a v1.9.0-format index re-embeds only changed chunks and answers
           (stale) during the upgrade
-    - [ ] `search_text` top result has the most matches; `graph_path` finds B->A when A->B exists
-    - [ ] a `--read-only` server leaves `git status` of the notes tree clean
-  - [ ] Real-corpus before (v1.9.0) / after on both real-corpus sets through the production `.mcp.json` launch
-  - [ ] `npm run lint && npm run build && npm test && npm run eval`; `scripts/smoke-install.sh`;
+    - [x] `search_text` top result has the most matches; `graph_path` finds B->A when A->B exists
+    - [x] a `--read-only` server leaves `git status` of the notes tree clean
+  - [x] Real-corpus before (v1.9.0) / after on both real-corpus sets through the production `.mcp.json` launch
+        (`scripts/retrieval-eval/real-corpus.mjs`, v1.9.0 = main built in a worktree; numbers in notes.md "Phase 9")
+  - [x] `npm run lint && npm run build && npm test && npm run eval`; `scripts/smoke-install.sh`;
         offline tarball install + `--verify`
+        (all green; flakes freshness-scale, hook-failure Jev-hang, skill-eval concurrency failed under load, pass alone; smoke PASS v1.9.1; tarball 556,696,360 B, `--verify` OK 9986 files)
 - [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New `.documentation/changelog/v1-9-1-ranking-regression.md` with before/after tables per split
   - [ ] Update `.documentation/operational/retrieval-tuning-guide.md` (score fusion, field BM25, `ef`,
@@ -180,7 +187,7 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
 - Phase 5: load flakes in the full run (`freshness-scale` warm start, `hook-failure` Jev-hang) passed alone. Tool-surface snapshot updated (soft no_strong_match wording).
 
 ## Status
-**Currently in Phase 9** - validation (Phase 7 release prep and Phase 8 cleanup done)
+**Phase 9 validation done except four acceptance targets missed (listed in Phase 9); next: Phase 10 documentation pass**
 
 Prior: release prep v1.9.1 (Phase 6 done: tool fixes; Phase 5 done: abstention; two held-out targets missed, see Errors; Phase 4 done: score fusion, field-aware BM25, doc titles; fixture held-out hybrid-vs-semantic gap still open).
 
