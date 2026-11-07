@@ -37,7 +37,7 @@ Fixes issue #41: on a hewtd docs corpus `search_hybrid` was no better than grep 
 - **Abstention and a smaller payload.** `confidence` and `no_strong_match` on results; ~600-char excerpt instead of whole chunks (`full: true` restores); `related` on the #1 result.
 - **Pull-based freshness.** No resident watcher (0 inotify watches). A throttled (2 s) reconcile stats the tree before each search, re-parses and re-embeds only files whose bytes changed (content hash), updates HNSW in place, and commits atomically under `index.lock`. A manifest with `schemaVersion` and `generation` replaces the chunk-count staleness check.
 - **Opt-in reranker** (`rerank.enabled`, off) and a retrieval eval with a CI floor (`npm run eval`).
-- `Watcher` stays exported and `--no-watch` stays accepted (both deprecated no-ops) until v2.0.0. `INDEX_SCHEMA_VERSION` is 3: caches re-parse once, vectors are kept.
+- `Watcher` stays exported and `--no-watch` stays accepted (both deprecated no-ops) until v2.0.0. `INDEX_SCHEMA_VERSION` is 3: caches re-parse once. Correction (v1.9.1): v1.9.0 did NOT keep vectors from v1.7.2/v1.8.x indexes; it re-embedded everything on upgrade. v1.9.1 migrates them.
 
 ## Retrieval, before and after
 
@@ -84,4 +84,4 @@ This repo's `.documentation/` copy (137 docs / 255 chunks) unless noted.
 
 ## Upgrading
 
-Nothing to do. The first start after upgrade re-parses once (schema version bump) and keeps cached vectors. Offline tarball: 532 MB (was about 0.55 GB expected); the reranker model is not bundled.
+Nothing to do, but note: on the first start after upgrade v1.9.0 re-parsed and re-embedded everything (it did not keep cached vectors from v1.7.2/v1.8.x indexes, contrary to what this page first claimed), so search was slow or stale until that finished. v1.9.1 migrates old indexes and re-embeds only changed chunks. Offline tarball: 532 MB (was about 0.55 GB expected); the reranker model is not bundled.

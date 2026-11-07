@@ -113,3 +113,6 @@ values keep train false flags lowest (T_cos 0.38 gives 8/59, 0.36 gives 3/59). f
 
 ## Eval results: Phase 6
 Tool fixes only, no ranking change. `npm run eval` green (37 passed, 4 expected fail, unchanged). Link precision/recall stay 1.0 with `include_excluded: true`; the `search_text` eval arm is unchanged (answered@1 0, an exact-phrase tool).
+
+## Eval results: Phase 7
+Offline tarball semantic-sidekick-offline-1.9.1-5e053eeb11-x64.tgz: 557,705,685 bytes (532 MiB; v1.9.0 was the same 557,695,835 B). Also corrected v1.9.0 changelog and CHANGELOG.md upgrade claim.

@@ -89,10 +89,10 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
         (done: only search/read telemetry wrote on a read-only server (session, lexicon, dossier, log, patch tools are not registered); it now goes to `.semantic-sidekick-index/selection.jsonl` via `ctx.telemetryDir`; `readSelectionLog` reads legacy then index dir; `test/integration/read-only-clean-tree.test.ts` asserts `git status --porcelain` empty, no `.claude/`)
   - [x] Tests for each
         (`search-text.test.ts`, `graph-links.test.ts`, `links-exclude.test.ts`, `read-only-clean-tree.test.ts`; tool-surface snapshot updated)
-- [ ] Phase 7: Release prep v1.9.1
-  - [ ] Correct the v1.9.0 changelog's false "vectors are kept" upgrade claim (lines 40, 87)
-  - [ ] Bump all five version fields to 1.9.1, then `npm install --package-lock-only --ignore-scripts`
-  - [ ] Offline tarball builds near the expected size
+- [x] Phase 7: Release prep v1.9.1
+  - [x] Correct the v1.9.0 changelog's false "vectors are kept" upgrade claim (lines 40, 87)
+  - [x] Bump all five version fields to 1.9.1, then `npm install --package-lock-only --ignore-scripts`
+  - [x] Offline tarball builds near the expected size (557,705,685 B = 532 MiB, built with --allow-dirty)
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove `fuseRrf`/RRF constants if score fusion fully replaces them
   - [ ] Remove tuning knobs and trial code that did not ship
