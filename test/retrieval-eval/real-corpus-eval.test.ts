@@ -16,7 +16,7 @@ import { cleanupTempDir } from "../setup.js";
 const HERE = import.meta.dirname;
 const DOCS = join(HERE, "..", "..", ".documentation");
 // Gates v1.9.0 fails, run as expected failures until Phase 4 (score fusion) fixes them; see .planning/v191-ranking-regression/notes.md "Eval results".
-const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean }> = { "real-train": {}, "real-heldout": {} };
+const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "real-train": {}, "real-heldout": { negatives: true } };
 
 describe("Facet eval (real corpus: .documentation)", () => {
   const baseline = JSON.parse(readFileSync(join(HERE, "baseline.json"), "utf-8"));

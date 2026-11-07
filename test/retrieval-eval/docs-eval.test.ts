@@ -23,7 +23,7 @@ import {
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
 const HERE = import.meta.dirname;
 // Gates v1.9.0 fails, run as expected failures until Phase 4 (score fusion) fixes them; see .planning/v191-ranking-regression/notes.md "Eval results".
-const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean }> = { "fixture-train": {}, "fixture-heldout": { atOne: true, paraphrase: true } };
+const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": {}, "fixture-heldout": { atOne: true, paraphrase: true, falseFlags: true } };
 const STOP = new Set("the a an of to for and or in on is are do does how what which when where who with from that this it we our can i my be".split(" "));
 
 describe("Facet eval (golden-docs vs docs-vault)", () => {

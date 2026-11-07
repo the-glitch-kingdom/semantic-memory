@@ -99,7 +99,7 @@ export class Bm25Index {
     return [...best]
       .sort((a, b) => b[1].score - a[1].score)
       .slice(0, k)
-      .map(([path, { score, text }]) => ({ path, title: path, score, snippet: text.slice(0, 200), matchedChunk: text }));
+      .map(([path, { score, text }]) => ({ path, title: path, score, snippet: text.slice(0, 200), matchedChunk: text, bm25: score }));
   }
 }
 
@@ -119,7 +119,24 @@ export function fuseScores(vector: SearchResult[], lexical: SearchResult[]): Sea
   for (const r of lexical) fused.set(r.path, { ...r, score: ((1 - COSINE_WEIGHT) * r.score) / top, lexical: true });
   for (const r of vector) {
     const hit = fused.get(r.path);
-    fused.set(r.path, { ...r, score: COSINE_WEIGHT * r.score + (hit?.score ?? 0), lexical: hit ? true : undefined });
+    fused.set(r.path, { ...r, score: COSINE_WEIGHT * r.score + (hit?.score ?? 0), lexical: hit ? true : undefined, bm25: hit?.bm25 });
   }
   return [...fused.values()].sort((a, b) => b.score - a.score);
+}
+
+/** Most docs a self-query reference samples: enough for a stable median, bounded so a large vault commits fast. */
+const SELF_QUERY_MAX = 200;
+/** Share of the self-query median a query's best BM25 score must reach to count as lexical evidence. Calibrated on the train splits only. */
+export const BM25_FRACTION = 0.8;
+
+/**
+ * Corpus-scaled BM25 reference with no labelled data: the median top score of each doc's title used as its own query
+ * (an evenly spaced sample of titled docs). BM25 magnitudes depend on the corpus (idf, chunk lengths), so a constant
+ * cannot transfer between vaults; the same share of this median does. Null when no doc has a scoring title.
+ */
+export function bm25SelfTop(index: Bm25Index, docs: { title?: string }[]): number | null {
+  const titled = docs.filter((d) => d.title);
+  const step = Math.max(1, Math.ceil(titled.length / SELF_QUERY_MAX));
+  const tops = titled.filter((_, i) => i % step === 0).map((d) => index.search(d.title!, 1)[0]?.score ?? 0).filter((s) => s > 0).sort((a, b) => a - b);
+  return tops.length ? tops[Math.floor(tops.length / 2)] : null;
 }

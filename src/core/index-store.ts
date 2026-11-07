@@ -18,6 +18,8 @@ export interface IndexMeta {
   model: string;
   dimensions: number;
   totalChunks: number;
+  /** median top BM25 score of title self-queries (bm25SelfTop): the corpus scale for the no_strong_match lexical threshold; absent in older indexes */
+  bm25SelfTop?: number | null;
   indexedAt: string;
   /** size + mtime of each commit file as written; a reader that sees anything else caught a half-finished commit */
   files: Record<string, { size: number; mtimeMs: number }>;
@@ -115,7 +117,7 @@ export async function withLock(indexPath: string, fn: () => Promise<void>): Prom
 export async function commitIndex(
   indexPath: string,
   expectedGeneration: number,
-  info: Pick<IndexMeta, "model" | "dimensions" | "totalChunks" | "ignoreGlobs">,
+  info: Pick<IndexMeta, "model" | "dimensions" | "totalChunks" | "ignoreGlobs" | "bm25SelfTop">,
   write: (stageDir: string) => Promise<void>
 ): Promise<IndexMeta | null> {
   const stage = join(indexPath, `.stage-${process.pid}-${Math.random().toString(36).slice(2)}`);

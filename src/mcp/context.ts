@@ -5,7 +5,7 @@ import { Embedder } from "../core/embedder.js";
 import { Reranker, loadRerankConfig } from "../core/reranker.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
-import { Bm25Index, bm25Fields } from "../core/bm25.js";
+import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop } from "../core/bm25.js";
 import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
@@ -67,6 +67,8 @@ export interface ServerContext {
   graph: GraphBuilder;
   textSearch: TextSearch;
   bm25: Bm25Index;
+  /** Best raw BM25 score below which the lexical arm is no evidence for this index (null: no reference, cosine alone decides). */
+  bm25Min(): number | null;
   crud: NoteCrud;
   frontmatterManager: FrontmatterManager;
   tagManager: TagManager;
@@ -219,8 +221,12 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     graph.buildFromDocuments(docs);
   }
 
+  let selfTopCache: number | null | undefined; // undefined = not computed for the current docs
+  const selfTop = () => (selfTopCache === undefined ? (selfTopCache = bm25SelfTop(bm25, documents)) : selfTopCache);
+
   /** Whole-index load or rebuild: drop the lexical index and refill it from these docs. */
   function resetBm25(docs: IndexedDocument[]) {
+    selfTopCache = undefined;
     bm25.clear();
     for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
   }
@@ -258,6 +264,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       upgrading = older;
       resetBm25(docs);
       setDocuments(docs);
+      selfTopCache = meta.bm25SelfTop; // undefined (older index): computed on first use
       return true;
     }
     return false;
@@ -346,6 +353,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     }
 
     // From here on everything is synchronous: a search never sees a half-applied change.
+    selfTopCache = undefined;
     const byPath = new Map(rebuild ? [] : documents.map((d) => [d.path, d] as const));
     const vec = rebuild || !vectorIndex ? new VectorIndex(embedder.getDimensions()) : vectorIndex;
     if (rebuild) bm25.clear();
@@ -423,6 +431,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
         dimensions: embedder.getDimensions(),
         totalChunks: docs.reduce((n, d) => n + d.chunks.length, 0),
         ignoreGlobs: ignoreGlobsHash(indexExclude(getPathClassConfig())),
+        bm25SelfTop: selfTop(),
       },
       async (stage) => {
         await Promise.all([
@@ -642,6 +651,10 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     graph,
     textSearch,
     bm25,
+    bm25Min: () => {
+      const top = selfTop();
+      return top === null ? null : top * BM25_FRACTION;
+    },
     crud,
     frontmatterManager,
     tagManager,

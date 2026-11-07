@@ -86,3 +86,27 @@ Held-out sets written before any look at ranking scores: `golden-docs-heldout.js
   gate lexical evidence (e.g. require BM25 to clear a threshold or drop the fields for exact-title matches) using new train questions, never the held-out ones.
 - Real held-out hybrid @1 11 (was 12-13), @3 22/24 (semantic 17), @8 24/24. Floors: real-train hybrid 13 -> 16; real-heldout hybrid 12 -> 10 (lowered: measured 11, stable over 3 runs).
 - HNSW recall unchanged (1.000 fixture, 0.999 real).
+
+### Phase 5 -- abstention (no_strong_match = best cosine < T_cos AND best BM25 < T_bm25)
+
+Rule: margin term dropped from `withConfidence` (confidence = cosine + 0.1 lexical bonus). `isWeak` looks at the best cosine and best raw BM25 over the whole ranked list.
+`search_semantic` has no BM25 arm, so it passes `null` and the cosine alone decides.
+T_bm25 = `BM25_FRACTION * bm25SelfTop`, where `bm25SelfTop` is the median top BM25 score of each titled doc's title used as its own query (<= 200 evenly spaced docs),
+computed at commit time and stored in `meta.json` (`bm25SelfTop`; older indexes compute it on first use). Self-top is 5.72 on the fixture and 12.24 on `.documentation/`, so a constant could not have served both.
+T_cos = 0.36, fraction = 0.8, chosen on the TRAIN splits only (fixture-train + real-train, 24 negatives, 59 answerable): grid over T_cos 0.34-0.50 x fraction 0.4-1.2.
+Feasible (all 24 train negatives flagged) needs T_cos >= 0.36 (highest train negative cosine 0.35) and fraction >= 0.8 (highest train negative BM25 / self-top 0.78); the smallest feasible
+values keep train false flags lowest (T_cos 0.38 gives 8/59, 0.36 gives 3/59). fraction 0.9 would add one train false flag (fixture-train 4/35 > 10%), so 0.8.
+
+| Split | negatives flagged | answerable flagged (any rank) | answered@1 flagged | before (v1.9.0 rule: negatives / answered@1 flagged) |
+|---|---|---|---|---|
+| fixture train (35) | 12/12 | 3/35 = 8.6% | 1 | 12/12 / 2 |
+| fixture held-out (23) | 8/8 | 6/23 = 26.1% (target missed) | 2 | 8/8 / 4 |
+| real train (24) | 12/12 | 0/24 = 0% | 0 | 12/12 / 4 |
+| real held-out (24) | 7/8 (target missed) | 2/24 = 8.3% | 0 | 8/8 / 3-4 |
+
+- Held-out was measured once after the rule was fixed on train; nothing was changed after looking. Two misses, reported as measured:
+  - real held-out: one negative (best cosine 0.35, BM25 0.84 of self-top) keeps lexical evidence above 0.8; fraction 0.9 would catch it, but train does not argue for 0.9 and held-out cannot tune.
+  - fixture held-out: 6 of 23 answerable questions are symptom-style with best cosine < 0.36 and no strong BM25 hit (the same cases the ranker loses at @1); no threshold that flags every negative can rescue them.
+    The false-flag gate there runs as `it.fails` (`KNOWN["fixture-heldout"].falseFlags`), as does real held-out `negatives`.
+- Answer@1 and ranking unchanged by this phase (abstention does not reorder). Gates added to `gates.ts` for every split: all negatives flagged; answerable false flags <= 10%.
+- Wording: tool descriptions, `serverInstructions` and the UserPromptSubmit hook now say "weak match, verify before citing", not "not documented".
