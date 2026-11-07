@@ -108,7 +108,7 @@ ranking:
   link_prior_min_links: 5
 ```
 
-- **Object symptoms** (hit-em-with-the-docs playbooks) are read through `symptom_keys`; `user_phrase` may be a string or a list. `error_pattern` is regex text, so it feeds BM25 only. `target`, `cites` and `severity` are never indexed. Field contract: see the [configuration reference](../reference/configuration-reference.md#index_fields-vaultschemayml--v1100).
+- **Object symptoms** (hit-em-with-the-docs playbooks) are read through `symptom_keys`; `user_phrase` may be a string or a list. `error_pattern` is regex text, so it feeds BM25 only. `target`, `cites` and `severity` are never indexed. Field contract: see the [configuration reference](../reference/configuration-reference.md#index_fields-vaultschemayml---v1100).
 - **`meta_weight` 0.8** was picked on train: accuracy is flat within one case from 0.7 to 1.1, while abstention is not (metadata chunks of unrelated notes raise a negative's best cosine; 0.8 is the highest weight that kept every real-train negative flagged).
 - **Coverage bias.** Docs with no fields get no metadata chunks, so a purpose-carrying neighbour can outrank them. The eval's `nofield` tier measures it (held-out 2 -> 1 in v1.10.0). `get_stats` / `lint_vault` report `fieldCoverage`; if a field is rare in your corpus, fill it in before trusting the channel.
 - A field-list change re-parses the corpus; vectors are keyed by text, so only changed metadata embeds. `meta_weight` is search-time only.
