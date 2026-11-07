@@ -227,3 +227,6 @@ Shipped: `confidence = clamp(cos + (cos - best other cos) + 0.1 if BM25 agrees, 
 
 - First try (neighbour must clear the regular confidence >= 0.50) added nothing: #2 results carry a negative margin term (m02 storage-tiers 0.46, m03 ingest-pipeline 0.49, m08 changelog 0.34). With the margin dropped (`standaloneConfidence`) the same bar adds m02 and m03 only; m01/m04/m06/m07/m08 stay at #1-only. The fixture has no cites/incident/archived_from content, so the new edge types are covered by unit tests (`test/unit/graph-knowledge.test.ts`), not by the eval.
 - Gate: `baseline.json` hybrid `expandedAt1` 25, `multiExpandedAt1` 4 (floors), `meanBytes` ceiling 4132; @1 floors unchanged.
+
+## Eval results
+- Phase 9: offline tarball semantic-sidekick-offline-1.9.0-e524c85a66-x64.tgz = 532M (557,695,835 bytes; expected ~0.55 GB), built in 45 s with --allow-dirty (version bump uncommitted). Reranker model is opt-in and not bundled. Not published.

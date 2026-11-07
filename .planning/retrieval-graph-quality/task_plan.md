@@ -137,11 +137,11 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
   - [x] `search_graph` reworked: semantic seeding + directed link edges, hub exclusion, no degree
         tiebreak; `graph_path` over link edges only by default
   - [x] Bump `schemaVersion`; re-run eval (multi-doc tier especially), record numbers, raise CI floor
-- [ ] Phase 9: Release prep v1.9.0
-  - [ ] Bump all five version fields (package.json, both in `.claude-plugin/marketplace.json`,
+- [x] Phase 9: Release prep v1.9.0
+  - [x] Bump all five version fields (package.json, both in `.claude-plugin/marketplace.json`,
         `.claude-plugin/plugin.json`, AGENTS.md frontmatter), then
         `npm install --package-lock-only --ignore-scripts`
-  - [ ] Offline tarball builds and lands near the expected size (with reranker if bundled)
+  - [x] Offline tarball builds and lands near the expected size (with reranker if bundled)
 - [ ] Phase 10: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove the query-string `searchGraph` call paths in hybrid (replaced in Phase 4)
   - [ ] Remove `fullIndex`/`backgroundIndex` code paths that reconcile replaced (keep `reindex`)
@@ -298,7 +298,7 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 4: one full run failed `e2e/new-features.test.ts` "should write meta.json with model info" and the skill-eval concurrency case; both pass alone and in the next two full runs (load timing, unrelated).
 
 ## Status
-**Currently in Phase 9** (release prep v1.9.0). Phase 8 (graph as knowledge) done: new edge types, `related` on the #1 result (multi-doc #1+related 2/8 -> 4/8), `search_graph` seeded semantically; numbers in notes.md "Phase 8".
+**Currently in Phase 10** (cleanup). Phase 9 (release prep v1.9.0) done. Phase 8 (graph as knowledge) done: new edge types, `related` on the #1 result (multi-doc #1+related 2/8 -> 4/8), `search_graph` seeded semantically; numbers in notes.md "Phase 8".
 
 ---
 
