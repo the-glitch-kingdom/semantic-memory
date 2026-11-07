@@ -93,10 +93,10 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
   - [x] Correct the v1.9.0 changelog's false "vectors are kept" upgrade claim (lines 40, 87)
   - [x] Bump all five version fields to 1.9.1, then `npm install --package-lock-only --ignore-scripts`
   - [x] Offline tarball builds near the expected size (557,705,685 B = 532 MiB, built with --allow-dirty)
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove `fuseRrf`/RRF constants if score fusion fully replaces them
-  - [ ] Remove tuning knobs and trial code that did not ship
-  - [ ] No stray eval output committed
+- [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove `fuseRrf`/RRF constants if score fusion fully replaces them (verified: no fuseRrf/RRF symbols left in src, test, scripts; only a why-comment in bm25.ts)
+  - [x] Remove tuning knobs and trial code that did not ship (grepped branch diff: no console/TODO/debug/commented code; unused dependency `graphology-library` removed, `graphology` kept)
+  - [x] No stray eval output committed (git ls-files shows none)
 - [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review of `git diff main...HEAD`; fix real bugs with regression tests
   - [ ] Check every ticked box in this plan against the code (the v1.9.0 plan ticked an undone item)
@@ -180,7 +180,9 @@ Source: https://github.com/the-glitch-kingdom/semantic-memory/issues/43 (verifie
 - Phase 5: load flakes in the full run (`freshness-scale` warm start, `hook-failure` Jev-hang) passed alone. Tool-surface snapshot updated (soft no_strong_match wording).
 
 ## Status
-**Currently in Phase 7** - release prep v1.9.1 (Phase 6 done: tool fixes; Phase 5 done: abstention; two held-out targets missed, see Errors; Phase 4 done: score fusion, field-aware BM25, doc titles; fixture held-out hybrid-vs-semantic gap still open).
+**Currently in Phase 9** - validation (Phase 7 release prep and Phase 8 cleanup done)
+
+Prior: release prep v1.9.1 (Phase 6 done: tool fixes; Phase 5 done: abstention; two held-out targets missed, see Errors; Phase 4 done: score fusion, field-aware BM25, doc titles; fixture held-out hybrid-vs-semantic gap still open).
 
 ---
 
@@ -201,3 +203,8 @@ When complete, archive it instead of deleting it:
 
 Archiving moves this directory to the gitignored .planning/.archive/ and stamps
 it archived. Nothing is destroyed.
+
+
+## Phase 7/8 notes
+- Real held-out false-flag gate (1/8 = 0.125) is sensitive to the text of .documentation/changelog/v1-9-0-retrieval-graph-quality.md: every wording of the line-40 correction except the one shipped flipped it. Phase 9/10 doc edits may trip it again; it is n=8 noise, do not tune on it.
+- Flakes freshness-scale and hook-failure failed under full-suite load, passed alone.

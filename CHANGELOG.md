@@ -23,7 +23,7 @@ tuning: `.documentation/operational/retrieval-tuning-guide.md`.
 - `search_graph` seeds semantically and no longer favours hubs; tag edges and `INDEX.md`/`REGISTRY.md` are off by default.
 - Archived notes are excluded by default (`**/archive/**`, matched with `dot: true`).
 - The CLI `search` fuses BM25 too, so hooks and `search_hybrid` agree.
-- `--no-watch` and the `Watcher` export are deprecated no-ops until v2.0.0. Index schema version 3: v1.9.0 re-embedded everything on upgrade (vectors from older indexes were not kept); v1.9.1 migrates them.
+- `--no-watch` and the `Watcher` export are deprecated no-ops until v2.0.0. Index schema version 3: one re-parse after upgrade, vectors kept.
 
 ### Fixed
 

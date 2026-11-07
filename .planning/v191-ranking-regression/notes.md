@@ -116,3 +116,6 @@ Tool fixes only, no ranking change. `npm run eval` green (37 passed, 4 expected 
 
 ## Eval results: Phase 7
 Offline tarball semantic-sidekick-offline-1.9.1-5e053eeb11-x64.tgz: 557,705,685 bytes (532 MiB; v1.9.0 was the same 557,695,835 B). Also corrected v1.9.0 changelog and CHANGELOG.md upgrade claim.
+
+## Eval results: Phase 8
+No ranking change. npm run eval green (37 pass, 4 expected-fail). Removed unused dep graphology-library.
