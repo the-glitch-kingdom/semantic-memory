@@ -132,6 +132,8 @@ export interface ArmResponse {
   weak?: boolean;
   /** paths of the `related` neighbours attached to the #1 result (context expansion) */
   related?: string[];
+  /** the `decay` block of each result that carried one, by path (`source` is the age source: last_verified / git / mtime / penalty / fresh) */
+  decay?: Record<string, { multiplier: number; source?: string }>;
 }
 export type ArmFn = (q: string, limit: number) => Promise<ArmResponse>;
 

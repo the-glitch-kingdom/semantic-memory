@@ -53,3 +53,23 @@ Tier detail for boost 1.0 vs shipped:
 
 ## Eval results
 (per phase)
+
+### Phase 2: Eval first (shipped v1.10.0 ranking, no ranking or decay change)
+Existing splits with the temp-vault git history added (all docs committed 10 days ago): unchanged, hybrid @1 =
+fixture train 39/57, fixture held-out 22/36, real train 21/27, real held-out 13/27 (semantic 39 / 23 / 15 / 13).
+Reference sweep (#48 table, shipped row) still stands; baseline.json floors untouched.
+
+Decay fixture (`npm run eval`, `decay-eval.test.ts`; answer doc ranked first; 12 questions written before any run):
+| split | arm | all | unverified twin | 400-day-verified twin (control) |
+|---|---|---|---|---|
+| train | semantic | 4/6 | 2/4 | 2/2 |
+| train | hybrid | 4/6 | 2/4 | 2/2 |
+| held-out | semantic | 5/6 | 3/4 | 2/2 |
+| held-out | hybrid | 6/6 | 4/4 | 2/2 |
+
+Reading: the control always passes (400-day `last_verified` decays today). The unverified twin wins about half the time on
+train (fail-open, coin flip between near-identical docs). Held-out hybrid happened to win 4/4 at baseline by chance, so it
+is a real gate from the start (it will catch a regression); only train carries the `it.fails` gate that Phase 4 flips.
+Age source per result: `decay` blocks are absent at baseline (no `source` yet; none attached at multiplier 1), the eval
+records `decay.{multiplier,source}` per result path (`ArmResponse.decay`) and prints the sources seen (`sources=[]` now).
+Full suite: lint, build, eval green; one known flake (hook-failure Jev-hang timing) passed alone 14/14.

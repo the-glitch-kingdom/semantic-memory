@@ -21,14 +21,14 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
   - [x] Post the verifications on #48 and #49
   - [x] Sync main and cut `feat/boost-decay-fallback`
   - [x] Commit this plan (the staged archive move of `retrieval-ready-fields` goes in the same commit)
-- [ ] Phase 2: Eval first (written before any ranking or decay change)
-  - [ ] Decay fixture in `test/fixtures/docs-vault/`: pairs of equally relevant docs, one with a recent `last_verified`
+- [x] Phase 2: Eval first (written before any ranking or decay change)
+  - [x] Decay fixture in `test/fixtures/decay-vault/` (separate dir, see Decisions): pairs of equally relevant docs, one with a recent `last_verified`
         and one with none, plus one with `last_verified` 400 days old. Write train and held-out questions where the
         verified doc is the answer. Record the shipped baseline (the unverified doc wins, or ties on fail-open).
-  - [ ] Give the eval's temp vault a git history with backdated commits (`GIT_COMMITTER_DATE`), so `git` mode can be
+  - [x] Give the eval's temp vault a git history with backdated commits (`GIT_COMMITTER_DATE`), so `git` mode can be
         measured. Keep the existing splits unaffected when decay falls back.
-  - [ ] Eval reports the age source per result, so the Phase 4 checks can assert on it
-  - [ ] Re-record the shipped baseline for all four splits in notes.md (the #48 sweep numbers are the reference)
+  - [x] Eval reports the age source per result, so the Phase 4 checks can assert on it
+  - [x] Re-record the shipped baseline for all four splits in notes.md (the #48 sweep numbers are the reference)
 - [ ] Phase 3: Graph boost and the stale marker (#48)
   - [ ] `GRAPH_BOOST` 1.3 → 1.0 in `src/core/graph-boost.ts`. Keep the helper and seeds in place (the boost is now a
         no-op multiplier). Re-check on train that 1.0 is not worse than 1.1, and record both.
@@ -132,12 +132,17 @@ the `decay` block), in one PR from `feat/boost-decay-fallback`. Every target tha
 - `meta_weight` stays 0.8 and `NO_STRONG_MATCH_BELOW` stays 0.36 unless train shows otherwise: the #48 sweep showed
   abstention loss with 1.0, and 22-31% false flags at 0.45.
 - `ranking.*` stays off (#48 agrees).
+- Phase 2: the decay fixture is its own vault (`test/fixtures/decay-vault/`, 24 docs, 12 pairs) and its own eval
+  (`decay-eval.test.ts`), not added to `docs-vault`: extra docs there would shift every existing split. Dates in the
+  fixture are `{{ago:N}}` tokens stamped at run time, and `ages.json` gives each doc's backdated commit and file age.
+- Phase 2: the existing splits get a temp-vault git history with every doc committed 10 days ago (`git-history.ts`), so
+  the Phase 4 git fallback gives all docs the same ~1.0 multiplier. Measured identical to before (39/22/21/13 hybrid @1).
 
 ## Errors Encountered
 - [Error]: [Resolution]
 
 ## Status
-**Currently in Phase 2** - eval first (decay fixture, git-history temp vault)
+**Currently in Phase 3** - graph boost and the stale marker (#48)
 
 ---
 
