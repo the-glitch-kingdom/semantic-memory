@@ -93,10 +93,11 @@ Sources:
   - [x] (changelog/README wording lands in Phase 8) v1.9.1 was merged but never published (user, 2026-11-06: publish only after this plan). npm goes 1.9.0 ->
         1.10.0: the v1.10.0 changelog says it includes v1.9.1, the v1.9.1 changelog is marked "not published
         separately; shipped in 1.10.0", and README's version/status line names 1.10.0
-- [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Only what this work created or made dead (the old string-symptom chunk path, trial knobs); unused deps
-        checked against imports
-  - [ ] Archive the finished #43 plan: `/archive-plan v191-ranking-regression` (it reads complete with its misses
+- [x] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Only what this work created or made dead (the old string-symptom chunk path, trial knobs); unused deps
+        checked against imports (tsc --noUnusedLocals clean for every touched file; no leftover trial knobs, debug logging or
+        commented-out code in the branch diff; pre-existing unused imports elsewhere left alone)
+  - [x] Archive the finished #43 plan: `/archive-plan v191-ranking-regression` (it reads complete with its misses
         recorded), and commit the move
 - [ ] Phase 7: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review of `git diff main...HEAD`; fix real bugs with regression tests
@@ -186,6 +187,8 @@ Sources:
   split gate and failed on the new baseline; reduced to its answered@1-flag ceiling.
 
 ## Status
+**Phase 6 done** (nothing dead found; #43 plan archived). Next: Phase 7 validation.
+
 **Phase 5 done** (all five version fields 1.10.0, lockfile updated, offline tarball 531 MiB). Next: Phase 6 cleanup.
 
 **Phase 4 done** (coverage helper + link prior shared by MCP and CLI, shipped off because train showed no gain; guidance in four places; lexical-arm sweeps recorded; numbers in notes.md). Next: Phase 5 (release prep v1.10.0).
