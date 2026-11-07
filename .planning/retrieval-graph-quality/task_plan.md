@@ -142,11 +142,11 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
         `.claude-plugin/plugin.json`, AGENTS.md frontmatter), then
         `npm install --package-lock-only --ignore-scripts`
   - [x] Offline tarball builds and lands near the expected size (with reranker if bundled)
-- [ ] Phase 10: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove the query-string `searchGraph` call paths in hybrid (replaced in Phase 4)
-  - [ ] Remove `fullIndex`/`backgroundIndex` code paths that reconcile replaced (keep `reindex`)
-  - [ ] Remove losing embedder/reranker trial code and config knobs nobody uses
-  - [ ] No stray eval output files committed; scratch stays in the session scratchpad
+- [x] Phase 10: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove the query-stringRemove the query-string `searchGraph` call paths in hybrid (replaced in Phase 4) (done in Phase 4: hybrid seeds searchGraph from doc paths; nothing left)
+  - [x] Remove `fullIndex`Remove `fullIndex`/`backgroundIndex` code paths that reconcile replaced (keep `reindex`) (kept: still the cold-start/forceReindex path in server.ts and the reindex tool; reconcile only replaced the warm-cache path)
+  - [x] Remove losing embedderRemove losing embedder/reranker trial code and config knobs nobody uses (kept: the reranker is an intentional opt-in path per Phase 6; dropped unused dep graphology-shortest-path)
+  - [x] No stray eval outputNo stray eval output files committed; scratch stays in the session scratchpad (checked: none tracked)
 - [ ] Phase 11: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Unit `test/unit/indexer.test.ts`: markdown link extraction (relative, `../`, `#anchor`,
         external URLs skipped, images skipped, `%20`, links in code blocks ignored)
@@ -298,7 +298,7 @@ against `src/` on 2026-11-06; see notes.md "Verification" and "Verification: ind
 - Phase 4: one full run failed `e2e/new-features.test.ts` "should write meta.json with model info" and the skill-eval concurrency case; both pass alone and in the next two full runs (load timing, unrelated).
 
 ## Status
-**Currently in Phase 10** (cleanup). Phase 9 (release prep v1.9.0) done. Phase 8 (graph as knowledge) done: new edge types, `related` on the #1 result (multi-doc #1+related 2/8 -> 4/8), `search_graph` seeded semantically; numbers in notes.md "Phase 8".
+**Currently in Phase 11** (validation). Phase 9 (release prep v1.9.0) done. Phase 8 (graph as knowledge) done: new edge types, `related` on the #1 result (multi-doc #1+related 2/8 -> 4/8), `search_graph` seeded semantically; numbers in notes.md "Phase 8".
 
 ---
 
