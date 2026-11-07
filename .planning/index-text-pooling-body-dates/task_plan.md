@@ -37,14 +37,16 @@ Every missed target is stated in the PR.
         `src/mcp/tools/inventory.ts:25`, `src/cli/index.ts:216`. Grep for any other "graph proximity" text.
         Done: also AGENTS.md:30 (generated; regenerate_contract in Phase 10 would overwrite it from the code anyway).
   - [x] `CHANGELOG.md` 1.11.0 entry: the stale marker is a trailing separate text block, not a prefix.
-- [ ] Phase 3: Eval first (written before any indexing, decay or embedder change)
-  - [ ] Fixture docs and questions (train and held-out) for #52: an identifier only inside backticks (e.g.
+- [x] Phase 3: Eval first (written before any indexing, decay or embedder change)
+  - [x] Fixture docs and questions (train and held-out) for #52: an identifier only inside backticks (e.g.
         `check_rls_coverage.py`), a value only in a table cell (an env var name), a `snake_case_name` in prose, a
         command only inside a fenced block. Record the shipped baseline (expected: misses).
-  - [ ] Decay fixture case for #54: a doc whose body was last changed 400 days ago, then touched by a
+        Done: `test/fixtures/code-vault` (40 docs), `golden-code.jsonl` / `golden-code-heldout.jsonl`, `code-eval.test.ts`; search_text finds 0/16 code-only terms; embedding arms 9/10 and 6/10 (prose leaks the topic), see notes.
+  - [x] Decay fixture case for #54: a doc whose body was last changed 400 days ago, then touched by a
         frontmatter-only commit today, against an equally relevant verified twin. Record the shipped baseline
         (expected: the unverified doc wins).
-  - [ ] Re-record all splits (fixture train/held-out, real train/held-out, decay) for main @ 93ab5f2 in notes.md.
+        Done: tier `frontmatter-touch` (6 cases), `touched.json` + `gitHistory(..., touched)`. Baseline: the answer still wins 5/6 (relevance decides, twin multiplier 1.0 vs 0.989); the 400-day multiplier gate is the sharp it.fails.
+  - [x] Re-record all splits (fixture train/held-out, real train/held-out, decay) for main @ 93ab5f2 in notes.md.
 - [ ] Phase 4: Git-date decay by last body change (#54)
   - [ ] `gitCommitDates` keeps each path's blob history from the same single `git log --raw` (newest first), not only
         the newest entry.
@@ -157,10 +159,11 @@ Every missed target is stated in the PR.
   measurement isolates one change.
 
 ## Errors Encountered
+- Phase 3: full `npm test` failed freshness-scale warm start and hook-failure Jev-hang under load; both pass alone (16/16).
 - Full `npm test` under load failed freshness-scale warm start, hook-failure Jev-hang and skill-eval concurrency (Phase 2); all pass alone (known flakes). tool-surface snapshot updated for the search_hybrid description.
 
 ## Status
-**Currently in Phase 3** - Eval first
+**Currently in Phase 4** - Git-date decay by last body change (#54)
 
 ---
 

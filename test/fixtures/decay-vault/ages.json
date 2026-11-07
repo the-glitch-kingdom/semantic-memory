@@ -22,5 +22,17 @@
   "ops/invoice-payment-terms.md": 5,
   "ops/billing-due-dates.md": 400,
   "ops/preview-image-size.md": 5,
-  "ops/thumbnail-dimensions.md": 400
+  "ops/thumbnail-dimensions.md": 400,
+  "ops/build-log-retention.md": 5,
+  "ops/ci-log-expiry.md": 400,
+  "ops/agent-checkin-interval.md": 5,
+  "ops/agent-heartbeat-period.md": 400,
+  "ops/account-lockout-threshold.md": 5,
+  "ops/failed-login-limit.md": 400,
+  "ops/import-batch-size.md": 5,
+  "ops/bulk-load-chunking.md": 400,
+  "ops/invite-link-lifetime.md": 5,
+  "ops/invitation-expiry.md": 400,
+  "ops/object-replica-count.md": 5,
+  "ops/storage-redundancy-factor.md": 400
 }

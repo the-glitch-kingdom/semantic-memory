@@ -52,7 +52,42 @@
   first body change. A bulk frontmatter commit costs ~2 blob reads per file.
 
 ## Baselines
-- (Phase 3)
+Phase 3, measured on feat/index-text-pooling-body-dates @ a91ddbc (Phase 2 code; ranking, indexing and decay unchanged since main @ 93ab5f2). `npm run eval`, one run.
+Existing splits (answer@1 / @3, floors in baseline.json untouched):
+| split | semantic | hybrid |
+|---|---|---|
+| fixture train (57) | 39 / 50 | 38 / 52 |
+| fixture held-out (36) | 23 / 31 | 25 / 29 |
+| real train (27) | 15 / 22 | 21 / 27 |
+| real held-out (27) | 13 / 19 | 15 / 23 |
+Fixture search_text train: 20 / 41. Negatives flagged (hybrid): fixture train 11/12, held-out 7/8, real train 12/12, held-out 7/8. hnsw recall 1.000. Golden-14 eval: recall@1 86%, @3 100%.
+
+#52 code-vault (`code-eval.test.ts`, `test/fixtures/code-vault`, 20 answer docs each with a same-topic distractor; answer ranked first):
+| split | arm | all | backtick | fence | table | snake | plain (control) |
+|---|---|---|---|---|---|---|---|
+| train | semantic | 9/10 | 1/2 | 2/2 | 2/2 | 2/2 | 2/2 |
+| train | hybrid | 9/10 | 1/2 | 2/2 | 2/2 | 2/2 | 2/2 |
+| train | search_text | 2/10 | 0/2 | 0/2 | 0/2 | 0/2 | 2/2 |
+| held-out | semantic | 5/10 | 1/2 | 1/2 | 0/2 | 1/2 | 2/2 |
+| held-out | hybrid | 6/10 | 2/2 | 2/2 | 0/2 | 0/2 | 2/2 |
+| held-out | search_text | 2/10 | 0/2 | 0/2 | 0/2 | 0/2 | 2/2 |
+Reading: search_text finds none of the 16 code-only terms (the text is stripped), the control passes. The embedding arms still
+find many answer docs because the answer prose around the identifier (and the topic words in the question) leaks the topic; so
+search_text is the sharpest #52 arm and hybrid/semantic the end-to-end one. Questions were fixed before any run and not edited after.
+The 6 it.fails gates (code-only terms all ranked first, per arm and split) pass as expected failures; Phase 5 turns each that starts
+passing into a real gate (a semantic arm may never reach 8/8 on held-out; report as measured).
+
+#54 decay fixture, new tier `frontmatter-touch` (twin: no last_verified, body 400 days old, frontmatter-only commit today via
+`touched.json`; answer verified 5 days ago; 3 train + 3 held-out cases):
+| split | arm | frontmatter-touch (answer first) | twin decay block |
+|---|---|---|---|
+| train | semantic / hybrid | 3/3 / 3/3 | multiplier 1.0, source git |
+| held-out | semantic / hybrid | 2/3 / 2/3 | multiplier 1.0, source git |
+Existing tiers unchanged: unverified 4/4 (both splits), old-verified 2/2.
+Deviation from the plan's expectation ("the unverified doc wins"): the twin is dated today (multiplier 1.0 vs the answer's 0.989) but the two docs are
+near-identical, so relevance decides and the answer still wins 5 of 6. The sharp gate is the twin's decay block: multiplier 1.0 now, ~0.47 (400 days)
+after Phase 4. Gates: train beats-twin is a real gate; held-out beats-twin (2/3 now) and the "touched twin decays as 400 days
+(multiplier < 0.6, source git)" check for both splits are it.fails until Phase 4.
 
 ## Append-Only Log
 ### 2026-11-07

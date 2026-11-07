@@ -7,3 +7,7 @@
 {"id":"d04","tier":"unverified","q":"What is the biggest file a user is allowed to attach?","facets":["is 25 MB"],"answer":"ops/attachment-size-limit.md","twin":"ops/upload-quotas.md"}
 {"id":"d05","tier":"old-verified","q":"How long does the lookup cache keep an entry before refetching it?","facets":["for 300 seconds"],"answer":"ops/lookup-cache-ttl.md","twin":"ops/lookup-cache-expiry.md"}
 {"id":"d06","tier":"old-verified","q":"How often do service passwords have to be changed?","facets":["every 90 days"],"answer":"ops/password-rotation-policy.md","twin":"ops/credential-renewal-cadence.md"}
+// Decay golden set, tier frontmatter-touch (index-text-pooling-body-dates Phase 3, semantic-memory#54): the twin has no last_verified, its body was last changed 400 days ago, and a frontmatter-only commit touched it today (touched.json). The answer is verified 5 days ago. Written before any ranking was run against it.
+{"id":"d13","tier":"frontmatter-touch","q":"How many days are build logs kept before they are deleted?","facets":["kept for 45 days"],"answer":"ops/build-log-retention.md","twin":"ops/ci-log-expiry.md"}
+{"id":"d14","tier":"frontmatter-touch","q":"How often does an agent check in with the controller?","facets":["every 45 seconds"],"answer":"ops/agent-checkin-interval.md","twin":"ops/agent-heartbeat-period.md"}
+{"id":"d15","tier":"frontmatter-touch","q":"How many failed sign-in attempts lock an account?","facets":["after 8 failed attempts"],"answer":"ops/account-lockout-threshold.md","twin":"ops/failed-login-limit.md"}

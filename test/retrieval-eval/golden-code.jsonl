@@ -1,0 +1,13 @@
+// Indexed-text golden set for test/fixtures/code-vault (index-text-pooling-body-dates Phase 3, semantic-memory#52). Each question names an identifier, command or setting that
+// appears in its answer doc only inside inline code, a fenced block, a table cell, or as snake_case in prose (tier plain = the control: a plain word). `term` is the literal search_text pattern.
+// Written before any ranking was run against it; every doc has a same-topic distractor (<slug>-notes.md) that does not contain the term.
+{"id":"c01","tier":"backtick","q":"What does check_rls_coverage.py do?","term":"check_rls_coverage.py","answer":"code/row-security-audit.md"}
+{"id":"c02","tier":"backtick","q":"How do I run reconcile_ledger_totals for the previous month?","term":"reconcile_ledger_totals","answer":"code/month-end-close.md"}
+{"id":"c03","tier":"fence","q":"What is the warmctl prime invocation after a failover?","term":"warmctl prime","answer":"code/cache-warm-up.md"}
+{"id":"c04","tier":"fence","q":"How do I use sluice-drain on the billing queue?","term":"sluice-drain","answer":"code/queue-drain.md"}
+{"id":"c05","tier":"table","q":"What is the default of HARBOR_SPOOL_LIMIT?","term":"HARBOR_SPOOL_LIMIT","answer":"code/spooler-settings.md"}
+{"id":"c06","tier":"table","q":"What does KESTREL_RETRY_BUDGET default to?","term":"KESTREL_RETRY_BUDGET","answer":"code/dispatcher-retry-options.md"}
+{"id":"c07","tier":"snake","q":"Which job writes rollup_hourly_totals?","term":"rollup_hourly_totals","answer":"code/hourly-rollup-job.md"}
+{"id":"c08","tier":"snake","q":"What does enable_shadow_reads do?","term":"enable_shadow_reads","answer":"code/store-migration-reads.md"}
+{"id":"c09","tier":"plain","q":"What does the Quillfeather service do?","term":"Quillfeather","answer":"code/report-signing-service.md"}
+{"id":"c10","tier":"plain","q":"What is Marrowgate responsible for?","term":"Marrowgate","answer":"code/edge-proxy-service.md"}

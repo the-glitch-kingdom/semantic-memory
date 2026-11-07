@@ -9,7 +9,7 @@ import { cleanupTempDir } from "../setup.js";
 /**
  * Decay fixture eval (boost-decay-fallback Phase 2, semantic-memory#49). test/fixtures/decay-vault holds pairs of equally relevant docs:
  * the answer has a recent `last_verified`, its twin has none (tier "unverified", git/file age 800 days) or a 400-day-old one (tier
- * "old-verified", the control that decays today). A case is answered when the answer doc ranks first. The temp copy gets a backdated git
+ * "old-verified", the control that decays today; tier "frontmatter-touch": the twin's body is 400 days old but a frontmatter-only commit touched it today, #54). A case is answered when the answer doc ranks first. The temp copy gets a backdated git
  * history, so the `git` fallback can be measured; ages.json holds each doc's commit and file age.
  * EVAL_OUT=<file> also writes the numbers as JSON.
  */
@@ -26,7 +26,8 @@ describe("Decay fixture eval (verified doc vs unverified twin)", () => {
 
   beforeAll(async () => {
     const ages = JSON.parse(await readFile(join(FIXTURE, "ages.json"), "utf-8"));
-    env = await startEval(FIXTURE, "sp-decay-eval-", async (dir) => { await stampDates(dir); await gitHistory(dir, ages); });
+    const touched = JSON.parse(await readFile(join(FIXTURE, "touched.json"), "utf-8"));
+    env = await startEval(FIXTURE, "sp-decay-eval-", async (dir) => { await stampDates(dir); await gitHistory(dir, ages, 10, touched); });
     for (const [split, file] of [["train", "golden-decay.jsonl"], ["heldout", "golden-decay-heldout.jsonl"]] as const) {
       const cases = parseGolden(await readFile(join(HERE, file), "utf-8")) as unknown as DecayCase[];
       for (const arm of ["search_semantic", "search_hybrid"]) {
@@ -44,7 +45,7 @@ describe("Decay fixture eval (verified doc vs unverified twin)", () => {
     }
     const at1 = (rows: Row[], tier?: string) => { const rs = rows.filter((r) => !tier || r.tier === tier); return `${rs.filter((r) => r.answerRank === 1).length}/${rs.length}`; };
     process.stderr.write("\nDecay fixture eval (answer ranked first)\n" + Object.entries(table).map(([s, arms]) => Object.entries(arms).map(([a, rows]) =>
-      `  ${s.padEnd(8)} ${a.padEnd(16)} all=${at1(rows)}  unverified=${at1(rows, "unverified")}  old-verified=${at1(rows, "old-verified")}  sources=${JSON.stringify([...new Set(rows.flatMap((r) => [r.answerDecay?.source, r.twinDecay?.source]).filter(Boolean))])}`).join("\n")).join("\n") + "\n\n");
+      `  ${s.padEnd(8)} ${a.padEnd(16)} all=${at1(rows)}  unverified=${at1(rows, "unverified")}  old-verified=${at1(rows, "old-verified")}  frontmatter-touch=${at1(rows, "frontmatter-touch")}  sources=${JSON.stringify([...new Set(rows.flatMap((r) => [r.answerDecay?.source, r.twinDecay?.source]).filter(Boolean))])}`).join("\n")).join("\n") + "\n\n");
     if (process.env.EVAL_OUT) await writeFile(`${process.env.EVAL_OUT}.decay`, JSON.stringify(table, null, 2));
   }, 180_000);
 
@@ -82,4 +83,20 @@ describe("Decay fixture eval (verified doc vs unverified twin)", () => {
   it("heldout: the recently verified doc beats an unverified twin (git age 800 days)", () => {
     expect(count("heldout", "search_hybrid", "unverified", (r) => r.beatsTwin)).toBe(total("heldout", "search_hybrid", "unverified"));
   });
+
+  // #54 (index-text-pooling-body-dates): a frontmatter-only commit today moves the file's git date, not its body's. v1.11.0 dates the twin today (multiplier 1.0, so
+  // relevance alone decides: 3/3 train, 2/3 held-out); Phase 4 dates it by its last body change (400 days, multiplier ~0.47 like the old-verified control).
+  it("train: the recently verified doc beats a twin touched by a frontmatter-only commit", () => {
+    expect(count("train", "search_hybrid", "frontmatter-touch", (r) => r.beatsTwin)).toBe(total("train", "search_hybrid", "frontmatter-touch"));
+  });
+  it.fails("heldout: the recently verified doc beats a twin touched by a frontmatter-only commit", () => {
+    expect(count("heldout", "search_hybrid", "frontmatter-touch", (r) => r.beatsTwin)).toBe(total("heldout", "search_hybrid", "frontmatter-touch"));
+  });
+  for (const s of ["train", "heldout"]) {
+    it.fails(`${s}: the touched twin decays as its 400-day-old body (multiplier below 0.6, source git)`, () => {
+      const twins = table[s].search_hybrid.filter((r) => r.tier === "frontmatter-touch").map((r) => r.twinDecay);
+      expect(twins.length).toBeGreaterThan(0);
+      for (const d of twins) { expect(d?.source).toBe("git"); expect(d!.multiplier).toBeLessThan(0.6); }
+    });
+  }
 });

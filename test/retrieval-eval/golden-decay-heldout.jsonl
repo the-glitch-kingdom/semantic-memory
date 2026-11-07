@@ -7,3 +7,7 @@
 {"id":"d10","tier":"unverified","q":"At what backlog size does the on-call engineer get paged for a queue?","facets":["more than 5000 messages"],"answer":"ops/queue-backlog-paging.md","twin":"ops/queue-depth-alerting.md"}
 {"id":"d11","tier":"old-verified","q":"How soon after issue does a customer have to pay an invoice?","facets":["within 15 days"],"answer":"ops/invoice-payment-terms.md","twin":"ops/billing-due-dates.md"}
 {"id":"d12","tier":"old-verified","q":"What is the longest edge of a generated preview image?","facets":["at most 256 pixels"],"answer":"ops/preview-image-size.md","twin":"ops/thumbnail-dimensions.md"}
+// Decay golden set, tier frontmatter-touch (index-text-pooling-body-dates Phase 3, semantic-memory#54): the twin has no last_verified, its body was last changed 400 days ago, and a frontmatter-only commit touched it today (touched.json). The answer is verified 5 days ago. Written before any ranking was run against it.
+{"id":"d16","tier":"frontmatter-touch","q":"How many rows can one import batch hold?","facets":["at most 5000 rows"],"answer":"ops/import-batch-size.md","twin":"ops/bulk-load-chunking.md"}
+{"id":"d17","tier":"frontmatter-touch","q":"How long does an invitation link stay valid?","facets":["after 72 hours"],"answer":"ops/invite-link-lifetime.md","twin":"ops/invitation-expiry.md"}
+{"id":"d18","tier":"frontmatter-touch","q":"How many copies of each stored object are kept?","facets":["exactly 3 copies"],"answer":"ops/object-replica-count.md","twin":"ops/storage-redundancy-factor.md"}
