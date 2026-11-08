@@ -202,7 +202,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
       const queryEmbed = await ctx.embedder.embedQuery(query);
       await ctx.refreshUsageBoost();
-      // Boosts act on each arm's own scores, before fusion, so a x1.3 stays a x1.3 on the cosine.
+      // Boosts act on each arm's own scores, before fusion.
       const adjust = (rs: SearchResult[]) =>
         rs
           .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))

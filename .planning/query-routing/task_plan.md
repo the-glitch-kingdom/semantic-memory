@@ -58,9 +58,9 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
   - [x] `bestSection(doc, queryVec)` (`VectorIndex.bestChunk` + `sectionFields`, in `src/core/reading-path.ts`): the doc's chunk nearest the query vector (no re-embedding, no extra search), mapped
         through `sectionFields`. Each member `{path, title, section: {anchor, trail}, via}`.
   - [x] Attached to result #1 as `reading_path`; no reordering.
-- [ ] Phase 6: Identifier route
-  - [ ] Identifier queries put #58's entity card first and get no reading path. If #58 already does this, #61 only labels.
-  - [ ] Remove the stale "x1.3" comment in `src/mcp/tools/search.ts`.
+- [x] Phase 6: Identifier route
+  - [x] Identifier queries put #58's entity card first and get no reading path. If #58 already does this, #61 only labels. (#58 card rides on #1 unreordered; reading_path only for flow; asserted in search-payload test)
+  - [x] Remove the stale "x1.3" comment in `src/mcp/tools/search.ts`.
 - [ ] Phase 7: Release prep v1.18.0
   - [ ] Bump all five version fields, lockfile; offline tarball builds
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -108,7 +108,7 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
 - Phase 2: hook-failure Jev-hang test flaked under full-suite load and passed alone (known flake). Labels cover the six routing-eval splits (docs, real, code, train and held-out); the other golden files (golden.jsonl, decay, graph, section) are not routing-eval inputs and stay unlabelled.
 
 ## Status
-**Currently in Phase 6** - Identifier route
+**Currently in Phase 7** - Release prep v1.18.0
 
 ---
 

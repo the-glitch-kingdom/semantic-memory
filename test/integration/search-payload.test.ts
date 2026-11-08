@@ -63,6 +63,7 @@ describe("search payload and abstention", () => {
     const q = "What is the default value of TIDEWATCH_FLUSH_MS?";
     const auto = await call("search_hybrid", { query: q, limit: 5 });
     expect(auto[0].query_type).toBe("identifier");
+    expect(auto[0].reading_path).toBeUndefined();
     expect(auto.slice(1).every((r) => r.query_type === undefined)).toBe(true);
     const forced = await call("search_hybrid", { query: q, limit: 5, mode: "flow" });
     expect(forced[0].query_type).toBe("flow");

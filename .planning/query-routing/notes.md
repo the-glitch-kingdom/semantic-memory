@@ -84,3 +84,6 @@ Multi tier, `#1 + reading_path` against max(`#1 + related`, @3). "Forced" = `mod
 Seed threshold sweep, fixture-train / fixture-heldout multi `#1+path` forced (train chose it; held-out shown for the record only): 0.5: 9/12, 4/7; 0.4: 10/12, 5/7; 0.3: 11/12, 5/7; 0: 11/12, 5/7. Real splits were 9/9 and 6/6 at every threshold. Chosen: 0.36 (existing constant), measured 11/12 and 5/7.
 As shipped the path does not reach the target on the multi tier (5/12 on fixture-train vs 10/12): the gate is on forced flow. Plain @1, fact-tier @1 and @3 are unchanged (the path never reorders; `npm run eval` floors pass). Payload cost of the path: mean payload +~800 B per forced-flow case on the fixture (4372 -> 5197 B), +1.2 kB on real. Latency of the path not measured separately (Phase 9).
 Gates added: docs-eval (train, exact) and real-corpus-eval (train, one case of slack) assert forced-flow `pathAt1 >= max(expandedAt1, @3)`; the eval prints `#1+path` per tier and a "mode flow forced" block.
+
+## Eval results: Phase 6
+Label only. No ranking change, so no eval numbers move. Identifier queries keep #58's entity card on #1 and get no reading_path (path is flow-only); asserted in test/integration/search-payload.test.ts. Stale "x1.3" comment trimmed in src/mcp/tools/search.ts.
