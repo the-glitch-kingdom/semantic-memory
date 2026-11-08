@@ -75,3 +75,10 @@ Grounding on, `decay.code` defaults (0.97 per drifted file, 0.95 per dead file r
 
 Stable over 3 repeat runs. The held-out clean share cannot move on this fixture: a demoted dead twin still sits in the top 3 (see Phase 2). The `it.fails` pair gates are now real gates; codeGraph floors in baseline.json raised to these numbers (test keeps one case of slack). Real-corpus and docs-vault eval unchanged (87 passed, 5 expected fail; mean payload 4746 B hybrid, ceiling 4750): those vaults have no code refs to ground. The `grounding` block only appears with something to report. Bug caught by the unit test: `Math.max` with a NaN date silently dropped all drift; dates are filtered first.
 Full `npm test`: only the hook-failure Jev-hang timing failed under load; passed alone (14/14).
+
+## Eval results: Phase 7
+`npx vitest run test/retrieval-eval/graph-eval.test.ts` (fixture, both arms, both splits): ranking unchanged (answer@1 9/9, @3 9/9, twin-beaten 6/6; clean-top3 0.815 train, 0.778 held-out).
+Undocumented: flagged 2/2 and located 2/2 per split (the file path matches truth); `missing_terms` is now empty for them (named 0/2), so the old "named" check became "located". Held-out was measured once, nothing tuned.
+Entity card: `check_rls_coverage.py` returns a file card on result #1 only, citing row-security-audit.md; CLI and MCP return the same card.
+Full suite: 1016 passed, 5 expected fail; only the known hook-failure Jev-hang flake failed under load (14/14 alone). Tool-surface snapshot updated for the new search descriptions.
+Open: symbol cards need the export for a file (fallback symbols have none); the card is built from `identifiers()` tokens, so a bare word such as `guards` gets none.

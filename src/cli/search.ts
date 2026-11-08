@@ -9,7 +9,8 @@ import { TextSearch } from "../core/search-text.js";
 import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
-import { missingTerms } from "../core/identifiers.js";
+import { identifiers, missingTerms } from "../core/identifiers.js";
+import { entityCard, loadCodeData, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { decayForDoc, groundingBlock, loadDecayConfig, type DecayBlock } from "../core/decay.js";
 import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
@@ -36,6 +37,10 @@ export interface SearchHit {
   no_strong_match?: true;
   /** identifiers of the query that no indexed doc contains */
   missing_terms?: string[];
+  /** identifiers of the query that exist in code but in no doc */
+  undocumented?: { entity: string; path: string }[];
+  /** result #1 only: the symbol or file the query names, and the docs citing it */
+  entity?: EntityCard;
   /** a server is rebuilding the index this hit came from */
   stale?: true;
   /** present when the note is down-weighted or its age came from a fallback; same block as the MCP tools */
@@ -125,6 +130,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   const decayOf = (path: string) => (decayConfig.enabled && docByPath.get(path) ? decayForDoc(docByPath.get(path)!, decayConfig) : { multiplier: 1 });
   const selfTop = (await readMeta(indexPath))?.bm25SelfTop ?? bm25SelfTop(bm25, docs);
   const paths = docs.map((d) => d.path).join("\n").toLowerCase();
+  let codeP: Promise<CodeData | null> | undefined;
   const bm25Min = selfTop === null ? null : selfTop * BM25_FRACTION;
   return {
     async search(query, limit = 8) {
@@ -147,19 +153,25 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
           pathClass
         )
       );
-      const missing = missingTerms(query, bm25, paths);
-      const weak = isWeak(all, bm25Min) || missing.length > 0;
+      const absent = missingTerms(query, bm25, paths);
+      // the code is read only for a query that names an identifier: it costs a git call
+      const code = identifiers(query).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
+      const { missing, undocumented } = splitUndocumented(absent, code);
+      const weak = isWeak(all, bm25Min) || absent.length > 0;
+      const scoreOf = new Map(all.map((r) => [r.path, r.score]));
+      const card = entityCard(query, code, docByPath, (p) => scoreOf.get(p) ?? -Infinity);
       const stale = await indexRebuilding(indexPath);
       const ranked = all.slice(0, limit);
 
-      return ranked.map((r) => ({
+      return ranked.map((r, i) => ({
         path: r.path,
         title: docByPath.get(r.path)?.title ?? r.title,
         score: r.score,
         confidence: r.confidence,
         snippet: excerpt(r.matchedChunk ?? r.snippet, query),
         ...(r.matched && { matched: r.matched }),
-        ...(weak && { no_strong_match: true as const, ...(missing.length && { missing_terms: missing }) }),
+        ...(i === 0 && card && { entity: card }),
+        ...(weak && { no_strong_match: true as const, ...(missing.length && { missing_terms: missing }), ...(undocumented.length && { undocumented }) }),
         ...(stale && { stale: true as const }),
         ...(decayOf(r.path).block && { decay: decayOf(r.path).block }),
         ...(decayOf(r.path).grounding && { grounding: decayOf(r.path).grounding }),

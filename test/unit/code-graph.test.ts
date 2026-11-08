@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { groundDocs, loadExport, loadCodeData, fallbackCode, gitLastChanged } from "../../src/core/code-graph.js";
+import { entityCard, splitUndocumented, groundDocs, loadExport, loadCodeData, fallbackCode, gitLastChanged } from "../../src/core/code-graph.js";
 
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "code-graph-vault");
 const mdIn = (dir: string) => new Set((readdirSync(dir, { recursive: true }) as string[]).filter((f) => f.endsWith(".md")).map((f) => f.split("\\").join("/")));
@@ -226,5 +226,41 @@ describe("groundDocs", () => {
     expect(d.grounding).toBeUndefined();
     groundDocs([d], code({ verdict: "stale", refs: [] }));
     expect(d.grounding).toMatchObject({ verdict: "stale" });
+  });
+});
+
+describe("entityCard and splitUndocumented", () => {
+  const ref = (file: string) => ({ kind: "file" as const, target: file, file, resolved: true });
+  const code: any = {
+    files: ["jobs/a.py", "scripts/b.sh", "jobs/dup.py", "scripts/dup.py"],
+    symbols: new Map([
+      ["do_a", { file: "jobs/a.py", fileKind: "definition", citedBy: ["d1.md", "d2.md", "gone.md"] }],
+      ["do_b", { file: "scripts/b.sh", fileKind: "reference", citedBy: [] }],
+    ]),
+    docs: new Map([["d1.md", { source: "export", refs: [ref("scripts/b.sh")] }]]),
+  };
+  const docs = new Map<string, any>([
+    ["d1.md", { title: "One", grounding: { source: "export", code_drift: ["jobs/a.py"], dead_refs: [] } }],
+    ["d2.md", { title: "Two" }],
+  ]);
+  it("says 'defined in' only for a definition, lists fresh citers first, and drops docs outside the vault", () => {
+    expect(entityCard("where is do_a", code, docs, () => 0)).toEqual({
+      entity: "do_a", kind: "symbol", path: "jobs/a.py", location: "defined in",
+      cited_by: [{ path: "d2.md", title: "Two", stale: false }, { path: "d1.md", title: "One", stale: true }],
+    });
+    expect(entityCard("do_b", code, docs, () => 0)?.location).toBe("found in");
+  });
+  it("finds a unique file by name and its citers, never an ambiguous one", () => {
+    expect(entityCard("scripts/b.sh", code, docs, () => 0)).toMatchObject({ kind: "file", path: "scripts/b.sh", cited_by: [{ path: "d1.md" }] });
+    expect(entityCard("dup.py", code, docs, () => 0)).toBeUndefined();
+    expect(entityCard("do_a", null, docs, () => 0)).toBeUndefined();
+  });
+  it("orders citers of equal freshness by search score", () => {
+    const two = new Map(docs).set("d1.md", { title: "One" });
+    expect(entityCard("do_a", code, two, (p) => (p === "d1.md" ? 2 : 1))?.cited_by.map((c) => c.path)).toEqual(["d1.md", "d2.md"]);
+  });
+  it("splits missing terms into those that exist in code (undocumented, with the file) and the rest", () => {
+    expect(splitUndocumented(["b", "nowhere_fn"], code)).toEqual({ missing: ["nowhere_fn"], undocumented: [{ entity: "b", path: "scripts/b.sh" }] });
+    expect(splitUndocumented(["x_y"], null)).toEqual({ missing: ["x_y"], undocumented: [] });
   });
 });

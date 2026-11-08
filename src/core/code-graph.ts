@@ -27,7 +27,8 @@ export interface DocCode {
   refs: CodeRef[];
 }
 export interface SymbolInfo { file?: string; fileKind?: "definition" | "reference"; citedBy: string[] }
-export interface CodeData { docs: Map<string, DocCode>; symbols: Map<string, SymbolInfo> }
+/** `files`: tracked repo files (from git), for locating an identifier no doc cites */
+export interface CodeData { docs: Map<string, DocCode>; symbols: Map<string, SymbolInfo>; files?: string[] }
 
 const warned = new Set<string>();
 const warnOnce = (msg: string) => {
@@ -216,7 +217,8 @@ export async function loadCodeData(vaultDir: string, docs: { path: string; codeR
   if (!existsSync(join(root, ".git"))) return null;
   const exp = loadExport(root, vaultDir, new Set(docs.map((d) => d.path)));
   const rest = await fallbackCode(root, vaultDir, exp ? docs.filter((d) => !exp.docs.has(d.path)) : docs);
-  if (!exp) return rest;
+  if (!exp) return Object.assign(rest, { files: await gitFiles(root) });
+  exp.files = await gitFiles(root);
   for (const [p, d] of rest.docs) exp.docs.set(p, d);
   for (const [n, s] of rest.symbols) {
     const e = exp.symbols.get(n);
@@ -252,4 +254,69 @@ export function groundDocs(docs: { path: string; frontmatter?: Record<string, un
     }
   }
   return changed;
+}
+
+/** Tracked files an identifier names: a repo path (exact or by suffix), or a file name with or without its extension. */
+function locateFiles(term: string, files: string[] = []): string[] {
+  const t = term.replace(/^\.\//, "");
+  if (t.includes("/")) return files.filter((f) => f === t || f.endsWith("/" + t));
+  return files.filter((f) => {
+    const b = posix.basename(f);
+    return b === t || b.replace(/\.[^.]*$/, "") === t;
+  });
+}
+
+const STALE_VERDICTS = new Set(["check", "stale", "archive-candidate"]);
+export interface EntityCard {
+  entity: string;
+  kind: "symbol" | "file";
+  path?: string;
+  /** "defined in" only when hewtd marks the symbol's file a definition; otherwise it is the first file containing the name */
+  location: "defined in" | "found in";
+  cited_by: { path: string; title?: string; stale: boolean }[];
+}
+
+/**
+ * The card for the first identifier of `query` that names a symbol or a unique file in the code, with up to 5 citing docs
+ * (fresh first, then by search score). Reuses #57's identifiers(), so a card and `missing_terms` read the same tokens.
+ */
+export function entityCard(
+  query: string, code: CodeData | null, docs: Map<string, { title?: string; grounding?: Grounding }>, score: (path: string) => number,
+): EntityCard | undefined {
+  if (!code) return undefined;
+  for (const term of identifiers(query)) {
+    let card: Omit<EntityCard, "cited_by"> | undefined;
+    let citers: string[] = [];
+    const sym = code.symbols.get(term);
+    if (sym) {
+      card = { entity: term, kind: "symbol", path: sym.file, location: sym.fileKind === "definition" ? "defined in" : "found in" };
+      citers = sym.citedBy;
+    } else {
+      const hit = locateFiles(term, code.files);
+      if (hit.length !== 1) continue;
+      card = { entity: term, kind: "file", path: hit[0], location: "found in" };
+      citers = [...code.docs].filter(([, d]) => d.refs.some((r) => r.file === hit[0] || r.target === hit[0])).map(([p]) => p);
+    }
+    const stale = (p: string) => {
+      const g = docs.get(p)?.grounding;
+      return !!g && (g.code_drift.length > 0 || g.dead_refs.length > 0 || STALE_VERDICTS.has(g.verdict ?? ""));
+    };
+    const cited_by = citers.filter((p) => docs.has(p))
+      .sort((a, b) => Number(stale(a)) - Number(stale(b)) || score(b) - score(a) || a.localeCompare(b))
+      .slice(0, 5).map((path) => ({ path, title: docs.get(path)?.title, stale: stale(path) }));
+    return { ...card, cited_by };
+  }
+  return undefined;
+}
+
+/** Splits `missing` (identifiers no doc contains): those that exist in the code are undocumented, the rest stay missing. */
+export function splitUndocumented(missing: string[], code: CodeData | null): { missing: string[]; undocumented: { entity: string; path: string }[] } {
+  const undocumented: { entity: string; path: string }[] = [];
+  const still = missing.filter((term) => {
+    const path = locateFiles(term, code?.files)[0];
+    if (!path) return true;
+    undocumented.push({ entity: term, path });
+    return false;
+  });
+  return { missing: still, undocumented };
 }

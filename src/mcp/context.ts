@@ -87,6 +87,8 @@ export interface ServerContext {
 
   getDocuments(): IndexedDocument[];
   getDocByPath(): Map<string, IndexedDocument>;
+  /** code data behind the graph's code nodes (null outside a git repo) */
+  getCode(): CodeData | null;
   getVectorIndex(): VectorIndex | null;
   getIndexState(): IndexState;
   getIndexProgress(): { embedded: number; total: number };
@@ -169,6 +171,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   let documents: IndexedDocument[] = [];
   let docByPath = new Map<string, IndexedDocument>();
+  let codeData: CodeData | null = null;
   let vectorIndex: VectorIndex | null = null;
   let indexState: IndexState = "empty";
   let indexProgress = { embedded: 0, total: 0 };
@@ -244,8 +247,9 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     try {
       const code = await loadCodeData(notesPath, docs);
       groundDocs(docs, code);
-      return code;
+      return (codeData = code);
     } catch (e: any) {
+      codeData = null;
       process.stderr.write(`Code graph skipped: ${e?.message ?? e}\n`);
       return null;
     }
@@ -710,6 +714,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     sessions,
     getDocuments: () => documents,
     getDocByPath: () => docByPath,
+    getCode: () => codeData,
     getVectorIndex: () => vectorIndex,
     getIndexState: () => indexState,
     getIndexProgress: () => indexProgress,

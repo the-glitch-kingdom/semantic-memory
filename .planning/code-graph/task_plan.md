@@ -83,12 +83,14 @@ Series step 2. Every missed target is stated in the PR.
   - [x] Result block only when there is something to report: `grounding: {source, verdict?, code_drift: [≤3],
         dead_refs: [≤3], more?}`; `verdict` shown only for `check`, `stale`, `archive-candidate`, `secret`.
         (Done in `decay.ts` `groundingMultiplier`/`groundingBlock`, called by `decayForDoc`, which MCP `applyDecay` and the CLI both use; `groundDocs` in `code-graph.ts` sets `doc.grounding`, saved in docs.cache.json so the CLI reads it. Defaults needed no tuning. Deviation: the export's `body_changed` replaces the git body date for drift only, not for the age decay.)
-- [ ] Phase 7: Entity cards and `undocumented`
-  - [ ] Query tokens through #57's detector, looked up against symbols and file paths / unique basenames. The card
+- [x] Phase 7: Entity cards and `undocumented`
+  - [x] Query tokens through #57's detector, looked up against symbols and file paths / unique basenames. The card
         rides on result #1: `entity: {entity, kind, path, cited_by: [{path, title, stale}] ≤ 5}`; citers ordered by
         search score, fresh first. Cards say "found in" (hewtd locates a symbol by the first file containing it).
-  - [ ] `undocumented: [...]` alongside `missing_terms`: an identifier in no doc that exists in code is reported as
+        (Done: `entityCard` in code-graph.ts, `location` is "defined in" only for file_kind definition; `getCode()` on ctx; CLI loads code lazily, only for a query with an identifier. Deviation: files are matched too (path suffix or unique name with/without extension) via `CodeData.files` from `git ls-files`; stale = drift, dead refs or a check/stale/archive-candidate verdict.)
+  - [x] `undocumented: [{entity, path}]` alongside `missing_terms`: an identifier in no doc that exists in code is reported as
         undocumented, not missing.
+        (Done in `splitUndocumented`, used by MCP `shape()` and CLI `openSearch`; `no_strong_match` is still set; `missing_terms` keeps only names found in neither docs nor code.)
 - [ ] Phase 8: Release prep v1.16.0
   - [ ] Bump all five version fields, lockfile; offline tarball builds
 - [ ] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -147,7 +149,7 @@ Series step 2. Every missed target is stated in the PR.
 - (none yet)
 
 ## Status
-**Currently in Phase 7** - Entity cards and `undocumented` (Phase 6 done: grounding multiplier, `grounding` block, decay.code)
+**Currently in Phase 8** - Release prep v1.16.0 (Phase 7 done: entity cards and `undocumented`)
 
 ---
 

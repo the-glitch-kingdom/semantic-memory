@@ -4,6 +4,7 @@ import type { ServerContext } from "../context.js";
 import { applyCoverage } from "../../core/rank.js";
 import { fuseScores } from "../../core/bm25.js";
 import { missingTerms } from "../../core/identifiers.js";
+import { entityCard, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { excerpt, isWeak, standaloneConfidence, withConfidence, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
@@ -43,8 +44,11 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
 function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null) {
   const scored = withConfidence(ranked);
   const page = scored.slice(0, limit);
-  const missing = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase());
-  const weak = isWeak(scored, bm25Min) || missing.length > 0;
+  const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase());
+  const { missing, undocumented } = splitUndocumented(absent, ctx.getCode());
+  const weak = isWeak(scored, bm25Min) || absent.length > 0;
+  const scoreOf = new Map(scored.map((r) => [r.path, r.score]));
+  const card = entityCard(query, ctx.getCode(), ctx.getDocByPath(), (p) => scoreOf.get(p) ?? -Infinity);
   return page.map((r, i) => {
     const { cosine: _c, lexical: _l, bm25: _b, ...e } = ctx.enrichResult(r);
     const out = full
@@ -60,9 +64,10 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
           ...((e as any).grounding && { grounding: (e as any).grounding }),
           ...((e as any).usage && { usage: (e as any).usage }),
         };
-    if (weak) return { ...out, no_strong_match: true, ...(missing.length && { missing_terms: missing }) };
+    const withCard = i === 0 && card ? { ...out, entity: card } : out;
+    if (weak) return { ...withCard, no_strong_match: true, ...(missing.length && { missing_terms: missing }), ...(undocumented.length && { undocumented }) };
     const related = i === 0 ? relatedTo(ctx, r.path, scored) : [];
-    return related.length ? { ...out, related } : out;
+    return related.length ? { ...withCard, related } : withCard;
   });
 }
 
@@ -74,7 +79,7 @@ const fullArg = z.boolean().optional().default(false).describe("Return the whole
 export function registerSearchTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
     "search_semantic",
-    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]`: those names are not in the docs (they may still exist in code). `full: true` returns whole chunks and frontmatter fields.",
+    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -159,7 +164,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]`: those names are not in the docs (they may still exist in code). For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). `full: true` returns whole chunks and frontmatter fields.",
+    "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). `full: true` returns whole chunks and frontmatter fields.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),

@@ -102,7 +102,7 @@ export function serverInstructions(notesPath: string, readOnly = false): string 
     `For a question about what ${where} says, call search_hybrid here before grepping or opening files there, ` +
     `then read_note the hits; search_text finds exact strings. ` +
     `For a broad or end-to-end question (how does X work, overview of Y, several steps), read the top 3 results, not just #1, and search each step separately. ` +
-    `If the results carry no_strong_match: true, it is a weak match: verify the notes answer the question before citing them, and say so if they do not. missing_terms lists identifiers from the query that are not in the docs (they may still exist in code).` +
+    `If the results carry no_strong_match: true, it is a weak match: verify the notes answer the question before citing them, and say so if they do not. missing_terms lists identifiers from the query that are in neither the docs nor the code; undocumented lists those that exist in code but in no doc. A query naming a symbol or file the docs cite gets an entity card on result #1 (where it is, which docs cite it).` +
     (readOnly ? "" : " Write research, decisions and gotchas here with synthesize_note.")
   );
 }
