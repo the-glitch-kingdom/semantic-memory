@@ -46,8 +46,8 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
   - [x] `search_hybrid` gains `mode: "auto" | "identifier" | "fact" | "flow"` (default auto); `query_type` on result #1;
         the search event (#59 usage log, if present) records it.
   - [x] `eval` prints classifier accuracy per split (floor about 0.8 on train, held-out reported).
-- [ ] Phase 4: PPR walk (`GraphBuilder.walk` in `src/core/graph.ts`)
-  - [ ] `walk(seeds: Map<path, score>, {alpha 0.15, maxNodes 300, maxSteps 20, maxDegree 50, skip})`: local subgraph
+- [x] Phase 4: PPR walk (`GraphBuilder.walk` in `src/core/graph.ts`)
+  - [x] `walk(seeds: Map<path, score>, {alpha 0.15, maxNodes 300, maxSteps 20, maxDegree 50, skip})`: local subgraph
         from the seeds (both directions) up to `maxNodes`, power iteration on it as undirected until `maxSteps` or L1
         change < 1e-6, nodes above `maxDegree` skipped (like `TAG_EDGE_MAX_DOCS`), deterministic. Code/symbol nodes
         are traversed, never returned.
@@ -103,7 +103,7 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
 - Phase 2: hook-failure Jev-hang test flaked under full-suite load and passed alone (known flake). Labels cover the six routing-eval splits (docs, real, code, train and held-out); the other golden files (golden.jsonl, decay, graph, section) are not routing-eval inputs and stay unlabelled.
 
 ## Status
-**Currently in Phase 4** - PPR walk
+**Currently in Phase 5** - Reading path for flow
 
 ---
 

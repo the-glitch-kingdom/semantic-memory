@@ -63,3 +63,10 @@ Targets for later phases: the reading path on multi must reach `max(#1+related, 
 | code-heldout | 9/10 = 0.90 |
 
 Printed by `npm run eval` (test/retrieval-eval/qtype-labels.test.ts); train floor 0.8. Train misses: one kebab/subcommand identifier, one flow ("how does it catch up and where do payloads end up"), two code-set identifiers (sluice-drain, warmctl prime). Ranking unchanged: fact @1 and multi @3 identical to the Phase 2 baseline by construction (the label is attached after ranking; a test checks the path order is the same under a forced mode).
+
+## Eval results: Phase 4
+- `GraphBuilder.walk` (src/core/graph.ts), test/unit/graph-walk.test.ts. No retrieval change yet, so eval numbers are unchanged.
+- Synthetic 5k-node / 50k-edge random graph, 3 seeds, defaults (maxNodes 300, maxSteps 20): under 10 ms per walk (asserted in the test; mean of 5 after warm-up).
+- Choices: seeds are exempt from maxDegree and skip is not applied to them; maxDegree counts all edges incl. code edges; isolated nodes' mass restarts at the seeds; ties break by path. Returns seeds too (Phase 5 picks members).
+- Note: on a chain a-b-c-d seeded at a, b outranks a (a's only neighbour collects its whole walk). Phase 5 should drop seeds or weight as the plan says, not assume the seed is first.
+- Full npm test: freshness-scale warm start and hook-failure Jev-hang failed under load, both pass alone.

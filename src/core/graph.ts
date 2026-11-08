@@ -274,6 +274,55 @@ export class GraphBuilder {
     return ranked.slice(0, limit).map((n) => this.nodeToGraphNode(n));
   }
 
+  /**
+   * Personalized PageRank over the local subgraph around `seeds` (path -> weight), links followed either way. The
+   * subgraph is grown breadth-first to `maxNodes`; non-seed nodes with more than `maxDegree` edges are skipped
+   * (hub-like, as with TAG_EDGE_MAX_DOCS) as are `skip`ped paths. Code and symbol nodes carry the walk but are never
+   * returned. Deterministic: neighbours are visited in sorted order. Returns doc nodes by score, highest first.
+   */
+  walk(
+    seeds: Map<string, number>,
+    { alpha = 0.15, maxNodes = 300, maxSteps = 20, maxDegree = 50, skip }: { alpha?: number; maxNodes?: number; maxSteps?: number; maxDegree?: number; skip?: (path: string) => boolean } = {},
+  ): { path: string; score: number }[] {
+    const g = this.graph;
+    const start = [...seeds].filter(([p, w]) => g.hasNode(p) && w > 0);
+    const total = start.reduce((a, [, w]) => a + w, 0);
+    if (!total) return [];
+    const idx = new Map<string, number>();
+    const names: string[] = [];
+    const add = (n: string) => (idx.set(n, names.length), names.push(n));
+    for (const [p] of start) add(p);
+    for (let i = 0; i < names.length && names.length < maxNodes; i++) {
+      for (const m of g.neighbors(names[i]).sort()) {
+        if (names.length >= maxNodes) break;
+        if (!idx.has(m) && !skip?.(m) && g.degree(m) <= maxDegree) add(m);
+      }
+    }
+    const adj = names.map((n) => [...new Set(g.neighbors(n))].filter((m) => idx.has(m)).map((m) => idx.get(m)!));
+    const s = new Float64Array(names.length);
+    for (const [p, w] of start) s[idx.get(p)!] = w / total;
+    let p = Float64Array.from(s);
+    for (let step = 0; step < maxSteps; step++) {
+      const q = new Float64Array(names.length);
+      let dangling = 0;
+      adj.forEach((nb, u) => {
+        if (!nb.length) dangling += p[u];
+        else for (const v of nb) q[v] += ((1 - alpha) * p[u]) / nb.length;
+      });
+      let change = 0;
+      for (let i = 0; i < q.length; i++) {
+        q[i] += alpha * s[i] + (1 - alpha) * dangling * s[i]; // an isolated node's mass restarts at the seeds
+        change += Math.abs(q[i] - p[i]);
+      }
+      p = q;
+      if (change < 1e-6) break;
+    }
+    return names
+      .map((path, i) => ({ path, score: p[i] }))
+      .filter((r) => !this.isCode(r.path))
+      .sort((a, b) => b.score - a.score || (a.path < b.path ? -1 : 1));
+  }
+
   statistics(): GraphStats {
     const notes = this.graph.nodes().filter((n) => !this.isCode(n));
     const nodes = notes.length;
