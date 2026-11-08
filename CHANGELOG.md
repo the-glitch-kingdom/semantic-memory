@@ -17,7 +17,7 @@ Against v1.17.0 in the same run, fact-tier @1 is unchanged on all four splits. M
 
 ### Missed targets
 
-**As shipped (mode auto) the multi-tier target is not met on 3 of 4 splits** (5/12, 2/7, 8/9, 4/6): most multi questions are two facts and classify as fact, so they get no path. Flow recall is tested on about 8 rows.
+**As shipped (mode auto) the multi-tier target is not met on 3 of 4 splits** (5/12, 2/7, 8/9, 4/6): most multi questions are two facts and classify as fact, so they get no path (they keep `related` as before, so nothing is lost against 1.17.0). Pass `mode: "flow"` to get the path. Flow recall is tested on about 8 rows.
 
 ## [1.17.0] - 2026-11-08 — Section results
 
