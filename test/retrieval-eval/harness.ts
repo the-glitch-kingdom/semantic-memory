@@ -6,7 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { glob } from "glob";
 import { createServer } from "../../src/mcp/server.js";
-import type { ArmFn } from "./eval.js";
+import { armsOf } from "../../src/core/retrieval-eval/runner.js";
 
 /** An in-process server over a temp copy of `source` (index dirs left behind), plus the arms and doc texts the facet eval needs. */
 export async function startEval(source: string, prefix: string, prepare?: (dir: string) => Promise<void>) {
@@ -19,17 +19,7 @@ export async function startEval(source: string, prefix: string, prepare?: (dir: 
   const client = new Client({ name: prefix, version: "1.0.0" });
   await client.connect(ct);
 
-  const call = async (name: string, args: Record<string, unknown>) => {
-    const res = await client.callTool({ name, arguments: args });
-    const text = (res.content as any)[0].text as string;
-    let parsed: any = [];
-    try { parsed = JSON.parse(text); } catch { /* indexing message */ }
-    return { parsed: Array.isArray(parsed) ? parsed : [], bytes: Buffer.byteLength(text) };
-  };
-  const tool = (name: string, extra: Record<string, unknown> = {}): ArmFn => async (q, limit) => {
-    const { parsed, bytes } = await call(name, { query: q, limit, ...extra });
-    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match), related: (parsed[0]?.related ?? []).map((r: any) => r.path), decay: Object.fromEntries(parsed.filter((r: any) => r.decay).map((r: any) => [r.path, { multiplier: r.decay.multiplier, source: r.decay.source }])) };
-  };
+  const { call, tool } = armsOf(client);
   const texts = new Map<string, string>();
   for (const p of await glob("**/*.md", { cwd: source })) texts.set(p, readFileSync(join(source, p), "utf-8"));
   return { dir, client, call, tool, textOf: (p: string) => texts.get(p) ?? "" };

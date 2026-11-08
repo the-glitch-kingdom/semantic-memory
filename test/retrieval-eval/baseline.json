@@ -40,7 +40,7 @@
       "search_hybrid": 21
     },
     "real-heldout": {
-      "search_semantic": 12,
+      "search_semantic": 11,
       "search_hybrid": 13
     }
   },
@@ -195,8 +195,8 @@
     "real-heldout": {
       "search_semantic": {
         "all": {
-          "at1": 12,
-          "at3": 16
+          "at1": 11,
+          "at3": 15
         },
         "exact": {
           "at1": 0,
@@ -207,8 +207,8 @@
           "at3": 3
         },
         "paraphrase": {
-          "at1": 6,
-          "at3": 10
+          "at1": 5,
+          "at3": 9
         }
       },
       "search_hybrid": {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { facetRank, runFacetEval, scoreLinks, invertLinks, type FacetCase } from "./eval.js";
+import { grepPattern, facetRank, runFacetEval, scoreLinks, invertLinks, type FacetCase } from "./eval.js";
 
 const docs: Record<string, string> = {
   "a.md": "the retry limit is 5",
@@ -35,6 +35,27 @@ describe("runFacetEval", () => {
     expect(m.archiveHits).toBe(2);
     expect(m.negativeTop).toEqual([0.3]);
     expect(m.meanBytes).toBe(10);
+  });
+});
+
+describe("runFacetEval expected paths and latency", () => {
+  it("reports found@k, MRR and latency only for cases with expected", async () => {
+    const cases: FacetCase[] = [
+      { id: "1", tier: "exact", q: "x", facets: ["retry"], expected: ["b.md"] },
+      { id: "2", tier: "exact", q: "y", facets: ["retry"], expected: ["zzz.md"] },
+      { id: "3", tier: "exact", q: "w", facets: ["retry"] },
+    ];
+    const m = await runFacetEval(cases, async () => ({ bytes: 1, results: [{ path: "a.md", score: 1 }, { path: "b.md", score: 0.5 }] }), textOf);
+    expect(m.expectedN).toBe(2);
+    expect(m.foundAt).toEqual({ 1: 0, 3: 1, 8: 1 });
+    expect(m.mrr).toBe(0.25);
+    expect(m.latencyMs.p95).toBeGreaterThanOrEqual(m.latencyMs.p50);
+  });
+});
+
+describe("grepPattern", () => {
+  it("keeps content words only", () => {
+    expect(grepPattern("How does the retry limit work?")).toBe("retry|limit|work");
   });
 });
 

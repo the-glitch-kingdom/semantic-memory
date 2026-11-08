@@ -11,7 +11,7 @@ import { cleanupTempDir } from "../setup.js";
 import { gitHistory } from "./git-history.js";
 import { splitGates } from "./gates.js";
 import {
-  runFacetEval, scoreLinks, invertLinks, facetRank, formatArm, parseGolden, hnswRecall,
+  runFacetEval, scoreLinks, invertLinks, facetRank, formatArm, parseGolden, hnswRecall, grepPattern,
   type FacetCase, type ArmFn, type ArmMetrics, type LinkMetrics,
 } from "./eval.js";
 
@@ -25,7 +25,6 @@ const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
 const HERE = import.meta.dirname;
 // Gates the field fixture fails today, run as expected failures until retrieval-ready-fields Phase 4 fixes them; see .planning/retrieval-ready-fields/notes.md "Eval results".
 const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { paraphrase: true, negatives: true }, "fixture-heldout": { falseFlags: true, paraphrase: true } };
-const STOP = new Set("the a an of to for and or in on is are do does how what which when where who with from that this it we our can i my be".split(" "));
 
 describe("Facet eval (golden-docs vs docs-vault)", () => {
   let client: Client;
@@ -53,8 +52,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   };
   // the "grep" arm: every content word of the question as one alternation, in the tool's own order
   const text: ArmFn = async (q, limit) => {
-    const words = q.toLowerCase().match(/[a-z0-9_]+/g)!.filter((w) => w.length > 2 && !STOP.has(w));
-    const { parsed, bytes } = await call("search_text", { pattern: words.join("|"), regex: true, limit });
+    const { parsed, bytes } = await call("search_text", { pattern: grepPattern(q), regex: true, limit });
     return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes };
   };
 

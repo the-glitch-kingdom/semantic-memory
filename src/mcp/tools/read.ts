@@ -15,7 +15,7 @@ export function registerReadTools(server: McpServer, ctx: ServerContext): void {
       // the valuable, low-frequency half of the log. Awaited so it's durably
       // recorded before we return; appendEvent never throws and respects the opt-out,
       // so it can add tiny latency but can never fail the read.
-      await appendEvent(ctx.notesPath, {
+      if (ctx.options.telemetry !== false) await appendEvent(ctx.notesPath, {
         kind: "selection",
         note_path: path,
         via: "read_note",

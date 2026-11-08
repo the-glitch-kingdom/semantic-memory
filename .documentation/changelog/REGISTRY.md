@@ -3,7 +3,7 @@ title: Changelog Registry
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-11-07'
+last_updated: '2026-11-08'
 version: '1.0.0'
 purpose: Quick reference for changelog documentation
 ---
@@ -16,7 +16,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 25 |
+| Documents | 26 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -31,21 +31,21 @@ purpose: Quick reference for changelog documentation
 - [v1.10.0 — retrieval-ready fields](v1-10-0-retrieval-fields.md)
 - [v1.11.0 — graph boost removed, decay age fallback, stale marker](v1-11-0-boost-decay-fallback.md)
 - [v1.12.0 — code stays in the indexed text, pooling and query prompt from the model config, git decay by body change](v1-12-0-index-text-pooling-body-dates.md)
-- [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](v1-2-3-hygiene-completion.md)
+- [v1.13.0 - built-in retrieval eval](v1-13-0-builtin-eval.md)
 
 ## Recently Updated
 
 - [v1.10.0 — retrieval-ready fields](v1-10-0-retrieval-fields.md) - 2026-11-07
 - [v1.11.0 — graph boost removed, decay age fallback, stale marker](v1-11-0-boost-decay-fallback.md) - 2026-11-07
 - [v1.12.0 — code stays in the indexed text, pooling and query prompt from the model config, git decay by body change](v1-12-0-index-text-pooling-body-dates.md) - 2026-11-07
+- [v1.13.0 - built-in retrieval eval](v1-13-0-builtin-eval.md) - 2026-11-07
 - [v1.9.0 — retrieval and graph quality, index freshness](v1-9-0-retrieval-graph-quality.md) - 2026-11-06
-- [v1.9.1 — ranking regression fix](v1-9-1-ranking-regression.md) - 2026-11-06
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 25 |
+| active | 26 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
@@ -61,4 +61,4 @@ purpose: Quick reference for changelog documentation
 
 ---
 
-*Last updated: 2026-11-07*
+*Last updated: 2026-11-08*
