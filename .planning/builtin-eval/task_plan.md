@@ -41,13 +41,14 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
         prompt from `meta.json`; refuses when there is no index; `telemetry: false` makes `logSearch` return early.
         (Also skips the `read_note` selection event. `armsOf` moved here; test harness reuses it. Test proxies "model A" with cls pooling + a query prompt: same mismatch check, no second model download.)
   - [x] Tests: an index built with model A is left untouched (no re-embed); `selection.jsonl` is unchanged after an eval.
-- [ ] Phase 4: CLI `semantic-memory eval`
-  - [ ] `eval --notes <dir> [--set <file>...] [--json] [--baseline] [--check] [--band <n>] [--dir <evaldir>]`. No
+- [x] Phase 4: CLI `semantic-memory eval`
+  - [x] `eval --notes <dir> [--set <file>...] [--json] [--baseline] [--check] [--band <n>] [--dir <evaldir>]`. No
         `--set` loads `*.jsonl` from the eval dir (default `<project>/.claude/.semantic-memory/eval/`; `--dir` lets a
         team keep sets and floors in a committed folder). The set format is the existing `{id, tier, q, facets}` JSONL
         plus the optional fields, so external sets work unchanged.
-  - [ ] Every case is validated against the live docs: facets no doc matches are reported as stale and skipped.
-  - [ ] Reports arms `search_hybrid`, `search_semantic`, `search_text` and grep; tiers; "all" and "clean" (questions
+        (`--baseline`/`--check`/`--band` land in Phase 5 with the floors they drive; Phase 4 has `--notes --set --dir --json`.)
+  - [x] Every case is validated against the live docs: facets no doc matches are reported as stale and skipped.
+  - [x] Reports arms `search_hybrid`, `search_semantic`, `search_text` and grep; tiers; "all" and "clean" (questions
         not marked `tune`); negatives split by `negative_kind`.
 - [ ] Phase 5: Floors
   - [ ] `--baseline` writes `<evaldir>/baseline.json`: plugin version, set hash, corpus fingerprint (doc count + hash of
@@ -103,10 +104,10 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - "Re-run on every release" means this repo's CI and release checklist; no auto-run for users after update.
 
 ## Errors Encountered
-- (none yet)
+- Stale-index warning (Phase 3 open question) not built: `meta.files` lists commit files, not docs, so a doc-count comparison is wrong (it said 5 vs 38). The server reconciles changed docs on open, so results track the folder.
 
 ## Status
-**Currently in Phase 4** - CLI `semantic-memory eval`
+**Currently in Phase 5** - Floors
 
 ---
 

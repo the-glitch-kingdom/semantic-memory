@@ -21,6 +21,7 @@ import { migrateState } from "./migrate-state.js";
 import { registerFeatureCommands } from "./features.js";
 import { registerSkillLoopCommands, skillLoopStatus } from "./skill-loop.js";
 import { registerSkillEvalCommands } from "./skill-eval.js";
+import { registerEvalCommand } from "./retrieval-eval.js";
 import { featureState, describeFeature } from "../core/features.js";
 
 const require_ = createRequire(import.meta.url);
@@ -1215,5 +1216,6 @@ registerFeatureCommands(program, {
 });
 registerSkillLoopCommands(program);
 registerSkillEvalCommands(program);
+registerEvalCommand(program);
 
 program.parse();

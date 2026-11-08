@@ -24,3 +24,8 @@
 
 ## Eval results: Phase 3
 - No numbers change (runner is new; `npm run eval` 61 passed, 5 expected fail). Tests 914 passed. `ServerOptions.telemetry: false` skips search logging and the read_note selection event. runner.test.ts: no index -> refuses and creates no index dir; cls-pooled index with a prompt keeps hnsw.bin/docs.cache.json/meta.json hashes and writes no selection.jsonl.
+
+## Eval results: Phase 4
+- `semantic-memory eval` (src/cli/retrieval-eval.ts, src/core/retrieval-eval/suite.ts). On the docs-vault fixture with golden-docs.jsonl (69 questions, 57 answerable, 12 negatives): search_hybrid all @1=43/57 @3=55/57 @8=57/57, negatives flagged 11/12; search_semantic @1=42/57 @3=53/57; same as `npm run eval`. Wall time 1.3 s including model load; latency p50 4 ms / p95 10 ms (hybrid). "clean" prints only when a set marks `split: tune`.
+- Arms: search_hybrid, search_semantic, search_text (raw question), grep (search_text with grepPattern).
+- Gate: lint, build, `npm test` 915 passed; freshness-scale warm start and hook-failure Jev-hang failed under load, both pass alone (16 tests, --no-file-parallelism). `npm run eval` 64 passed, 5 expected fail.
