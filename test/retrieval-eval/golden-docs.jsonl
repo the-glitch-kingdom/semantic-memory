@@ -1,80 +1,80 @@
 // Golden set for test/fixtures/docs-vault (retrieval-graph-quality Phase 2). Written for that fixture; facets are
 // case-insensitive regexes. Paraphrase queries share no key terms with their answer doc.
-{"id":"e01","tier":"exact","q":"What does the harbor.dlq topic receive?","facets":["harbor\\.dlq"]}
-{"id":"e02","tier":"exact","q":"What is the default value of TIDEWATCH_FLUSH_MS?","facets":["TIDEWATCH_FLUSH_MS"]}
-{"id":"e03","tier":"exact","q":"How do I run tidewatch keys rotate for the ingest scope?","facets":["keys rotate --scope ingest"]}
-{"id":"e04","tier":"exact","q":"How long is the Beacon cooldown before an alert can fire again?","facets":["cooldown of 15 minutes"]}
-{"id":"e05","tier":"exact","q":"How many days does the hot storage tier keep data?","facets":["Hot \\(7 days\\)"]}
-{"id":"e06","tier":"exact","q":"What is the maximum payload size of a telemetry message?","facets":["at most 8 KB"]}
-{"id":"e07","tier":"exact","q":"What share of vessels receives the canary of an edge agent release?","facets":["canary of 5%"]}
-{"id":"e08","tier":"exact","q":"When should I add more pier-workers?","facets":["exceeds 10,000 messages"]}
-{"id":"e09","tier":"exact","q":"Which role has full administration rights?","facets":["harbormaster: full administration"]}
-{"id":"e10","tier":"exact","q":"How long are passenger manifest records kept?","facets":["manifest data is deleted after 30 days"]}
-{"id":"e11","tier":"exact","q":"How many messages does a worker batch before flushing?","facets":["reaches 500 messages"]}
-{"id":"e12","tier":"exact","q":"Which severities can a Beacon rule carry?","facets":["advisory, warning or critical"]}
-{"id":"e13","tier":"exact","q":"What does the --from flag of tidewatch replay take?","facets":["replay --from <timestamp>"]}
-{"id":"p01","tier":"paraphrase","q":"Where do poison items wind up after repeated unsuccessful handling attempts?","facets":["harbor\\.dlq"]}
-{"id":"p02","tier":"paraphrase","q":"The boat trail on the map zigzags into the past","facets":["chrony"]}
-{"id":"p03","tier":"paraphrase","q":"How often should credentials be swapped for fresh ones?","facets":["replaced every 90 days"]}
-{"id":"p04","tier":"paraphrase","q":"Undo a faulty software release on the ships","facets":["fleet rollback"]}
-{"id":"p05","tier":"paraphrase","q":"How frequently does the monitor re-examine conditions?","facets":["every 30 seconds"]}
-{"id":"p06","tier":"paraphrase","q":"Totals are inflated whenever a unit comes back online","facets":["Never set retain"]}
-{"id":"p07","tier":"paraphrase","q":"How many years must we hold on to where boats have been, for the authorities?","facets":["kept for 7 years"]}
-{"id":"p08","tier":"paraphrase","q":"Which login standard do staff use to get in?","facets":["OIDC"]}
-{"id":"p09","tier":"paraphrase","q":"Exercise the system with a day of recorded traffic played back faster","facets":["20x speed"]}
-{"id":"p10","tier":"paraphrase","q":"Which version stopped accepting the old wire format?","facets":["Dropped support for schema=2"]}
-{"id":"p11","tier":"paraphrase","q":"How do I pause erasure because of a lawsuit?","facets":["legal hold"]}
-{"id":"p12","tier":"paraphrase","q":"What kind of disk serves the freshest reads?","facets":["SSD"]}
-{"id":"m01","tier":"multi","q":"Ingest returns 401 after a key change, so how long did the previous credential stay valid and which command issues the replacement?","facets":["HTTP 401","grace period of 24 hours"]}
-{"id":"m02","tier":"multi","q":"How long is passenger data kept compared with position history, and which tier holds the latter long-term?","facets":["after 30 days","Cold \\(7 years\\)"]}
-{"id":"m03","tier":"multi","q":"Which fields does a telemetry message carry and how many are batched per flush?","facets":["engine_rpm","reaches 500 messages"]}
-{"id":"m04","tier":"multi","q":"When a critical rule fires who is notified and how often can it repeat?","facets":["paging webhook","cooldown of 15 minutes"]}
-{"id":"m05","tier":"multi","q":"Which environment variable controls retries and where does the failed traffic go?","facets":["TIDEWATCH_DLQ_RETRIES","harbor\\.dlq"]}
-{"id":"m06","tier":"multi","q":"Which roles exist and how often must service keys be replaced?","facets":["deckhand","replaced every 90 days"]}
-{"id":"m07","tier":"multi","q":"How long does a release canary run and which command inspects fleet state?","facets":["for 48 hours","fleet status"]}
-{"id":"m08","tier":"multi","q":"What changed about alert repeat intervals in release 2.0 and what is the interval now?","facets":["from 5 to 15 minutes","cooldown of 15 minutes"]}
-{"id":"s01","tier":"exact","q":"vessel track zigzags backwards","facets":["chrony","GPS pulse"]}
-{"id":"s02","tier":"exact","q":"totals double after a gateway reconnects","facets":["retain flag"]}
-{"id":"n01","tier":"negative","q":"How do I configure SAML for the billing portal?"}
-{"id":"n02","tier":"negative","q":"What is the recipe for the crew canteen fish stew?"}
-{"id":"n03","tier":"negative","q":"How do I tune GPU memory for the image recognition model?"}
-{"id":"n04","tier":"negative","q":"What is the on-call phone number for the harbormaster?"}
-{"id":"n05","tier":"negative","q":"How does the platform take credit card payments for ticket sales?"}
-{"id":"n06","tier":"negative","q":"Describe the Kubernetes autoscaling policy for the web frontend"}
-{"id":"n07","tier":"negative","q":"How do I back up the Redis cache nightly?"}
-{"id":"n08","tier":"negative","q":"What is the escalation process for a billing dispute?"}
-{"id":"n09","tier":"negative","q":"How do I add a new language pack for the crew handheld app?"}
-{"id":"n10","tier":"negative","q":"Which Docker base image do the gateways run on?"}
-{"id":"n11","tier":"negative","q":"How do I set up Grafana panels for request latency?"}
-{"id":"n12","tier":"negative","q":"What is the onboarding checklist for a new shipping partner?"}
+{"id":"e01","tier":"exact","qtype":"identifier","q":"What does the harbor.dlq topic receive?","facets":["harbor\\.dlq"]}
+{"id":"e02","tier":"exact","qtype":"identifier","q":"What is the default value of TIDEWATCH_FLUSH_MS?","facets":["TIDEWATCH_FLUSH_MS"]}
+{"id":"e03","tier":"exact","qtype":"identifier","q":"How do I run tidewatch keys rotate for the ingest scope?","facets":["keys rotate --scope ingest"]}
+{"id":"e04","tier":"exact","qtype":"fact","q":"How long is the Beacon cooldown before an alert can fire again?","facets":["cooldown of 15 minutes"]}
+{"id":"e05","tier":"exact","qtype":"fact","q":"How many days does the hot storage tier keep data?","facets":["Hot \\(7 days\\)"]}
+{"id":"e06","tier":"exact","qtype":"fact","q":"What is the maximum payload size of a telemetry message?","facets":["at most 8 KB"]}
+{"id":"e07","tier":"exact","qtype":"fact","q":"What share of vessels receives the canary of an edge agent release?","facets":["canary of 5%"]}
+{"id":"e08","tier":"exact","qtype":"fact","q":"When should I add more pier-workers?","facets":["exceeds 10,000 messages"]}
+{"id":"e09","tier":"exact","qtype":"fact","q":"Which role has full administration rights?","facets":["harbormaster: full administration"]}
+{"id":"e10","tier":"exact","qtype":"fact","q":"How long are passenger manifest records kept?","facets":["manifest data is deleted after 30 days"]}
+{"id":"e11","tier":"exact","qtype":"fact","q":"How many messages does a worker batch before flushing?","facets":["reaches 500 messages"]}
+{"id":"e12","tier":"exact","qtype":"fact","q":"Which severities can a Beacon rule carry?","facets":["advisory, warning or critical"]}
+{"id":"e13","tier":"exact","qtype":"identifier","q":"What does the --from flag of tidewatch replay take?","facets":["replay --from <timestamp>"]}
+{"id":"p01","tier":"paraphrase","qtype":"fact","q":"Where do poison items wind up after repeated unsuccessful handling attempts?","facets":["harbor\\.dlq"]}
+{"id":"p02","tier":"paraphrase","qtype":"fact","q":"The boat trail on the map zigzags into the past","facets":["chrony"]}
+{"id":"p03","tier":"paraphrase","qtype":"fact","q":"How often should credentials be swapped for fresh ones?","facets":["replaced every 90 days"]}
+{"id":"p04","tier":"paraphrase","qtype":"fact","q":"Undo a faulty software release on the ships","facets":["fleet rollback"]}
+{"id":"p05","tier":"paraphrase","qtype":"fact","q":"How frequently does the monitor re-examine conditions?","facets":["every 30 seconds"]}
+{"id":"p06","tier":"paraphrase","qtype":"fact","q":"Totals are inflated whenever a unit comes back online","facets":["Never set retain"]}
+{"id":"p07","tier":"paraphrase","qtype":"fact","q":"How many years must we hold on to where boats have been, for the authorities?","facets":["kept for 7 years"]}
+{"id":"p08","tier":"paraphrase","qtype":"fact","q":"Which login standard do staff use to get in?","facets":["OIDC"]}
+{"id":"p09","tier":"paraphrase","qtype":"fact","q":"Exercise the system with a day of recorded traffic played back faster","facets":["20x speed"]}
+{"id":"p10","tier":"paraphrase","qtype":"fact","q":"Which version stopped accepting the old wire format?","facets":["Dropped support for schema=2"]}
+{"id":"p11","tier":"paraphrase","qtype":"fact","q":"How do I pause erasure because of a lawsuit?","facets":["legal hold"]}
+{"id":"p12","tier":"paraphrase","qtype":"fact","q":"What kind of disk serves the freshest reads?","facets":["SSD"]}
+{"id":"m01","tier":"multi","qtype":"fact","q":"Ingest returns 401 after a key change, so how long did the previous credential stay valid and which command issues the replacement?","facets":["HTTP 401","grace period of 24 hours"]}
+{"id":"m02","tier":"multi","qtype":"fact","q":"How long is passenger data kept compared with position history, and which tier holds the latter long-term?","facets":["after 30 days","Cold \\(7 years\\)"]}
+{"id":"m03","tier":"multi","qtype":"fact","q":"Which fields does a telemetry message carry and how many are batched per flush?","facets":["engine_rpm","reaches 500 messages"]}
+{"id":"m04","tier":"multi","qtype":"fact","q":"When a critical rule fires who is notified and how often can it repeat?","facets":["paging webhook","cooldown of 15 minutes"]}
+{"id":"m05","tier":"multi","qtype":"fact","q":"Which environment variable controls retries and where does the failed traffic go?","facets":["TIDEWATCH_DLQ_RETRIES","harbor\\.dlq"]}
+{"id":"m06","tier":"multi","qtype":"fact","q":"Which roles exist and how often must service keys be replaced?","facets":["deckhand","replaced every 90 days"]}
+{"id":"m07","tier":"multi","qtype":"fact","q":"How long does a release canary run and which command inspects fleet state?","facets":["for 48 hours","fleet status"]}
+{"id":"m08","tier":"multi","qtype":"fact","q":"What changed about alert repeat intervals in release 2.0 and what is the interval now?","facets":["from 5 to 15 minutes","cooldown of 15 minutes"]}
+{"id":"s01","tier":"exact","qtype":"fact","q":"vessel track zigzags backwards","facets":["chrony","GPS pulse"]}
+{"id":"s02","tier":"exact","qtype":"fact","q":"totals double after a gateway reconnects","facets":["retain flag"]}
+{"id":"n01","tier":"negative","qtype":"fact","q":"How do I configure SAML for the billing portal?"}
+{"id":"n02","tier":"negative","qtype":"fact","q":"What is the recipe for the crew canteen fish stew?"}
+{"id":"n03","tier":"negative","qtype":"fact","q":"How do I tune GPU memory for the image recognition model?"}
+{"id":"n04","tier":"negative","qtype":"fact","q":"What is the on-call phone number for the harbormaster?"}
+{"id":"n05","tier":"negative","qtype":"fact","q":"How does the platform take credit card payments for ticket sales?"}
+{"id":"n06","tier":"negative","qtype":"fact","q":"Describe the Kubernetes autoscaling policy for the web frontend"}
+{"id":"n07","tier":"negative","qtype":"fact","q":"How do I back up the Redis cache nightly?"}
+{"id":"n08","tier":"negative","qtype":"fact","q":"What is the escalation process for a billing dispute?"}
+{"id":"n09","tier":"negative","qtype":"fact","q":"How do I add a new language pack for the crew handheld app?"}
+{"id":"n10","tier":"negative","qtype":"fact","q":"Which Docker base image do the gateways run on?"}
+{"id":"n11","tier":"negative","qtype":"fact","q":"How do I set up Grafana panels for request latency?"}
+{"id":"n12","tier":"negative","qtype":"fact","q":"What is the onboarding checklist for a new shipping partner?"}
 // field-eval additions (retrieval-ready-fields Phase 2): symptom/nofield tiers, overview multi-doc cases. Our own questions, written against the new fixture docs before any ranking run.
-{"id": "t01", "tier": "symptom", "q": "the live screen shows readings from an hour old", "facets": ["consumers evict"]}
-{"id": "t02", "tier": "symptom", "q": "charts are empty for yesterday's date", "facets": ["rollup --day"]}
-{"id": "t03", "tier": "symptom", "q": "what does ERR_ROLLUP_MISSING mean", "facets": ["rollup --day"]}
-{"id": "t04", "tier": "symptom", "q": "HarborBacklogHigh fired, what do I do", "facets": ["consumers evict"]}
-{"id": "t05", "tier": "paraphrase", "q": "What happens to data collected while a ship had no internet for a week?", "facets": ["replays them oldest first"]}
-{"id": "t06", "tier": "paraphrase", "q": "Where can a new operator look up what the abbreviations mean?", "facets": ["Pier-worker: a queue consumer"]}
-{"id": "t07", "tier": "paraphrase", "q": "How do I stop a vessel from running up a huge satellite bill?", "facets": ["sat_budget_mb"]}
-{"id": "t08", "tier": "paraphrase", "q": "A gateway cannot connect any more and the broker complains about its identity", "facets": ["certs renew"]}
-{"id": "b01", "tier": "nofield", "q": "How big can a gateway log file get before it rolls over?", "facets": ["log_max_mb"]}
-{"id": "b02", "tier": "nofield", "q": "How many requests per minute can one key make?", "facets": ["600 requests per minute"]}
-{"id": "o01", "tier": "multi", "q": "Walk me through the whole journey of a sensor reading from the boat to the screen", "facets": ["gateway on each vessel buffers", "Beacon engine checks", "hot, warm and cold"]}
-{"id": "o02", "tier": "multi", "q": "Give me a one-page summary of the platform covering collecting, processing, alerts, storage and access", "facets": ["Workers validate every reading", "only what their role allows"]}
-{"id": "o03", "tier": "multi", "q": "How do the main parts of the system fit together?", "facets": ["five stages", "Beacon engine checks"]}
-{"id": "o04", "tier": "multi", "q": "A vessel was offline for days, how does it catch up and where do payloads that keep failing end up?", "facets": ["replays them oldest first", "harbor\\.dlq"]}
-{"id": "q01", "tier": "paraphrase", "q": "How long do we hold on to the nightly copies of the rule database?", "facets": ["kept 14 days"]}
-{"id": "q02", "tier": "paraphrase", "q": "What is the largest number of queue-draining processes the topic can support?", "facets": ["ceiling is 24 workers"]}
-{"id": "q03", "tier": "symptom", "q": "the on-call pager stayed silent although the same rule triggered again ten minutes later", "facets": ["cooldown of 15 minutes"]}
-{"id": "q04", "tier": "paraphrase", "q": "In which measurement units are vessel positions and velocities saved?", "facets": ["nautical miles"]}
-{"id": "q05", "tier": "paraphrase", "q": "Can a user switch the dashboard to a dark look?", "facets": ["light or dark theme"]}
-{"id": "q06", "tier": "symptom", "q": "messages pile up on the queue and nobody is draining them fast enough", "facets": ["exceeds 10,000 messages"]}
-{"id": "q07", "tier": "paraphrase", "q": "What is the longest the pipeline waits before pushing out a partial batch?", "facets": ["TIDEWATCH_FLUSH_MS"]}
-{"id": "q08", "tier": "paraphrase", "q": "Which role may change alert conditions but cannot manage accounts?", "facets": ["engineer: dashboards plus rule editing"]}
-{"id":"i01","tier":"negative","q":"What does the rotate_harbor_keys job do?","negative_kind":"identifier"}
-{"id":"i02","tier":"negative","q":"What is HARBOR_SYNC_WINDOW set to on the gateways?","negative_kind":"identifier"}
-{"id":"i03","tier":"negative","q":"Where is flushTideBuffer called from?","negative_kind":"identifier"}
-{"id":"i04","tier":"negative","q":"How do I run scripts/reconcile_manifests.py?","negative_kind":"identifier"}
-{"id":"i05","tier":"negative","q":"What does gateway.relay.timeout_ms control?","negative_kind":"identifier"}
-{"id":"i06","tier":"negative","q":"When does purge_stale_tracks run?","negative_kind":"identifier"}
-{"id":"i07","tier":"negative","q":"What is the default for BERTH_ALLOC_LIMIT?","negative_kind":"identifier"}
-{"id":"i08","tier":"negative","q":"What does `syncCrewRoster` return?","negative_kind":"identifier"}
+{"id": "t01", "tier": "symptom", "qtype": "fact", "q": "the live screen shows readings from an hour old", "facets": ["consumers evict"]}
+{"id": "t02", "tier": "symptom", "qtype": "fact", "q": "charts are empty for yesterday's date", "facets": ["rollup --day"]}
+{"id": "t03", "tier": "symptom", "qtype": "identifier", "q": "what does ERR_ROLLUP_MISSING mean", "facets": ["rollup --day"]}
+{"id": "t04", "tier": "symptom", "qtype": "identifier", "q": "HarborBacklogHigh fired, what do I do", "facets": ["consumers evict"]}
+{"id": "t05", "tier": "paraphrase", "qtype": "fact", "q": "What happens to data collected while a ship had no internet for a week?", "facets": ["replays them oldest first"]}
+{"id": "t06", "tier": "paraphrase", "qtype": "fact", "q": "Where can a new operator look up what the abbreviations mean?", "facets": ["Pier-worker: a queue consumer"]}
+{"id": "t07", "tier": "paraphrase", "qtype": "fact", "q": "How do I stop a vessel from running up a huge satellite bill?", "facets": ["sat_budget_mb"]}
+{"id": "t08", "tier": "paraphrase", "qtype": "fact", "q": "A gateway cannot connect any more and the broker complains about its identity", "facets": ["certs renew"]}
+{"id": "b01", "tier": "nofield", "qtype": "fact", "q": "How big can a gateway log file get before it rolls over?", "facets": ["log_max_mb"]}
+{"id": "b02", "tier": "nofield", "qtype": "fact", "q": "How many requests per minute can one key make?", "facets": ["600 requests per minute"]}
+{"id": "o01", "tier": "multi", "qtype": "flow", "q": "Walk me through the whole journey of a sensor reading from the boat to the screen", "facets": ["gateway on each vessel buffers", "Beacon engine checks", "hot, warm and cold"]}
+{"id": "o02", "tier": "multi", "qtype": "flow", "q": "Give me a one-page summary of the platform covering collecting, processing, alerts, storage and access", "facets": ["Workers validate every reading", "only what their role allows"]}
+{"id": "o03", "tier": "multi", "qtype": "flow", "q": "How do the main parts of the system fit together?", "facets": ["five stages", "Beacon engine checks"]}
+{"id": "o04", "tier": "multi", "qtype": "flow", "q": "A vessel was offline for days, how does it catch up and where do payloads that keep failing end up?", "facets": ["replays them oldest first", "harbor\\.dlq"]}
+{"id": "q01", "tier": "paraphrase", "qtype": "fact", "q": "How long do we hold on to the nightly copies of the rule database?", "facets": ["kept 14 days"]}
+{"id": "q02", "tier": "paraphrase", "qtype": "fact", "q": "What is the largest number of queue-draining processes the topic can support?", "facets": ["ceiling is 24 workers"]}
+{"id": "q03", "tier": "symptom", "qtype": "fact", "q": "the on-call pager stayed silent although the same rule triggered again ten minutes later", "facets": ["cooldown of 15 minutes"]}
+{"id": "q04", "tier": "paraphrase", "qtype": "fact", "q": "In which measurement units are vessel positions and velocities saved?", "facets": ["nautical miles"]}
+{"id": "q05", "tier": "paraphrase", "qtype": "fact", "q": "Can a user switch the dashboard to a dark look?", "facets": ["light or dark theme"]}
+{"id": "q06", "tier": "symptom", "qtype": "fact", "q": "messages pile up on the queue and nobody is draining them fast enough", "facets": ["exceeds 10,000 messages"]}
+{"id": "q07", "tier": "paraphrase", "qtype": "fact", "q": "What is the longest the pipeline waits before pushing out a partial batch?", "facets": ["TIDEWATCH_FLUSH_MS"]}
+{"id": "q08", "tier": "paraphrase", "qtype": "fact", "q": "Which role may change alert conditions but cannot manage accounts?", "facets": ["engineer: dashboards plus rule editing"]}
+{"id":"i01","tier":"negative","qtype":"identifier","q":"What does the rotate_harbor_keys job do?","negative_kind":"identifier"}
+{"id":"i02","tier":"negative","qtype":"identifier","q":"What is HARBOR_SYNC_WINDOW set to on the gateways?","negative_kind":"identifier"}
+{"id":"i03","tier":"negative","qtype":"identifier","q":"Where is flushTideBuffer called from?","negative_kind":"identifier"}
+{"id":"i04","tier":"negative","qtype":"identifier","q":"How do I run scripts/reconcile_manifests.py?","negative_kind":"identifier"}
+{"id":"i05","tier":"negative","qtype":"identifier","q":"What does gateway.relay.timeout_ms control?","negative_kind":"identifier"}
+{"id":"i06","tier":"negative","qtype":"identifier","q":"When does purge_stale_tracks run?","negative_kind":"identifier"}
+{"id":"i07","tier":"negative","qtype":"identifier","q":"What is the default for BERTH_ALLOC_LIMIT?","negative_kind":"identifier"}
+{"id":"i08","tier":"negative","qtype":"identifier","q":"What does `syncCrewRoster` return?","negative_kind":"identifier"}

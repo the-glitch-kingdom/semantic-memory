@@ -6,6 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "../../src/mcp/server.js";
 import { cleanupTempDir } from "../setup.js";
+import { readSelectionLog } from "../../src/core/telemetry.js";
 
 // Phase 7: trimmed default payload, `full: true` keeps the old shape, weak top results carry no_strong_match.
 describe("search payload and abstention", () => {
@@ -56,5 +57,34 @@ describe("search payload and abstention", () => {
       expect(rs.length).toBeGreaterThan(0);
       expect(rs.every((r) => r.no_strong_match === true)).toBe(true);
     }
+  });
+
+  it("search_hybrid labels result #1 with query_type; mode overrides it, ranking and the bare array are unchanged, the usage log records it", async () => {
+    const q = "What is the default value of TIDEWATCH_FLUSH_MS?";
+    const auto = await call("search_hybrid", { query: q, limit: 5 });
+    expect(auto[0].query_type).toBe("identifier");
+    expect(auto[0].reading_path).toBeUndefined();
+    expect(auto.slice(1).every((r) => r.query_type === undefined)).toBe(true);
+    const forced = await call("search_hybrid", { query: q, limit: 5, mode: "flow" });
+    expect(forced[0].query_type).toBe("flow");
+    expect(forced.map((r) => r.path)).toEqual(auto.map((r) => r.path));
+    expect((await call("search_semantic", { query: q, limit: 1 }))[0].query_type).toBeUndefined();
+    const logged = (await readSelectionLog(dir)).filter((e: any) => e.kind === "search" && e.tool === "search_hybrid" && e.query === q);
+    expect(logged.map((e: any) => e.query_type)).toEqual(["identifier", "flow"]);
+  });
+
+  it("a flow query gets a reading_path on result #1 only; ranking is unchanged and fact queries get none", async () => {
+    const q = "Walk me through how a reading travels from the edge agent to an alert, end to end";
+    const flow = await call("search_hybrid", { query: q, limit: 5 });
+    expect(flow[0].query_type).toBe("flow");
+    const path = flow[0].reading_path as any[];
+    expect(path.length).toBeGreaterThan(0);
+    expect(path.length).toBeLessThanOrEqual(5);
+    expect(path.every((s) => typeof s.path === "string" && typeof s.title === "string")).toBe(true);
+    expect(new Set(path.map((s) => s.path)).size).toBe(path.length);
+    expect(flow.slice(1).every((r) => r.reading_path === undefined)).toBe(true);
+    const fact = await call("search_hybrid", { query: q, limit: 5, mode: "fact" });
+    expect(fact[0].reading_path).toBeUndefined();
+    expect(fact.map((r) => r.path)).toEqual(flow.map((r) => r.path));
   });
 });

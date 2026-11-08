@@ -2,6 +2,23 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.18.0] - 2026-11-08 — Query routing
+
+Issue #61. Numbers and misses: `.documentation/changelog/v1-18-0-query-routing.md`.
+
+### Added
+
+- **Query type**: a rules-only classifier labels each `search_hybrid` query `identifier | fact | flow` (`query_type` on result #1 and in the usage log); `mode` overrides it.
+- **`reading_path`** on result #1 for flow questions: up to 5 docs in reading order (overview first, then links), each with its section, from a bounded personalized-PageRank walk (`GraphBuilder.walk`). Results are never reordered; path members obey the search filters.
+
+### Measured
+
+Against v1.17.0 in the same run, fact-tier @1 is unchanged on all four splits. Multi `#1 + path` with flow forced: fixture 11/12 and 5/7, real 9/9 and 6/6 (targets 10, 5, 8, 6, all met). Latency p95 at most 16.4 ms with the path on every call.
+
+### Missed targets
+
+**As shipped (mode auto) the multi-tier target is not met on 3 of 4 splits** (5/12, 2/7, 8/9, 4/6): most multi questions are two facts and classify as fact, so they get no path (they keep `related` as before, so nothing is lost against 1.17.0). Pass `mode: "flow"` to get the path. Flow recall is tested on about 8 rows.
+
 ## [1.17.0] - 2026-11-08 — Section results
 
 Issue #60. Numbers and misses: `.documentation/changelog/v1-17-0-section-results.md`.

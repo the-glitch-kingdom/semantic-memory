@@ -145,6 +145,10 @@ The suite points at `/home/tmarlette/workspace/the-glitch-kingdom/sidekick-test-
 | `src/core/retrieval-eval/*`, `retrieval-eval/{facet-metrics,runner,suite,generate}.test.ts` (v1.13.0) | The shipped eval engine (moved from `test/retrieval-eval/eval.ts`, which re-exports it): side-effect-free runner (no index or log changes, refuses with no index), the `eval` CLI (needs `npm run build` first), `--baseline` / `--check` with the noise band and the refusal of both together, a 40-case run under 120 s, and the question generator (validation, provenance, reproducibility) on the fake `test/bin/claude`. |
 | `unit/{reconcile,bm25,graph-links,graph-knowledge,path-class,reranker}.test.ts`, `unit/search-parity.test.ts` | Diff branches and throttle, BM25, link extraction and typed edges, archive globs, rerank fallback, CLI and MCP same order on the golden questions. |
 
+### v1.18 query routing
+
+`unit/graph-walk.test.ts` (walk, caps, 5k-node benchmark), `unit/reading-path.test.ts`, `integration/search-payload.test.ts` (label, `mode`, no reordering), `integration/reading-path-filter.test.ts` (filters, no export), `retrieval-eval/qtype-labels.test.ts` (labels and classifier accuracy). The eval gates forced-flow `#1+path` on the train splits.
+
 ## Running subsets
 
 ```bash

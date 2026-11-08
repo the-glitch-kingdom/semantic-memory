@@ -139,6 +139,18 @@ export class VectorIndex {
     return results;
   }
 
+  /** The doc's body chunk nearest the query vector, read from the stored embeddings (no re-embedding, no search). */
+  bestChunk(docPath: string, queryEmbedding: Float32Array): string | undefined {
+    let best: { cos: number; text: string } | undefined;
+    for (const label of this.labelsByDoc.get(docPath) ?? []) {
+      const m = this.chunkMeta[label];
+      if (!m || m.kind === "meta" || !this.index) continue;
+      const cos = cosineOf(this.index.getPoint(label), queryEmbedding);
+      if (!best || cos > best.cos) best = { cos, text: m.text };
+    }
+    return best?.text;
+  }
+
   async save(indexPath: string): Promise<void> {
     if (!this.index) return;
 

@@ -1,12 +1,12 @@
 // Held-out indexed-text golden set for test/fixtures/code-vault (index-text-pooling-body-dates Phase 3). Never used to choose a text rule or constant; tuning uses golden-code.jsonl only.
 // Same shape as golden-code.jsonl. Written before any ranking was run against it.
-{"id":"h01","tier":"backtick","q":"What is audit_orphan_buckets.py for?","term":"audit_orphan_buckets.py","answer":"code/orphan-bucket-audit.md"}
-{"id":"h02","tier":"backtick","q":"How do I call prune_stale_sessions to drop month old logins?","term":"prune_stale_sessions","answer":"code/old-login-cleanup.md"}
-{"id":"h03","tier":"fence","q":"What does a ferryman export look like for yesterday's audit trail?","term":"ferryman export","answer":"code/audit-trail-export.md"}
-{"id":"h04","tier":"fence","q":"Where is maxUnavailable set for rollouts?","term":"maxUnavailable","answer":"code/rollout-strategy-block.md"}
-{"id":"h05","tier":"table","q":"What is GLACIER_THAW_HOURS?","term":"GLACIER_THAW_HOURS","answer":"code/cold-restore-settings.md"}
-{"id":"h06","tier":"table","q":"What is the default value of OTEL_SAMPLE_RATIO?","term":"OTEL_SAMPLE_RATIO","answer":"code/tracing-options.md"}
-{"id":"h07","tier":"snake","q":"Who writes last_seen_at?","term":"last_seen_at","answer":"code/device-presence-column.md"}
-{"id":"h08","tier":"snake","q":"What should max_inflight_batches be on small hosts?","term":"max_inflight_batches","answer":"code/small-host-tuning.md"}
-{"id":"h09","tier":"plain","q":"What does the Brindlemoor service do?","term":"Brindlemoor","answer":"code/invoice-render-service.md"}
-{"id":"h10","tier":"plain","q":"What is Cinderwick used for?","term":"Cinderwick","answer":"code/sms-gateway-service.md"}
+{"id":"h01","tier":"backtick","qtype":"identifier","q":"What is audit_orphan_buckets.py for?","term":"audit_orphan_buckets.py","answer":"code/orphan-bucket-audit.md"}
+{"id":"h02","tier":"backtick","qtype":"identifier","q":"How do I call prune_stale_sessions to drop month old logins?","term":"prune_stale_sessions","answer":"code/old-login-cleanup.md"}
+{"id":"h03","tier":"fence","qtype":"identifier","q":"What does a ferryman export look like for yesterday's audit trail?","term":"ferryman export","answer":"code/audit-trail-export.md"}
+{"id":"h04","tier":"fence","qtype":"identifier","q":"Where is maxUnavailable set for rollouts?","term":"maxUnavailable","answer":"code/rollout-strategy-block.md"}
+{"id":"h05","tier":"table","qtype":"identifier","q":"What is GLACIER_THAW_HOURS?","term":"GLACIER_THAW_HOURS","answer":"code/cold-restore-settings.md"}
+{"id":"h06","tier":"table","qtype":"identifier","q":"What is the default value of OTEL_SAMPLE_RATIO?","term":"OTEL_SAMPLE_RATIO","answer":"code/tracing-options.md"}
+{"id":"h07","tier":"snake","qtype":"identifier","q":"Who writes last_seen_at?","term":"last_seen_at","answer":"code/device-presence-column.md"}
+{"id":"h08","tier":"snake","qtype":"identifier","q":"What should max_inflight_batches be on small hosts?","term":"max_inflight_batches","answer":"code/small-host-tuning.md"}
+{"id":"h09","tier":"plain","qtype":"fact","q":"What does the Brindlemoor service do?","term":"Brindlemoor","answer":"code/invoice-render-service.md"}
+{"id":"h10","tier":"plain","qtype":"fact","q":"What is Cinderwick used for?","term":"Cinderwick","answer":"code/sms-gateway-service.md"}

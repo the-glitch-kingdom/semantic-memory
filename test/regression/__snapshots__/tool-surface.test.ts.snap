@@ -1057,6 +1057,17 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "default": 10,
           "type": "number",
         },
+        "mode": {
+          "default": "auto",
+          "description": "Query type: auto classifies the query; the other values override it. Reported as query_type on result #1; ranking is the same.",
+          "enum": [
+            "auto",
+            "identifier",
+            "fact",
+            "flow",
+          ],
+          "type": "string",
+        },
         "modifiedAfter": {
           "description": "ISO date — only return notes modified after this date",
           "type": "string",

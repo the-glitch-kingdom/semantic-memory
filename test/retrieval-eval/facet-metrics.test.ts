@@ -30,7 +30,7 @@ describe("runFacetEval", () => {
       async (q) => ({ bytes: 10, results: q === "z" ? [{ path: "b.md", score: 0.3 }] : [{ path: "archive/a.md", score: 0.9 }, { path: "a.md", score: 0.8 }, { path: "b.md", score: 0.7 }] }),
       textOf
     );
-    expect(m.tiers.all).toEqual({ n: 2, at: { 1: 0, 3: 2, 8: 2 }, expandedAt1: 0 });
+    expect(m.tiers.all).toEqual({ n: 2, at: { 1: 0, 3: 2, 8: 2 }, expandedAt1: 0, pathAt1: 0 });
     expect(m.tiers.exact.at[3]).toBe(1);
     expect(m.archiveHits).toBe(2);
     expect(m.negativeTop).toEqual([0.3]);
