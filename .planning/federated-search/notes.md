@@ -53,3 +53,6 @@ Fixture: docs-vault (primary) + vault (source "vault"); test/retrieval-eval/fede
 | held-out | 16 / 20 of 20 | 10 / 13 | 8 / 8 | 9 vs 10 | 6 vs 7 |
 
 Federated found@3 beats either alone on both splits; per-source @1 is within one case of alone. Misses: train 1 of 21 at @3, held-out 0.
+
+## Eval results: Phase 6-7
+No retrieval change. Full suite green; freshness-scale and hook-failure Jev budget failed once under load, passed alone (16/16). eval green.
