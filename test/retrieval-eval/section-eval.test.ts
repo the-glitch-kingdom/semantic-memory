@@ -80,10 +80,9 @@ describe("Section-results eval (long runbooks, owner/copy/pointer families)", ()
     }
   }
 
-  // Phase 3 and 4 (chunking, result fields) and Phase 5 (folding) must reach these; they fail on v1.16.0 and become real gates when they start passing.
-  // The 9 of 12 target was fixed before any chunking code; the semantic arm is not gated (its doc@1 is the ceiling).
+  // The 9 of 12 target was fixed before any chunking code (Phase 3 reached it). The fold gates are Phase 5's; they fail until then and become real gates when they start passing.
   for (const s of ["train", "heldout"]) {
-    it.fails(`${s}: search_hybrid names the right section (anchor@1) in at least 9 of 12 runbook questions`, () => {
+    it(`${s}: search_hybrid names the right section (anchor@1) in at least 9 of 12 runbook questions`, () => {
       expect(m(s, "search_hybrid").anchorAt1).toBeGreaterThanOrEqual(9);
     });
     for (const arm of ["search_semantic", "search_hybrid"]) {

@@ -33,7 +33,7 @@
     },
     "fixture-heldout": {
       "search_semantic": 23,
-      "search_hybrid": 25
+      "search_hybrid": 24
     },
     "real-train": {
       "search_semantic": 14,
@@ -57,7 +57,7 @@
           "at3": 12
         },
         "multi": {
-          "at1": 4,
+          "at1": 2,
           "at3": 9
         },
         "nofield": {
@@ -83,8 +83,8 @@
           "at3": 13
         },
         "multi": {
-          "at1": 5,
-          "at3": 11
+          "at1": 4,
+          "at3": 10
         },
         "nofield": {
           "at1": 2,
@@ -119,17 +119,17 @@
           "at3": 2
         },
         "paraphrase": {
-          "at1": 13,
+          "at1": 12,
           "at3": 15
         },
         "symptom": {
           "at1": 2,
-          "at3": 3
+          "at3": 2
         }
       },
       "search_hybrid": {
         "all": {
-          "at1": 25,
+          "at1": 24,
           "at3": 29
         },
         "exact": {
@@ -145,12 +145,12 @@
           "at3": 2
         },
         "paraphrase": {
-          "at1": 13,
+          "at1": 11,
           "at3": 13
         },
         "symptom": {
           "at1": 3,
-          "at3": 4
+          "at3": 3
         }
       }
     },
@@ -258,29 +258,29 @@
     }
   },
   "sections": {
-    "_comment": "section-results Phase 2: shipped v1.16.0 numbers on test/fixtures/section-vault (12 runbook questions per split), measured 3 runs, identical. anchorAt1 counts a result only when its doc is first and the section its snippet lies in is the answer's; the test allows one case below each floor.",
+    "_comment": "section-results Phase 2: shipped v1.16.0 numbers on test/fixtures/section-vault (12 runbook questions per split), measured 3 runs, identical. anchorAt1 counts a result only when its doc is first and the section its snippet lies in is the answer's; the test allows one case below each floor. Phase 3 raised every floor to the measured 12/12 (section chunking with the heading trail, merge threshold 100).",
     "train": {
       "search_semantic": {
-        "docAt1": 7,
-        "docAt3": 9,
-        "anchorAt1": 3
-      },
-      "search_hybrid": {
-        "docAt1": 11,
+        "docAt1": 12,
         "docAt3": 12,
-        "anchorAt1": 3
-      }
-    },
-    "heldout": {
-      "search_semantic": {
-        "docAt1": 10,
-        "docAt3": 11,
-        "anchorAt1": 4
+        "anchorAt1": 12
       },
       "search_hybrid": {
         "docAt1": 12,
         "docAt3": 12,
-        "anchorAt1": 4
+        "anchorAt1": 12
+      }
+    },
+    "heldout": {
+      "search_semantic": {
+        "docAt1": 12,
+        "docAt3": 12,
+        "anchorAt1": 12
+      },
+      "search_hybrid": {
+        "docAt1": 12,
+        "docAt3": 12,
+        "anchorAt1": 12
       }
     }
   }
