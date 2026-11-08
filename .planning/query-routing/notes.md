@@ -120,3 +120,6 @@ Ticked boxes audited against code: all Phase 2-8 boxes hold (labels on 6 splits,
 5. Works without hit-em-with-the-docs: **Met.** `test/integration/reading-path-filter.test.ts` asserts the fixture has no `.hewtd/graph.json` and still returns a path on the doc-only graph (and `search-payload.test.ts` builds a path on the same fixture).
 
 **Suite.** lint, build pass; `npm run eval` 125 passed, 5 expected fail. Full `npm test` (run twice): the only failures both times were freshness-scale "warm start under a second" and hook-failure "Jev error or hang" (known load flakes); both pass alone (16/16). Not re-run clean in one pass.
+
+## Eval results: Phase 10
+Docs only, code unchanged. Numbers in the v1.18.0 changelog are the Phase 2 (v1.17.0 code) and Phase 9 rows from the same run; `npm run eval` re-run after the docs: 125 passed, 5 expected fail, no floor moved. Full `npm test` passed clean: 1104 passed, 5 expected fail.

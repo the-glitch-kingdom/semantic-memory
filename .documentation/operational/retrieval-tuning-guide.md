@@ -105,6 +105,10 @@ rerank:
 
 Chunks split at headings with the trail in the embedded text; this lowered a few existing floors and abstention (real held-out negatives flagged 5/8). Folding rules and numbers: [v1.17.0 changelog](../changelog/v1-17-0-section-results.md).
 
+## Query routing (v1.18)
+
+`classifyQuery` (`src/core/query-type.ts`) is rules only and never changes ranking; flow questions get `reading_path` from `GraphBuilder.walk` (restart 0.15, 300 nodes, 20 steps, degree cap 50, seeds above 0.36). Classifier accuracy, walk numbers and the missed multi-tier target: [v1.18.0 changelog](../changelog/v1-18-0-query-routing.md).
+
 ## Trying another embedder (v1.12)
 
 ```bash

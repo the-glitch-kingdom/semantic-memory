@@ -11,10 +11,11 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 ## Status
 
-**v1.17.0** (next release; 1.8.0 is the latest on npm), package `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
+**v1.18.0** (next release; 1.8.0 is the latest on npm), package `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
 
 | Version | What it adds |
 |---|---|
+| **1.18.0** | Query routing: `search_hybrid` labels each query `identifier`, `fact` or `flow` (`query_type`, `mode` override); flow questions get an ordered `reading_path` on result #1 |
 | **1.17.0** | Section results: `section`, `anchor`, `code` on each result, `granularity`, copies and pointers fold into their owner (`also_in`), `read_note` `#anchor`; one-time re-embed on upgrade |
 | **1.16.0** | Code graph: `code:` / `symbol:` nodes from hewtd's `.hewtd/graph.json` or code spans, drifted and dead cited files rank down (`grounding`), `entity` cards and `undocumented` names for identifier queries |
 | **1.15.0** | Usage capture: a PostToolUse hook logs searches, reads and grep fallbacks; `semantic-memory gaps [--json]` reports what the docs missed (hewtd `gaps.v1`); `usage-set` builds an eval set from usage |

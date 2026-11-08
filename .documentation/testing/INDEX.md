@@ -26,7 +26,7 @@ purpose: Complete listing of testing documentation
 
 | Document | Status | Updated | Words | Purpose |
 |----------|--------|---------|-------|---------|
-| [Tests and Validation](tests-and-validation.md) | active | 2026-04-23 | 1,507 | Test layout, per-file coverage, Phase 1 activation suite, fresh-install validation |
+| [Tests and Validation](tests-and-validation.md) | active | 2026-04-23 | 1,540 | Test layout, per-file coverage, Phase 1 activation suite, fresh-install validation |
 
 ## Keywords
 

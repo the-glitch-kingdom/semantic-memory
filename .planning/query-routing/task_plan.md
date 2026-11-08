@@ -77,12 +77,12 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
         external blind set, so beating @3 is the real target); classifier accuracy reported (#61 check 3).
   - [x] Works without hit-em-with-the-docs: CI with no `.hewtd/graph.json`; doc-only walk (#61 check 5).
   - [x] Full suite; known flakes re-run alone and recorded. Answer each #61 acceptance item in notes.md. (full suite: only the two known load flakes failed, both pass alone)
-- [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New changelog doc under `.documentation/changelog/` (`npx hewtd integrate -a`) and a `CHANGELOG.md` entry
-  - [ ] `.documentation/reference/mcp-tools-reference.md`: `mode`, `query_type`, `reading_path`
-  - [ ] `.documentation/operational/retrieval-tuning-guide.md`: classifier rules, walk constants, measurements
-  - [ ] `.documentation/architecture/mcp-internals.md`, `.documentation/testing/tests-and-validation.md`
-  - [ ] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
+- [x] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New changelog doc under `.documentation/changelog/` (`npx hewtd integrate -a`) and a `CHANGELOG.md` entry
+  - [x] `.documentation/reference/mcp-tools-reference.md`: `mode`, `query_type`, `reading_path`
+  - [x] `.documentation/operational/retrieval-tuning-guide.md`: classifier rules, walk constants, measurements
+  - [x] `.documentation/architecture/mcp-internals.md`, `.documentation/testing/tests-and-validation.md`
+  - [x] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
 
 ## Key Questions
 1. Should `related` stay on fact queries? The data says it does not hurt. (Default: keep it.)
@@ -102,6 +102,7 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
 - Phase 5: `reading_path` is attached when the query type is flow and there is at least one seed. (Phase 9: path members now obey the status/tier/domain/date filters too.)
 
 ## Errors Encountered
+- Phase 10: docs only. AGENTS.md regenerated from branch code: the tool inventory is unchanged (mode is an arg), so only the timestamp moved and was reverted (no change kept). hewtd maintain --quick reports 10 errors, 98 warnings repo-wide, none from the new page.
 - Phase 9: reading_path ignored status/tier/domain/date filters for non-hit members (Phase 5 had recorded it as a decision); fixed with an `allowed` predicate in the walk skip and a regression test. As shipped (mode auto) the multi-tier #1+path target is NOT met on 3 of 4 splits (forced flow meets it on all 4); the PR states it.
 - Phase 5: known load flakes in the first full `npm test` (freshness-scale warm start, hook-failure Jev-hang, the graph-walk 10 ms wall-clock benchmark once at 11.4 ms); all passed re-run alone.
 - (none yet)
@@ -109,7 +110,7 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
 - Phase 2: hook-failure Jev-hang test flaked under full-suite load and passed alone (known flake). Labels cover the six routing-eval splits (docs, real, code, train and held-out); the other golden files (golden.jsonl, decay, graph, section) are not routing-eval inputs and stay unlabelled.
 
 ## Status
-**Currently in Phase 10** - Documentation pass
+**All phases complete** - ready for PR
 
 ---
 

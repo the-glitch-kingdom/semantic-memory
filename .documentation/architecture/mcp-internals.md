@@ -288,6 +288,10 @@ The MCP SDK does NOT exit the process on transport close. It's the application's
 
 5. **When in doubt about readOnly behavior, test with `createServer(path, { readOnly: true })`** — `test/regression/tool-surface.test.ts` has separate write-mode and read-only-mode snapshots; both must pass.
 
+## Query routing (v1.18)
+
+`search_hybrid` calls `classifyQuery`, then for flow `readingPath` (`src/core/reading-path.ts`, which uses `GraphBuilder.walk` and `VectorIndex.bestChunk`); `shape` adds `query_type` and `reading_path` to result #1 only. See the [v1.18.0 changelog](../changelog/v1-18-0-query-routing.md).
+
 ## See also
 
 - [architecture-layers.md](./architecture-layers.md) — the substrate the MCP server lives on
