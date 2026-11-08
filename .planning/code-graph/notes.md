@@ -98,3 +98,7 @@ Full suite: 1019 passed, 5 expected fail; two load flakes (freshness-scale, hook
 5. **Met.** Without an export the fallback grounds docs from code spans and links (above); outside git it is the doc-only graph.
 6. **Met.** No export and no gaps file is the default in CI (the unit and integration tests run that way); every existing floor passes untouched.
 Known limits: fallback dead refs treat a prose route such as `api/v1/x` as dead when `api/` is a top folder (damped to 0.95 each, floor 0.8); symbol cards from the fallback have no file; `.git` as a worktree file never moves the stamp (`.git/logs/HEAD` missing).
+
+## Eval results: Phase 11 (docs)
+Code unchanged. `npm run eval` after the docs: 92 passed, 5 expected fail, every floor untouched (real-train hybrid @1 18/27 @3 25/27, flagged 8/8 each). New text went in two new pages (architecture/code-graph.md, changelog/v1-16-0-code-graph.md); existing pages got one short paragraph each (what-gets-indexed, indices-and-storage, decay-guide, mcp-tools-reference) and a one-line comment in configuration-reference. AGENTS.md regenerated from branch code: the managed body is unchanged (no tool added), only `last_generated` moved. `hewtd maintain --quick`: 10 errors, 94 warnings, same as before this phase (95 warnings before).
+Full npm test: only freshness-scale and hook-failure Jev-hang failed under load; both passed alone (16/16).

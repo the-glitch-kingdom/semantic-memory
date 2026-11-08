@@ -345,6 +345,7 @@ Confidence decay down-weights `search_semantic`/`search_hybrid` results by time 
 
 ```yaml
 decay:
+  # code: {...} grounding penalties (v1.16): see architecture/code-graph.md#grounding
   enabled: true                 # false → byte-identical pre-v1.3 ranking
   default_half_life_days: 365   # multiplier = 0.5 ^ (age_days / half_life)
   per_type:

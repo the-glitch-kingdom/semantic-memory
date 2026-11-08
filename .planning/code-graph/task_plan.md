@@ -108,14 +108,14 @@ Series step 2. Every missed target is stated in the PR.
   - [x] #58 checks 5 and 6: the same fixture without `.hewtd/` (fallback grounding, no crash); no git repo (doc-only
         graph, unchanged graph stats); every existing floor passes untouched.
   - [x] Full suite; known flakes re-run alone. Answer each #58 acceptance item in notes.md.
-- [ ] Phase 11: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New `.documentation/architecture/code-graph.md` (the export contract as consumed, key mapping, fallback rules)
-  - [ ] New changelog doc (`npx hewtd integrate -a`); `CHANGELOG.md`
-  - [ ] `.documentation/architecture/what-gets-indexed.md`, `.documentation/architecture/indices-and-storage.md`,
+- [x] Phase 11: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New `.documentation/architecture/code-graph.md` (the export contract as consumed, key mapping, fallback rules)
+  - [x] New changelog doc (`npx hewtd integrate -a`); `CHANGELOG.md`
+  - [x] `.documentation/architecture/what-gets-indexed.md`, `.documentation/architecture/indices-and-storage.md`,
         `.documentation/operational/decay-guide.md` (code drift, verdicts), `.documentation/reference/mcp-tools-reference.md`
         (`grounding`, `entity`, `undocumented`, code edges in backlinks/forwardlinks),
         `.documentation/reference/configuration-reference.md` (`decay.code`)
-  - [ ] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
+  - [x] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
 
 ## Key Questions
 1. Resolved: doc keys are docs-relative (hewtd `docs/graph-export.md`); the Phase 4 mapping reads `docs_root`/`docs_path`.
@@ -154,7 +154,7 @@ Series step 2. Every missed target is stated in the PR.
 - Not run: the external 751-doc tree (not available here); #58 check 4 on it stays a release step.
 
 ## Status
-**Currently in Phase 11** - Documentation pass (Phase 10 done: review, real-export run, acceptance answers in notes.md)
+**All phases complete** - Phase 11 documentation done; ready to archive and open the PR
 
 ---
 

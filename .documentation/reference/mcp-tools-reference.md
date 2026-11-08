@@ -248,6 +248,8 @@ All lint tools accept `{ pathGlob? }` to scope to a subset.
 
 Since v1.9.0 these follow typed edges: `types` (any of `link`, `wikilink`, `related`, `cites`, `same-incident`, `supersedes`, `tag`; default is everything except `supersedes` and `tag`). Backlinks and forwardlinks differ for a one-way link; hub files (`INDEX.md`, `REGISTRY.md`) are not nodes.
 
+**v1.16.0:** `search_hybrid` / `search_semantic` items may carry `grounding` (`code_drift`, `dead_refs`), result #1 an `entity` card, and identifier queries `undocumented: [{entity, path}]`. `backlinks` / `forwardlinks` accept a file path or symbol name and return `cites_code` / `defined_in` edges by default. See [code-graph](../architecture/code-graph.md).
+
 ### `backlinks` — `{ path, limit?=50, types?, include_excluded?=false }` — notes that link TO this one (markdown links, wikilinks, `related_docs`, cites). v1.9.1: notes under `path_class.exclude` are skipped unless `include_excluded` is true or `types` asks for `supersedes`.
 ### `forwardlinks` — `{ path, limit?=50, types?, include_excluded?=false }` — notes this one links to; same exclusion rule as `backlinks`.
 ### `graph_path` — `{ from, to, types?, direction?='any' }` — shortest path over the link-type edges. v1.9.1: `direction` is `out`, `in` or `any` (it only followed out-edges); archived notes do not bridge live ones unless `supersedes` is asked for.

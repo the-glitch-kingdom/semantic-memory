@@ -2,6 +2,25 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.16.0] - 2026-11-08 — Code graph
+
+Issue #58. Design: `.documentation/architecture/code-graph.md`; numbers and misses: `.documentation/changelog/v1-16-0-code-graph.md`.
+
+### Added
+
+- **Code in the graph**: `code:` and `symbol:` nodes (`cites_code`, `defined_in`) from `.hewtd/graph.json` v1 (hit-em-with-the-docs 2.21.0+) or, without it, from code spans and links matched against git. `backlinks` / `forwardlinks` accept files and symbols.
+- **Grounding**: docs citing changed or missing files rank slightly lower (`decay.code`) and carry a `grounding` block.
+- **`entity`** card on result #1 and **`undocumented`** names for identifier queries (MCP and CLI).
+- Index schema 8 (`codeRefs`): a re-parse, no re-embedding.
+
+### Measured
+
+Fixture answer@1 4-6/9 to 9/9, twin pairs 2-3/6 to 6/6 (12/12 on the fallback), undocumented located 2/2 per split. Nothing tuned on held-out.
+
+### Missed targets
+
+Clean-top-3 share did not rise on held-out (a demoted dead twin stays in the top 3); the real-corpus vaults have no code refs and the 751-doc tree was not available, so the gain on a real tree is unmeasured. The entity card does not reorder prose matches. Fallback: prose routes can count as dead, and symbol cards have no file without the export.
+
 ## [1.15.0] - 2026-11-07 — Usage capture and search gaps
 
 Issue #59, plan A. Full numbers and misses: `.documentation/changelog/v1-15-0-usage-capture-gaps.md`.
