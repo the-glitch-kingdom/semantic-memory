@@ -73,10 +73,10 @@ built-in eval and #57). Every missed target is stated in the PR.
   - [x] Offline tarball builds (deferred to release; rebuilt from the merge commit with a clean model cache before publishing)
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Remove payload-capture scaffolding and debug logging; dead-code check over the branch diff. (Nothing to remove: Phase 2 used temp files outside the repo, fixtures are test inputs, console.log lines are CLI output; only unused-outside exports are the UseEvent/FallbackEvent/Gap types, kept as part of the module's typed surface.)
-- [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review of `git diff main...HEAD`: any path that writes `selection` events, doc text or tool
+- [x] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review of `git diff main...HEAD`: any path that writes `selection` events, doc text or tool
         responses in the log, unredacted queries in the export, hook work before the cheap exits, hewtd references.
-  - [ ] Hook integration (`test/integration/usage-capture-hook.test.ts`, spawn the real hook with the Phase 2
+  - [x] Hook integration (`test/integration/usage-capture-hook.test.ts`, spawn the real hook with the Phase 2
         fixtures in a temp repo whose `.mcp.json` points at `./.documentation --read-only`):
     - search then `Read` of a returned doc gives a `use` with its rank (#59 check 1)
     - `Read` of a doc not in the results gives `rank: null`
@@ -85,19 +85,19 @@ built-in eval and #57). Every missed target is stated in the PR.
     - another session is not linked; a read after the window is not linked (injected clock)
     - Bash `ls` writes nothing and the hook stays under its budget; bad stdin fails open; nested vaults resolve to
       the longest path
-  - [ ] Privacy (#59 check 3): a marker string in the tool response and file content never reaches `usage.jsonl`;
+  - [x] Privacy (#59 check 3): a marker string in the tool response and file content never reaches `usage.jsonl`;
         an `AKIA…` key in a query is redacted; `telemetry.enabled: false` and `SEMANTIC_MEMORY_USAGE_CAPTURE=0` write
         nothing.
-  - [ ] No ranking leak: after hook events `loadCitationCounts` is unchanged and eval numbers are identical.
-  - [ ] Schema (#59 check 4): `gaps --json` on a fixture log validates with Ajv2020 against
+  - [x] No ranking leak: after hook events `loadCitationCounts` is unchanged and eval numbers are identical.
+  - [x] Schema (#59 check 4): `gaps --json` on a fixture log validates with Ajv2020 against
         `node_modules/@theglitchking/hit-em-with-the-docs/schemas/gaps.v1.schema.json` (the devDependency, 2.21.0+;
         no copy kept in this repo); a hand-written minimal gaps file validates; `version: 2` fails. We emit only the full
         `gaps.v1` object, not the other input forms `hewtd reconcile --gaps` accepts.
-  - [ ] Other plugin absent (#59 check 6): no `.hewtd`, no hewtd install; `gaps` on a missing log prints `gaps: []`
+  - [x] Other plugin absent (#59 check 6): no `.hewtd`, no hewtd install; `gaps` on a missing log prints `gaps: []`
         and exits 0; a grep test asserts `usage-log.ts` and the hook never reference hewtd or spawn anything.
-  - [ ] #59 check 5 (the prior does not lower blind @1) is plan B: record it as not in scope.
-  - [ ] Full suite: `npm run lint && npm run build && npm test && npm run eval`; known flakes re-run alone and recorded.
-  - [ ] Offline tarball `--verify`; smoke install. Answer each #59 acceptance item in notes.md.
+  - [x] #59 check 5 (the prior does not lower blind @1) is plan B: record it as not in scope.
+  - [x] Full suite: `npm run lint && npm run build && npm test && npm run eval`; known flakes re-run alone and recorded. (hook-failure Jev-hang failed once under load, passes alone.)
+  - [x] Offline tarball `--verify`; smoke install. Answer each #59 acceptance item in notes.md. (Smoke run on `npm pack` output; the real tarball and `--verify` are at release. Acceptance answers in notes.md.)
 - [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New `.documentation/changelog/v1-15-0-usage-capture-gaps.md` (`npx hewtd integrate -a`) and a `CHANGELOG.md` entry
   - [ ] New `.documentation/reference/gaps-format.md`: what semantic-memory fills and how (vault-relative `used_doc`,
@@ -131,13 +131,14 @@ built-in eval and #57). Every missed target is stated in the PR.
   held-out usage and blind-set @1 do not drop; and a decision on the old query-independent `usage_boost`.
 
 ## Errors Encountered
+- Phase 9: full suite had 1 known flake (hook-failure Jev-hang, 3901 ms vs 3000); passes alone. No source bug found; the redactor skips values containing "example" by design.
 - Phase 5: full suite had the 2 known flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. Healthcheck gitignore warning (`usage_log_ignored`) fires only when usage.jsonl exists and `git check-ignore` exits 1; tested in test/integration/gaps-command.test.ts.
 - Phase 4: tsup had no entries for usage-log/telemetry, so the plain-JS hook could not import them from dist; added both to tsup.config.ts. Full suite had the 2 known flakes (hook-failure Jev-hang, freshness-scale warm start); both pass alone.
 - Phase 3: full suite had the 2 known load flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. `usageEvalSet` emits tier `paraphrase` (FacetCase needs a tier). Fallback `scope` is `vault` | `repo`; the hook (Phase 4) decides which.
 - Phase 2: no errors. Live capture succeeded on the second try (first used a library file as the server entry).
 
 ## Status
-**Currently in Phase 9** - validation
+**Currently in Phase 10** - documentation
 
 ---
 

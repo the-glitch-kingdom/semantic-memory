@@ -57,3 +57,24 @@ No retrieval change; `npm run eval` green (76 passed, 5 expected fail). `gaps --
 - `semantic-memory usage-set [--root] [--out]` writes `<root>/.claude/.semantic-memory/eval/usage.jsonl` via usageEvalSet; `eval` loads every *.jsonl in that dir, so no eval change was needed (cases carry `expected`, no `facets`).
 - `npm run eval` unchanged: 76 passed, 5 expected fail. Full suite: 2 known flakes (freshness-scale, hook-failure Jev-hang), both pass alone.
 - Not run: `eval` against a real usage.jsonl (none exists yet).
+
+## Eval results: Phase 9 (review and validate)
+Review of `git diff main...HEAD` against the plan:
+- `selection` writes: none. `appendUsage` writes only KEEP-listed fields and returns false for any other type (unit-tested); the integration test asserts the raw log never contains "selection".
+- Doc text / tool responses: the hook reads `tool_response` only for the MCP search tools (paths only, via `parseSearchResponse`); Read/Grep/Glob/Bash responses and grep patterns are never read. New test plants a marker in the search snippet, Read content, Grep pattern and Grep output: not in the log.
+- Export: `computeGaps` and `usageEvalSet` redact again and drop queries still holding `[REDACTED]`. The redactor deliberately skips placeholder-looking values (anything containing "example", e.g. the AWS docs key `AKIAIOSFODNN7EXAMPLE`); a realistic key is redacted. Not a bug.
+- Cheap exits: env, config, Bash-not-grep, Read-not-.md all run before `.mcp.json`, dist or the log. Non-matching Bash ~2 ms over node start (Phase 4).
+- hewtd: no reference or spawn in `usage-log.ts` or the hook (grep test added). The only mention is a doc comment in `toGapsV1`'s header, which is a comment.
+- No real bug found, so no source change. Added `test/integration/usage-capture-review.test.ts` (6 tests): rank null for a Read outside the results; search+Grep = `new doc` gap, then +Read X = `symptoms.user_phrase` with `used_doc` X; nested vaults resolve to the longest path; privacy marker + key redaction; real no-ranking-leak (selection log, `loadCitationCounts`, selection.jsonl files identical after hook events); no hewtd references.
+- Audit of ticked boxes: all hold, with the recorded deviations (search `weak` flag not recorded; Read/Bash exits before the .mcp.json read; offline tarball deferred to release).
+Full suite: lint, build green. `npm test` 970 passed, 5 expected fail, 1 failure (hook-failure Jev-hang budget, 3901 ms under load); passes alone (14/14). `npm run eval`: 76 passed, 5 expected fail, unchanged (identifier negatives flagged 8/8 train and 8/8 heldout, recall@24 0.998).
+Tarball: `npm pack` output extracted, contains hooks/usage-capture.js and dist/core/{usage-log,telemetry}.js; `--version` 1.15.0, `gaps` and `gaps --json` on an empty root give `gaps: []` / empty v1 and exit 0; hook on a Bash `ls` exits 0 silently. The real offline tarball (`--verify`) is built at release; not run.
+
+### #59 acceptance checks
+1. Search then Read of a returned doc gives a `use` with its rank: PASS (hook test, fixtures from live payloads; rank 1 for read_note, rank 5 for Read).
+2. Search then grep with no read gives a fallback and a `new doc` gap: PASS (integration test; scope "vault" only for greps inside a source).
+3. No doc text or tool responses in the log, queries redacted, off switches work: PASS (marker test, `SEMANTIC_MEMORY_USAGE_CAPTURE=0`, `usage_capture: off`, `telemetry.enabled: false`, reviewer env).
+4. `gaps --json` validates against hewtd 2.21.0's gaps.v1 schema, `version: 2` fails: PASS (Ajv2020, gaps-command test). `hewtd reconcile --gaps` end to end was not run.
+5. The prior does not lower blind @1: NOT IN SCOPE (plan B). No ranking change here; eval identical.
+6. Works with the other plugin absent: PASS (missing log gives `gaps: []`, exit 0; no hewtd reference or spawn).
+Known weak spots: `computeGaps` counts every search with no `use`, including ones answered from the search snippet, so it is noisy; a Bash grep with no path assumes cwd; a plugin server whose `.mcp.json` name differs from its tool-name server is skipped; the stale-block parse is only tested with a synthetic block; the hook is tested only with fixtures, not a fresh live Claude Code run.
