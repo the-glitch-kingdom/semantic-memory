@@ -18,3 +18,9 @@
 - **Response:** an array, with flags on the items (`search.ts:259`). A weak flag also suppresses `related` (`:259-261`). An empty result can't carry the flag.
 - **Two code paths need it:** `shape()` (MCP) and `openSearch` in `src/cli/search.ts:139-159` (hooks). `test/integration/search-parity.test.ts` expects them to match.
 - **The arXiv 2610.33732 AUROC figures were not checked.**
+
+## Eval results: Phase 2
+- 8 identifier negatives per split (ids i01-i08, `negative_kind: identifier`) appended to golden-docs, golden-docs-heldout, real-corpus, real-corpus-heldout. Planted terms (snake_case, ALL_CAPS, camelCase, paths, dotted names, one backticked) were grep-verified absent (case-insensitive, whole token and basename) from test/fixtures/docs-vault and .documentation; none appear in this plan's notes.
+- Shipped baseline, search_hybrid, existing score rule only: fixture-train 3/8 flagged, fixture-heldout 3/8, real-train 2/8, real-heldout 1/8. Existing 40 topic negatives and all tier counts unchanged (run separately).
+- Gates: `identifierGate` (test/retrieval-eval/gates.ts) is `it.fails` in docs-eval and real-corpus-eval until Phase 5.
+- Phase 2 gate: lint, build clean; npm test 923 passed, 2 load flakes (freshness-scale, hook-failure) pass alone; npm run eval 72 passed, 9 expected fail (5 old + 4 identifier gates).

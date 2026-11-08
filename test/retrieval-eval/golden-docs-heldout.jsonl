@@ -45,3 +45,11 @@
 {"id": "hm1", "tier": "multi", "q": "Describe how the system works from collection through to who may view data", "facets": ["gateway on each vessel buffers", "only what their role allows"]}
 {"id": "hm2", "tier": "multi", "q": "Summarize the stages a reading passes through, including where critical alerts get paged", "facets": ["five stages", "pages the on-call engineer"]}
 {"id": "hm3", "tier": "multi", "q": "A boat was out of contact for days: how does it catch up and how long are the replayed readings retained?", "facets": ["replays them oldest first", "Hot \\(7 days\\)"]}
+{"id":"i01","tier":"negative","q":"How do I use ops/tools/replay_voyage.sh?","negative_kind":"identifier"}
+{"id":"i02","tier":"negative","q":"What is the unit of fleet.beacon.interval_s?","negative_kind":"identifier"}
+{"id":"i03","tier":"negative","q":"What triggers drain_ballast_queue?","negative_kind":"identifier"}
+{"id":"i04","tier":"negative","q":"What is MAX_HULL_SENSORS used for?","negative_kind":"identifier"}
+{"id":"i05","tier":"negative","q":"Which module defines rebuildSonarIndex?","negative_kind":"identifier"}
+{"id":"i06","tier":"negative","q":"What goes in config/gateway/tls_overrides.yaml?","negative_kind":"identifier"}
+{"id":"i07","tier":"negative","q":"What is dock.lock.ttl_ms by default?","negative_kind":"identifier"}
+{"id":"i08","tier":"negative","q":"How often does compact_telemetry_log run?","negative_kind":"identifier"}

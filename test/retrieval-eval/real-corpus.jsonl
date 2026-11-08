@@ -40,3 +40,11 @@
 {"id": "x20", "tier": "multi", "q": "Give me the big picture of what the first three v1 releases added to semantic-memory, and what the rebrand left unfinished", "facets": ["What v1\\.0 left half-finished", "SessionStart drift detection"]}
 {"id": "x21", "tier": "multi", "q": "How do the layers stack from the bottom up to routing, and what escape hatch exists for modes?", "facets": ["Layer 5 \u2014 Routing", "Layer 1", "escape hatch"]}
 {"id": "x22", "tier": "multi", "q": "Explain the whole life of a work session, from when to open one to how a forgotten one is detected", "facets": ["When to open a session", "Session staleness detection"]}
+{"id":"i01","tier":"negative","q":"What does SEMANTIC_SHARD_COUNT do?","negative_kind":"identifier"}
+{"id":"i02","tier":"negative","q":"Where is warmEmbeddingPool called?","negative_kind":"identifier"}
+{"id":"i03","tier":"negative","q":"How do I run scripts/prune_orphan_vectors.mjs?","negative_kind":"identifier"}
+{"id":"i04","tier":"negative","q":"What is indexer.shard.max_bytes by default?","negative_kind":"identifier"}
+{"id":"i05","tier":"negative","q":"When should I call reset_graph_cursor?","negative_kind":"identifier"}
+{"id":"i06","tier":"negative","q":"What is VAULT_QUORUM_SIZE set to?","negative_kind":"identifier"}
+{"id":"i07","tier":"negative","q":"What does refreshLexiconCache do?","negative_kind":"identifier"}
+{"id":"i08","tier":"negative","q":"What does src/core/shard_router.ts route?","negative_kind":"identifier"}

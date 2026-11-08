@@ -24,10 +24,10 @@ measured with #56's `eval`. Every missed target is stated in the PR.
   - [x] Re-verify against main after #56 merges (13ab4c0: isWeak, bm25 df, shape(), openSearch unchanged; eval has `negative_kind`)
   - [x] Post the verification comment on #57
   - [x] Sync main, cut `feat/identifier-abstention`, commit this plan (with the archive move of `builtin-eval`)
-- [ ] Phase 2: Identifier negatives first
-  - [ ] Identifier negatives (7+ train and 7+ held-out) for the docs-vault fixture and `.documentation`, each term
+- [x] Phase 2: Identifier negatives first
+  - [x] Identifier negatives (7+ train and 7+ held-out) for the docs-vault fixture and `.documentation`, each term
         grep-verified absent, tagged `negative_kind: identifier`. Keep the planted terms out of this plan's own docs
-        (`.documentation` is a corpus). Record the shipped baseline (expected: mostly not flagged).
+        (`.documentation` is a corpus). Record the shipped baseline (expected: mostly not flagged). Done: 8 per split, baseline 3/8, 3/8, 2/8, 1/8 flagged (notes.md).
 - [ ] Phase 3: `missingTerms` and `Bm25Index.has`
   - [ ] `src/core/identifiers.ts`: detection (tokens with `_`, lower camelCase `[a-z]+[A-Z]\w*`, paths with `/`,
         dotted names whose every part starts with a letter so `v1.12.0` is excluded, backticked spans without
@@ -77,11 +77,14 @@ measured with #56's `eval`. Every missed target is stated in the PR.
 - v1 detection leaves out bare acronyms, PascalCase and kebab-case to avoid false flags on product names and prose.
 - A weak flag also suppresses `related` on that result (existing behaviour); recorded, not changed.
 
+- Phase 2: 8 identifier negatives per split (not 7); the identifier gate scales to ceil(n*4/7) = 5 of 8, so Phase 5 must reach 5/8 or restate the target.
+- Phase 2: identifier negatives run as a separate `search_hybrid` pass (`idArms`) so the old negatives gate, `meanBytes` ceiling and tier counts are unchanged; the new gate is an `it.fails` until Phase 4/5.
+
 ## Errors Encountered
 - (none yet)
 
 ## Status
-**Currently in Phase 2** - identifier negatives first
+**Currently in Phase 3** - `missingTerms` and `Bm25Index.has`
 
 ---
 
