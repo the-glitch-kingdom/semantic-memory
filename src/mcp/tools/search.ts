@@ -15,6 +15,7 @@ import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js
  * respects the opt-out, so it can't fail the search.
  */
 async function logSearch(ctx: ServerContext, tool: string, query: string, enriched: any[]): Promise<void> {
+  if (ctx.options.telemetry === false) return;
   const results = enriched.map((r) => ({
     path: r.path,
     score: r.score,

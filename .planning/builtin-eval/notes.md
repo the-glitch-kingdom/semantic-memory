@@ -21,3 +21,6 @@
 - Engine moved to `src/core/retrieval-eval/metrics.ts` (all of the old `test/retrieval-eval/eval.ts` except `hnswRecall`; `eval.ts` now re-exports it). The docs-eval grep arm's pattern builder is `grepPattern` in metrics.ts.
 - `npm run eval` before vs after: every answered@k, tier count, flagged count, negative-top score, link precision/recall and hnsw recall identical. Only differences: mean-payload on three arms is 1 byte lower after (4828->4827, 7415->7414, 7271->7270), run-to-run noise (HNSW is random per build), not from this change (metrics code does not touch payloads). Tests 57 -> 59 (two new unit tests: expected/found@k/MRR/latency, grepPattern).
 - Full `npm test`: only the known load flakes failed (freshness-scale, hook-failure, skill-eval concurrency); all pass alone with `--no-file-parallelism`.
+
+## Eval results: Phase 3
+- No numbers change (runner is new; `npm run eval` 61 passed, 5 expected fail). Tests 914 passed. `ServerOptions.telemetry: false` skips search logging and the read_note selection event. runner.test.ts: no index -> refuses and creates no index dir; cls-pooled index with a prompt keeps hnsw.bin/docs.cache.json/meta.json hashes and writes no selection.jsonl.

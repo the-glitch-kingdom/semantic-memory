@@ -36,6 +36,8 @@ export interface ServerOptions {
   pooling?: "mean" | "cls";
   queryPrompt?: string;
   readOnly?: boolean;
+  /** false: searches and reads are not logged (the retrieval eval must not feed usage-boost). Default true. */
+  telemetry?: boolean;
   onProgress?: (embedded: number, total: number) => void;
 }
 

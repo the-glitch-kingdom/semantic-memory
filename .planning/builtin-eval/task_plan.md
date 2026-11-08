@@ -36,10 +36,11 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
   - [x] `FacetCase` gains optional `expected?: string[]`, `split?: "tune" | "heldout"`, `negative_kind?: "identifier" |
         "topic"`. `runFacetEval` adds found@k and MRR when `expected` is set, and per-case latency (p50/p95).
   - [x] `npm run eval` numbers identical before and after (record both runs in notes.md).
-- [ ] Phase 3: Runner without side effects (`src/core/retrieval-eval/runner.ts`)
-  - [ ] `openEval(notes)`: `createServer` plus an in-memory client against the existing index; model, pooling and
+- [x] Phase 3: Runner without side effects (`src/core/retrieval-eval/runner.ts`)
+  - [x] `openEval(notes)`: `createServer` plus an in-memory client against the existing index; model, pooling and
         prompt from `meta.json`; refuses when there is no index; `telemetry: false` makes `logSearch` return early.
-  - [ ] Tests: an index built with model A is left untouched (no re-embed); `selection.jsonl` is unchanged after an eval.
+        (Also skips the `read_note` selection event. `armsOf` moved here; test harness reuses it. Test proxies "model A" with cls pooling + a query prompt: same mismatch check, no second model download.)
+  - [x] Tests: an index built with model A is left untouched (no re-embed); `selection.jsonl` is unchanged after an eval.
 - [ ] Phase 4: CLI `semantic-memory eval`
   - [ ] `eval --notes <dir> [--set <file>...] [--json] [--baseline] [--check] [--band <n>] [--dir <evaldir>]`. No
         `--set` loads `*.jsonl` from the eval dir (default `<project>/.claude/.semantic-memory/eval/`; `--dir` lets a
@@ -105,7 +106,7 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - (none yet)
 
 ## Status
-**Currently in Phase 3** - runner without side effects
+**Currently in Phase 4** - CLI `semantic-memory eval`
 
 ---
 
