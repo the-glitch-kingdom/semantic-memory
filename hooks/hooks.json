@@ -70,8 +70,7 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-loop.js\""
           }
         ]
-      }
-,
+      },
       {
         "matcher": "Read|Grep|Glob|Bash|mcp__.*semantic-.*__(search_hybrid|search_semantic|search_text|read_note)",
         "hooks": [

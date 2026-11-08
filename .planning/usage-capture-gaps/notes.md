@@ -82,3 +82,8 @@ Known weak spots: `computeGaps` counts every search with no `use`, including one
 ## Eval results: Phase 10
 Docs only; code unchanged. See the eval run below in the commit message / final report.
 Floors lowered for the new docs; measured: real-train hybrid @1 18 (was 21), semantic @1 19 (was 14), real-heldout hybrid false flags 1/9. See Errors Encountered in the plan.
+
+## Release checks (main session, before the PR)
+- #59 check 4, end to end: a hand-written usage log in a scratch copy, `semantic-memory gaps --json`, then `hewtd reconcile --gaps <file> --json` (2.21.0): the `used_doc` gap became a phrase proposal on `operational/skill-loop.md`, the `used_doc: null` gap an open question; no errors, nothing dropped.
+- Floor change audited: a per-question top-3 dump (branch docs vs main's versions of the edited docs) shows 4 flips, each a swap of the top two among docs that both cover the question (`configuration-reference.md` vs `troubleshooting.md` / a changelog / `usage-feedback-guide.md`). Corpus sensitivity, not a ranking bug. The real-corpus eval reads the live `.documentation`, so every docs phase can move it; a frozen snapshot would stop that (not done here).
+- hooks.json: fixed a misplaced comma in the new PostToolUse entry.
