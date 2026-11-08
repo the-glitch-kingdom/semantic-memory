@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 export interface FederationSource {
@@ -59,7 +59,9 @@ function relatedRepos(notesPath: string, warnings: string[]): FederationSource[]
     }
     const repo = resolve(root, e.path);
     const own = asRecord(readJson(join(repo, HEWTD_CONFIG)))?.docs_root;
-    const docs = [typeof own === "string" && own ? resolve(repo, own) : "", join(repo, ".documentation")].find((d) => d && isDir(d));
+    // a sibling's own config must not point the index outside that sibling (e.g. docs_root: "../../.ssh")
+    const inside = (d: string) => !relative(repo, d).startsWith("..") && !isAbsolute(relative(repo, d));
+    const docs = [typeof own === "string" && own ? resolve(repo, own) : "", join(repo, ".documentation")].find((d) => d && inside(d) && isDir(d));
     if (!docs) {
       warnings.push(`federation: related repo "${e.name}" has no docs tree (docs_root or .documentation); skipped`);
       continue;

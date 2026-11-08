@@ -56,3 +56,30 @@ Federated found@3 beats either alone on both splits; per-source @1 is within one
 
 ## Eval results: Phase 6-7
 No retrieval change. Full suite green; freshness-scale and hook-failure Jev budget failed once under load, passed alone (16/16). eval green.
+
+## Eval results: Phase 8
+Review of `git diff main...HEAD` (adversarial). Found and fixed, each with a test:
+- A source whose own `vault.schema.yml` enables `rerank` built a second cross-encoder and its scores (another scale) entered the merge. Now `ctx.reranker = null` for sources (test/integration/federation-notes.test.ts).
+- A sibling's `docs_root` such as `../outside` was indexed. Now ignored unless inside the sibling (test/unit/federation.test.ts).
+Checked, clean: nothing written into a source (readOnly, telemetry off, index under the primary; mtime snapshot test); one Embedder (sources reuse the primary's, `init()` memoized); single-source output equals the v1.18.0 snapshot, no `source`; calibration was chosen on train only. Known limits kept: a source that was missing/unreadable/indexing at the first search stays reported until restart; only `search_hybrid` and `read_note` are federated; `source` is set whenever a federated merge ran (any ready source), including a source with zero hits.
+New tests: federation-notes.test.ts (stale-source trailing block + `_meta.stale`, content[0] stays a plain array, telemetry logs `label:path` for search and read_note, primary hits stay bare, source reranker off, works with no hewtd config and `related_repos` left at its default).
+
+Latency and memory (throwaway test, deleted; primary = this repo's .documentation, 183 docs, each source a copy of it; 77 queries from golden-docs x3 = 231 timed calls after warm-up; one process per arm; `--expose-gc`, measured after gc):
+
+| sources | p50 | p95 | max | heapUsed | RSS | external+arrayBuffers |
+|---|---|---|---|---|---|---|
+| 0 (no federation) | 5.4 ms | 10.5 ms | 20.8 ms | 66 MB | 1652 MB | 21 MB |
+| 1 | 9.1 ms | 16.3 ms | 28.0 ms | 81 MB | 1734 MB | 23 MB |
+| 3 | 11.2 ms | 19.5 ms | 53.3 ms | 113 MB | 1771 MB | 41 MB |
+
+About +16 MB heap and +40 MB RSS per source on a 183-doc corpus, well under the 50-100 MB estimate; index memory scales with docs, so a 538-doc source would be roughly 3x. RSS baseline (1.6 GB) is the vitest process, so read the deltas. The repo has no p95 budget; the issue's baseline was 33 ms p95 on 751 docs. Every arm is far under it; 3 sources cost about 2x the no-federation p95.
+
+Eval (`npm run eval`, 15 files, 132 passed, 5 expected fail), federated eval, found@k:
+- train (21): joint federated @1 17 @3 20; docs alone 11 / 12; vault alone 8 / 8. Own primary: 10 vs 10 alone. Own vault: 7 vs 8 alone.
+- held-out (20): joint federated @1 16 @3 20; docs alone 10 / 13; vault alone 8 / 8. Own primary: 9 vs 10 alone. Own vault: 6 vs 7 alone.
+
+#62 acceptance:
+1. Two sources, one `search_hybrid`, results from both, labelled: PASS (federated-search.test.ts, labels `primary` and `svc`; the eval shows both sides answering).
+2. Missing or unreadable source reported once and skipped, search succeeds: PASS (missing path in federated-search.test.ts, missing and chmod 000 in federation-sources.test.ts, run as a non-root user so chmod 000 is really exercised; reported once).
+3. Found@3 above either index alone on a two-source set, p95 within budget: PASS for found@3 on train and held-out (20 vs 12/8 and 20 vs 13/8). p95: 19.5 ms with 3 sources vs 10.5 ms without; no budget is defined in the repo. The stricter own-question gate also holds: federated @1 within one case of alone on every side, both splits; note the vault side is small (8 and 7 cases) so one case is a large share, and both vault-own splits are exactly one below alone.
+4. Works with the other plugin absent: PASS (fixtures have no `.claude/hit-em-with-the-docs.json`; federation-notes.test.ts leaves `related_repos` at its default and federates; federation.test.ts covers absent and malformed hewtd config).

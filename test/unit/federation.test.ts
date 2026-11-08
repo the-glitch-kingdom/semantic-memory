@@ -60,6 +60,16 @@ describe("loadFederation", () => {
   });
 
   describe("related_repos", () => {
+    it("ignores a sibling docs_root that points outside the sibling", async () => {
+      await mkdir(join(root, "e", ".claude"), { recursive: true });
+      await mkdir(join(root, "outside"), { recursive: true });
+      await writeFile(join(root, "e", ".claude", "hit-em-with-the-docs.json"), JSON.stringify({ docs_root: "../outside" }));
+      await hewtd({ reconcile: { related_repos: [{ name: "e", path: "e" }] } });
+      const f = loadFederation(vault);
+      expect(f.sources).toEqual([]);
+      expect(f.warnings.join()).toContain('"e" has no docs tree');
+    });
+
     it("resolves siblings' docs trees: own docs_root, else .documentation, else skipped", async () => {
       await mkdir(join(root, "a", "docs"), { recursive: true });
       await mkdir(join(root, "a", ".claude"), { recursive: true });

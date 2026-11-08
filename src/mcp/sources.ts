@@ -55,6 +55,7 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
       }
       try {
         const ctx = await buildContext(s.path, { readOnly: true, indexPath: sourceIndexPath(primary.indexPath, s), embedder: primary.embedder, telemetry: false });
+        ctx.reranker = null; // a source's own rerank block would load a second model and score on a scale the merge cannot compare
         ctx.tryLoadCachedIndex()
           .then((cached) => (cached ? ctx.reconcileNow() : ctx.backgroundIndex()))
           .catch(() => ctx.backgroundIndex());
