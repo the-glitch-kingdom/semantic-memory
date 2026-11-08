@@ -63,11 +63,11 @@ built-in eval and #57). Every missed target is stated in the PR.
         suggested, count, last_seen}]}`; `used_doc` vault-relative or null; `suggested` is `symptoms.user_phrase`
         when `used_doc` is set, else `new doc`; `last_seen` YYYY-MM-DD. A query that still holds `[REDACTED]` after
         redaction is dropped. The text report may also show the signals (no selection, grep fallback, not in results).
-- [ ] Phase 6: Usage eval set
-  - [ ] `semantic-memory usage-set [--out]` writes `.claude/.semantic-memory/eval/usage.jsonl` in `eval`'s
+- [x] Phase 6: Usage eval set
+  - [x] `semantic-memory usage-set [--out]` writes `.claude/.semantic-memory/eval/usage.jsonl` in `eval`'s
         question-set format (#56), only searches whose doc was used, split by a deterministic hash of the normalized
         query (`tune` / `heldout`). `eval` picks it up when present.
-  - [ ] Delete `scripts/retrieval-eval/mine-selection.mjs` and update its doc references.
+  - [x] Delete `scripts/retrieval-eval/mine-selection.mjs` and update its doc references. (refs were in retrieval-tuning-guide.md and tests-and-validation.md; the guide now lists usage-set)
 - [ ] Phase 7: Release prep v1.15.0
   - [ ] Bump all five version fields, `npm install --package-lock-only --ignore-scripts`
   - [ ] Offline tarball builds (rebuilt from the merge commit with a clean model cache before publishing)
@@ -137,7 +137,7 @@ built-in eval and #57). Every missed target is stated in the PR.
 - Phase 2: no errors. Live capture succeeded on the second try (first used a library file as the server entry).
 
 ## Status
-**Currently in Phase 6** - the usage eval set
+**Currently in Phase 7** - release prep v1.15.0
 
 ---
 

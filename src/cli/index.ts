@@ -2,7 +2,7 @@
 
 import { program } from "commander";
 import { resolve, join, dirname, relative } from "node:path";
-import { existsSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -1215,6 +1215,22 @@ registerFeatureCommands(program, {
   },
 });
 registerSkillLoopCommands(program);
+
+program
+  .command("usage-set")
+  .description("Write the usage eval set (searches that ended in a used doc) in `eval` question-set format; `eval` loads it from the eval dir")
+  .option("--root <dir>", "Repo root (default: the repo of the current directory)")
+  .option("--out <file>", "Output file (default <root>/.claude/.semantic-memory/eval/usage.jsonl)")
+  .action(async (opts) => {
+    const { repoRoot } = await import("../core/skill-evidence.js");
+    const { readUsage, usageEvalSet } = await import("../core/usage-log.js");
+    const root = opts.root ?? repoRoot(process.cwd());
+    const out = opts.out ?? join(root, ".claude", ".semantic-memory", "eval", "usage.jsonl");
+    const cases = usageEvalSet(readUsage(root));
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, cases.map((c) => JSON.stringify(c)).join("\n") + (cases.length ? "\n" : ""));
+    console.log(`${cases.length} questions (${cases.filter((c) => c.split === "heldout").length} heldout) -> ${out}`);
+  });
 
 program
   .command("gaps")

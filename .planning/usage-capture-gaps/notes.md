@@ -52,3 +52,8 @@ Not done: search `weak` flag is not recorded (optional field).
 
 ## Eval results: Phase 5
 No retrieval change; `npm run eval` green (76 passed, 5 expected fail). `gaps --json` validates with Ajv2020 against hewtd 2.21.0 gaps.v1.schema.json; `signals` is stripped by `toGapsV1` (text report keeps it).
+
+## Eval results: Phase 6
+- `semantic-memory usage-set [--root] [--out]` writes `<root>/.claude/.semantic-memory/eval/usage.jsonl` via usageEvalSet; `eval` loads every *.jsonl in that dir, so no eval change was needed (cases carry `expected`, no `facets`).
+- `npm run eval` unchanged: 76 passed, 5 expected fail. Full suite: 2 known flakes (freshness-scale, hook-failure Jev-hang), both pass alone.
+- Not run: `eval` against a real usage.jsonl (none exists yet).

@@ -70,3 +70,22 @@ describe("healthcheck: usage log gitignore", () => {
     rmSync(r, { recursive: true, force: true });
   });
 });
+
+describe("semantic-memory usage-set", () => {
+  it("writes eval question-set lines for searches that ended in a used doc", () => {
+    const r = mkdtempSync(join(tmpdir(), "uset-"));
+    mkdirSync(join(r, ".claude", ".semantic-memory"), { recursive: true });
+    writeFileSync(join(r, ".claude", ".semantic-memory", "usage.jsonl"), [
+      line({ type: "search", id: "a", server: "semantic-docs", tool: "search_hybrid", query: "tls cert expired", results: [] }),
+      line({ type: "use", search: "a", server: "semantic-docs", path: "tls.md", rank: null, via: "read_note" }),
+      line({ type: "search", id: "b", server: "semantic-docs", tool: "search_hybrid", query: "redis memory limit", results: ["r.md"] }),
+      line({ type: "fallback", search: "b", via: "Grep", scope: "vault" }),
+    ].join("\n") + "\n");
+    execFileSync("node", [cli, "usage-set", "--root", r], { encoding: "utf8" });
+    const cases = readFileSync(join(r, ".claude", ".semantic-memory", "eval", "usage.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    expect(cases).toHaveLength(1); // the fallback-only search has no used doc
+    expect(cases[0]).toMatchObject({ q: "tls cert expired", expected: ["tls.md"], tier: "paraphrase" });
+    expect(["tune", "heldout"]).toContain(cases[0].split);
+    rmSync(r, { recursive: true, force: true });
+  });
+});
