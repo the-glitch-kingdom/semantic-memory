@@ -47,8 +47,8 @@ measured with #56's `eval`. Every missed target is stated in the PR.
 - [x] Phase 5: Measure
   - [x] All splits with `eval`: identifier negatives flagged (target: at least 4 of 7 per split), answerable false
         flags unchanged, plain-English questions unchanged. Gates for the new negatives; raise the negatives floors.
-- [ ] Phase 6: Release prep v1.14.0
-  - [ ] Bump all five version fields, lockfile; offline tarball builds
+- [x] Phase 6: Release prep v1.14.0
+  - [x] Bump all five version fields, lockfile; offline tarball builds
 - [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Dead-code check over the branch diff.
 - [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
