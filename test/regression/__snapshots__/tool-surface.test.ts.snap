@@ -896,7 +896,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "read_multiple_notes",
   },
   {
-    "description": "Read a note by path. Pass \`section\` (a heading name) to read only that heading's section instead of the whole file — cheaper when you only need one part (e.g. a dossier's 'Knobs' section).",
+    "description": "Read a note by path. Pass \`section\` (a heading name, or \`#anchor\` as search results give it) to read only that heading's section instead of the whole file — cheaper when you only need one part (e.g. a dossier's 'Knobs' section).",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -905,7 +905,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "section": {
-          "description": "Heading name — return only that section (heading through the next same-or-higher heading).",
+          "description": "Heading name or #anchor — return only that section (heading through the next same-or-higher heading).",
           "type": "string",
         },
       },
@@ -1030,7 +1030,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "search_graph",
   },
   {
-    "description": "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\` (not in the docs or the code) or \`undocumented: [{entity, path}]\` (in the code, in no doc). A query naming a symbol or file the docs cite gets an \`entity\` card on result #1: its path ("defined in" or "found in") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). \`full: true\` returns whole chunks and frontmatter fields.",
+    "description": "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\` (not in the docs or the code) or \`undocumented: [{entity, path}]\` (in the code, in no doc). A query naming a symbol or file the docs cite gets an \`entity\` card on result #1: its path ("defined in" or "found in") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). \`full: true\` returns whole chunks and frontmatter fields. Each result also carries its best section: \`section\` (heading trail), \`anchor\` (heading anchor, hewtd's rules) and \`code\` (up to 3 code refs in the section); \`granularity: "doc"\` leaves them out.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -1043,6 +1043,15 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "default": false,
           "description": "Return the whole result (full matched chunk, frontmatter fields) instead of the trimmed default",
           "type": "boolean",
+        },
+        "granularity": {
+          "default": "section",
+          "description": ""section" (default) adds the best section's \`section\` trail, \`anchor\` and \`code\` refs to each result; "doc" returns whole-doc results without them",
+          "enum": [
+            "section",
+            "doc",
+          ],
+          "type": "string",
         },
         "limit": {
           "default": 10,
@@ -1076,7 +1085,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "search_hybrid",
   },
   {
-    "description": "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\` (not in the docs or the code) or \`undocumented: [{entity, path}]\` (in the code, in no doc). A query naming a symbol or file the docs cite gets an \`entity\` card on result #1: its path ("defined in" or "found in") and the docs citing it. \`full: true\` returns whole chunks and frontmatter fields.",
+    "description": "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\` (not in the docs or the code) or \`undocumented: [{entity, path}]\` (in the code, in no doc). A query naming a symbol or file the docs cite gets an \`entity\` card on result #1: its path ("defined in" or "found in") and the docs citing it. \`full: true\` returns whole chunks and frontmatter fields. Each result also carries its best section: \`section\` (heading trail), \`anchor\` (heading anchor, hewtd's rules) and \`code\` (up to 3 code refs in the section); \`granularity: "doc"\` leaves them out.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -1089,6 +1098,15 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "default": false,
           "description": "Return the whole result (full matched chunk, frontmatter fields) instead of the trimmed default",
           "type": "boolean",
+        },
+        "granularity": {
+          "default": "section",
+          "description": ""section" (default) adds the best section's \`section\` trail, \`anchor\` and \`code\` refs to each result; "doc" returns whole-doc results without them",
+          "enum": [
+            "section",
+            "doc",
+          ],
+          "type": "string",
         },
         "limit": {
           "default": 10,

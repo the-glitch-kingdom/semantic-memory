@@ -1,6 +1,7 @@
 import { join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { repoRoot } from "../core/skill-evidence.js";
 import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
 import { GraphBuilder } from "../core/graph.js";
@@ -10,7 +11,9 @@ import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { identifiers, missingTerms } from "../core/identifiers.js";
-import { entityCard, loadCodeData, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
+import { entityCard, loadCodeData, loadExport, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
+import { fold } from "../core/fold.js";
+import { sectionFields } from "../core/section-fields.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { decayForDoc, groundingBlock, loadDecayConfig, type DecayBlock } from "../core/decay.js";
 import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
@@ -46,6 +49,12 @@ export interface SearchHit {
   /** present when the note is down-weighted or its age came from a fallback; same block as the MCP tools */
   decay?: DecayBlock;
   grounding?: ReturnType<typeof groundingBlock>;
+  /** other docs folded into this result: a marked copy or a pointer, as `path#anchor` */
+  also_in?: string[];
+  /** best section: heading trail (H1 dropped when it is the title), anchor, up to 3 code refs; same as the MCP tools */
+  section?: string;
+  anchor?: string;
+  code?: string[];
 }
 
 export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
@@ -63,7 +72,7 @@ export interface Searcher {
  * Load a notes folder once and search it many times — the same scoring the hook's CLI search uses.
  * The hook spawns `search` per prompt; the failure eval reuses one Searcher per corpus.
  */
-export async function openSearch(notes: string, opts: { textOnly?: boolean } = {}): Promise<Searcher> {
+export async function openSearch(notes: string, opts: { textOnly?: boolean; granularity?: "section" | "doc" } = {}): Promise<Searcher> {
   const notesPath = resolve(notes);
   if (!existsSync(notesPath)) {
     throw new Error(`notes directory not found: ${notesPath}`);
@@ -130,6 +139,9 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   const decayOf = (path: string) => (decayConfig.enabled && docByPath.get(path) ? decayForDoc(docByPath.get(path)!, decayConfig) : { multiplier: 1 });
   const selfTop = (await readMeta(indexPath))?.bm25SelfTop ?? bm25SelfTop(bm25, docs);
   const paths = docs.map((d) => d.path).join("\n").toLowerCase();
+  // the export is one file read: folding needs its duplicates and pointers, not the git calls of the full code graph
+  let exp: CodeData | null | undefined;
+  const exported = () => (exp !== undefined ? exp : (exp = loadExport(repoRoot(notesPath), notesPath, new Set(docs.map((d) => d.path)))));
   let codeP: Promise<CodeData | null> | undefined;
   const bm25Min = selfTop === null ? null : selfTop * BM25_FRACTION;
   return {
@@ -147,12 +159,11 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
             return { ...r, score };
           })
           .sort((a, b) => b.score - a.score);
-      const all = withConfidence(
-        filterPathClass(
-          applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, limit * 3))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
-          pathClass
-        )
+      const filtered = filterPathClass(
+        applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, limit * 3))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
+        pathClass
       );
+      const all = withConfidence(opts.granularity === "doc" ? filtered : fold(filtered, docByPath, exported()));
       const absent = missingTerms(query, bm25, paths);
       // the code is read only for a query that names an identifier: it costs a git call
       const code = identifiers(query).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
@@ -163,19 +174,25 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
       const stale = await indexRebuilding(indexPath);
       const ranked = all.slice(0, limit);
 
-      return ranked.map((r, i) => ({
+      return ranked.map((r, i) => {
+        const title = docByPath.get(r.path)?.title ?? r.title;
+        const sec = sectionFields(docByPath.get(r.path), r.matchedChunk ?? r.snippet, title);
+        return {
         path: r.path,
-        title: docByPath.get(r.path)?.title ?? r.title,
+        title,
         score: r.score,
         confidence: r.confidence,
-        snippet: excerpt(r.matchedChunk ?? r.snippet, query),
+        snippet: excerpt(sec.text, query),
         ...(r.matched && { matched: r.matched }),
+        ...((r as any).also_in && { also_in: (r as any).also_in }),
         ...(i === 0 && card && { entity: card }),
         ...(weak && { no_strong_match: true as const, ...(missing.length && { missing_terms: missing }), ...(undocumented.length && { undocumented }) }),
         ...(stale && { stale: true as const }),
         ...(decayOf(r.path).block && { decay: decayOf(r.path).block }),
         ...(decayOf(r.path).grounding && { grounding: decayOf(r.path).grounding }),
-      }));
+        ...(opts.granularity !== "doc" && { ...(sec.section && { section: sec.section }), ...(sec.anchor && { anchor: sec.anchor }), ...(sec.code && { code: sec.code }) }),
+        };
+      });
     },
   };
 }

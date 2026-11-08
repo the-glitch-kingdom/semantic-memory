@@ -144,8 +144,8 @@ exports[`Regression: MCP tool outputs (golden snapshots) > get_stats > returns v
   "hasLastIndexed": true,
   "indexSize": 0,
   "indexState": "ready",
-  "totalChunks": 10,
-  "totalEmbeddings": 10,
+  "totalChunks": 17,
+  "totalEmbeddings": 17,
   "totalNotes": 10,
 }
 `;
@@ -196,7 +196,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > lint_vault > returns 
 exports[`Regression: MCP tool outputs (golden snapshots) > list_notes > returns a stable listing for the fixture vault 1`] = `
 [
   {
-    "chunks": 1,
+    "chunks": 2,
     "hasMtime": true,
     "path": "api-gateway.md",
     "tags": [
@@ -208,7 +208,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > list_notes > returns 
     "wikilinks": 4,
   },
   {
-    "chunks": 1,
+    "chunks": 2,
     "hasMtime": true,
     "path": "deployment-guide.md",
     "tags": [
@@ -228,7 +228,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > list_notes > returns 
     "wikilinks": 0,
   },
   {
-    "chunks": 1,
+    "chunks": 2,
     "hasMtime": true,
     "path": "event-driven.md",
     "tags": [
@@ -240,7 +240,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > list_notes > returns 
     "wikilinks": 2,
   },
   {
-    "chunks": 1,
+    "chunks": 2,
     "hasMtime": true,
     "path": "microservices.md",
     "tags": [
@@ -262,7 +262,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > list_notes > returns 
     "wikilinks": 1,
   },
   {
-    "chunks": 1,
+    "chunks": 2,
     "hasMtime": true,
     "path": "notes/meeting-2024-01-15.md",
     "tags": [
@@ -285,7 +285,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > list_notes > returns 
     "wikilinks": 0,
   },
   {
-    "chunks": 1,
+    "chunks": 2,
     "hasMtime": true,
     "path": "project-overview.md",
     "tags": [
@@ -298,7 +298,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > list_notes > returns 
     "wikilinks": 3,
   },
   {
-    "chunks": 1,
+    "chunks": 2,
     "hasMtime": true,
     "path": "user-service.md",
     "tags": [
@@ -358,10 +358,12 @@ exports[`Regression: MCP tool outputs (golden snapshots) > search_graph > return
 
 exports[`Regression: MCP tool outputs (golden snapshots) > search_hybrid > returns results with stable structural shape 1`] = `
 [
+  "anchor",
   "confidence",
   "path",
   "related",
   "score",
+  "section",
   "snippet",
   "title",
 ]
@@ -369,10 +371,12 @@ exports[`Regression: MCP tool outputs (golden snapshots) > search_hybrid > retur
 
 exports[`Regression: MCP tool outputs (golden snapshots) > search_semantic > returns results with stable structural shape 1`] = `
 [
+  "anchor",
   "confidence",
   "path",
   "related",
   "score",
+  "section",
   "snippet",
   "title",
 ]

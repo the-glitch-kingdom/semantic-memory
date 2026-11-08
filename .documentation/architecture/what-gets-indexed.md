@@ -74,7 +74,7 @@ For every markdown file the indexer finds, it extracts and indexes multiple dist
 
 Body text is split into chunks before embedding. Each chunk becomes one vector in the index. Splits happen at:
 
-1. **Section boundaries** — markdown `##` and `###` headings
+1. **Section boundaries** (v1.17, index schema 9) — every markdown heading. Each chunk is prefixed with its `A > B > C` heading trail, and a section under 100 characters is carried into the next chunk. The index stores each section's anchor, trail, hash and first 3 code refs, and maps chunks to sections (the `section`, `anchor` and `code` result fields). See the [v1.17.0 changelog](../changelog/v1-17-0-section-results.md)
 2. **Token-count caps** — chunks too large for the embedding model's context window get split
 3. **Code-block respect** — chunks try not to split fenced code blocks
 

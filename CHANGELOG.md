@@ -2,6 +2,24 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.17.0] - 2026-11-08 — Section results
+
+Issue #60. Numbers and misses: `.documentation/changelog/v1-17-0-section-results.md`.
+
+### Added
+
+- **Section chunks** (index schema 9): split at headings with the heading trail in the embedded text. **The first start after upgrading re-embeds once.**
+- Results carry `section`, `anchor` and `code`; `granularity: "section" | "doc"` on `search_semantic` / `search_hybrid`; `read_note` `section: "#anchor"`.
+- **Folding**: a copy or pointer folds under its owner (`also_in`), from `.hewtd/graph.json` `duplicates` / `points_to`, or by identical section text without it.
+
+### Measured
+
+Section anchor@1 3/12 and 4/12 to 12/12 on train and held-out; owner first in 4/4 and 2/2 fold cases. Doc answer@1 against v1.16.0's packing in the same run (semantic / hybrid): fixture train 42/43 to 40/41, fixture held-out 25/26 to 23/24, real train 19/19 to 18/21, real held-out 13/18 to 11/18.
+
+### Missed targets
+
+Existing @1/@3 dropped on some fixture splits (floors lowered to the measured values) and real held-out negatives flagged by `no_strong_match` fell from 7-8/8 to 5/8. Without the export a pointer is not folded. A short section carried into the next chunk reports the later section's anchor; `code` per section is not resolved against the code graph.
+
 ## [1.16.0] - 2026-11-08 — Code graph
 
 Issue #58. Design: `.documentation/architecture/code-graph.md`; numbers and misses: `.documentation/changelog/v1-16-0-code-graph.md`.

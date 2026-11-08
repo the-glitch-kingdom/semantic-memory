@@ -32,7 +32,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 29 | Release notes per version and phase |
+| [Changelog](#changelog) | 30 | Release notes per version and phase |
 | [Operational](#operational) | 18 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 7 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -229,6 +229,7 @@ purpose: Navigation hub for all documentation
 | [v1.14.0 - identifier abstention](changelog/v1-14-0-identifier-abstention.md) | reference | active | 2026-11-07 | What v1.14.0 changed (issue 57), the measured acceptance results, and the targets that were missed. |
 | [v1.15.0 - usage capture and search gaps](changelog/v1-15-0-usage-capture-gaps.md) | reference | active | 2026-11-07 | What v1.15.0 changed (issue 59, plan A), the measured acceptance results, and the targets that were missed. |
 | [v1.16.0 - code graph](changelog/v1-16-0-code-graph.md) | reference | active | 2026-11-08 | What v1.16.0 changed (issue 58), the measured results on the code-graph fixture, and the targets that were missed. |
+| [v1.17.0 - section results](changelog/v1-17-0-section-results.md) | reference | active | 2026-11-08 | What v1.17.0 changed (issue 60), the measured results on the section fixture, and the targets that were missed. |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](changelog/v1-2-3-hygiene-completion.md) | reference | active | 2026-07-10 | What v1.2.3 added — the three v1.2 roadmap items that slipped past 1.2.0/1.2.1/1.2.2 (healthcheck --fix, code_symbols lint, fresh-install CI smoke). |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](changelog/v1-2-state-consolidation.md) | reference | active | 2026-05-09 | What v1.2.0 changed — three transient state files moved from .claude/.sidekick-* to .claude/.semantic-memory/. Read-with-fallback through v1.x. |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |

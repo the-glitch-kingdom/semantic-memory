@@ -8,14 +8,19 @@ import { existsSync } from "node:fs";
 import { basename, join, relative, posix } from "node:path";
 import type { IndexedDocument } from "./types.js";
 import { buildFields, loadIndexFields, type IndexFields } from "./fields.js";
+import { createHash } from "node:crypto";
+import { flatSections } from "./sections.js";
 import { isExcludedPath, loadPathClassConfig, type PathClassConfig } from "./path-class.js";
 
 const DOCS_CACHE_FILE = "docs.cache.json";
 
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
+const MIN_SECTION_CHARS = 100; // a section shorter than this shares the chunk of the next one (tuned on train: 0-150 keep every answer section, 200+ merge neighbours of the section eval and lose it)
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 8; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed); 8: codeRefs (re-parse only, chunk text unchanged)
+/** refs kept per section for the result's `code` field */
+const SECTION_CODE_MAX = 3;
+export const INDEX_SCHEMA_VERSION = 9; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed); 8: codeRefs (re-parse only, chunk text unchanged); 9: chunks split at headings and prefixed with the heading trail (full re-embed), sections, chunkSection
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -109,7 +114,7 @@ export class Indexer {
     const tags = this.extractTags(content, frontmatter);
     const headers = this.extractHeaders(tree);
     const plainText = this.stripMarkdown(content);
-    const chunks = this.chunkText(plainText);
+    const { chunks, sections, chunkSection } = this.sectionChunks(content, plainText, relativePath);
 
     // YAML parses `title: 2024` as a number and `title: 2024-05-01` as a Date
     const fmTitle = frontmatter.title as unknown;
@@ -164,6 +169,7 @@ export class Indexer {
       tags,
       headers,
       chunks: hidden ? [] : chunks,
+      ...(!hidden && { sections, chunkSection }),
       ...(fields.meta.length > 0 && { meta: fields.meta }),
       ...(fields.lexical && { fieldText: fields.lexical }),
       ...(generated && { generated }),
@@ -295,7 +301,7 @@ export class Indexer {
   }
 
   private nodeToText(node: any): string {
-    if (node.type === "text") return node.value;
+    if (node.type === "text" || node.type === "inlineCode") return node.value;
     if (node.children) return node.children.map((c: any) => this.nodeToText(c)).join("");
     return "";
   }
@@ -320,6 +326,38 @@ export class Indexer {
       .replace(/^\s*-{3,}\s*$/gm, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
+  }
+
+  /**
+   * Chunks split at headings, each prefixed with its heading trail ("Deploy > Rollback"); a section under MIN_SECTION_CHARS
+   * is carried into the chunk of the next section. `chunkSection[i]` is the section chunk i answers for.
+   */
+  sectionChunks(content: string, plainText: string, sourcePath = ""): { chunks: string[]; sections: NonNullable<IndexedDocument["sections"]>; chunkSection: number[] } {
+    const flat = flatSections(content);
+    const stack: string[] = [];
+    const sections = flat.map((s) => {
+      stack.length = Math.max(0, s.level - 1);
+      if (s.level > 0) stack[s.level - 1] = s.heading;
+      const text = this.stripMarkdown(s.body);
+      const code = this.extractCodeRefs(this.processor.parse(s.body), sourcePath).slice(0, SECTION_CODE_MAX);
+      return { anchor: s.anchor, trail: stack.filter(Boolean).join(" > "), ...(code.length && { code }), hash: createHash("sha1").update(text.toLowerCase().replace(/\s+/g, " ")).digest("hex").slice(0, 16), text };
+    });
+    const chunks: string[] = [];
+    const chunkSection: number[] = [];
+    let carry = "";
+    sections.forEach((sec, i) => {
+      const text = [carry, sec.text].filter(Boolean).join("\n\n");
+      carry = "";
+      if (text.length < MIN_SECTION_CHARS && i < sections.length - 1) { carry = text; return; }
+      if (!text) return;
+      for (const c of this.chunkText(text)) {
+        chunks.push(sec.trail ? `${sec.trail}\n${c}` : c);
+        chunkSection.push(i);
+      }
+    });
+    const strip = sections.map(({ text, ...s }) => s);
+    if (chunks.length === 0) return { chunks: this.chunkText(plainText), sections: strip, chunkSection: [0] };
+    return { chunks, sections: strip, chunkSection };
   }
 
   chunkText(text: string): string[] {

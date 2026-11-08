@@ -1,0 +1,1082 @@
+[
+ {
+  "tool": "search_hybrid",
+  "full": false,
+  "q": "when do the harbor pumps run",
+  "results": [
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.7301,
+    "confidence": 0.82,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.1771,
+    "confidence": 0.3,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1288,
+    "confidence": 0.22,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": false,
+  "q": "how often are mooring ropes inspected",
+  "results": [
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.7711,
+    "confidence": 0.89,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.1406,
+    "confidence": 0.24,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1236,
+    "confidence": 0.21,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": false,
+  "q": "what oil do the lanterns use",
+  "results": [
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.6758,
+    "confidence": 0.73,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.0618,
+    "confidence": 0.1,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.0419,
+    "confidence": 0.07,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": false,
+  "q": "fish stew on fridays",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.7532,
+    "confidence": 0.86,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.136,
+    "confidence": 0.23,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.0807,
+    "confidence": 0.14,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": false,
+  "q": "fog horn test schedule",
+  "results": [
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.6963,
+    "confidence": 0.77,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.1585,
+    "confidence": 0.27,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.1181,
+    "confidence": 0.2,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": false,
+  "q": "recipe for sourdough bread starter",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.4331,
+    "confidence": 0.32,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "no_strong_match": true
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.0564,
+    "confidence": 0.09,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "no_strong_match": true
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.0287,
+    "confidence": 0.05,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "no_strong_match": true
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": true,
+  "q": "when do the harbor pumps run",
+  "results": [
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.7301,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.82
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.1771,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "matchedChunk": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.3
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1288,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.22
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": true,
+  "q": "how often are mooring ropes inspected",
+  "results": [
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.7711,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "matchedChunk": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.89
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.1406,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.24
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1236,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.21
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": true,
+  "q": "what oil do the lanterns use",
+  "results": [
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.6758,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.73
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.0618,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "matchedChunk": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.1
+   },
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.0419,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "matchedChunk": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.07
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": true,
+  "q": "fish stew on fridays",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.7532,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.86
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.136,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.23
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.0807,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.14
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": true,
+  "q": "fog horn test schedule",
+  "results": [
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.6963,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "matchedChunk": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.77
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.1585,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.27
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.1181,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.2
+   }
+  ]
+ },
+ {
+  "tool": "search_hybrid",
+  "full": true,
+  "q": "recipe for sourdough bread starter",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.4331,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.32,
+    "no_strong_match": true
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.0564,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.09,
+    "no_strong_match": true
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.0287,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.05,
+    "no_strong_match": true
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": false,
+  "q": "when do the harbor pumps run",
+  "results": [
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.6144,
+    "confidence": 0.72,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.253,
+    "confidence": 0.3,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.184,
+    "confidence": 0.22,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": false,
+  "q": "how often are mooring ropes inspected",
+  "results": [
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.673,
+    "confidence": 0.79,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.2008,
+    "confidence": 0.24,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1766,
+    "confidence": 0.21,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": false,
+  "q": "what oil do the lanterns use",
+  "results": [
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.5369,
+    "confidence": 0.63,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.0883,
+    "confidence": 0.1,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.0599,
+    "confidence": 0.07,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": false,
+  "q": "fish stew on fridays",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.6475,
+    "confidence": 0.76,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.1943,
+    "confidence": 0.23,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.1153,
+    "confidence": 0.14,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": false,
+  "q": "fog horn test schedule",
+  "results": [
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.5661,
+    "confidence": 0.67,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.2265,
+    "confidence": 0.27,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.1686,
+    "confidence": 0.2,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    }
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": false,
+  "q": "recipe for sourdough bread starter",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1901,
+    "confidence": 0.22,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "no_strong_match": true
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.0805,
+    "confidence": 0.09,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "no_strong_match": true
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.041,
+    "confidence": 0.05,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "no_strong_match": true
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": true,
+  "q": "when do the harbor pumps run",
+  "results": [
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.6144,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.72
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.253,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "matchedChunk": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.3
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.184,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.22
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": true,
+  "q": "how often are mooring ropes inspected",
+  "results": [
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.673,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "matchedChunk": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.79
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.2008,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.24
+   },
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1766,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.21
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": true,
+  "q": "what oil do the lanterns use",
+  "results": [
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.5369,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.63
+   },
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.0883,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "matchedChunk": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.1
+   },
+   {
+    "path": "ropes.md",
+    "title": "Rope Inspection",
+    "score": 0.0599,
+    "snippet": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "matchedChunk": "Mooring ropes are inspected monthly for fraying. Replace any rope with more than three broken strands. Record the inspection date on the tag and in the ledger.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.07
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": true,
+  "q": "fish stew on fridays",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.6475,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.76
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.1943,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.23
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.1153,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.14
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": true,
+  "q": "fog horn test schedule",
+  "results": [
+   {
+    "path": "signals.md",
+    "title": "Fog Signals",
+    "score": 0.5661,
+    "snippet": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "matchedChunk": "The fog horn sounds every ninety seconds when visibility drops below a quarter mile. Test the horn weekly and keep the compressor drained. A silent horn must be reported to the harbor master at once.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.67
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.2265,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.27
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.1686,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.2
+   }
+  ]
+ },
+ {
+  "tool": "search_semantic",
+  "full": true,
+  "q": "recipe for sourdough bread starter",
+  "results": [
+   {
+    "path": "canteen.md",
+    "title": "Crew Canteen",
+    "score": 0.1901,
+    "snippet": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "matchedChunk": "The canteen serves fish stew on Fridays and bread every morning. Report allergies to the cook. Leftovers are discarded after two days.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.22,
+    "no_strong_match": true
+   },
+   {
+    "path": "lanterns.md",
+    "title": "Lantern Oil",
+    "score": 0.0805,
+    "snippet": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "matchedChunk": "Lanterns on the pier burn lamp oil bought from the chandler. Refill them before dusk, trim the wicks, and never mix oil grades. Spent wicks go in the metal bin by the shed.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.09,
+    "no_strong_match": true
+   },
+   {
+    "path": "pumps.md",
+    "title": "Harbor Pumps",
+    "score": 0.041,
+    "snippet": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "matchedChunk": "The harbor pumps drain the lower dock every night at 02:00. If the float switch sticks, reset it by hand and log the event in the tide book. Pumps run on the backup generator during storms.",
+    "decay": {
+     "multiplier": 0.85,
+     "age_days": 0,
+     "source": "penalty"
+    },
+    "confidence": 0.05,
+    "no_strong_match": true
+   }
+  ]
+ }
+]
