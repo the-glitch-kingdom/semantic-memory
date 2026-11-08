@@ -72,6 +72,9 @@ Path retains legacy name through all of v1.x per the v1.0 storage promise. v2.0 
 - `index.lock` (v1.9.0) — `{pid, at}` while a process is writing; stale after 10 minutes or a dead pid.
 - `docs.cache.json` — Phase 2 parsed-doc cache (drops hook latency 9x).
 
+### `<project>/.claude/.semantic-memory/eval/` — eval dir (v1.13, gitignored)
+Question sets (`*.jsonl`), `generated.jsonl` from `eval generate`, and `baseline.json` floors. Override with `eval --dir`; point it at a committed folder to share floors. See the [retrieval eval guide](../operational/retrieval-eval-guide.md).
+
 ### `<vault>/log.md` — the durable state log (tracked with vault content)
 Append-only. Format per entry:
 ```

@@ -41,6 +41,7 @@ Binary: `node node_modules/@theglitchking/semantic-memory/bin/semantic-memory` (
 | `jev-mode <action>` (v1.7+) | Jev mode | Turn jev mode on/off, show its state |
 | `skills lint` (v1.7+) | Maintenance | Lint the learned skills this repo loads |
 | `skill-eval <action>` (v1.7+) | Measurement | Trigger, task and description-tuning evals for one skill |
+| `eval`, `eval generate` (v1.13+) | Measurement | Measure retrieval on your vault; generate blind questions |
 | `update` / `policy` | Plugin runtime | Inherited from `@theglitchking/claude-plugin-runtime` |
 
 All subcommands accept `--help`.
@@ -450,6 +451,20 @@ Scripts (run with `node` from the repo root; both reach Jev only through jev-loo
 - `scripts/eval-failures/calibrate-jev.mjs [--dir <dir>] [--json]` — compares Jev's picks with the Claude labels (`judgments.jsonl` and `judge/*.jev.out.jsonl` under `--dir`, default `~/.semantic-memory/eval/failures`): agreement per label class and the unsure rate. Verdict "jev" only if all picks together are right at least 95% of the time over at least 40 picks, with at most 2 wrong.
 
 Building the inputs from real failures: [failure-lookup-guide.md](../operational/failure-lookup-guide.md#measuring-it-on-your-own-failures).
+
+## `eval` (v1.13+) — measure retrieval on your vault
+
+```bash
+semantic-memory eval --notes <dir> [--set <files...>] [--dir <evaldir>] [--baseline | --check [--band 1]] [--json]
+semantic-memory eval generate --notes <dir> [--docs 20] [--model <name>] [--dir <evaldir>]
+```
+
+- `--set` — JSONL question sets; default every `*.jsonl` in the eval dir (`<project>/.claude/.semantic-memory/eval/`, gitignored; `--dir` overrides).
+- `--baseline` — write `baseline.json` (floors) in the eval dir. `--check` — exit 1 when answered @1/@3/@8 or negatives flagged drop by more than `--band` questions. The two cannot be combined.
+- `--json` — print the report as JSON. Exit 1 also when there is no index or no baseline.
+- `generate` — blind questions from sampled docs via the host `claude`, validated, written to `generated.jsonl`; exit 1 when none were kept.
+
+Never changes the index or logs. Guide: [retrieval eval guide](../operational/retrieval-eval-guide.md).
 
 ## `skill-loop` (v1.7+) — learned skills between sessions
 

@@ -3,7 +3,7 @@ title: Changelog Documentation Index
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-11-07'
+last_updated: '2026-11-08'
 version: '1.0.0'
 purpose: Complete listing of changelog documentation
 ---
@@ -14,7 +14,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 25
+- **Total Documents:** 26
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -34,6 +34,7 @@ purpose: Complete listing of changelog documentation
 | [v1.10.0 — retrieval-ready fields](v1-10-0-retrieval-fields.md) | active | 2026-11-07 | 772 |
 | [v1.11.0 — graph boost removed, decay age fallback, stale marker](v1-11-0-boost-decay-fallback.md) | active | 2026-11-07 | 633 |
 | [v1.12.0 — code stays in the indexed text, pooling and query prompt from the model config, git decay by body change](v1-12-0-index-text-pooling-body-dates.md) | active | 2026-11-07 | 1,047 |
+| [v1.13.0 - built-in retrieval eval](v1-13-0-builtin-eval.md) | active | 2026-11-07 | 276 |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](v1-2-3-hygiene-completion.md) | active | 2026-07-10 | 613 |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](v1-2-state-consolidation.md) | active | 2026-05-09 | 671 |
 | [v1.3.1 — selection-logging telemetry](v1-3-1-telemetry.md) | active | 2026-07-10 | 653 |
@@ -63,4 +64,4 @@ This domain covers: changelog, release, version, shipped
 
 ---
 
-*Last updated: 2026-11-07*
+*Last updated: 2026-11-08*

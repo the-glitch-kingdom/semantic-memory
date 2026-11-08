@@ -2,6 +2,24 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.13.0] - 2026-11-07 — Built-in retrieval eval
+
+Issue #56. Full numbers and misses: `.documentation/changelog/v1-13-0-builtin-eval.md`.
+
+### Added
+
+- **`semantic-memory eval --notes <dir>`** measures hybrid, semantic, text and grep arms on your own vault through the live search path (@1/@3/@8, found@k, MRR, p50/p95, tiers, negatives per kind, all vs clean). It never changes the index or logs.
+- **`--baseline` / `--check` / `--band`** floors with a noise band (default 1 question). `--baseline` with `--check` is refused.
+- **`eval generate`** writes blind, validated questions with the host agent.
+
+### Measured
+
+Real corpus held-out (27): hybrid @1/@3/@8 17/24/26, semantic 12/16/24; a swapped floor fails `--check`. CLI matches the repo test within one question.
+
+### Missed targets
+
+External blind-kit run not done; generation quality with a real `claude` unmeasured and thresholds untuned; offline tarball 922 MB (check before publishing); default eval dir is gitignored so floors there are not shared.
+
 ## [1.12.0] - 2026-11-07 — Code stays in the indexed text, pooling and query prompt from the model config, git decay by body change
 
 Issues #51 to #54. Full tables, misses and upgrade note: `.documentation/changelog/v1-12-0-index-text-pooling-body-dates.md`.

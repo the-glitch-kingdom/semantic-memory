@@ -86,12 +86,12 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
         on the same set within one question. As a release step: run `eval` on the external blind set if available
         and record it in the changelog.
   - [x] Full suite; known flakes re-run alone and recorded. Answer each #56 acceptance item in notes.md.
-- [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New `.documentation/operational/retrieval-eval-guide.md` (sets, generation, floors, noise band, clean vs all)
-  - [ ] New `.documentation/changelog/v1-13-0-builtin-eval.md` (`npx hewtd integrate -a`); `CHANGELOG.md`
-  - [ ] `.documentation/reference/cli-reference.md` (`eval`, `eval generate`), `.documentation/testing/tests-and-validation.md`,
+- [x] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New `.documentation/operational/retrieval-eval-guide.md` (sets, generation, floors, noise band, clean vs all)
+  - [x] New `.documentation/changelog/v1-13-0-builtin-eval.md` (`npx hewtd integrate -a`); `CHANGELOG.md`
+  - [x] `.documentation/reference/cli-reference.md` (`eval`, `eval generate`), `.documentation/testing/tests-and-validation.md`,
         `.documentation/operational/retrieval-tuning-guide.md` (how to measure), `.documentation/reference/configuration-reference.md` (eval dir)
-  - [ ] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
+  - [x] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
 
 ## Key Questions
 1. A fresh vault has no questions: generation needs `claude` (the host agent) or a `--set`. Counted as "no extra
@@ -111,7 +111,7 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - Stale-index warning (Phase 3 open question) not built: `meta.files` lists commit files, not docs, so a doc-count comparison is wrong (it said 5 vs 38). The server reconciles changed docs on open, so results track the folder.
 
 ## Status
-**Currently in Phase 10** - Documentation pass
+**COMPLETE** - all phases done
 
 ---
 

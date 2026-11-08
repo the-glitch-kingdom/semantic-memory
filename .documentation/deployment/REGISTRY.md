@@ -3,7 +3,7 @@ title: Deployment Registry
 tier: reference
 domains: [deployment]
 status: active
-last_updated: '2026-11-07'
+last_updated: '2026-11-08'
 version: '1.0.0'
 purpose: Quick reference for deployment documentation
 ---
@@ -48,4 +48,4 @@ purpose: Quick reference for deployment documentation
 
 ---
 
-*Last updated: 2026-11-07*
+*Last updated: 2026-11-08*

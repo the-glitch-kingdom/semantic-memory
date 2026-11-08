@@ -162,8 +162,13 @@ The gate is `test/retrieval-eval/baseline.json`: @1 floors per arm, archive hits
 
 **Splits and gates (v1.9.1).** Four splits: fixture train (`golden-docs.jsonl`), fixture held-out (`golden-docs-heldout.jsonl`), real train (`real-corpus.jsonl`) and real held-out (`real-corpus-heldout.jsonl`, against `.documentation/`). Tune weights and thresholds on train only; held-out is written before a ranking change and reported as measured. Gates on every split: hybrid @1 >= semantic @1 - 1, paraphrase-tier hybrid @1 >= semantic's, all negatives flagged, answerable false flags <= 10%, plus HNSW recall@k >= 0.97 vs exact cosine. Gates v1.9.1 still misses run as `it.fails` (expected failures) and flip red when fixed; see the [v1.9.1 changelog](../changelog/v1-9-1-ranking-regression.md).
 
+## Measuring on your own vault (v1.13)
+
+`semantic-memory eval --notes <dir>` runs the same engine on your own question sets, with `--baseline` / `--check` floors and a noise band of one question. See the [retrieval eval guide](./retrieval-eval-guide.md).
+
 ## See also
 
+- [Retrieval eval guide](./retrieval-eval-guide.md)
 - [Indices and storage](../architecture/indices-and-storage.md)
 - [Configuration reference](../reference/configuration-reference.md)
 - [v1.10.0 changelog](../changelog/v1-10-0-retrieval-fields.md)
