@@ -3,8 +3,8 @@ import type { IndexedDocument } from "./types.js";
 import { sectionFields } from "./section-fields.js";
 
 /** Walk seeds and path length. Fixed from the issue's shape, not tuned on a question set. */
-export const PATH_SEEDS = 5;
-export const PATH_MAX = 5;
+const PATH_SEEDS = 5;
+const PATH_MAX = 5;
 
 export interface ReadingStep {
   path: string;
