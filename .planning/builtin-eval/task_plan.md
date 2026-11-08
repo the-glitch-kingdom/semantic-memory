@@ -29,13 +29,13 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
   - [x] Verify #56 against main @ 29e74db (notes.md)
   - [x] Verification recorded in notes.md (a GitHub comment on #56 waits for the user's go-ahead)
   - [x] Sync main, cut `feat/builtin-eval`, commit this plan (with the archive move of `index-text-pooling-body-dates`)
-- [ ] Phase 2: Move the engine into `src/core/retrieval-eval/`
-  - [ ] `metrics.ts`: `runEval`, `runFacetEval`, `facetRank`, `parseGolden`, `formatArm`, `ARCHIVE_RE`, the grep arm.
-        `test/retrieval-eval/eval.ts` re-exports them; `gates.ts`, `hnswRecall`, `git-history.ts`, `baseline.json` and
+- [x] Phase 2: Move the engine into `src/core/retrieval-eval/`
+  - [x] `metrics.ts`: `runEval`, `runFacetEval`, `facetRank`, `parseGolden`, `formatArm`, `ARCHIVE_RE`, the grep arm.
+        `test/retrieval-eval/eval.ts` re-exports them (also `scoreLinks`, `invertLinks`, `grepPattern`: pure, moved too); `gates.ts`, `hnswRecall`, `git-history.ts`, `baseline.json` and
         the golden sets stay in test.
-  - [ ] `FacetCase` gains optional `expected?: string[]`, `split?: "tune" | "heldout"`, `negative_kind?: "identifier" |
+  - [x] `FacetCase` gains optional `expected?: string[]`, `split?: "tune" | "heldout"`, `negative_kind?: "identifier" |
         "topic"`. `runFacetEval` adds found@k and MRR when `expected` is set, and per-case latency (p50/p95).
-  - [ ] `npm run eval` numbers identical before and after (record both runs in notes.md).
+  - [x] `npm run eval` numbers identical before and after (record both runs in notes.md).
 - [ ] Phase 3: Runner without side effects (`src/core/retrieval-eval/runner.ts`)
   - [ ] `openEval(notes)`: `createServer` plus an in-memory client against the existing index; model, pooling and
         prompt from `meta.json`; refuses when there is no index; `telemetry: false` makes `logSearch` return early.
@@ -105,7 +105,7 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - (none yet)
 
 ## Status
-**Currently in Phase 2** - move the engine into src/
+**Currently in Phase 3** - runner without side effects
 
 ---
 

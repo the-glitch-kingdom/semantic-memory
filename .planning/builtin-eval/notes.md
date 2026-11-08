@@ -16,3 +16,8 @@
 - **A model mismatch re-embeds.** `context.ts:253` forces a full re-embed on a model, pooling or prompt mismatch, so the eval must open the index with the meta's settings.
 - **A read-only server still logs** into the index dir (`context.ts:662`), and `readSelectionLog` reads both locations. That is why the eval needs `telemetry: false`.
 - **The BM25-drop check needs a corpus that separates the arms.** `search_semantic` = `search_hybrid` without fusion. They differ on `.documentation` (real held-out @1 17 vs 12) but barely on docs-vault (43 vs 42).
+
+## Eval results: Phase 2
+- Engine moved to `src/core/retrieval-eval/metrics.ts` (all of the old `test/retrieval-eval/eval.ts` except `hnswRecall`; `eval.ts` now re-exports it). The docs-eval grep arm's pattern builder is `grepPattern` in metrics.ts.
+- `npm run eval` before vs after: every answered@k, tier count, flagged count, negative-top score, link precision/recall and hnsw recall identical. Only differences: mean-payload on three arms is 1 byte lower after (4828->4827, 7415->7414, 7271->7270), run-to-run noise (HNSW is random per build), not from this change (metrics code does not touch payloads). Tests 57 -> 59 (two new unit tests: expected/found@k/MRR/latency, grepPattern).
+- Full `npm test`: only the known load flakes failed (freshness-scale, hook-failure, skill-eval concurrency); all pass alone with `--no-file-parallelism`.

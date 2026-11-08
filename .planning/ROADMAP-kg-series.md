@@ -11,6 +11,7 @@ Build order (from the series comment on each issue). Each plan is its own branch
 | 5 | section-results | #60 | 1.17.0 | #56, #58 |
 | 6 | query-routing | #61 | 1.18.0 | #56, #58, #60 |
 | 7 | federated-search | #62 | 1.19.0 | #56, #61 |
+| 8 | user-help | (new issue) | 1.20.0 | all of the above |
 
 Later: #59 plan B (gated usage prior), after weeks of usage data.
 hit-em-with-the-docs #65 and #66 are built in another session; we read their files when present.
