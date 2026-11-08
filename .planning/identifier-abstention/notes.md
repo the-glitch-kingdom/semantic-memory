@@ -24,3 +24,7 @@
 - Shipped baseline, search_hybrid, existing score rule only: fixture-train 3/8 flagged, fixture-heldout 3/8, real-train 2/8, real-heldout 1/8. Existing 40 topic negatives and all tier counts unchanged (run separately).
 - Gates: `identifierGate` (test/retrieval-eval/gates.ts) is `it.fails` in docs-eval and real-corpus-eval until Phase 5.
 - Phase 2 gate: lint, build clean; npm test 923 passed, 2 load flakes (freshness-scale, hook-failure) pass alone; npm run eval 72 passed, 9 expected fail (5 old + 4 identifier gates).
+
+## Eval results: Phase 3
+- Deterministic (real `Bm25Index` over `Indexer.indexAll`, no embedder), test/unit/identifiers.test.ts: 0 answerable questions get a missing term across golden-docs(+heldout), real-corpus(+heldout), golden-code(+heldout), golden-decay(+heldout), golden. Identifier-bearing answerable cases: docs 3/2, real 3/1, code 6/7 (train/held-out).
+- Detector alone flags all 8/8 identifier negatives in each of the four splits (vs 3/8, 3/8, 2/8, 1/8 for the score rule), so the Phase 5 target of 5/8 is met by missingTerms; remaining risk is wiring. Held-out was measured, not used to choose rules.

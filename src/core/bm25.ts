@@ -74,6 +74,11 @@ export class Bm25Index {
     this.docTerms.set(docPath, new Set(chunks.flatMap((c) => [...c.tf.keys()])));
   }
 
+  /** True when some indexed chunk holds this token (tokenized, lowercase). */
+  has(term: string): boolean {
+    return this.df.has(term);
+  }
+
   /** idf-weighted share of the query's distinct indexed terms that appear anywhere in the doc (0 when the query has none). */
   cover(docPath: string, query: string): number {
     const have = this.docTerms.get(docPath);

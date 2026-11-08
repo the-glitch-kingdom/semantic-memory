@@ -28,16 +28,16 @@ measured with #56's `eval`. Every missed target is stated in the PR.
   - [x] Identifier negatives (7+ train and 7+ held-out) for the docs-vault fixture and `.documentation`, each term
         grep-verified absent, tagged `negative_kind: identifier`. Keep the planted terms out of this plan's own docs
         (`.documentation` is a corpus). Record the shipped baseline (expected: mostly not flagged). Done: 8 per split, baseline 3/8, 3/8, 2/8, 1/8 flagged (notes.md).
-- [ ] Phase 3: `missingTerms` and `Bm25Index.has`
-  - [ ] `src/core/identifiers.ts`: detection (tokens with `_`, lower camelCase `[a-z]+[A-Z]\w*`, paths with `/`,
+- [x] Phase 3: `missingTerms` and `Bm25Index.has`
+  - [x] `src/core/identifiers.ts`: detection (tokens with `_`, lower camelCase `[a-z]+[A-Z]\w*`, paths with `/`,
         dotted names whose every part starts with a letter so `v1.12.0` is excluded, backticked spans without
         whitespace). Not in v1: bare acronyms (SLA, TLS), PascalCase, kebab-case.
-  - [ ] Presence: strip edge `_` and `*`, tokenize as BM25 does; a path checks only its last segment. A term is
+  - [x] Presence: strip edge `_` and `*`, tokenize as BM25 does; a path checks only its last segment. A term is
         missing when some token has df 0 AND it does not appear in the lowercased joined doc paths (BM25 path words
         replace `_` with spaces, so a file named after the identifier counts as present). Return the original spelling.
         Shortcut comment: parts are checked, not adjacency; upgrade to a literal check over `doc.content` if the eval
         shows misses.
-  - [ ] `Bm25Index.has(term)` (the df map is private today).
+  - [x] `Bm25Index.has(term)` (the df map is private today).
 - [ ] Phase 4: Wire it up
   - [ ] `shape()` in `src/mcp/tools/search.ts`: `weak = isWeak(...) || missing.length > 0`; `missing_terms` on every
         item (covers `search_hybrid` and `search_semantic`).
@@ -80,11 +80,13 @@ measured with #56's `eval`. Every missed target is stated in the PR.
 - Phase 2: 8 identifier negatives per split (not 7); the identifier gate scales to ceil(n*4/7) = 5 of 8, so Phase 5 must reach 5/8 or restate the target.
 - Phase 2: identifier negatives run as a separate `search_hybrid` pass (`idArms`) so the old negatives gate, `meanBytes` ceiling and tier counts are unchanged; the new gate is an `it.fails` until Phase 4/5.
 
+- Phase 3: `missingTerms(query, index, paths)` takes the lowercased joined doc paths as a string (the caller already holds the docs); `identifiers(query)` is exported separately for #58/#61. Presence is checked per token (a term with several tokens is missing if any is). DOTTED parts need 2+ chars so `e.g.` is excluded. A `://` word is skipped (URLs).
+
 ## Errors Encountered
-- (none yet)
+- Phase 3 full run: freshness-scale and hook-failure (Jev-hang) failed under load, both pass alone; lint, build, eval (72 passed, 9 expected fail) clean.
 
 ## Status
-**Currently in Phase 3** - `missingTerms` and `Bm25Index.has`
+**Currently in Phase 4** - Wire it up
 
 ---
 
