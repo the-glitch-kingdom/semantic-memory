@@ -44,3 +44,8 @@ Captured live: a temp settings file with a PostToolUse hook (matcher `.*`) appen
 - Haiku's first attempt failed with the server connection closed when `.mcp.json` ran `dist/mcp/server.js` (a library, not an entry point); `dist/cli/index.js --notes` is the server entry.
 - hewtd devDependency pinned to `^2.21.0` (lock at 2.21.0); `schemas/gaps.v1.schema.json` present.
 - Phase 2: full suite had 2 known flakes (freshness-scale warm start, hook-failure Jev-hang) under load; both pass alone. Eval green; no code changed.
+
+## Eval results: Phase 4
+No retrieval-eval change (hook only); `npm run eval` green (76 passed, 5 expected fail).
+Hook cost on a non-matching Bash call (`ls -la`, 20 runs, node 18-20 ms bare): usage-capture.js ~20 ms avg vs bare `node -e 0` ~18 ms, so about 2 ms over node startup (doc-search-redirect.js ~23 ms). It exits before reading .mcp.json, the log or dist/.
+Not done: search `weak` flag is not recorded (optional field).

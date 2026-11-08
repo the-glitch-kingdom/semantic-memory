@@ -15,6 +15,8 @@ export default defineConfig({
     "core/skill-review": "src/core/skill-review.ts",
     "core/skill-curator": "src/core/skill-curator.ts",
     "core/skill-ledger": "src/core/skill-ledger.ts",
+    "core/usage-log": "src/core/usage-log.ts",
+    "core/telemetry": "src/core/telemetry.ts",
     "mcp/server": "src/mcp/server.ts",
     "cli/index": "src/cli/index.ts",
   },

@@ -46,14 +46,14 @@ built-in eval and #57). Every missed target is stated in the PR.
         trailing `[stale: …]` block), `matchSearch` (same session, 10-minute window, the newest search whose results
         hold the doc, else the newest), `computeGaps`, `usageEvalSet`.
   - [x] Unit tests for each, including session isolation, the window edge and the stale block.
-- [ ] Phase 4: The hook (`hooks/usage-capture.js`, second PostToolUse entry in `hooks/hooks.json`)
-  - [ ] Matcher `Read|Grep|Glob|Bash|mcp__.*semantic-.*__(search_hybrid|search_semantic|search_text|read_note)`
+- [x] Phase 4: The hook (`hooks/usage-capture.js`, second PostToolUse entry in `hooks/hooks.json`)
+  - [x] Matcher `Read|Grep|Glob|Bash|mcp__.*semantic-.*__(search_hybrid|search_semantic|search_text|read_note)`
         (server names matched by suffix, so plugin-provided servers match).
-  - [ ] Exits, cheapest first: `SEMANTIC_MEMORY_REVIEWER=1`, `SEMANTIC_MEMORY_USAGE_CAPTURE=0`, repo config
+  - [x] Exits, cheapest first: `SEMANTIC_MEMORY_REVIEWER=1`, `SEMANTIC_MEMORY_USAGE_CAPTURE=0`, repo config
         `usage_capture: off`, no semantic source; Bash that is not a grep; Read that is not `.md` under a source
         (longest matching source path). Only then read the last 256 KB of the log. Respect the searched vault's
-        `telemetry.enabled`. Fails open on bad input.
-  - [ ] Read maps to `{server, vault-relative path}`; rank from that search's results.
+        `telemetry.enabled`. Fails open on bad input. (Note: Read/Bash exits sit before the .mcp.json read; the 256 KB log tail is read only for use/fallback, after a source and a tool shape match.)
+  - [x] Read maps to `{server, vault-relative path}`; rank from that search's results.
 - [ ] Phase 5: `semantic-memory gaps [--root <dir>] [--since <iso>] [--json] [--include-repo-grep]`
   - [ ] A search is a gap when it has no `use` in the window, a `fallback` came before its first `use`, or the doc
         used was not in its results. By default only fallbacks inside a vault count (`--include-repo-grep` widens it).
@@ -131,11 +131,12 @@ built-in eval and #57). Every missed target is stated in the PR.
   held-out usage and blind-set @1 do not drop; and a decision on the old query-independent `usage_boost`.
 
 ## Errors Encountered
+- Phase 4: tsup had no entries for usage-log/telemetry, so the plain-JS hook could not import them from dist; added both to tsup.config.ts. Full suite had the 2 known flakes (hook-failure Jev-hang, freshness-scale warm start); both pass alone.
 - Phase 3: full suite had the 2 known load flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. `usageEvalSet` emits tier `paraphrase` (FacetCase needs a tier). Fallback `scope` is `vault` | `repo`; the hook (Phase 4) decides which.
 - Phase 2: no errors. Live capture succeeded on the second try (first used a library file as the server entry).
 
 ## Status
-**Currently in Phase 4** - the hook
+**Currently in Phase 5** - the gaps command
 
 ---
 
