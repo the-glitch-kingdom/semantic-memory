@@ -93,7 +93,7 @@ export function loadExport(gitRoot: string, vaultDir: string, vaultPaths: Set<st
       for (const r of Array.isArray(d.refs) ? d.refs : []) {
         if (!isObj(r) || (r.kind !== "file" && r.kind !== "symbol")) continue; // env, command, table, column, doc refs are not code
         const target = str(r.target);
-        if (!target) continue;
+        if (!target || (r.kind === "file" && clean(target) === ".")) continue; // the real export has a dead `./` ref: prose, not a file
         refs.push({
           kind: r.kind, target: r.kind === "file" ? clean(target) : target, file: str(r.file), repo: str(r.repo),
           resolved: typeof r.resolved === "boolean" ? r.resolved : null, changed: day(r.code_changed),
@@ -167,7 +167,7 @@ export async function fallbackCode(gitRoot: string, vaultDir: string, docs: { pa
     tops.add(f.split("/")[0]);
     for (let d = dirname(f); d !== "."; d = dirname(d)) dirs.add(d);
     const b = posix.basename(f);
-    byBase.set(b, [...(byBase.get(b) ?? []), f]);
+    (byBase.get(b) ?? byBase.set(b, []).get(b)!).push(f);
   }
   const vaultRel = relative(gitRoot, vaultDir).split(sep).join("/");
 

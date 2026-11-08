@@ -95,19 +95,19 @@ Series step 2. Every missed target is stated in the PR.
   - [x] Bump all five version fields, lockfile (offline tarball: deferred to release, built from the merge commit)
 - [x] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Remove trial knobs and sweep scripts; dead-code check over the branch diff. (none found: no sweep scripts or trial env knobs, no debug logging or commented-out code in the diff; every exported function in code-graph.ts is used by src or tests; the only export used solely in its own file is gitFiles, kept as a small helper)
-- [ ] Phase 10: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review: trusting the export (crash on bad input, `null` counted dead, unknown versions read), git
+- [x] Phase 10: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review: trusting the export (crash on bad input, `null` counted dead, unknown versions read), git
         at query time or per file, `cites_code` leaking into walks or `related`, CLI/MCP drift in grounding, payload.
-  - [ ] Unit: ref extraction; export reader (missing, v1, v2 warns once, bad JSON, `null` refs, `repo` refs, key
+  - [x] Unit: ref extraction; export reader (missing, v1, v2 warns once, bad JSON, `null` refs, `repo` refs, key
         mapping); conservative dead refs; drift date maths; verdict multipliers.
-  - [ ] Integration: #58 check 1 (`forwardlinks(doc)` has its code refs, `backlinks("scripts/ci/guards.sh")` lists the
+  - [x] Integration: #58 check 1 (`forwardlinks(doc)` has its code refs, `backlinks("scripts/ci/guards.sh")` lists the
         citing docs); check 2 (a `check_rls_coverage` query returns the card on result #1); check 3 (two near-identical
         docs, one with drift: it carries `code_drift` and ranks lower); CLI/MCP parity.
-  - [ ] #58 check 4: on the eval, "top-3 docs citing no missing references" rises and answer @1 does not drop (blind
+  - [x] #58 check 4: on the eval, "top-3 docs citing no missing references" rises and answer @1 does not drop (blind
         set via `eval`; the external 751-doc tree as a release step if available).
-  - [ ] #58 checks 5 and 6: the same fixture without `.hewtd/` (fallback grounding, no crash); no git repo (doc-only
+  - [x] #58 checks 5 and 6: the same fixture without `.hewtd/` (fallback grounding, no crash); no git repo (doc-only
         graph, unchanged graph stats); every existing floor passes untouched.
-  - [ ] Full suite; known flakes re-run alone. Answer each #58 acceptance item in notes.md.
+  - [x] Full suite; known flakes re-run alone. Answer each #58 acceptance item in notes.md.
 - [ ] Phase 11: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New `.documentation/architecture/code-graph.md` (the export contract as consumed, key mapping, fallback rules)
   - [ ] New changelog doc (`npx hewtd integrate -a`); `CHANGELOG.md`
@@ -146,10 +146,15 @@ Series step 2. Every missed target is stated in the PR.
 - Phase 5: `setDocuments(docs, code)` takes the code data loaded by `loadCode()` (errors give a stderr line and a doc-only graph). `lastCodeStamp` = mtimes of `.hewtd/graph.json` and `.git/logs/HEAD`; no CLI change (the CLI has no graph build).
 
 ## Errors Encountered
-- (none yet)
+- Phase 10 review found two real defects, both fixed with regression tests:
+  1. `backlinks`/`forwardlinks` ran `code:` nodes through `path_class` (`**/archive/**`), so a cited file such as `tools/archive/old.sh` vanished from `forwardlinks(doc)`. `src/mcp/tools/graph.ts` now filters notes only; test in `test/integration/links-exclude.test.ts` (fails without the fix).
+  2. The real hewtd export has a dead file ref `./` (prose). `loadExport` now drops file refs that normalise to `.`; covered by `test/unit/code-graph-real-export.test.ts`.
+  Also: `byBase` in the fallback no longer copies its array per file (quadratic on many same-named files).
+- Full `npm test` in Phase 10: freshness-scale warm start (1180 ms vs 1000) and hook-failure Jev-hang (4387 ms vs 3000) failed under load; both passed alone, 3 of 3 runs (16/16).
+- Not run: the external 751-doc tree (not available here); #58 check 4 on it stays a release step.
 
 ## Status
-**Currently in Phase 10** - Validate (Phases 8-9 done: version 1.16.0, cleanup)
+**Currently in Phase 11** - Documentation pass (Phase 10 done: review, real-export run, acceptance answers in notes.md)
 
 ---
 

@@ -82,3 +82,19 @@ Undocumented: flagged 2/2 and located 2/2 per split (the file path matches truth
 Entity card: `check_rls_coverage.py` returns a file card on result #1 only, citing row-security-audit.md; CLI and MCP return the same card.
 Full suite: 1016 passed, 5 expected fail; only the known hook-failure Jev-hang flake failed under load (14/14 alone). Tool-surface snapshot updated for the new search descriptions.
 Open: symbol cards need the export for a file (fallback symbols have none); the card is built from `identifiers()` tokens, so a bare word such as `guards` gets none.
+
+## Eval results: Phase 10 (review and validate)
+Fixture eval (both arms, both splits), grounding on, nothing tuned, held-out measured as is: answer@1 9/9, answer@3 9/9, twin-beaten 6/6 per split; clean-top3 share 0.815 train, 0.778 held-out (Phase 2 baseline: 0.778, @1 4-6/9, twin-beaten 2-3/6). Undocumented flagged and located 2/2 per split.
+Fallback (no `.hewtd/`, `test/retrieval-eval/graph-fallback.test.ts`, train + held-out questions): twin-beaten 12/12, the twin carries `grounding` (source `code-spans`) 12/12, `backlinks(guards.sh)` lists its 3 docs, the file card on result #1 is found. Outside git: `codeNodes` 0, no grounding, no card, no `undocumented`, `backlinks(file)` empty.
+Real hewtd export (`real-trimmed.json`, `test/unit/code-graph-real-export.test.ts`, 11 docs staged in a temp git repo): loads with no warning; dead refs equal the file refs with `resolved: false` exactly (symbol, column, env, null never dead); `archive-candidate` verdict surfaced, `unreviewed` not; multiplier stays above the 0.8 x 0.85 floor; graph builds with code and symbol nodes, doc stats unchanged. It found the `./` dead ref (dropped now).
+Real-corpus and docs-vault eval: 92 passed, 5 expected fail, every floor untouched; those vaults hold no code refs, so their numbers did not move (real-train hybrid @1 21/27, real-heldout 18/27, flagged 8/8 each).
+Full suite: 1019 passed, 5 expected fail; two load flakes (freshness-scale, hook-failure Jev-hang) passed alone 3 of 3.
+
+### #58 acceptance checks
+1. **Met.** With an export, `forwardlinks(doc)` includes `code:`/`symbol:` nodes and `backlinks("scripts/ci/guards.sh")` lists its 3 citing docs (graph-eval, graph-code unit, real-export test). A code file under an `archive/` folder is no longer hidden (fixed in review).
+2. **Met on the fixture, with a caveat.** `check_rls_coverage.py` returns a file card on result #1 with the citing doc (MCP and CLI equal). The card rides on #1; it does not reorder prose matches (the doc that cites the script already ranks first). A bare `check_rls_coverage` symbol gets a path only from the export (the fallback has no symbol file).
+3. **Met.** A drifted doc carries `grounding.code_drift` and ranks below its twin in 6/6 pairs per split (export) and 12/12 (fallback).
+4. **Not shown on the fixture, not measurable here.** "Top-3 docs citing no missing references" rose on train (0.778 to 0.815) and stayed 0.778 on held-out because a demoted dead twin still sits in the top 3; answer@1 did not drop (it rose 4-6/9 to 9/9). The real-corpus eval vaults have no code refs, so they cannot show it, and the external 751-doc tree was not available: this needs the release-step run.
+5. **Met.** Without an export the fallback grounds docs from code spans and links (above); outside git it is the doc-only graph.
+6. **Met.** No export and no gaps file is the default in CI (the unit and integration tests run that way); every existing floor passes untouched.
+Known limits: fallback dead refs treat a prose route such as `api/v1/x` as dead when `api/` is a top folder (damped to 0.95 each, floor 0.8); symbol cards from the fallback have no file; `.git` as a worktree file never moves the stamp (`.git/logs/HEAD` missing).

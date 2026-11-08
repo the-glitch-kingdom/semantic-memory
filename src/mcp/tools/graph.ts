@@ -10,8 +10,13 @@ const withCode = (t?: string[]) => (t ?? [...LINK_EDGE_TYPES, ...CODE_EDGE_TYPES
 const includeExcluded = z.boolean().optional().default(false).describe("Also return notes under path_class.exclude (archive by default). Asking for the 'supersedes' type includes them too");
 
 export function registerGraphTools(server: McpServer, ctx: ServerContext): void {
-  const visible = <T extends { path: string }>(nodes: T[], types: string[] | undefined, include?: boolean) =>
-    include || types?.includes("supersedes") ? nodes : ctx.filterPathClass(nodes);
+  // path_class judges notes only: a code file under some `archive/` folder is still the file a note cites
+  const isCode = (n: { path: string }) => /^(code|symbol):/.test(n.path);
+  const visible = <T extends { path: string }>(nodes: T[], types: string[] | undefined, include?: boolean) => {
+    if (include || types?.includes("supersedes")) return nodes;
+    const kept = new Set<T>(ctx.filterPathClass(nodes.filter((n) => !isCode(n))));
+    return nodes.filter((n) => isCode(n) || kept.has(n));
+  };
 
   server.tool(
     "backlinks",
