@@ -31,3 +31,16 @@
 - Hook cost: one Node start on every Read, Grep, Glob and Bash call (the redirect hook measured about 25 ms), so the cheap exits must run first.
 - Code greps after a docs search are often normal, so only fallbacks inside a vault count by default.
 - `selection-stats` (server log) and `gaps` (usage log) will report different numbers. Document that rather than merging the two logs.
+
+## Real PostToolUse payloads (Phase 2, captured 2026-11-07, Claude Code via `claude -p`, model haiku)
+Captured live: a temp settings file with a PostToolUse hook (matcher `.*`) appending stdin, a `.mcp.json` running `node dist/cli/index.js --notes <notes> --read-only` (server name `semantic-docs`), and a 6-call prompt. No repo settings file touched. Redacted fixtures: `test/fixtures/usage-capture/{mcp-search_hybrid,mcp-read_note,Read,Grep,Glob,Bash}.json` (paths rewritten to `/home/user/proj/.documentation`, session/prompt/tool-use ids and transcript path replaced). Re-capture needs `--allowedTools` for the tools plus `--add-dir <notes>` (`--dangerously-skip-permissions` was refused by the auto-mode classifier).
+- Common keys: `session_id, transcript_path, cwd, prompt_id, permission_mode, effort, hook_event_name, tool_name, tool_use_id, tool_input, tool_response, duration_ms`.
+- **MCP tools: `tool_name` is `mcp__<server>__<tool>` (here `mcp__semantic-docs__search_hybrid`). `tool_response` is an ARRAY `[{type:"text", text:"<string>"}]`**, not a string and not `{content:[...]}`. For `search_hybrid`, `text` is the pretty-printed JSON array of `{path,title,score,confidence,snippet,decay}` (paths vault-relative); no `[stale:]` block in this capture. For `read_note`, `text` is the raw note (frontmatter + body). `tool_input`: `{query}` / `{path}` (vault-relative).
+- `Read`: `tool_input {file_path}` absolute; `tool_response {type:"text", file:{filePath, content, numLines, startLine, totalLines}}`.
+- `Grep`: `tool_input {pattern, path, output_mode, -n}`; `tool_response {mode, numFiles, filenames, content, numLines, totalLines}`. In `content` mode `numFiles` is 0 and `filenames` empty, so the files grepped must come from `tool_input.path`, not the response.
+- `Glob`: `tool_input {pattern, path}`; `tool_response {filenames[], durationMs, numFiles, truncated, totalMatches, countIsComplete}`.
+- `Bash`: `tool_input {command, description}`; `tool_response {stdout, stderr, interrupted, isImage, noOutputExpected}` (no exit code).
+- Implication for Phase 3: `parseSearchResponse` must accept the array form first; the hook must not read `tool_response` of Read/Grep/Glob/Bash at all (privacy rule).
+- Haiku's first attempt failed with the server connection closed when `.mcp.json` ran `dist/mcp/server.js` (a library, not an entry point); `dist/cli/index.js --notes` is the server entry.
+- hewtd devDependency pinned to `^2.21.0` (lock at 2.21.0); `schemas/gaps.v1.schema.json` present.
+- Phase 2: full suite had 2 known flakes (freshness-scale warm start, hook-failure Jev-hang) under load; both pass alone. Eval green; no code changed.

@@ -1,0 +1,27 @@
+{
+  "session_id": "SESSION-ID",
+  "transcript_path": "/home/user/.claude/projects/proj/SESSION-ID.jsonl",
+  "cwd": "/home/user/proj",
+  "prompt_id": "PROMPT-ID",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "mcp__semantic-docs__read_note",
+  "tool_input": {
+    "path": "operational/rotating-api-keys.md"
+  },
+  "tool_response": [
+    {
+      "type": "text",
+      "text": "---\ntitle: Rotating API Keys\ntags: [operational, runbook, security]\ndomain: operational\n---\n\n# Rotating API Keys\n\nIngest and dashboard keys are replaced every 90 days.\n\n1. Run `tidewatch keys rotate --scope ingest`.\n2. Roll the new key out to the gateways.\n3. The previous key keeps working for a grace period of 24 hours, then stops.\n\nWho may do this is described in [[access-control]]. The grace length is set in the\n[config reference](../reference/config-reference.md).\n"
+    }
+  ],
+  "tool_use_id": "TOOL-USE-ID",
+  "duration_ms": 1,
+  "mcp_server": {
+    "name": "semantic-docs",
+    "source": "dynamic"
+  }
+}

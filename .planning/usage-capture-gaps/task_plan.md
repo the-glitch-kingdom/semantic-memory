@@ -32,8 +32,9 @@ built-in eval and #57). Every missed target is stated in the PR.
   - [x] Re-verify against main @ 865322b (v1.14.0): claims unchanged; hewtd 2.21.0 published `gaps.v1.schema.json`
   - [x] Post the verification comment on #59
   - [x] Sync main, cut `feat/usage-capture-gaps`, commit this plan (with the archive move of the previous plan, if any)
-- [ ] Phase 2: Real payloads first
-  - [ ] Capture one real PostToolUse payload each for an MCP `search_hybrid`, `read_note`, `Read`, `Grep`, `Glob` and a
+- [x] Phase 2: Real payloads first
+  - [x] Pin hewtd devDependency to ^2.21.0, update the lock; schema file confirmed present
+  - [x] Capture one real PostToolUse payload each for an MCP `search_hybrid`, `read_note`, `Read`, `Grep`, `Glob` and a
         Bash grep (debug hook or `SIDEKICK_DEBUG=1`), redact them, and store them as test fixtures. Record the
         `tool_response` shape of MCP tools in notes.md before writing the parser.
 - [ ] Phase 3: Usage log module (`src/core/usage-log.ts`)
@@ -130,10 +131,10 @@ built-in eval and #57). Every missed target is stated in the PR.
   held-out usage and blind-set @1 do not drop; and a decision on the old query-independent `usage_boost`.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: no errors. Live capture succeeded on the second try (first used a library file as the server entry).
 
 ## Status
-**Currently in Phase 2** - real payloads first
+**Currently in Phase 3** - usage log module
 
 ---
 

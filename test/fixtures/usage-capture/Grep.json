@@ -1,0 +1,28 @@
+{
+  "session_id": "SESSION-ID",
+  "transcript_path": "/home/user/.claude/projects/proj/SESSION-ID.jsonl",
+  "cwd": "/home/user/proj",
+  "prompt_id": "PROMPT-ID",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Grep",
+  "tool_input": {
+    "pattern": "rotate",
+    "path": "/home/user/proj/.documentation",
+    "output_mode": "content",
+    "-n": true
+  },
+  "tool_response": {
+    "mode": "content",
+    "numFiles": 0,
+    "filenames": [],
+    "content": "/home/user/proj/.documentation/reference/cli-reference.md:11:- `tidewatch keys rotate --scope <scope>`: issue a replacement key.\n/home/user/proj/.documentation/operational/rotating-api-keys.md:11:1. Run `tidewatch keys rotate --scope ingest`.\n/home/user/proj/.documentation/.semantic-sidekick-index/hnsw-meta.json:1:[Omitted long matching line]\n/home/user/proj/.documentation/.semantic-sidekick-index/docs.cache.json:1:[Omitted long matching line]\n/home/user/proj/.documentation/.semantic-sidekick-index/selection.jsonl:1:[Omitted long matching line]",
+    "numLines": 5,
+    "totalLines": 5
+  },
+  "tool_use_id": "TOOL-USE-ID",
+  "duration_ms": 1
+}
