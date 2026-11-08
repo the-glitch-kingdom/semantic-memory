@@ -345,7 +345,9 @@ if (prompt.includes("optimizing a skill description")) {
   });
 
   describe("concurrency", () => {
-    const maxOverlap = (runs: { t0: number; t1: number }[]) => Math.max(...runs.map((r) => runs.filter((o) => o.t0 < r.t1 && r.t0 < o.t1).length));
+    // runs live at the instant each run starts: the peak of simultaneous runs (an interval-overlap count over-reports
+    // when a slow run outlives one run and overlaps the one that took its slot)
+    const maxOverlap = (runs: { t0: number; t1: number }[]) => Math.max(...runs.map((r) => runs.filter((o) => o.t0 <= r.t0 && r.t0 < o.t1).length));
     const twelve = Array.from({ length: 12 }, (_, i) => P(`queued prompt ${i}`));
 
     it("12 queued eval runs never exceed 5 live claude processes", async () => {
