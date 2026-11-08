@@ -44,6 +44,23 @@ const day = (v: unknown): number | undefined => (typeof v === "string" && DATE.t
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const str = (v: unknown): string | undefined => (typeof v === "string" && v ? v : undefined);
 const clean = (p: string) => posix.normalize(p.replace(/^\.\//, ""));
+const LOC = /(?<=\.[A-Za-z0-9]+)(?::[\w$.-]+)+$|#L\d+(?:-L?\d+)?$/; // `context.ts:208`, `a.ts:10-20`, `a.js:handlePrompt`, `a.ts#L5`
+const GLOB = /[*?[\]{}<>]/;
+
+/** Which of `paths` git ignores, from one `git check-ignore --stdin` (none when there is nothing to ask or git fails). */
+async function gitIgnored(root: string, paths: string[]): Promise<Set<string>> {
+  if (!paths.length) return new Set();
+  const parse = (o: unknown) => new Set(String(o ?? "").split("\0").filter(Boolean));
+  let out: Set<string>;
+  try {
+    const p = run("git", ["-C", root, "check-ignore", "--no-index", "-z", "--stdin"], { maxBuffer: 1 << 24, timeout: 60_000 });
+    p.child.stdin?.end(paths.flatMap((x) => [x, `${x}/`]).join("\0") + "\0"); // `dir/` too: a missing folder only matches a `dir/` rule that way
+    out = parse((await p).stdout);
+  } catch (e) {
+    out = parse((e as { stdout?: unknown }).stdout); // exit 1 = nothing ignored
+  }
+  return new Set(paths.filter((x) => out.has(x) || out.has(`${x}/`)));
+}
 
 /** hewtd's docs folder (repo-relative): the export's own `docs_root`, else its config (`docs_root` since 3.0.0, `docs_path` before), else `.documentation`. */
 function docsRoot(gitRoot: string, exported: Record<string, unknown>): string {
@@ -148,10 +165,11 @@ export async function gitLastChanged(root: string, files: string[]): Promise<Map
 }
 
 /**
- * Code refs of `docs` (their raw `codeRefs`) without an export: a span or link target matches a file by exact repo path, or by basename
+ * Code refs of `docs` (their raw `codeRefs`) without an export (`:line` / `#L` suffixes and a trailing `/` are dropped; globs and
+ * `<placeholders>` are skipped): a span or link target matches a file or folder by exact repo path, or by basename
  * when that name is unique; a symbol-like span (snake_case or camelCase, no `/` or `.`) becomes a symbol with no file. A ref is dead
- * only when it has a `/`, matches nothing and its top-level folder exists (a link that leaves the vault with `../` is resolved
- * to the repo first); anything else unmatched is prose and dropped.
+ * only when it has a `/`, matches nothing, its top-level folder exists and git does not ignore it (a link that leaves the vault
+ * with `../` is resolved to the repo first); anything else unmatched is prose and dropped.
  * shortcut: a link to a missing file inside the vault is not reported dead, since a raw span cannot be told from a link.
  */
 export async function fallbackCode(gitRoot: string, vaultDir: string, docs: { path: string; codeRefs?: string[] }[]): Promise<CodeData> {
@@ -172,7 +190,10 @@ export async function fallbackCode(gitRoot: string, vaultDir: string, docs: { pa
   const vaultRel = relative(gitRoot, vaultDir).split(sep).join("/");
 
   const refs = new Map<string, CodeRef | undefined>(); // classified once per raw ref, shared by all docs
-  const classify = (raw: string): CodeRef | undefined => {
+  const classify = (span: string): CodeRef | undefined => {
+    if (GLOB.test(span)) return undefined; // `src/*.ts`, `<name>/SKILL.md`: cannot be checked
+    const raw = span.replace(LOC, "").replace(/\/+$/, "");
+    if (!raw) return undefined;
     const t = clean(raw);
     const viaVault = raw.startsWith("../") ? clean(posix.join(vaultRel, raw)) : undefined;
     for (const c of [t, viaVault]) if (c && !c.startsWith("..") && (fileSet.has(c) || dirs.has(c))) return { kind: "file", target: c, file: c, resolved: true };
@@ -184,11 +205,15 @@ export async function fallbackCode(gitRoot: string, vaultDir: string, docs: { pa
     return undefined;
   };
 
+  for (const d of todo) for (const raw of d.codeRefs!) if (!refs.has(raw)) refs.set(raw, classify(raw));
+  // a missing path git ignores is runtime state (`.claude/.semantic-memory/mode`, `.planning/`), not a dead reference
+  const ignored = await gitIgnored(gitRoot, [...new Set([...refs.values()].filter((r) => r?.resolved === false).map((r) => r!.target))]);
+  for (const [raw, r] of refs) if (r?.resolved === false && ignored.has(r.target)) refs.set(raw, undefined);
+
   const perDoc = new Map<string, CodeRef[]>();
   for (const d of todo) {
     const list: CodeRef[] = [];
     for (const raw of d.codeRefs!) {
-      if (!refs.has(raw)) refs.set(raw, classify(raw));
       const r = refs.get(raw);
       if (r) list.push({ ...r });
     }

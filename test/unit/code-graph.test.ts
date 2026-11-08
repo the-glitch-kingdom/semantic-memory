@@ -155,6 +155,18 @@ describe("fallbackCode (no export)", () => {
     expect(d.symbols.get("prune_job")).toEqual({ citedBy: ["ops/x.md"] });
   });
 
+  it("is not fooled by line suffixes, folders with a slash, globs, placeholders or gitignored runtime paths", async () => {
+    const { root, commit } = repo();
+    commit("2026-01-01T00:00:00Z", { "src/core/vector.ts": "1", ".claude/settings.json": "{}", ".gitignore": ".claude/.semantic-memory/\n.planning/\n", ".documentation/a.md": "x" });
+    const refs = ["src/core/vector.ts:73", "src/core/vector.ts:10-20", "src/core/vector.ts#L5", "src/core/vector.ts:CACHE_TTL_MS", "src/", "src/core/", "src/mcp/tools/*.ts",
+      ".claude/skills/<name>/SKILL.md", ".claude/.semantic-memory/mode", ".claude/.semantic-memory", ".planning/", ".claude/gone.json"];
+    const d = await fallbackCode(root, join(root, ".documentation"), [{ path: "a.md", codeRefs: refs }]);
+    expect(d.docs.get("a.md")!.refs.map((r) => [r.target, r.resolved])).toEqual([
+      ["src/core/vector.ts", true], ["src/core/vector.ts", true], ["src/core/vector.ts", true], ["src/core/vector.ts", true], ["src", true], ["src/core", true],
+      [".claude/gone.json", false], // only a missing path git does not ignore is dead
+    ]);
+  });
+
   it("gitLastChanged dates files in batches past 500 pathspecs", async () => {
     const { root, commit } = repo();
     const files = Object.fromEntries(Array.from({ length: 520 }, (_, i) => [`f/${i}.txt`, "x"]));

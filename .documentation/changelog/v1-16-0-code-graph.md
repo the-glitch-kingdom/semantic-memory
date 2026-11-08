@@ -40,6 +40,17 @@ Design and contract: [code-graph.md](../architecture/code-graph.md).
 
 Answer@1 4-6/9 to 9/9 on both splits, twin pairs (answer above its stale twin) 2-3/6 to 6/6, undocumented flagged and located 2/2 per split. Fallback without `.hewtd/`: 12/12 twins. Clean-top-3 share 0.778 to 0.815 on train, 0.778 unchanged on held-out.
 
+## Measured on this repo (full clone, code present)
+
+The real-corpus questions (train + held-out, 54 answerable) on a `git clone` of this repo, one index, `decay.code` on vs off:
+
+| arm | answer@1 off → on | answer@3 off → on |
+|---|---|---|
+| hybrid | 31 → 33 | 45 → 47 |
+| semantic | 30 → 29 | 37 → 36 |
+
+59 of 127 docs carry grounding: 58 with drift, 11 with dead refs (6 distinct, among them `scripts/retrieval-eval/mine-selection.mjs`, deleted in 1.15.0). The first run of this check found fallback false positives (`file.ts:208` and `file.js:Name` suffixes, folders written with a trailing `/`, globs, `<placeholders>`, gitignored runtime paths such as `.claude/.semantic-memory/`); they were fixed before release.
+
 ## Missed targets
 
 - The clean-top-3 share did not rise on held-out: a demoted dead twin still sits in the top 3. The real-corpus eval vaults hold no code refs and the external 751-doc tree was not available, so the rise on a real tree is unmeasured (a release step).

@@ -102,3 +102,9 @@ Known limits: fallback dead refs treat a prose route such as `api/v1/x` as dead 
 ## Eval results: Phase 11 (docs)
 Code unchanged. `npm run eval` after the docs: 92 passed, 5 expected fail, every floor untouched (real-train hybrid @1 18/27 @3 25/27, flagged 8/8 each). New text went in two new pages (architecture/code-graph.md, changelog/v1-16-0-code-graph.md); existing pages got one short paragraph each (what-gets-indexed, indices-and-storage, decay-guide, mcp-tools-reference) and a one-line comment in configuration-reference. AGENTS.md regenerated from branch code: the managed body is unchanged (no tool added), only `last_generated` moved. `hewtd maintain --quick`: 10 errors, 94 warnings, same as before this phase (95 warnings before).
 Full npm test: only freshness-scale and hook-failure Jev-hang failed under load; both passed alone (16/16).
+
+## Release check (main session): grounding on a real repo
+The real-corpus eval copies only `.documentation`, so it never exercised grounding. Ran the real-corpus questions on a `git clone --local` of the branch (code present, real history), one index, `decay.code` on vs off (vault.schema.yml):
+- First run: 78 of 127 docs grounded, many false dead refs: `src/core/vector.ts:73` (line suffix), `src/` (clean() kept the trailing `/`, so the folder never matched), `src/mcp/tools/*.ts` (glob), `.claude/.semantic-memory/mode`, `.planning/` (gitignored runtime paths). Semantic @1 30 -> 25 with grounding on.
+- Fix in `fallbackCode`: strip `:line`/`:Name`/`#L` suffixes and a trailing `/`; skip globs and `<placeholders>`; one `git check-ignore --no-index --stdin` over the dead candidates only (path and `path/`). Regression test in test/unit/code-graph.test.ts (fails without the fix).
+- After: 59 grounded (58 drift, 11 dead; 6 distinct dead refs, plausible). Hybrid @1 31 -> 33, @3 45 -> 47; semantic @1 30 -> 29, @3 37 -> 36 (of 54).

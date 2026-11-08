@@ -15,11 +15,11 @@ Issue #58. Design: `.documentation/architecture/code-graph.md`; numbers and miss
 
 ### Measured
 
-Fixture answer@1 4-6/9 to 9/9, twin pairs 2-3/6 to 6/6 (12/12 on the fallback), undocumented located 2/2 per split. Nothing tuned on held-out.
+Fixture answer@1 4-6/9 to 9/9, twin pairs 2-3/6 to 6/6 (12/12 on the fallback), undocumented located 2/2 per split. Nothing tuned on held-out. On a full clone of this repo (real-corpus questions, train + held-out, same index, `decay.code` on vs off): hybrid answer@1 31 to 33 and @3 45 to 47 of 54; semantic answer@1 30 to 29 and @3 37 to 36. 59 of 127 docs carry grounding (58 with drift, 11 with dead refs).
 
 ### Missed targets
 
-Clean-top-3 share did not rise on held-out (a demoted dead twin stays in the top 3); the real-corpus vaults have no code refs and the 751-doc tree was not available, so the gain on a real tree is unmeasured. The entity card does not reorder prose matches. Fallback: prose routes can count as dead, and symbol cards have no file without the export.
+Clean-top-3 share did not rise on held-out (a demoted dead twin stays in the top 3); the 751-doc tree was not available; on this repo the semantic arm lost one answer@1 case with grounding on. The entity card does not reorder prose matches. Fallback: prose routes can count as dead, and symbol cards have no file without the export. A pre-release check on this repo found fallback dead-ref false positives (`file.ts:208`, `file.js:Name`, `src/`, globs, gitignored runtime paths); fixed before release.
 
 ## [1.15.0] - 2026-11-07 — Usage capture and search gaps
 
