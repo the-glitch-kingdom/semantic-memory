@@ -68,3 +68,6 @@ Section set, now reading the real `anchor` field (hybrid / semantic): train doc@
 `granularity: "doc"` vs v1.16.0: identical fields and excerpt on test/fixtures/flat-vault (24 snapshot cases from main @ 24c88af, scores within 2e-3). On vaults with headings the chunks themselves differ (schema 9), so only the field set is the same.
 Regression snapshots updated: tool-surface (granularity arg, read_note text, search descriptions), tool-outputs (default search shape gains optional `section`, `anchor` keys on the docs vault).
 Full suite: 5 failures first run (2 snapshots, now updated; freshness-scale warm start and hook-failure Jev-hang, known flakes, pass alone 16/16).
+
+## Eval results: Phase 5
+Fold gates (owner first in every fold case, no copy or pointer in the top 3): train 4/4 owner@1, 0 slots, both arms; held-out 2/2, 0 slots, both arms (was 0/4 and 0-1/2). Section set unchanged: doc@1, doc@3, anchor@1 12/12 on both splits and arms; meanBytes 2,584-2,719 train, 2,464-2,664 held-out. Constant FOLD_MIN_CHARS = 300 was set from the shape of pointers (about 230 chars with trail) and copies (about 440), not tuned on a question set. owner-anchor@1 is 3/4 on train (fold-cert-2: the owner doc ranks first but its best chunk is `troubleshooting`, not the rotation section); this is chunk choice inside the owner, not folding, and is not gated.

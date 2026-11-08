@@ -60,13 +60,15 @@ target is stated in the PR.
         Done: src/core/section-fields.ts (`sectionFields`) used by `shape()` in src/mcp/tools/search.ts and `openSearch` in src/cli/search.ts; `code` is stored per section at index time (`sections[].code`, raw refs, at most 3).
   - [x] `granularity: "section" | "doc"` on the search tools; `read_note`'s `section` accepts `#anchor`.
         Done: `granularity` on search_semantic and search_hybrid (default section; `openSearch` option for the CLI); `extractSection` takes `#anchor` (src/core/section.ts). Tests: test/integration/search-sections.test.ts (incl. v1.16.0 snapshot test/fixtures/flat-vault-v1.16.0.json), test/unit/section-fields.test.ts.
-- [ ] Phase 5: Folding (`src/core/fold.ts`, after rerank, before the limit)
-  - [ ] Export `duplicates`: the copy's section is the one whose anchor or content matches the owner's section
+- [x] Phase 5: Folding (`src/core/fold.ts`, after rerank, before the limit)
+  - [x] Export `duplicates`: the copy's section is the one whose anchor or content matches the owner's section
         (`duplicates.section` names the owner's anchor); the owner takes the slot (at the higher score), the copy goes
         into `also_in: ["b.md#setup"]`. `points_to` (from is null): a result counts as a pointer to `to` only when its
         best section is short (pointer-sized, under the hash-fold size floor) and links to `to`'s path; then it is
         replaced by its target, or dropped if the target already ranks above it. Otherwise the doc stays. Without an export, fold only sections with an identical normalized-text hash above a
         size floor.
+        Done: src/core/fold.ts (FOLD_MIN_CHARS = 300), export parsing in loadExport (`duplicates`, `pointsTo`), wired in shape() and the CLI
+        (not in granularity "doc"); `also_in` on result items. Unit: test/unit/fold.test.ts. The four fold gates in section-eval.test.ts are real gates now.
 - [ ] Phase 6: Release prep v1.17.0
   - [ ] Bump all five version fields, lockfile; offline tarball builds
 - [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -103,13 +105,14 @@ target is stated in the PR.
 - The trail prefix changes chunk text, so this release re-embeds once.
 
 ## Errors Encountered
+- Phase 5: a fold only happens when the owner or target is itself in the ranked list (never drop an answer whose owner is absent). A pointer whose target is not in the top `limit*3` stays. Hash folding also runs with an export (identical text is safe), not only without one.
 - Phase 4: `granularity: "doc"` cannot be byte-identical to v1.16.0 on a vault with headings, because schema 9 chunks differ (split at headings). It is proven on a heading-free vault (test/fixtures/flat-vault), where chunking is unchanged: the snapshot was produced by running main @ 24c88af (search_hybrid and search_semantic, trimmed and full, 6 queries). The doc-mode excerpt also drops the trail line, which is what makes it equal there.
 - Phase 3: section chunks with the trail prefix lower the semantic arm on the existing splits (measured in notes.md). Floors lowered to the measured values, each with the number: fixture-train semantic multi@1 4 to 2, hybrid multi 5/11 to 4/10; fixture-heldout hybrid all@1 25 to 24, hybrid paraphrase@1 13 to 11, semantic paraphrase@1 13 to 12, semantic symptom@3 3 to 2, hybrid symptom@3 4 to 3; real-heldout negatives flagged slack 1 to 3 (5/8 flagged, was 7-8/8). Reason: the trail prefix and heading splits shift cosines toward short chunks; the fallback (today's packing) does not move those numbers but cannot name the right section (anchor@1 0/12 train).
 - Phase 3: two regression snapshots (list_notes chunk counts, get_stats totals) updated: the fixture vault now has 17 chunks, not 10.
 - Phase 2: hook-failure Jev-hang test failed once under full-suite load (3827ms vs 3000); passes alone. Known flake.
 
 ## Status
-**Currently in Phase 5** - folding
+**Currently in Phase 6** - release prep
 
 ---
 

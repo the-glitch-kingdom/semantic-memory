@@ -6,6 +6,7 @@ import { fuseScores } from "../../core/bm25.js";
 import { missingTerms } from "../../core/identifiers.js";
 import { entityCard, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
+import { fold } from "../../core/fold.js";
 import { sectionFields } from "../../core/section-fields.js";
 import { excerpt, isWeak, standaloneConfidence, withConfidence, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
@@ -43,7 +44,7 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
  * returned result `no_strong_match` (the response is an array, so the flag rides on its items).
  */
 function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null, granularity: Granularity = "section") {
-  const scored = withConfidence(ranked);
+  const scored = withConfidence(granularity === "section" ? fold(ranked, ctx.getDocByPath(), ctx.getCode()) : ranked);
   const page = scored.slice(0, limit);
   const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase());
   const { missing, undocumented } = splitUndocumented(absent, ctx.getCode());
@@ -62,6 +63,7 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
           confidence: e.confidence,
           snippet: excerpt(sec.text, query),
           ...(e.matched && { matched: e.matched }),
+          ...((e as any).also_in && { also_in: (e as any).also_in }),
           ...(granularity === "section" && { ...(sec.section && { section: sec.section }), ...(sec.anchor && { anchor: sec.anchor }), ...(sec.code && { code: sec.code }) }),
           ...((e as any).decay && { decay: (e as any).decay }),
           ...((e as any).grounding && { grounding: (e as any).grounding }),

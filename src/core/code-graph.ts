@@ -25,6 +25,10 @@ export interface DocCode {
   bodyChanged?: number;
   lastVerified?: number;
   refs: CodeRef[];
+  /** export only: this doc's sections that copy another doc's section (`section` is the owner's anchor, as hewtd ships it) */
+  duplicates?: { section: string; owner: string; ownerAnchor: string }[];
+  /** export only: vault paths this doc points to (hewtd records only the target, never which section points) */
+  pointsTo?: string[];
 }
 export interface SymbolInfo { file?: string; fileKind?: "definition" | "reference"; citedBy: string[] }
 /** `files`: tracked repo files (from git), for locating an identifier no doc cites */
@@ -94,6 +98,7 @@ export function loadExport(gitRoot: string, vaultDir: string, vaultPaths: Set<st
 
   const root = docsRoot(gitRoot, g);
   const toVault = (key: string): string | undefined => {
+    key = key.replace(/#.*$/, "");
     const p = posix.normalize(relative(vaultDir, join(gitRoot, root, key)).split(sep).join("/"));
     return vaultPaths.has(p) ? p : undefined;
   };
@@ -116,8 +121,13 @@ export function loadExport(gitRoot: string, vaultDir: string, vaultPaths: Set<st
           resolved: typeof r.resolved === "boolean" ? r.resolved : null, changed: day(r.code_changed),
         });
       }
+      const dups = (Array.isArray(d.duplicates) ? d.duplicates : []).flatMap((x) => {
+        const o = isObj(x) && typeof x.owner === "string" ? toVault(x.owner) : undefined;
+        return o && isObj(x) && typeof x.section === "string" ? [{ section: x.section.replace(/^#/, ""), owner: o, ownerAnchor: (x.owner as string).split("#")[1] ?? "" }] : [];
+      });
+      const to = (Array.isArray(d.points_to) ? d.points_to : []).flatMap((x) => (isObj(x) && typeof x.to === "string" ? toVault(x.to) ?? [] : []));
       out.docs.set(path, {
-        source: "export", refs, bodyChanged: day(d.body_changed), lastVerified: day(d.last_verified),
+        source: "export", refs, ...(dups.length && { duplicates: dups }), ...(to.length && { pointsTo: to }), bodyChanged: day(d.body_changed), lastVerified: day(d.last_verified),
         verdict: typeof d.verdict === "string" && VERDICTS.has(d.verdict) ? d.verdict : undefined,
       });
     }
