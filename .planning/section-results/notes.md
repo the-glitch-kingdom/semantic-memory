@@ -14,3 +14,15 @@
 | Payload stays within budget | At risk | The ceiling is 4750 bytes (`baseline.json`, `docs-eval.test.ts:155`) and output is pretty-printed (`search.ts:131`). Section fields add ~300-500 bytes |
 
 - **Reuse:** `chunkText` per section, remark's heading positions, hewtd's anchor rules (`hit-em-with-the-docs/src/core/links/anchors.ts:14-89`, copied), `extractSection` (`section.ts`), #58's export reader, `doc.chunks.indexOf(matchedChunk)`.
+
+## Eval results: Phase 2 (shipped v1.16.0 baseline, before any chunking code; 3 identical runs plus the gate run)
+Fixture: test/fixtures/section-vault. Questions: 12 section + 4 fold (train), 12 section + 2 fold (held-out); written before any run, held-out never used to choose anything. A result's anchor is the section its snippet lies in (`anchorOfSnippet`, hewtd's flat-section rules) because v1.16.0 has no `anchor` field.
+
+| split | arm | doc@1 | doc@3 | anchor@1 | anchor@3 | meanBytes | fold owner@1 | copy+pointer slots in top 3 |
+|---|---|---|---|---|---|---|---|---|
+| train | search_semantic | 7/12 | 9/12 | 3/12 | 3/12 | 5325 | 0/4 | 8 |
+| train | search_hybrid | 11/12 | 12/12 | 3/12 | 4/12 | 5335 | 0/4 | 8 |
+| heldout | search_semantic | 10/12 | 11/12 | 4/12 | 4/12 | 4642 | 0/2 | 4 |
+| heldout | search_hybrid | 12/12 | 12/12 | 4/12 | 4/12 | 4659 | 0/2 | 4 |
+
+Floors in baseline.json `sections` (one case of slack). Targets (it.fails today, real gates once met): hybrid anchor@1 >= 9/12 per split; owner first and no copy/pointer in top 3 in every fold case. Note meanBytes on train already exceeds the 4750 ceiling on this long-doc set (ceiling applies to the existing suites); Phase 4 must trim.

@@ -36,9 +36,12 @@ target is stated in the PR.
   - [x] Re-verify against main @ 24c88af (v1.16.0): claims hold; `nodeToText` still drops inline code; schema 8; ceiling 4750
   - [x] Post the verification comment on #60
   - [x] Sync main, cut `feat/section-results`, commit this plan (with the archive move of the previous plan)
-- [ ] Phase 2: Eval first
-  - [ ] Long-doc fixture (runbooks of 1,000+ lines with deep headings), owner + copy + pointer fixtures with a
+- [x] Phase 2: Eval first
+  - [x] Long-doc fixture (runbooks of 1,000+ lines with deep headings), owner + copy + pointer fixtures with a
         `.hewtd/graph.json`, and questions (train/held-out) whose answer is one section. Record the baseline.
+        Done: test/fixtures/section-vault (3 runbooks of 1,300+ lines, 3 owner/copy/pointer families, export validated against
+        graph.v1.schema.json with from=null and owner-anchor sections), golden-section(.heldout).jsonl, section-eval.test.ts,
+        section-metrics.ts (anchorOfSnippet), baseline.json `sections`.
 - [ ] Phase 3: Section chunking (`indexer.ts`, `types.ts`)
   - [ ] Split at heading offsets, strip markdown per section, `chunkText` inside each section, prefix each chunk with
         its trail line. Store `sections: {anchor, trail, hash}[]` and `chunkSection: number[]`. A section under ~300
@@ -93,10 +96,10 @@ target is stated in the PR.
 - The trail prefix changes chunk text, so this release re-embeds once.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: hook-failure Jev-hang test failed once under full-suite load (3827ms vs 3000); passes alone. Known flake.
 
 ## Status
-**Currently in Phase 2** - eval first
+**Currently in Phase 3** - section chunking
 
 ---
 

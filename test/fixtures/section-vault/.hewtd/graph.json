@@ -1,0 +1,151 @@
+{
+  "docs": {
+    "legacy/cdn-operations-notes.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [
+        {
+          "owner": "shared/edge-certificates.md#rotating-the-edge-certificate",
+          "section": "#rotating-the-edge-certificate"
+        }
+      ],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "legacy/cert-rotation-moved.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [
+        {
+          "from": null,
+          "to": "shared/edge-certificates.md#rotating-the-edge-certificate"
+        }
+      ],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "legacy/compliance-handbook.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [
+        {
+          "owner": "shared/audit-legal-hold.md#placing-an-audit-log-legal-hold",
+          "section": "#placing-an-audit-log-legal-hold"
+        }
+      ],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "legacy/legal-hold-moved.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [
+        {
+          "from": null,
+          "to": "shared/audit-legal-hold.md#placing-an-audit-log-legal-hold"
+        }
+      ],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "legacy/snapshot-cleanup-moved.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [
+        {
+          "from": null,
+          "to": "shared/snapshot-expiry.md#expiring-warehouse-snapshots"
+        }
+      ],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "legacy/warehouse-handbook.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [
+        {
+          "owner": "shared/snapshot-expiry.md#expiring-warehouse-snapshots",
+          "section": "#expiring-warehouse-snapshots"
+        }
+      ],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "operational/data-pipeline-runbook.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "operational/platform-runbook.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "operational/storefront-runbook.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "shared/audit-legal-hold.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [
+        "shared/audit-legal-hold.md#placing-an-audit-log-legal-hold"
+      ],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "shared/edge-certificates.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [
+        "shared/edge-certificates.md#rotating-the-edge-certificate"
+      ],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "shared/snapshot-expiry.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [
+        "shared/snapshot-expiry.md#expiring-warehouse-snapshots"
+      ],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    }
+  },
+  "source_commit": null,
+  "symbols": {},
+  "version": 1
+}

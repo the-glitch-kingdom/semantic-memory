@@ -256,5 +256,32 @@
         "cleanShare": 0.778
       }
     }
+  },
+  "sections": {
+    "_comment": "section-results Phase 2: shipped v1.16.0 numbers on test/fixtures/section-vault (12 runbook questions per split), measured 3 runs, identical. anchorAt1 counts a result only when its doc is first and the section its snippet lies in is the answer's; the test allows one case below each floor.",
+    "train": {
+      "search_semantic": {
+        "docAt1": 7,
+        "docAt3": 9,
+        "anchorAt1": 3
+      },
+      "search_hybrid": {
+        "docAt1": 11,
+        "docAt3": 12,
+        "anchorAt1": 3
+      }
+    },
+    "heldout": {
+      "search_semantic": {
+        "docAt1": 10,
+        "docAt3": 11,
+        "anchorAt1": 4
+      },
+      "search_hybrid": {
+        "docAt1": 12,
+        "docAt3": 12,
+        "anchorAt1": 4
+      }
+    }
   }
 }
