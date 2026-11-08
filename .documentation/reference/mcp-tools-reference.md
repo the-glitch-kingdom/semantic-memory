@@ -56,6 +56,7 @@ Vector similarity search over chunk embeddings.
 **Args:** `{ query, limit?=10, full?=false, modifiedAfter?, modifiedBefore?, status?, tier?, domain? }`
 **v1.9.0:** vector only (no lexical fusion, no graph boost); same `confidence`, `no_strong_match`, excerpt and `full` as `search_hybrid`.
 **v1.14.0:** `search_hybrid` and `search_semantic` also set `no_strong_match: true` and `missing_terms: [...]` on every result when the query names an identifier (snake_case, ALL_CAPS with an underscore, camelCase, a path, a dotted name, a backticked span) that no indexed doc contains. Read it as "not in the docs" (it may exist in code). `content[0]` stays a plain JSON array; the fields ride on the items. See [retrieval tuning guide](../operational/retrieval-tuning-guide.md#reading-the-result).
+**v1.17.0:** items carry `section` (heading trail), `anchor` and `code` (up to 3 refs); `granularity?: "section"|"doc"` (default `section`; `doc` is the v1.16.0 field set, no folding); a copy or pointer folds under its owner, which lists it in `also_in: ["path#anchor"]`. See the [v1.17.0 changelog](../changelog/v1-17-0-section-results.md).
 **Use when:** conceptual/semantic queries ("authentication flows").
 **Skip when:** looking for exact strings — prefer `search_text`.
 **v1.3+ confidence decay:** results are down-weighted by time since `last_verified`. Decayed results carry a `decay: { multiplier, age_days, effective_half_life, reason }` block. See [configuration-reference.md](./configuration-reference.md#decay-vaultschemayml).
@@ -85,7 +86,7 @@ search (`_meta` `anthropic/alwaysLoad`); the doc-search redirect names it when i
 
 ### `read_note`
 **Args:** `{ path, section? }`. Returns full markdown content by default.
-**v1.4+ `section`:** when a heading name is given, returns only that heading's section (content through the next same-or-higher heading) instead of the whole note — a token-saver for targeted reads.
+**v1.4+ `section`:** when a heading name is given, returns only that heading's section (content through the next same-or-higher heading) instead of the whole note — a token-saver for targeted reads. **v1.17.0:** `section: "#anchor"` reads by a result's `anchor`.
 
 ### `read_multiple_notes` 🚫 deprecated (v2.0 removal)
 **Args:** `{ paths: string[] }`. Batch fetch.

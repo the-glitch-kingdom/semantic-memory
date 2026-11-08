@@ -89,12 +89,12 @@ target is stated in the PR.
   - [x] Schema upgrade test: re-embeds once, the old index answers with the stale marker meanwhile.
         Done: a "v1.16.0" (schema 8) case in test/integration/index-upgrade.test.ts.
   - [x] Full suite; known flakes re-run alone. Answer each #60 acceptance item in notes.md.
-- [ ] Phase 9: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New changelog doc (`npx hewtd integrate -a`; one-time re-embed on upgrade); `CHANGELOG.md`
-  - [ ] `.documentation/architecture/what-gets-indexed.md` (section chunking), `.documentation/reference/mcp-tools-reference.md`
+- [x] Phase 9: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New changelog doc (`npx hewtd integrate -a`; one-time re-embed on upgrade); `CHANGELOG.md`
+  - [x] `.documentation/architecture/what-gets-indexed.md` (section chunking), `.documentation/reference/mcp-tools-reference.md`
         (`section`, `anchor`, `code`, `also_in`, `granularity`, `read_note #anchor`), `.documentation/operational/retrieval-tuning-guide.md`
-  - [ ] KB fact (gotcha): remark's text of a heading with inline code drops the code unless taken from the source
-  - [ ] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
+  - [x] KB fact (gotcha): remark's text of a heading with inline code drops the code unless taken from the source
+  - [x] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
 
 ## Key Questions
 1. Should hewtd#65 add a line or section field to each ref, so `code` per section can come from the export? Until
@@ -117,7 +117,7 @@ target is stated in the PR.
 - Phase 2: hook-failure Jev-hang test failed once under full-suite load (3827ms vs 3000); passes alone. Known flake.
 
 ## Status
-**Currently in Phase 9** - documentation
+**COMPLETE** - all phases done
 
 ---
 

@@ -88,3 +88,6 @@ The "re-embeds once" claim is by construction (vectors are keyed by chunk text, 
 | 5. Works with the other plugin absent | Met. Integration describe "folding with no .hewtd" runs the section fixture with the export removed (search, fold by hash, section fields, CLI parity); the flat and docs vaults have no export at all. No gaps file is read by this feature. |
 
 Full suite: 1 failure, freshness-scale warm start (known load flake), passes alone 2/2.
+
+## Eval results: Phase 9 (docs only, code unchanged)
+Docs added: changelog/v1-17-0-section-results.md, KB fact remark-heading-text-drops-inline-code.md; tight edits to what-gets-indexed, mcp-tools-reference, retrieval-tuning-guide, README, CHANGELOG. AGENTS.md regenerated from branch code (only the timestamp differs, tools unchanged, so reverted). `hewtd maintain --quick` ran.

@@ -33,7 +33,7 @@ purpose: Complete listing of architecture documentation
 | [MCP server internals — composition, context, per-domain tool modules](mcp-internals.md) | active | 2026-10-24 | 1,611 | How the MCP server is structured internally — composition root, shared context, per-domain tool modules. Read this if you're adding a new MCP tool or debugging tool registration. |
 | [Schema and Provenance](schema-and-provenance.md) | active | 2026-04-23 | 878 | vault.schema.yml, 4 types, lint rules, provenance frontmatter |
 | [v1 stack overview — what v1.0 / v1.1 / v1.2 added](v1-stack-overview.md) | active | 2026-10-24 | 1,330 | Single doc covering everything v1.0 / v1.1 / v1.2 added on top of the v0.x five-layer substrate. Read this BEFORE the per-version changelog entries; it's the architectural narrative, they're the bullet lists. |
-| [What gets indexed where and why](what-gets-indexed.md) | active | 2026-05-09 | 2,216 | Content-perspective view of the index pipeline. For each kind of content semantic-memory sees, what it does with it and which tools query the result. Read this if you wonder "is this file indexed?" or "why isn't my note showing up in search?" |
+| [What gets indexed where and why](what-gets-indexed.md) | active | 2026-05-09 | 2,272 | Content-perspective view of the index pipeline. For each kind of content semantic-memory sees, what it does with it and which tools query the result. Read this if you wonder "is this file indexed?" or "why isn't my note showing up in search?" |
 
 ## Keywords
 

@@ -101,6 +101,10 @@ rerank:
 
 **Embed-text choice.** Option (a), the same kept text for vectors and BM25, beat option (b), dropping fenced contents from the embedded text, on the train splits (real-train hybrid 22 vs 20, semantic equal at 19). Held-out was not used to choose. Cost: some prose tiers lose a case, real-train hybrid negatives flagged 12/12 to 9/12 (code tokens raise BM25 on off-topic queries), and cold index time can double on a docs tree with many code blocks. Numbers: [v1.12.0 changelog](../changelog/v1-12-0-index-text-pooling-body-dates.md).
 
+## Section chunks and folding (v1.17)
+
+Chunks split at headings with the trail in the embedded text; this lowered a few existing floors and abstention (real held-out negatives flagged 5/8). Folding rules and numbers: [v1.17.0 changelog](../changelog/v1-17-0-section-results.md).
+
 ## Trying another embedder (v1.12)
 
 ```bash
