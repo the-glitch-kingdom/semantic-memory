@@ -63,13 +63,13 @@ Series step 2. Every missed target is stated in the PR.
         in batches). A span matches a file by exact repo path, or by basename when that name is unique; symbol-like
         spans become symbols with no file. Dead refs only for a link to a missing file or a span with `/` whose
         top-level folder exists. The repo root comes from `repoRoot()` (`skill-evidence.ts`).
-- [ ] Phase 5: Graph
-  - [ ] Nodes `code:<path>` (or `code:<repo>:<path>` for sibling repos) and `symbol:<name>` with a `kind`
+- [x] Phase 5: Graph
+  - [x] Nodes `code:<path>` (or `code:<repo>:<path>` for sibling repos) and `symbol:<name>` with a `kind`
         attribute; edges `cites_code` and `defined_in`; `buildFromDocuments(docs, code?)`; `statistics()` stays
         doc-only plus a `codeNodes` count.
-  - [ ] `backlinks` / `forwardlinks` accept a file path or symbol name and include code edges. These two tools are
+  - [x] `backlinks` / `forwardlinks` accept a file path or symbol name and include code edges. These two tools are
         `code_to_docs` / `doc_to_code`; no new tools.
-  - [ ] Code data is rebuilt in `sync()`; `ensureFresh` also rebuilds when the export's mtime or `<gitdir>/logs/HEAD`'s
+  - [x] Code data is rebuilt in `sync()`; `ensureFresh` also rebuilds when the export's mtime or `<gitdir>/logs/HEAD`'s
         mtime changes (one `stat`, no spawn).
 - [ ] Phase 6: Grounding and ranking
   - [ ] Per doc `grounding = {source: "export" | "code-spans", verdict?, code_drift[], dead_refs[]}`, stored like
@@ -139,11 +139,14 @@ Series step 2. Every missed target is stated in the PR.
 - Fallback dead refs are conservative: a `/` in the ref, no match, and the (repo-root) top folder exists. A link to a missing file inside the vault is not reported dead (a raw `codeRefs` string cannot be told from a span); `../` links are resolved to the repo first. Symbol spans: `identifiers()` shape, no `/` or `.`, not ALL_CAPS (env names).
 - One `git ls-files -z`; `git log --name-only` in batches of 500 pathspecs (one for a normal build).
 
+- Phase 5: `cites_code` / `defined_in` are `EdgeType`s and `CODE_EDGE_TYPES` (graph.ts), outside `LINK_EDGE_TYPES`. The graph methods keep their defaults; the `backlinks`/`forwardlinks` MCP tools pass link + code types when `types` is omitted. Dead refs (`resolved: false`) get no node. A note's `linkCount`/`backlinkCount` and `statistics()` ignore code edges; `GraphStats.codeNodes` is new (two snapshots updated: graph_statistics, tool surface).
+- Phase 5: `setDocuments(docs, code)` takes the code data loaded by `loadCode()` (errors give a stderr line and a doc-only graph). `lastCodeStamp` = mtimes of `.hewtd/graph.json` and `.git/logs/HEAD`; no CLI change (the CLI has no graph build).
+
 ## Errors Encountered
 - (none yet)
 
 ## Status
-**Currently in Phase 5** - Graph (Phase 4 done: `src/core/code-graph.ts` with `loadExport`, `fallbackCode`, `loadCodeData`)
+**Currently in Phase 6** - Grounding and ranking (Phase 5 done: code/symbol nodes, cites_code/defined_in, backlinks/forwardlinks on files and symbols)
 
 ---
 

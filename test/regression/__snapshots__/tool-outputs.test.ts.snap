@@ -162,6 +162,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > graph_path > returns 
 
 exports[`Regression: MCP tool outputs (golden snapshots) > graph_statistics > returns stable graph stats for the fixture vault 1`] = `
 {
+  "codeNodes": "number",
   "density": "number",
   "mostConnected": "object",
   "orphanCount": "number",

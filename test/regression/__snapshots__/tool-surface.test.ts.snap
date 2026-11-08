@@ -164,7 +164,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "apply_patch",
   },
   {
-    "description": "Find all notes that link TO a given note",
+    "description": "Find all notes that link TO a given note, file path or symbol name (code files and symbols list the notes citing them)",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -182,7 +182,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'cites_code' / 'defined_in' for code edges (backlinks and forwardlinks show them by default), 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
@@ -192,6 +192,8 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
               "same-incident",
               "supersedes",
               "tag",
+              "cites_code",
+              "defined_in",
             ],
             "type": "string",
           },
@@ -308,7 +310,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "find_stale",
   },
   {
-    "description": "Find all notes linked FROM a given note",
+    "description": "Find all notes linked FROM a given note, plus the code files and symbols it cites",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -326,7 +328,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'cites_code' / 'defined_in' for code edges (backlinks and forwardlinks show them by default), 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
@@ -336,6 +338,8 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
               "same-incident",
               "supersedes",
               "tag",
+              "cites_code",
+              "defined_in",
             ],
             "type": "string",
           },
@@ -398,7 +402,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'cites_code' / 'defined_in' for code edges (backlinks and forwardlinks show them by default), 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
@@ -408,6 +412,8 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
               "same-incident",
               "supersedes",
               "tag",
+              "cites_code",
+              "defined_in",
             ],
             "type": "string",
           },

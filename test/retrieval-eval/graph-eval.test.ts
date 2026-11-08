@@ -102,4 +102,14 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
       expect(m.named).toBe(m.neg);
     });
   }
+
+  // #58 check 1: code edges reach the tools, and the default walks do not see them
+  it("backlinks(file) lists the citing docs and forwardlinks(doc) lists its code; walks are untouched", async () => {
+    const back = (await env.call("backlinks", { path: "scripts/ci/guards.sh" })).parsed.map((x: any) => x.path).sort();
+    expect(back).toEqual(["operational/ci-guards.md", "operational/release-checklist.md", "operational/row-security-audit.md"]);
+    const fwd = (await env.call("forwardlinks", { path: "operational/ci-guards.md" })).parsed.map((x: any) => x.path);
+    expect(fwd).toContain("code:scripts/ci/guards.sh");
+    const walk = (await env.call("forwardlinks", { path: "operational/ci-guards.md", types: ["link", "wikilink", "related", "cites", "same-incident"] })).parsed;
+    expect(walk.every((x: any) => x.path.endsWith(".md"))).toBe(true);
+  });
 });

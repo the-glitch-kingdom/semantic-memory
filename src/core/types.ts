@@ -71,7 +71,8 @@ export interface GraphNode {
 
 /** `link` = markdown link, `related` = frontmatter related_docs, `tag` = shared rare tag */
 /** `cites` = playbook symptom -> knowledge-base fact, `supersedes` = live doc -> its archived copy (`archived_from`), `same-incident` = files under one `incidents/<id>/` */
-export type EdgeType = "link" | "wikilink" | "related" | "tag" | "cites" | "supersedes" | "same-incident";
+export type EdgeType = "link" | "wikilink" | "related" | "tag" | "cites" | "supersedes" | "same-incident" | "cites_code" | "defined_in";
+/** `cites_code` = doc -> code file or symbol, `defined_in` = symbol -> its file; neither is a link between notes, so neither is in LINK_EDGE_TYPES */
 
 export interface GraphEdge {
   source: string;
@@ -81,11 +82,13 @@ export interface GraphEdge {
 }
 
 export interface GraphStats {
+  /** documents only; `codeNodes` counts the code: and symbol: nodes */
   totalNodes: number;
   totalEdges: number;
   orphanCount: number;
   mostConnected: Array<{ path: string; connections: number }>;
   density: number;
+  codeNodes: number;
 }
 
 export type IndexState = "empty" | "loading" | "stale" | "indexing" | "ready";

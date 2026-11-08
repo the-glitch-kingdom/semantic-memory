@@ -61,3 +61,6 @@ No retrieval numbers: `codeRefs` is parse-only, chunk text is unchanged, so `npm
 
 ## Eval results: Phase 4
 No retrieval numbers: the module is not wired in yet. `npm run eval` unchanged (83 passed, 7 expected fail). Full `npm test`: only the hook-failure Jev-hang timing failed under load; passed alone.
+
+## Eval results: Phase 5
+Ranking is untouched, so `npm run eval` is unchanged (train hybrid @1 5/9, twin-beaten 2/6; held-out hybrid @1 6/9, twin-beaten 3/6; 84 passed, 7 expected fail). New: unit `graph-code.test.ts` (nodes, edges, dead refs, walks/paths/stats unchanged) and a graph-eval integration test (`backlinks("scripts/ci/guards.sh")` lists its 3 docs; `forwardlinks(doc)` has the code node; default walk types return only notes). Full `npm test`: freshness-scale warm start and hook-failure Jev-hang failed under load, both passed alone (16/16).

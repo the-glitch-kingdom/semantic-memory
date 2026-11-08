@@ -1,5 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { statSync } from "node:fs";
 import { join } from "node:path";
+import { loadCodeData, type CodeData } from "../core/code-graph.js";
+import { repoRoot } from "../core/skill-evidence.js";
 import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
 import { Reranker, loadRerankConfig } from "../core/reranker.js";
@@ -228,11 +231,29 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     return run;
   };
 
-  function setDocuments(docs: IndexedDocument[]) {
+  // code refs of the docs (export or span fallback); null = not a git repo, so the graph stays doc-only
+  let lastCodeStamp = "";
+  /** export + HEAD reflog mtimes: one stat each, no spawn */
+  function codeStamp(): string {
+    const m = (f: string) => { try { return statSync(f).mtimeMs; } catch { return 0; } };
+    const root = repoRoot(notesPath);
+    return `${m(join(root, ".hewtd", "graph.json"))}:${m(join(root, ".git", "logs", "HEAD"))}`;
+  }
+  async function loadCode(docs: IndexedDocument[]): Promise<CodeData | null> {
+    lastCodeStamp = codeStamp();
+    try {
+      return await loadCodeData(notesPath, docs);
+    } catch (e: any) {
+      process.stderr.write(`Code graph skipped: ${e?.message ?? e}\n`);
+      return null;
+    }
+  }
+
+  function setDocuments(docs: IndexedDocument[], code: CodeData | null = null) {
     documents = docs;
     docByPath = new Map(docs.map((d) => [d.path, d]));
     textSearch.setDocuments(docs);
-    graph.buildFromDocuments(docs);
+    graph.buildFromDocuments(docs, code);
   }
 
   let selfTopCache: number | null | undefined; // undefined = not computed for the current docs
@@ -277,7 +298,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       generation = meta.generation ?? 0;
       upgrading = older;
       resetBm25(docs);
-      setDocuments(docs);
+      setDocuments(docs, await loadCode(docs));
       selfTopCache = meta.bm25SelfTop; // undefined (older index): computed on first use
       return true;
     }
@@ -313,6 +334,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
     const plan = await reconcile(notesPath, rebuild ? {} : manifest);
     if (!plan.changed && !rebuild) {
+      // the tree is unchanged but the code may not be: a new export or a commit moves the stamp
+      if (codeStamp() !== lastCodeStamp) graph.buildFromDocuments(documents, await loadCode(documents));
       if (stale || indexState === "stale") {
         stale = false;
         indexState = "ready";
@@ -417,7 +440,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
     manifest = plan.manifest;
     vectorIndex = next;
-    setDocuments(docs);
+    setDocuments(docs, await loadCode(docs));
     stale = false;
     dirty = true;
     // a forced rebuild is ready only once it is on disk (fullIndex), so "ready" always means a persisted index
