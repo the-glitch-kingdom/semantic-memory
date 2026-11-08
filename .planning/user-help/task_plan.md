@@ -32,12 +32,12 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 - **No new dependencies.**
 
 ## Phases
-- [ ] Phase 1: Verify and plan
-  - [ ] Inventory the final surface after #62: CLI commands and flags (`src/cli/index.ts`), MCP tools
+- [x] Phase 1: Verify and plan
+  - [x] Inventory the final surface after #62: CLI commands and flags (`src/cli/index.ts`), MCP tools
         (`src/mcp/tools/inventory.ts`), slash commands (`commands/*.md`), `vault.schema.yml` keys
         (`schema-default.ts`), hooks, and the `.documentation/` guides; record it in notes.md
-  - [ ] Read hit-em-with-the-docs' `/help` command (`commands/help.md` in its plugin) for the house pattern
-  - [ ] Write the topic list (at least: getting started, add another index, federated search, eval and floors,
+  - [x] Read hit-em-with-the-docs' `/help` command (`commands/help.md` in its plugin) for the house pattern
+  - [x] Write the topic list (at least: getting started, add another index, federated search, eval and floors,
         gaps and hand-off to hit-em-with-the-docs, embedders/pooling/prompt, decay and git dates, code graph and
         grounding, section results, query routing and `mode`, modes (vault-first / research / outage-silence),
         healthcheck and troubleshooting, offline install, updating)
@@ -85,7 +85,7 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 - (none yet)
 
 ## Status
-**Currently in Phase 1** - inventory and topic list
+**Currently in Phase 2** - topic source and renderer (Phase 1 done: inventory and topic list in notes.md)
 
 ---
 
