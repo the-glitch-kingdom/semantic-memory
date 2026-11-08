@@ -51,15 +51,15 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
   - [x] CLI `semantic-memory help [topic]` (commander's own `--help` stays for flags)
   - [x] MCP tool `help({topic?})` in the inventory and the tool-surface snapshot
   - [x] `commands/help.md` slash command that runs the CLI (the hewtd pattern)
-- [ ] Phase 4: Write the topics
-  - [ ] `semantic-memory search --paths`: one vault-relative doc path per line (no JSON), so hit-em-with-the-docs'
+- [x] Phase 4: Write the topics
+  - [x] `semantic-memory search --paths`: one vault-relative doc path per line (no JSON), so hit-em-with-the-docs'
         `reconcile.search_command` can use our search. hewtd (2.21.0, `src/core/reconcile/search.ts`) splits the
         template on whitespace, substitutes `{query}` into one argument, runs it without a shell (30 s timeout) and keeps
         stdout lines that are indexed docs (docs-relative or absolute). Test it with hewtd's own parsing rules.
-  - [ ] Topic "use semantic search inside hit-em-with-the-docs reconcile": `.claude/hit-em-with-the-docs.json` →
+  - [x] Topic "use semantic search inside hit-em-with-the-docs reconcile": `.claude/hit-em-with-the-docs.json` →
         `"reconcile": {"search_command": "npx semantic-memory search --notes .documentation --paths {query}"}`,
         checked end to end with `hewtd reconcile` in a scratch copy.
-  - [ ] Every topic from Phase 1, checked by running each command it shows in a temp vault
+  - [x] Every topic from Phase 1, checked by running each command it shows in a temp vault
 - [ ] Phase 5: Release prep v1.20.0
   - [ ] Bump all five version fields, lockfile; offline tarball builds
 - [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -79,15 +79,17 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 1. Resolved: TypeScript objects in `src/core/help/topics.ts` (type-checked; the coverage and drift tests read them directly).
 
 ## Decisions Made
+- Phase 4: `search --paths` prints unique `hit.path` values (vault-relative, the form hewtd matches against its docs-relative index); the config template uses `npx semantic-memory` (resolves from node_modules/.bin in a project with the package). The hewtd-search topic links cli-reference.md until Phase 8 documents `--paths` there.
 - Phase 2: all 15 topics are written now with real commands (summary/steps/commands/verify/doc); Phase 4 re-checks each command in a temp vault and fills out detail. `hewtd-search` names `search --paths`, which Phase 4 adds. Matching: exact id/alias, else shared-word score (id/alias word 3, title word 1), ties return several; stop words include search/doc/docs because nearly every topic mentions them.
 - Planned after the series so it documents the final surface; the coverage and drift tests keep it current afterwards.
 
 ## Errors Encountered
 - Phase 3: first full `npm test` had 2 load flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. Tool-count tests (44 -> 45, read-only 20 -> 21) and the tool-surface snapshot updated for the new `help` tool: intended, not a floor change.
-- (none yet)
+- Phase 4: one load flake (hook-failure Jev-hang, 3827 ms vs 3000) in the full run; passes alone.
+- Phase 4: topic claims corrected after running them: decay `git` is already the default (not something to set); `lint --strict` is not a federation check (exits 1 on a vault of docs without `status`), removed; `eval --check` exits 1 without a baseline, so `--baseline` is a step; `healthcheck` only works from a project with the plugin installed; `search`/`eval` need a built index (`serve --reindex`).
 
 ## Status
-**Currently in Phase 4** - write the topics (Phase 3 done: CLI `help`, MCP `help` tool, commands/help.md)
+**Currently in Phase 5** - release prep v1.20.0 (Phase 4 done: `search --paths`, hewtd-search topic verified, all topic commands run)
 
 ---
 

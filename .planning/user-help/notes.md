@@ -59,3 +59,8 @@ No retrieval change; no eval numbers. Added test/unit/help-topics.test.ts (9 tes
 
 ## Eval results: Phase 3
 No retrieval code changed; `npm run eval` 132 passed, 5 expected fail. Tool surface 44 -> 45 (read-only 21). `help` is in the minimal (outage) surface via registerSystemTools.
+
+## Eval results: Phase 4
+No retrieval code changed; `npm run eval` 132 passed, 5 expected fail. New: `search --paths` (src/cli/search.ts `pathsOutput`, src/cli/index.ts), test/unit/search-paths.test.ts (replays hewtd 2.21.0 runCommand parsing).
+End to end (scratch copy /tmp/claude-1000/e2e-hewtd, not this repo, hewtd 2.21.0): 3 docs, query "how do we deploy to production" shares no words with them. `hewtd reconcile --overview ... --json` with search_command `npx semantic-memory search --notes .documentation --paths {query}`: 3 members, all `via: search`; without the config: 0 members. A failing command only warns and falls back to hewtd's BM25.
+Topic commands run in a temp vault: healthcheck (needs installed plugin), serve --reindex/--stats, search, search --paths, install-schema, decay-config, decay-trace, gaps (+ --json -> `hewtd reconcile --gaps`: 0 proposals, accepted), usage-set, eval generate (real claude call, $0.039), eval, eval --baseline, eval --check (rc 0 after baseline, 1 before). Code refs verified on `search runSearch` in this repo. Slash commands only checked to exist in commands/. Pseudo-calls (search_hybrid {...}, <hf-model-id>, <notePath>) not runnable; Phase 7 drift test must skip them.

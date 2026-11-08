@@ -408,8 +408,9 @@ program
   .option("--limit <n>", "Max results", (v) => parseInt(v, 10), 8)
   .option("--text-only", "Skip embedder — keyword-only search (fast path, no model init)")
   .option("--json", "Emit raw JSON (default)", true)
+  .option("--paths", "Print one vault-relative doc path per line instead of JSON (for hit-em-with-the-docs reconcile.search_command)")
   .action(async (query: string, opts) => {
-    const { runSearch } = await import("./search.js");
+    const { runSearch, pathsOutput } = await import("./search.js");
     try {
       const hits = await runSearch({
         notes: opts.notes,
@@ -417,7 +418,7 @@ program
         limit: opts.limit,
         textOnly: opts.textOnly,
       });
-      process.stdout.write(JSON.stringify(hits, null, 2) + "\n");
+      process.stdout.write(opts.paths ? pathsOutput(hits) : JSON.stringify(hits, null, 2) + "\n");
       process.exit(0);
     } catch (err: any) {
       console.error(`search failed: ${err.message}`);
