@@ -7,8 +7,8 @@ import { extractSection } from "../../core/section.js";
 export function registerReadTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
     "read_note",
-    "Read a note by path. Pass `section` (a heading name) to read only that heading's section instead of the whole file — cheaper when you only need one part (e.g. a dossier's 'Knobs' section).",
-    { path: z.string(), section: z.string().optional().describe("Heading name — return only that section (heading through the next same-or-higher heading).") },
+    "Read a note by path. Pass `section` (a heading name, or `#anchor` as search results give it) to read only that heading's section instead of the whole file — cheaper when you only need one part (e.g. a dossier's 'Knobs' section).",
+    { path: z.string(), section: z.string().optional().describe("Heading name or #anchor — return only that section (heading through the next same-or-higher heading).") },
     async ({ path, section }) => {
       const content = await ctx.crud.read(path);
       // Selection telemetry (v1.3.1): reading a note is a "this got used" signal —

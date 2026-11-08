@@ -53,11 +53,13 @@ target is stated in the PR.
   - [x] `INDEX_SCHEMA_VERSION` → next (full re-embed). If the eval regresses, keep today's packing and map each chunk to
         the section where it starts; record the choice.
         Done: schema 9. The eval regressed on the semantic arm, the fallback was built and measured, the section variant kept (notes.md "Eval results: Phase 3").
-- [ ] Phase 4: Result fields
-  - [ ] `shape()` and CLI `openSearch`: `section` (H1 dropped when it equals the title), `anchor`, `code: [≤3]` (refs
+- [x] Phase 4: Result fields
+  - [x] `shape()` and CLI `openSearch`: `section` (H1 dropped when it equals the title), `anchor`, `code: [≤3]` (refs
         inside the section, from #58); the excerpt drops the trail prefix. The result's section comes from
         `doc.chunks.indexOf(matchedChunk)`; neither search arm changes.
-  - [ ] `granularity: "section" | "doc"` on the search tools; `read_note`'s `section` accepts `#anchor`.
+        Done: src/core/section-fields.ts (`sectionFields`) used by `shape()` in src/mcp/tools/search.ts and `openSearch` in src/cli/search.ts; `code` is stored per section at index time (`sections[].code`, raw refs, at most 3).
+  - [x] `granularity: "section" | "doc"` on the search tools; `read_note`'s `section` accepts `#anchor`.
+        Done: `granularity` on search_semantic and search_hybrid (default section; `openSearch` option for the CLI); `extractSection` takes `#anchor` (src/core/section.ts). Tests: test/integration/search-sections.test.ts (incl. v1.16.0 snapshot test/fixtures/flat-vault-v1.16.0.json), test/unit/section-fields.test.ts.
 - [ ] Phase 5: Folding (`src/core/fold.ts`, after rerank, before the limit)
   - [ ] Export `duplicates`: the copy's section is the one whose anchor or content matches the owner's section
         (`duplicates.section` names the owner's anchor); the owner takes the slot (at the higher score), the copy goes
@@ -94,17 +96,20 @@ target is stated in the PR.
 2. Should hewtd record `points_to.from`? Until then a pointer is recognised by its size and link (Phase 5).
 
 ## Decisions Made
+- Phase 4: `code` per section is the raw inline-code and non-md link refs of that section (first 3), stored in the index; it is not filtered through the code graph's resolution (that needs a git call per query). Upgrade if dead refs show up.
+- Phase 4: a carried short section (under MIN_SECTION_CHARS) reports the later section's anchor, as chunkSection maps it.
 - `path` plus a separate `anchor` field, not `path#anchor`: every consumer keys on `path`.
 - One result per doc, its best section: section-level ranking with several sections of one doc is out of scope.
 - The trail prefix changes chunk text, so this release re-embeds once.
 
 ## Errors Encountered
+- Phase 4: `granularity: "doc"` cannot be byte-identical to v1.16.0 on a vault with headings, because schema 9 chunks differ (split at headings). It is proven on a heading-free vault (test/fixtures/flat-vault), where chunking is unchanged: the snapshot was produced by running main @ 24c88af (search_hybrid and search_semantic, trimmed and full, 6 queries). The doc-mode excerpt also drops the trail line, which is what makes it equal there.
 - Phase 3: section chunks with the trail prefix lower the semantic arm on the existing splits (measured in notes.md). Floors lowered to the measured values, each with the number: fixture-train semantic multi@1 4 to 2, hybrid multi 5/11 to 4/10; fixture-heldout hybrid all@1 25 to 24, hybrid paraphrase@1 13 to 11, semantic paraphrase@1 13 to 12, semantic symptom@3 3 to 2, hybrid symptom@3 4 to 3; real-heldout negatives flagged slack 1 to 3 (5/8 flagged, was 7-8/8). Reason: the trail prefix and heading splits shift cosines toward short chunks; the fallback (today's packing) does not move those numbers but cannot name the right section (anchor@1 0/12 train).
 - Phase 3: two regression snapshots (list_notes chunk counts, get_stats totals) updated: the fixture vault now has 17 chunks, not 10.
 - Phase 2: hook-failure Jev-hang test failed once under full-suite load (3827ms vs 3000); passes alone. Known flake.
 
 ## Status
-**Currently in Phase 4** - result fields
+**Currently in Phase 5** - folding
 
 ---
 

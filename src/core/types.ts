@@ -14,7 +14,7 @@ export interface IndexedDocument {
   headers: string[];
   chunks: string[];
   /** every flat section of the body (anchors as hit-em-with-the-docs computes them); `hash` is of the normalized section text. Absent in caches from before schemaVersion 9 */
-  sections?: { anchor: string; trail: string; hash: string }[];
+  sections?: { anchor: string; trail: string; hash: string; /** raw code refs inside the section, at most 3 */ code?: string[] }[];
   /** per body chunk, the index into `sections` of the section the chunk answers for */
   chunkSection?: number[];
   /** metadata chunks embedded beside the body (purpose / summary / description, symptom phrases) */

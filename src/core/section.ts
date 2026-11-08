@@ -1,3 +1,5 @@
+import { flatSections } from "./sections.js";
+
 /**
  * Section-targeted read (v1.4 Phase 7). Extract one heading's section from a
  * markdown document so pulling a dossier's *Knobs* section doesn't cost the whole
@@ -5,6 +7,7 @@
  * through to the next heading of the same or higher level.
  */
 export function extractSection(markdown: string, heading: string): string | null {
+  if (heading.startsWith("#") && !/^#{1,6}\s/.test(heading)) return extractByAnchor(markdown, heading.slice(1));
   const target = heading.trim().toLowerCase();
   const lines = markdown.split("\n");
   let startIdx = -1;
@@ -34,4 +37,17 @@ export function extractSection(markdown: string, heading: string): string | null
     }
   }
   return lines.slice(startIdx, endIdx).join("\n").trimEnd();
+}
+
+/** The section with this anchor (hewtd's rules, as search results give it) through the next heading of the same or higher level. */
+function extractByAnchor(markdown: string, anchor: string): string | null {
+  const flat = flatSections(markdown);
+  const at = flat.findIndex((s) => s.level > 0 && s.anchor === anchor);
+  if (at < 0) return null;
+  const end = flat.findIndex((s, i) => i > at && s.level <= flat[at].level);
+  return flat
+    .slice(at, end < 0 ? undefined : end)
+    .map((s) => (s.level ? `${"#".repeat(s.level)} ${s.heading}\n` : "") + s.body)
+    .join("\n")
+    .trimEnd();
 }
