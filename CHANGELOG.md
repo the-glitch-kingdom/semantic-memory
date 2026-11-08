@@ -8,7 +8,7 @@ Issue #56. Full numbers and misses: `.documentation/changelog/v1-13-0-builtin-ev
 
 ### Added
 
-- **`semantic-memory eval --notes <dir>`** measures hybrid, semantic, text and grep arms on your own vault through the live search path (@1/@3/@8, found@k, MRR, p50/p95, tiers, negatives per kind, all vs clean). It never changes the index or logs.
+- **`semantic-memory eval --notes <dir>`** measures hybrid, semantic, text and grep arms on your own vault through the live search path (@1/@3/@8, found@k, MRR, p50/p95, tiers, negatives per kind, all vs clean). It never re-embeds the index or writes search logs (notes changed since the last index are indexed first, as on a server start).
 - **`--baseline` / `--check` / `--band`** floors with a noise band (default 1 question). `--baseline` with `--check` is refused.
 - **`eval generate`** writes blind, validated questions with the host agent.
 

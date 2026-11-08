@@ -464,7 +464,7 @@ semantic-memory eval generate --notes <dir> [--docs 20] [--model <name>] [--dir 
 - `--json` — print the report as JSON. Exit 1 also when there is no index or no baseline.
 - `generate` — blind questions from sampled docs via the host `claude`, validated, written to `generated.jsonl`; exit 1 when none were kept.
 
-Never changes the index or logs. Guide: [retrieval eval guide](../operational/retrieval-eval-guide.md).
+Never re-embeds the index or writes search logs. Notes changed since the last index are indexed first, as on a server start. Guide: [retrieval eval guide](../operational/retrieval-eval-guide.md).
 
 ## `skill-loop` (v1.7+) — learned skills between sessions
 

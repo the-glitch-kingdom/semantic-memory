@@ -27,7 +27,7 @@ backlinks: []
 
 # Retrieval Eval Guide
 
-`semantic-memory eval` (v1.13.0) measures retrieval on your own notes through the live search path. It is the same engine as this repo's `npm run eval` (`src/core/retrieval-eval/`). It never changes your index or logs: it refuses to run with no index (`run --reindex first`), opens the server read-only with the model, pooling and query prompt recorded in `meta.json`, and writes no search or selection log.
+`semantic-memory eval` (v1.13.0) measures retrieval on your own notes through the live search path. It is the same engine as this repo's `npm run eval` (`src/core/retrieval-eval/`). It never re-embeds your index and never writes search or selection logs: it refuses to run with no index (`run --reindex first`) and opens the server read-only with the model, pooling and query prompt recorded in `meta.json`. If notes changed since the last index, those files are indexed first, as on any server start.
 
 One caveat: if the notes changed since the last index, opening the server reconciles them and updates the index for the changed files only.
 

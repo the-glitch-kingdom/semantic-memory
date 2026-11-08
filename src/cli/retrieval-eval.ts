@@ -11,7 +11,7 @@ export function registerEvalCommand(program: Command): void {
   const evalCmd = program
     .command("eval")
     .enablePositionalOptions()
-    .description("Measure retrieval on this vault through the live search path (reads the index; never changes it or the logs)")
+    .description("Measure retrieval on this vault through the live search path (never re-embeds the index or writes search logs; notes changed since the last index are indexed first, as on a server start)")
     .option("--notes <path>", "Path to markdown notes directory")
     .option("--set <files...>", "JSONL question sets ({id, tier, q, facets}); default: *.jsonl in the eval dir")
     .option("--dir <path>", "Eval dir (default <project>/.claude/.semantic-memory/eval)")
