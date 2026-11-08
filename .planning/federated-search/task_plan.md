@@ -29,14 +29,14 @@ is stated in the PR.
   - [x] Re-verify against main @ 003bef1 (v1.18.0): one index per context and one Embedder per context still hold
   - [x] Post the verification comment on #62
   - [x] Sync main, cut `feat/federated-search`, commit this plan
-- [ ] Phase 2: Config
-  - [ ] `src/core/federation.ts` `loadFederation(notesPath)`: `federation: {sources: [{label, path, weight}],
+- [x] Phase 2: Config
+  - [x] `src/core/federation.ts` `loadFederation(notesPath)`: `federation: {sources: [{label, path, weight}],
         related_repos: true|false}`. Lenient parse (bad entries dropped with one warning), paths relative to the vault,
         de-duplicated by realpath, the primary left out.
-  - [ ] `related_repos`: find the project root (walk up to `.claude/hit-em-with-the-docs.json` or `.git`), read
+  - [x] `related_repos`: find the project root (walk up to `.claude/hit-em-with-the-docs.json` or `.git`), read
         `reconcile.related_repos[{name, path}]`; each sibling's docs tree is its own `docs_root`, else `.documentation`,
         else skipped. Never index a whole code repo.
-  - [ ] Commented block in `schema-default.ts`. Unit tests (no hewtd config; malformed config).
+  - [x] Commented block in `schema-default.ts`. Unit tests (no hewtd config; malformed config).
 - [ ] Phase 3: Source contexts
   - [ ] `buildContext(path, {readOnly: true, indexPath, embedder})` (two new optional `ServerOptions`); in-process, not
         by querying sibling servers; one shared Embedder (sources use the primary's model and pooling).
@@ -90,12 +90,16 @@ is stated in the PR.
 - In-process source contexts with a shared embedder, not MCP calls to sibling servers: siblings may have no server,
   and a client adds processes and latency.
 - Source indexes under the primary's index dir: nothing is written into a source.
+- Phase 2: `loadFederation` is synchronous and returns `{sources, warnings}` (caller logs warnings once). `related_repos`
+  defaults to on (it only does anything when hewtd's config file exists); `false` opts out. A sibling's `name` is its
+  label, weight 1. Missing source paths are kept (Phase 3 reports them); duplicates dropped by realpath, then by label.
+  Label must match `[\w.-]+`, weight a positive number. Project root = first ancestor with hewtd config or `.git`.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: hook-failure "Jev error or hang" budget test failed once under full-suite load (3161 ms vs 3000); passed alone (14/14). Known flake.
 
 ## Status
-**Currently in Phase 2** - config
+**Currently in Phase 3** - source contexts
 
 ---
 

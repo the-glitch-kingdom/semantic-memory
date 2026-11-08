@@ -20,3 +20,7 @@
   - Each `buildContext` makes its own Embedder (`context.ts:147`), about 180-200 MB RSS per ONNX instance (`server.ts:121-123`).
   - A 538-doc index on disk: docs.cache 11.4 MB, hnsw-meta 5.3 MB, hnsw.bin 4.7 MB, graph 0.6 MB, embeddings.json 22 MB (read only when embedding).
   - Estimated 50-100 MB heap per source with a shared embedder (not measured).
+
+## Eval results: Phase 2
+Config only; no retrieval change. `npm run eval` green (14 files, 125 passed, 5 expected fail); real-corpus numbers unchanged
+(train @1 21/27 @3 25/27 @8 27/27; held-out @1 18/27 @3 25/27 @8 27/27). Unit: test/unit/federation.test.ts (7 tests).
