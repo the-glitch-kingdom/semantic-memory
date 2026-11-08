@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
+import type { Grounding } from "./types.js";
 
 /**
  * Confidence decay (v1.3).
@@ -35,6 +36,8 @@ export interface DecayConfig {
   per_type: Partial<Record<string, number | null>>;
   floor: number;
   hotness_boost: { enabled: boolean; cap: number };
+  /** Grounding (code-graph): a damped factor per file changed since the doc was written or verified, and per dead file reference. */
+  code: { enabled: boolean; drift_penalty: number; dead_penalty: number; floor: number; archive_candidate: number };
 }
 
 export interface DecayInput {
@@ -85,7 +88,27 @@ export const DEFAULT_DECAY_CONFIG: DecayConfig = {
   },
   floor: 0.1,
   hotness_boost: { enabled: false, cap: 2.0 },
+  code: { enabled: true, drift_penalty: 0.97, dead_penalty: 0.95, floor: 0.8, archive_candidate: 0.85 },
 };
+
+const GROUNDING_CAP = 3;
+const SHOWN_VERDICTS = new Set(["check", "stale", "archive-candidate", "secret"]);
+
+/** Rank factor of a doc's grounding: drift and dead refs count up to 3 each, floored; an `archive-candidate` verdict adds one more factor (other verdicts' causes already count). */
+export function groundingMultiplier(g: Grounding | undefined, c: DecayConfig["code"]): number {
+  if (!g || !c.enabled) return 1;
+  const m = Math.max(c.floor, Math.pow(c.drift_penalty, Math.min(g.code_drift.length, GROUNDING_CAP)) * Math.pow(c.dead_penalty, Math.min(g.dead_refs.length, GROUNDING_CAP)));
+  return g.verdict === "archive-candidate" ? m * c.archive_candidate : m;
+}
+
+/** What a result shows: only when there is something to report, at most 3 of each list (`more` counts the rest). */
+export function groundingBlock(g: Grounding | undefined) {
+  if (!g) return undefined;
+  const verdict = g.verdict && SHOWN_VERDICTS.has(g.verdict) ? g.verdict : undefined;
+  if (!verdict && !g.code_drift.length && !g.dead_refs.length) return undefined;
+  const more = Math.max(0, g.code_drift.length - GROUNDING_CAP) + Math.max(0, g.dead_refs.length - GROUNDING_CAP);
+  return { source: g.source, ...(verdict && { verdict }), code_drift: g.code_drift.slice(0, GROUNDING_CAP), dead_refs: g.dead_refs.slice(0, GROUNDING_CAP), ...(more && { more }) };
+}
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const EVERGREEN_MAX_AGE_DAYS = 365;
@@ -171,9 +194,9 @@ export interface DecayBlock {
  * the note is down-weighted or its age came from a fallback (even at 1.0), so healthy results stay clean.
  */
 export function decayForDoc(
-  doc: { frontmatter?: Record<string, unknown>; gitDate?: string; mtime?: string },
+  doc: { frontmatter?: Record<string, unknown>; gitDate?: string; mtime?: string; grounding?: Grounding },
   config: DecayConfig
-): { multiplier: number; block?: DecayBlock } {
+): { multiplier: number; block?: DecayBlock; grounding?: ReturnType<typeof groundingBlock> } {
   const fm = doc.frontmatter ?? {};
   const d = computeDecay({
     type: typeof fm.type === "string" ? fm.type : undefined,
@@ -182,9 +205,13 @@ export function decayForDoc(
     config,
     fallback_date: config.missing_last_verified === "git" ? doc.gitDate : doc.mtime,
   });
-  if (d.multiplier >= 1 && d.source !== "git" && d.source !== "mtime" && d.source !== "penalty") return { multiplier: d.multiplier };
+  // the block reports the age decay alone; the score carries grounding on top
+  const multiplier = d.multiplier * groundingMultiplier(doc.grounding, config.code);
+  const grounding = groundingBlock(doc.grounding);
+  if (d.multiplier >= 1 && d.source !== "git" && d.source !== "mtime" && d.source !== "penalty") return { multiplier, ...(grounding && { grounding }) };
   return {
-    multiplier: d.multiplier,
+    multiplier,
+    ...(grounding && { grounding }),
     block: {
       multiplier: Math.round(d.multiplier * 1000) / 1000,
       age_days: Math.round(d.age_days),
@@ -224,6 +251,7 @@ export function loadDecayConfig(vaultPath: string): DecayConfig {
       per_type: { ...DEFAULT_DECAY_CONFIG.per_type, ...(d.per_type ?? {}) },
       floor: typeof d.floor === "number" ? d.floor : DEFAULT_DECAY_CONFIG.floor,
       hotness_boost: { ...DEFAULT_DECAY_CONFIG.hotness_boost, ...(d.hotness_boost ?? {}) },
+      code: { ...DEFAULT_DECAY_CONFIG.code, ...(d.code ?? {}) },
     };
   } catch {
     return DEFAULT_DECAY_CONFIG;

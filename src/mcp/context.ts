@@ -1,5 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { statSync } from "node:fs";
 import { join } from "node:path";
+import { groundDocs, loadCodeData, type CodeData } from "../core/code-graph.js";
+import { repoRoot } from "../core/skill-evidence.js";
 import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
 import { Reranker, loadRerankConfig } from "../core/reranker.js";
@@ -12,7 +15,7 @@ import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
-import { decayForDoc, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
+import { decayForDoc, groundingBlock, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
 import { gitBlobId, gitBodyDates, gitCommitDates } from "../core/git-dates.js";
 import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
@@ -84,6 +87,8 @@ export interface ServerContext {
 
   getDocuments(): IndexedDocument[];
   getDocByPath(): Map<string, IndexedDocument>;
+  /** code data behind the graph's code nodes (null outside a git repo) */
+  getCode(): CodeData | null;
   getVectorIndex(): VectorIndex | null;
   getIndexState(): IndexState;
   getIndexProgress(): { embedded: number; total: number };
@@ -114,7 +119,7 @@ export interface ServerContext {
    * is fresh. Semantic ranking signal only — callers wire it into
    * search_semantic / search_hybrid, never search_text / search_graph.
    */
-  applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock };
+  applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock; grounding?: ReturnType<typeof groundingBlock> };
   /**
    * Apply the path-class multiplier (e.g. archive/** down-weight) to a scored
    * result. Composes multiplicatively with decay/priority at the same rank site.
@@ -166,6 +171,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   let documents: IndexedDocument[] = [];
   let docByPath = new Map<string, IndexedDocument>();
+  let codeData: CodeData | null = null;
   let vectorIndex: VectorIndex | null = null;
   let indexState: IndexState = "empty";
   let indexProgress = { embedded: 0, total: 0 };
@@ -228,11 +234,32 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     return run;
   };
 
-  function setDocuments(docs: IndexedDocument[]) {
+  // code refs of the docs (export or span fallback); null = not a git repo, so the graph stays doc-only
+  let lastCodeStamp = "";
+  /** export + HEAD reflog mtimes: one stat each, no spawn */
+  function codeStamp(): string {
+    const m = (f: string) => { try { return statSync(f).mtimeMs; } catch { return 0; } };
+    const root = repoRoot(notesPath);
+    return `${m(join(root, ".hewtd", "graph.json"))}:${m(join(root, ".git", "logs", "HEAD"))}`;
+  }
+  async function loadCode(docs: IndexedDocument[]): Promise<CodeData | null> {
+    lastCodeStamp = codeStamp();
+    try {
+      const code = await loadCodeData(notesPath, docs);
+      groundDocs(docs, code);
+      return (codeData = code);
+    } catch (e: any) {
+      codeData = null;
+      process.stderr.write(`Code graph skipped: ${e?.message ?? e}\n`);
+      return null;
+    }
+  }
+
+  function setDocuments(docs: IndexedDocument[], code: CodeData | null = null) {
     documents = docs;
     docByPath = new Map(docs.map((d) => [d.path, d]));
     textSearch.setDocuments(docs);
-    graph.buildFromDocuments(docs);
+    graph.buildFromDocuments(docs, code);
   }
 
   let selfTopCache: number | null | undefined; // undefined = not computed for the current docs
@@ -277,7 +304,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       generation = meta.generation ?? 0;
       upgrading = older;
       resetBm25(docs);
-      setDocuments(docs);
+      setDocuments(docs, await loadCode(docs));
       selfTopCache = meta.bm25SelfTop; // undefined (older index): computed on first use
       return true;
     }
@@ -313,6 +340,12 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
     const plan = await reconcile(notesPath, rebuild ? {} : manifest);
     if (!plan.changed && !rebuild) {
+      // the tree is unchanged but the code may not be: a new export or a commit moves the stamp
+      if (codeStamp() !== lastCodeStamp) {
+        const before = JSON.stringify(documents.map((d) => d.grounding));
+        graph.buildFromDocuments(documents, await loadCode(documents));
+        if (before !== JSON.stringify(documents.map((d) => d.grounding))) { dirty = true; scheduleSave(); } // the CLI reads grounding from the saved cache
+      }
       if (stale || indexState === "stale") {
         stale = false;
         indexState = "ready";
@@ -417,7 +450,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
     manifest = plan.manifest;
     vectorIndex = next;
-    setDocuments(docs);
+    setDocuments(docs, await loadCode(docs));
     stale = false;
     dirty = true;
     // a forced rebuild is ready only once it is on disk (fullIndex), so "ready" always means a persisted index
@@ -584,14 +617,13 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     return decayConfig;
   }
 
-  function applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock } {
+  function applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock; grounding?: ReturnType<typeof groundingBlock> } {
     const cfg = getDecayConfig();
     if (!cfg.enabled) return r;
     const doc = docByPath.get(r.path);
     if (!doc) return r;
-    const { multiplier, block } = decayForDoc(doc, cfg);
-    const scored = { ...r, score: r.score * multiplier };
-    return block ? { ...scored, decay: block } : scored;
+    const { multiplier, block, grounding } = decayForDoc(doc, cfg);
+    return { ...r, score: r.score * multiplier, ...(block && { decay: block }), ...(grounding && { grounding }) };
   }
 
   let pathClassConfig: PathClassConfig | null = null;
@@ -682,6 +714,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     sessions,
     getDocuments: () => documents,
     getDocByPath: () => docByPath,
+    getCode: () => codeData,
     getVectorIndex: () => vectorIndex,
     getIndexState: () => indexState,
     getIndexProgress: () => indexProgress,

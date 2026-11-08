@@ -1,0 +1,1664 @@
+{
+  "version": 1,
+  "source_commit": null,
+  "docs": {
+    "architecture/v1-stack-overview.md": {
+      "body_changed": "2026-10-24",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [
+        "architecture/v1-stack-overview.md#tool-consolidation-via-deprecation-shims-also-v11"
+      ],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../changelog/v1-2-3-hygiene-completion.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../changelog/v1-3-confidence-decay.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/contract-guide.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/drift-detection.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/sessions-guide.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/state-migration.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./architecture-layers.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./indices-and-storage.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./injection-points.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./mcp-internals.md"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "env",
+          "resolved": true,
+          "target": "LEGACY_PKG_NAME"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "env",
+          "resolved": true,
+          "target": "PKG_NAME"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".claude/.semantic-memory/"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".claude/.semantic-memory/capture-pending.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".claude/.semantic-memory/fingerprints.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".claude/.sidekick-capture-pending.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".claude/.sidekick-fingerprints.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".mcp.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "healthcheck-cache.json"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "hooks/reconcile.js"
+        },
+        {
+          "code_changed": "2026-10-25",
+          "kind": "file",
+          "resolved": true,
+          "target": "hooks/session-start.js"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "hooks/vault-context.js"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "scripts/link-skills.js"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "session.json"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/cli/index.ts"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/cli/migrate-state.ts"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/cli/skills.ts"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/agents-contract.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/healthcheck.ts"
+        },
+        {
+          "code_changed": "2026-10-24",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/session.ts"
+        },
+        {
+          "code_changed": "2026-07-11",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/synthesize.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/mcp/context.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/mcp/server.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "code_symbols"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "findCliBin"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "hooks/reconcile.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "findLocalBin"
+        },
+        {
+          "code_changed": "2026-11-06",
+          "file": "hooks/doc-search-redirect.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "findNotesSources"
+        },
+        {
+          "code_changed": "2026-06-11",
+          "file": "test/phase4/mode-hook.test.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "findVaultPath"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_broken_links"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/core/schema-default.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_missing_provenance"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_schema_violations"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_stale"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "scripts/link-skills.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "hookCommand"
+        },
+        {
+          "code_changed": "2026-07-10",
+          "file": "src/mcp/tools/contract.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "inspect_contract"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "isLocalForm"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "isNpxForm"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "last_verified"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/core/healthcheck.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "legacy_state_files"
+        },
+        {
+          "code_changed": "2026-10-25",
+          "file": "hooks/session-start.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "packageName"
+        },
+        {
+          "code_changed": "2026-10-25",
+          "file": "hooks/session-start.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "pluginName"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "read_multiple_notes"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "read_note"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "src/core/agents-contract.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "regenerate_contract"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "rename_tag"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "runRelink"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "session_finish"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "src/core/agents-contract.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "session_run"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "session_start"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "session_status"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "statePath"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "synthesize_note"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "synthesize_promote"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "verify_note"
+        }
+      ],
+      "verdict": "unreviewed"
+    },
+    "changelog/phase-4-routing.md": {
+      "body_changed": "2026-04-22",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "env",
+          "resolved": null,
+          "target": "ARGUMENTS"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "env",
+          "resolved": true,
+          "target": "VALID_MODES"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".claude/.sidekick-capture-pending.json"
+        },
+        {
+          "code_changed": "2026-07-10",
+          "kind": "file",
+          "resolved": true,
+          "target": ".claude/settings.json"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "commands/mode.md"
+        },
+        {
+          "code_changed": "2026-04-22",
+          "kind": "file",
+          "resolved": true,
+          "target": "commands/vault.md"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "hooks/vault-context.js"
+        },
+        {
+          "code_changed": "2026-06-11",
+          "kind": "file",
+          "resolved": true,
+          "target": "test/phase4/mode-hook.test.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "handlePrompt"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "handleSessionStart"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "handleStop"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "read_note"
+        },
+        {
+          "code_changed": "2026-11-06",
+          "file": "hooks/doc-search-redirect.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "search_hybrid"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "synthesize_note"
+        }
+      ],
+      "verdict": "unreviewed"
+    },
+    "changelog/v1-1-brain-absorption.md": {
+      "body_changed": "2026-05-09",
+      "duplicates": [
+        {
+          "owner": "architecture/v1-stack-overview.md#tool-consolidation-via-deprecation-shims-also-v11",
+          "section": "#tool-consolidation-via-deprecation-shims-also-v11"
+        }
+      ],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "session.notes_touched"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../architecture/mcp-internals.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../architecture/v1-stack-overview.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/contract-guide.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/drift-detection.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/sessions-guide.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./v1-0-rebrand.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./v1-2-state-consolidation.md"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "env",
+          "resolved": true,
+          "target": "LEGACY_PKG_NAME"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "env",
+          "resolved": true,
+          "target": "PKG_NAME"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".mcp.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".semantic-sidekick-index/"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "hooks/reconcile.js"
+        },
+        {
+          "code_changed": "2026-10-25",
+          "kind": "file",
+          "resolved": true,
+          "target": "hooks/session-start.js"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "hooks/vault-context.js"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "kind": "file",
+          "resolved": true,
+          "target": "scripts/link-skills.js"
+        },
+        {
+          "code_changed": "2026-07-10",
+          "kind": "file",
+          "resolved": true,
+          "target": "settings.json"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/cli/index.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/mcp/server.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "tools/inventory.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "SessionStart"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/hooks.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "UserPromptSubmit"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "agents_contract"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "src/core/agents-contract.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "apply_patch"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "hooks/reconcile.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "findLocalBin"
+        },
+        {
+          "code_changed": "2026-06-11",
+          "file": "test/phase4/mode-hook.test.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "findVaultPath"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_broken_links"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/core/schema-default.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_missing_provenance"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_schema_violations"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "find_stale"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "scripts/link-skills.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "hookCommand"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "hook_registration"
+        },
+        {
+          "code_changed": "2026-07-10",
+          "file": "src/mcp/tools/contract.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "inspect_contract"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "isLocalForm"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "isNpxForm"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "lint_vault"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "mcp_json_entry"
+        },
+        {
+          "code_changed": "2026-10-25",
+          "file": "hooks/session-start.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "packageName"
+        },
+        {
+          "code_changed": "2026-10-25",
+          "file": "hooks/session-start.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "pluginName"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "proposal_subdir"
+        },
+        {
+          "code_changed": "2026-07-11",
+          "file": "src/core/synthesize.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "proposed_target"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "read_multiple_notes"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "read_note"
+        },
+        {
+          "code_changed": "2026-05-08",
+          "file": "src/core/agents-contract.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "regenerate_contract"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "rename_tag"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "runRelink"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "session_staleness"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/mcp/tools/inventory.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "session_status"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "synthesize_note"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "synthesize_promote"
+        }
+      ],
+      "verdict": "unreviewed"
+    },
+    "changelog/v1-5-3-secret-redaction.md": {
+      "body_changed": "2026-10-24",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../knowledge-base/facts/regex-unanchored-prefix-is-quadratic.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../security/secret-redaction.md"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "dist/core/redact.js"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "redact.py"
+        },
+        {
+          "code_changed": "2026-10-24",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/redact.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "lint_vault"
+        }
+      ],
+      "verdict": "secret"
+    },
+    "changelog/v1-7-2-vault-context-sources.md": {
+      "body_changed": "2026-10-28",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../knowledge-base/facts/mcp-alwaysload-meta-works-for-project-mcp-json.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../knowledge-base/facts/userpromptsubmit-fires-for-task-notifications.md"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "./"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".mcp.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "archive/"
+        },
+        {
+          "kind": "symbol",
+          "resolved": null,
+          "target": "ToolSearch"
+        },
+        {
+          "code_changed": "2026-11-06",
+          "file": "hooks/doc-search-redirect.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "search_hybrid"
+        },
+        {
+          "code_changed": "2026-11-06",
+          "file": "hooks/doc-search-redirect.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "search_text"
+        }
+      ],
+      "verdict": "unreviewed"
+    },
+    "knowledge-base/facts/minimatch-star-star-skips-dot-dirs.md": {
+      "body_changed": "2026-11-06",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".documentation/archive/a.md"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "archive/"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "archive/a.md"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "graph-links.test.ts"
+        },
+        {
+          "code_changed": "2026-11-06",
+          "kind": "file",
+          "resolved": true,
+          "target": "path-class.test.ts"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "security/archive/a.md"
+        },
+        {
+          "code_changed": "2026-11-06",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/path-class.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/core/indexer.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "path_class"
+        },
+        {
+          "code_changed": "2026-11-06",
+          "file": "hooks/doc-search-redirect.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "search_hybrid"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/hooks.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "search_semantic"
+        }
+      ],
+      "verdict": "unreviewed"
+    },
+    "knowledge-base/facts/regex-unanchored-prefix-is-quadratic.md": {
+      "body_changed": "2026-10-24",
+      "duplicates": [],
+      "last_verified": "2026-10-25",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-10-24",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/redact.ts"
+        },
+        {
+          "code_changed": "2026-10-24",
+          "kind": "file",
+          "resolved": true,
+          "target": "test/unit/redact.test.ts"
+        },
+        {
+          "kind": "symbol",
+          "resolved": null,
+          "target": "verify_command"
+        }
+      ],
+      "verdict": "secret"
+    },
+    "legacy/embedder-guide.md": {
+      "body_changed": "2026-10-24",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "model.onnx"
+        },
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "model_quantized.onnx"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./performance-tuning.md"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".mcp.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".semantic-pages-index/"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "meta.json"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "src/core/embedder.ts"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "batchSize"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "test/unit/pooling.test.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "meanPoolAndNormalizeMany"
+        }
+      ],
+      "verdict": "secret"
+    },
+    "legacy/performance-tuning.md": {
+      "body_changed": "2026-04-06",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "model.onnx"
+        },
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "model_quantized.onnx"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".semantic-pages-index/"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "embeddings.json"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "meta.json"
+        }
+      ],
+      "verdict": "archive-candidate"
+    },
+    "operational/lexicon-guide.md": {
+      "body_changed": "2026-07-11",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../changelog/v1-4-0-resident-bridge.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../reference/mcp-tools-reference.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./REGISTRY.md"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "./decay-guide.md"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": ".claude/.semantic-memory/lexicon-cache.json"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "kind": "file",
+          "resolved": true,
+          "target": "REGISTRY.md"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "gotchas/flaky-indexer.md"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/core/lint.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "alias_conflicts"
+        },
+        {
+          "code_changed": "2026-10-24",
+          "file": "src/core/lexicon.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "evidence_count"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "hooks/vault-context.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "expandQueryViaLexicon"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "lint_vault"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "manage_lexicon"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": ".claude-plugin/marketplace.json",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "synthesize_note"
+        }
+      ],
+      "verdict": "unreviewed"
+    },
+    "reference/skill-format.md": {
+      "body_changed": "2026-11-03",
+      "duplicates": [],
+      "last_verified": null,
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "applies_to.paths"
+        },
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "metadata.generated_by"
+        },
+        {
+          "kind": "column",
+          "resolved": null,
+          "target": "skill_loop.schema"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/skill-loop.md#scope"
+        },
+        {
+          "kind": "doc",
+          "resolved": true,
+          "target": "../operational/skill-loop.md#suggestions-for-hand-written-skills"
+        },
+        {
+          "code_changed": "2026-04-05",
+          "kind": "file",
+          "resolved": true,
+          "target": "SKILL.md"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "file.ts"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "skill-drafts/"
+        },
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "skills-archive/"
+        },
+        {
+          "code_changed": "2026-11-07",
+          "file": "src/cli/index.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "applies_to"
+        },
+        {
+          "code_changed": "2026-11-03",
+          "file": "src/core/skill-schema.ts",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "name_clash"
+        },
+        {
+          "code_changed": "2026-11-03",
+          "file": "hooks/skill-loop.js",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "skill_loop"
+        }
+      ],
+      "verdict": "unreviewed"
+    }
+  },
+  "symbols": {
+    "SessionStart": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "UserPromptSubmit": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/hooks.json"
+    },
+    "agents_contract": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "alias_conflicts": {
+      "cited_by": [
+        "operational/lexicon-guide.md"
+      ],
+      "file": "src/core/lint.ts"
+    },
+    "applies_to": {
+      "cited_by": [
+        "reference/skill-format.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "apply_patch": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/core/agents-contract.ts"
+    },
+    "batchSize": {
+      "cited_by": [
+        "legacy/embedder-guide.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "code_symbols": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "evidence_count": {
+      "cited_by": [
+        "operational/lexicon-guide.md"
+      ],
+      "file": "src/core/lexicon.ts"
+    },
+    "expandQueryViaLexicon": {
+      "cited_by": [
+        "operational/lexicon-guide.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "findCliBin": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "findLocalBin": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/reconcile.js"
+    },
+    "findNotesSources": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": "hooks/doc-search-redirect.js"
+    },
+    "findVaultPath": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "test/phase4/mode-hook.test.ts"
+    },
+    "find_broken_links": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/mcp/tools/inventory.ts"
+    },
+    "find_missing_provenance": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/core/schema-default.ts"
+    },
+    "find_schema_violations": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/mcp/tools/inventory.ts"
+    },
+    "find_stale": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/mcp/tools/inventory.ts"
+    },
+    "handlePrompt": {
+      "cited_by": [
+        "changelog/phase-4-routing.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "handleSessionStart": {
+      "cited_by": [
+        "changelog/phase-4-routing.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "handleStop": {
+      "cited_by": [
+        "changelog/phase-4-routing.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "hookCommand": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "scripts/link-skills.js"
+    },
+    "hook_registration": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "inspect_contract": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/mcp/tools/contract.ts"
+    },
+    "isLocalForm": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "isNpxForm": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "last_verified": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "legacy_state_files": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": "src/core/healthcheck.ts"
+    },
+    "lint_vault": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md",
+        "changelog/v1-5-3-secret-redaction.md",
+        "operational/lexicon-guide.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "manage_lexicon": {
+      "cited_by": [
+        "operational/lexicon-guide.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "mcp_json_entry": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "meanPoolAndNormalizeMany": {
+      "cited_by": [
+        "legacy/embedder-guide.md"
+      ],
+      "file": "test/unit/pooling.test.ts"
+    },
+    "name_clash": {
+      "cited_by": [
+        "reference/skill-format.md"
+      ],
+      "file": "src/core/skill-schema.ts"
+    },
+    "packageName": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/session-start.js"
+    },
+    "path_class": {
+      "cited_by": [
+        "knowledge-base/facts/minimatch-star-star-skips-dot-dirs.md"
+      ],
+      "file": "src/core/indexer.ts"
+    },
+    "pluginName": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/session-start.js"
+    },
+    "proposal_subdir": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "proposed_target": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/core/synthesize.ts"
+    },
+    "read_multiple_notes": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "read_note": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/phase-4-routing.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "regenerate_contract": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/core/agents-contract.ts"
+    },
+    "rename_tag": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "runRelink": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/cli/index.ts"
+    },
+    "search_hybrid": {
+      "cited_by": [
+        "changelog/phase-4-routing.md",
+        "changelog/v1-7-2-vault-context-sources.md",
+        "knowledge-base/facts/minimatch-star-star-skips-dot-dirs.md"
+      ],
+      "file": "hooks/doc-search-redirect.js"
+    },
+    "search_semantic": {
+      "cited_by": [
+        "knowledge-base/facts/minimatch-star-star-skips-dot-dirs.md"
+      ],
+      "file": "hooks/hooks.json"
+    },
+    "search_text": {
+      "cited_by": [
+        "changelog/v1-7-2-vault-context-sources.md"
+      ],
+      "file": "hooks/doc-search-redirect.js"
+    },
+    "session_finish": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "session_run": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": "src/core/agents-contract.ts"
+    },
+    "session_staleness": {
+      "cited_by": [
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "session_start": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "session_status": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": "src/mcp/tools/inventory.ts"
+    },
+    "skill_loop": {
+      "cited_by": [
+        "reference/skill-format.md"
+      ],
+      "file": "hooks/skill-loop.js"
+    },
+    "statePath": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": "hooks/vault-context.js"
+    },
+    "synthesize_note": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/phase-4-routing.md",
+        "changelog/v1-1-brain-absorption.md",
+        "operational/lexicon-guide.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "synthesize_promote": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md",
+        "changelog/v1-1-brain-absorption.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    },
+    "verify_note": {
+      "cited_by": [
+        "architecture/v1-stack-overview.md"
+      ],
+      "file": ".claude-plugin/marketplace.json"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { mkdir, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -37,5 +38,26 @@ describe("backlinks / forwardlinks and path_class.exclude", () => {
     expect(await call("graph_path", { from: "live-a.md", to: "live-b.md" })).toBe("No path found");
     expect(JSON.parse(await call("graph_path", { from: "live-a.md", to: "live-b.md", types: ["link", "supersedes"] }))).toEqual(["live-a.md", "archive/bridge.md", "live-b.md"]);
     await client.close();
+  }, 180_000);
+
+  it("keeps a cited code file whose path has an archive/ folder", async () => {
+    const vault = await createTempVault();
+    try {
+      await mkdir(join(vault, "tools", "archive"), { recursive: true });
+      await writeFile(join(vault, "tools", "archive", "old.sh"), "echo\n");
+      await writeFile(join(vault, "live.md"), "# Live\n\nRuns [old](tools/archive/old.sh).\n");
+      const git = (...a: string[]) => execFileSync("git", ["-C", vault, "-c", "user.email=t@t", "-c", "user.name=t", ...a], { stdio: "pipe" });
+      git("init", "-q"); git("add", "-A"); git("commit", "-qm", "c");
+      const server = await createServer(vault, { watch: false, waitForReady: true });
+      const [ct, st] = InMemoryTransport.createLinkedPair();
+      await server.connect(st);
+      const client = new Client({ name: "t", version: "1" });
+      await client.connect(ct);
+      const r = (await client.callTool({ name: "forwardlinks", arguments: { path: "live.md" } })) as any;
+      expect(JSON.parse(r.content[0].text).map((n: { path: string }) => n.path)).toEqual(["code:tools/archive/old.sh"]);
+      await client.close();
+    } finally {
+      await cleanupTempDir(vault);
+    }
   }, 180_000);
 });

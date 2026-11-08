@@ -1,4 +1,5 @@
 import Graph from "graphology";
+import type { CodeData } from "./code-graph.js";
 import type { IndexedDocument, GraphNode, GraphStats, EdgeType } from "./types.js";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -8,6 +9,8 @@ import { minimatch } from "minimatch";
 
 /** Edges that mean "this note points at that note"; tag edges only mean "same topic" and are opt-in. */
 export const LINK_EDGE_TYPES: EdgeType[] = ["link", "wikilink", "related", "cites", "same-incident"];
+/** Only backlinks/forwardlinks show these by default; walks, graph_path and related never follow them. */
+export const CODE_EDGE_TYPES: EdgeType[] = ["cites_code", "defined_in"];
 export const DEFAULT_EXCLUDE_HUBS = ["**/INDEX.md", "**/REGISTRY.md"];
 
 export interface GraphOptions {
@@ -43,7 +46,7 @@ export class GraphBuilder {
     this.graph = new Graph({ type: "directed", multi: false });
   }
 
-  buildFromDocuments(allDocuments: IndexedDocument[]): void {
+  buildFromDocuments(allDocuments: IndexedDocument[], code?: CodeData | null): void {
     this.graph.clear();
     const hubs = this.opts.excludeHubs ?? DEFAULT_EXCLUDE_HUBS;
     // generated files (`generated: true`) are hubs too: not nodes, so they carry no walk and add no degree
@@ -132,6 +135,8 @@ export class GraphBuilder {
       }
     }
 
+    if (code) this.addCode(documents, code);
+
     // Add tag-based edges (weight 0.5) — capped at TAG_EDGE_MAX_DOCS per tag.
     // Generic tags shared by many docs (e.g. "api", "testing") create noise;
     // only specific tags (e.g. "qdrant", "celery") create meaningful connections.
@@ -159,17 +164,54 @@ export class GraphBuilder {
     }
   }
 
+  /** `code:<path>` (`code:<repo>:<path>` for a sibling repo) and `symbol:<name>` nodes; dead refs (`resolved: false`) get none. */
+  private addCode(documents: IndexedDocument[], code: CodeData): void {
+    const node = (id: string, kind: "code" | "symbol", name: string) => {
+      if (!this.graph.hasNode(id)) this.graph.addNode(id, { kind, title: name, tags: [] });
+      return id;
+    };
+    const edge = (from: string, to: string, type: EdgeType) => {
+      if (!this.graph.hasEdge(from, to)) this.graph.addEdge(from, to, { type, weight: 1.0 });
+    };
+    const codeId = (file: string, repo?: string) => node(`code:${repo ? `${repo}:` : ""}${file}`, "code", file);
+    for (const doc of documents) {
+      for (const r of code.docs.get(doc.path)?.refs ?? []) {
+        if (r.resolved === false) continue;
+        if (r.kind === "file") edge(doc.path, codeId(r.file ?? r.target, r.repo), "cites_code");
+        else {
+          const sym = node(`symbol:${r.target}`, "symbol", r.target);
+          edge(doc.path, sym, "cites_code");
+          const file = r.file ?? code.symbols.get(r.target)?.file;
+          if (file) edge(sym, codeId(file, r.repo), "defined_in");
+        }
+      }
+    }
+  }
+
+  /** A vault path, or else a file path / symbol name given to backlinks and forwardlinks. */
+  private resolve(id: string): string | null {
+    return [id, `code:${id}`, `symbol:${id}`].find((n) => this.graph.hasNode(n)) ?? null;
+  }
+
+  /** Edges as the notes see them: code edges do not count toward a note's degree (graph stats and counts stay doc-only). */
+  private degree(n: string, dir: "in" | "out"): number {
+    const f = (_e: string, a: Record<string, any>) => !CODE_EDGE_TYPES.includes(a.type);
+    return (dir === "in" ? this.graph.filterInEdges(n, f) : this.graph.filterOutEdges(n, f)).length;
+  }
+
   backlinks(notePath: string, types: EdgeType[] = LINK_EDGE_TYPES): GraphNode[] {
-    if (!this.graph.hasNode(notePath)) return [];
+    const id = this.resolve(notePath);
+    if (!id) return [];
     return this.graph
-      .filterInEdges(notePath, (_e, a) => types.includes(a.type))
+      .filterInEdges(id, (_e, a) => types.includes(a.type))
       .map((e) => this.nodeToGraphNode(this.graph.source(e)));
   }
 
   forwardlinks(notePath: string, types: EdgeType[] = LINK_EDGE_TYPES): GraphNode[] {
-    if (!this.graph.hasNode(notePath)) return [];
+    const id = this.resolve(notePath);
+    if (!id) return [];
     return this.graph
-      .filterOutEdges(notePath, (_e, a) => types.includes(a.type))
+      .filterOutEdges(id, (_e, a) => types.includes(a.type))
       .map((e) => this.nodeToGraphNode(this.graph.target(e)));
   }
 
@@ -233,16 +275,11 @@ export class GraphBuilder {
   }
 
   statistics(): GraphStats {
-    const nodes = this.graph.order;
-    const edges = this.graph.size;
-    const orphans = this.graph.nodes().filter(
-      (n) => this.graph.degree(n) === 0
-    );
-
-    const connections = this.graph.nodes().map((n) => ({
-      path: n,
-      connections: this.graph.degree(n),
-    }));
+    const notes = this.graph.nodes().filter((n) => !this.isCode(n));
+    const nodes = notes.length;
+    const edges = this.graph.filterEdges((_e, a) => !CODE_EDGE_TYPES.includes(a.type)).length;
+    const connections = notes.map((n) => ({ path: n, connections: this.degree(n, "in") + this.degree(n, "out") }));
+    const orphans = connections.filter((c) => c.connections === 0);
     connections.sort((a, b) => b.connections - a.connections);
 
     const maxPossibleEdges = nodes * (nodes - 1);
@@ -254,7 +291,12 @@ export class GraphBuilder {
       orphanCount: orphans.length,
       mostConnected: connections.slice(0, 10),
       density,
+      codeNodes: this.graph.order - nodes,
     };
+  }
+
+  private isCode(n: string): boolean {
+    return this.graph.getNodeAttribute(n, "kind") !== undefined;
   }
 
   private nodeToGraphNode(nodePath: string): GraphNode {
@@ -263,8 +305,8 @@ export class GraphBuilder {
       path: nodePath,
       title: typeof attrs.title === "string" ? attrs.title : nodePath,
       tags: (attrs.tags as string[]) || [],
-      linkCount: this.graph.outDegree(nodePath),
-      backlinkCount: this.graph.inDegree(nodePath),
+      linkCount: this.degree(nodePath, "out"),
+      backlinkCount: this.degree(nodePath, "in"),
       ...(attrs.loadPriority !== undefined && { loadPriority: attrs.loadPriority as number }),
       ...(attrs.status !== undefined && { status: attrs.status as string }),
     };

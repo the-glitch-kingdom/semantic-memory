@@ -98,6 +98,27 @@ describe("Indexer", () => {
     });
   });
 
+  describe("codeRefs", () => {
+    it("takes inline spans and non-md links, resolved from the doc's folder; skips fences, images, urls, md links", async () => {
+      const dir = await createTempVault();
+      try {
+        await mkdir(join(dir, "ops"), { recursive: true });
+        await writeFile(
+          join(dir, "ops", "guard.md"),
+          "# Guard\n\nRun `scripts/ci/guards.sh` and `check_rls()`; `npm run build` is a command.\n\n" +
+            "See [script](../scripts/guards.sh#L3), [dir](../scripts/), [other](other.md), [web](https://x.io/a.py), ![img](pic.png).\n\n" +
+            "```\nin_fence_only\n```\n"
+        );
+        const doc = (await new Indexer(dir).indexAll()).find((d) => d.path === "ops/guard.md")!;
+        expect([...doc.codeRefs!].sort()).toEqual(["check_rls()", "scripts", "scripts/ci/guards.sh", "scripts/guards.sh"].sort());
+        const plain = (await new Indexer(dir).indexAll()).find((d) => d.path === "microservices.md")!;
+        expect(plain.codeRefs).toBeUndefined();
+      } finally {
+        await cleanupTempDir(dir);
+      }
+    });
+  });
+
   // v1.9.1: path_class.exclude was applied to results only, so archived docs were still embedded
   describe("path_class.exclude", () => {
     it("keeps an excluded doc as a graph-only node: frontmatter and links, no chunks", async () => {

@@ -19,7 +19,7 @@ purpose: Navigation hub for all documentation
 |--------|-----------|-------------|
 | [Agents](#agents) | 0 | Expert agent documentation, specialty matrix |
 | [API](#api) | 0 | API endpoints, routes, specifications, contracts |
-| [Architecture](#architecture) | 7 | System design, AI coach, project registry, patterns |
+| [Architecture](#architecture) | 8 | System design, AI coach, project registry, patterns |
 | [Backups](#backups) | 0 | Backup/restore guides, disaster recovery |
 | [Database](#database) | 0 | Schema, migrations, RLS, queries, procedures |
 | [DevOps](#devops) | 0 | Deployment, CI/CD, Docker, environments, infrastructure |
@@ -32,7 +32,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 28 | Release notes per version and phase |
+| [Changelog](#changelog) | 29 | Release notes per version and phase |
 | [Operational](#operational) | 18 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 7 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -69,6 +69,7 @@ purpose: Navigation hub for all documentation
 | Document | Tier | Status | Updated | Purpose |
 |----------|------|--------|----------|---------|
 | [Architecture — the Five Layers](architecture/architecture-layers.md) | reference | active | 2026-10-25 | Each of the 5 layers with responsibilities, key files, contracts, gotchas, plus the opt-in v1.7 skill loop layer and the Jev bridge |
+| [Code graph - code nodes, grounding and entity cards](architecture/code-graph.md) | reference | active | 2026-11-08 | How semantic-memory puts code into the graph (v1.16.0, issue 58) - the hit-em-with-the-docs graph export it reads, the fallback from code spans, the grounding penalty, entity cards and undocumented names. |
 | [Indices and storage — every file semantic-memory writes](architecture/indices-and-storage.md) | reference | active | 2026-10-25 | Comprehensive map of every file and directory semantic-memory creates on disk. Use for backup planning, gitignore decisions, disk-usage forensics, and v2.0 migration prep. |
 | [Injection Points](architecture/injection-points.md) | reference | active | 2026-10-28 | Every place semantic-sidekick touches Claude's context — symptom→check table |
 | [MCP server internals — composition, context, per-domain tool modules](architecture/mcp-internals.md) | reference | active | 2026-10-24 | How the MCP server is structured internally — composition root, shared context, per-domain tool modules. Read this if you're adding a new MCP tool or debugging tool registration. |
@@ -227,6 +228,7 @@ purpose: Navigation hub for all documentation
 | [v1.13.0 - built-in retrieval eval](changelog/v1-13-0-builtin-eval.md) | reference | active | 2026-11-07 | What v1.13.0 changed (issue 56), the measured acceptance results, and the targets that were missed. |
 | [v1.14.0 - identifier abstention](changelog/v1-14-0-identifier-abstention.md) | reference | active | 2026-11-07 | What v1.14.0 changed (issue 57), the measured acceptance results, and the targets that were missed. |
 | [v1.15.0 - usage capture and search gaps](changelog/v1-15-0-usage-capture-gaps.md) | reference | active | 2026-11-07 | What v1.15.0 changed (issue 59, plan A), the measured acceptance results, and the targets that were missed. |
+| [v1.16.0 - code graph](changelog/v1-16-0-code-graph.md) | reference | active | 2026-11-08 | What v1.16.0 changed (issue 58), the measured results on the code-graph fixture, and the targets that were missed. |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](changelog/v1-2-3-hygiene-completion.md) | reference | active | 2026-07-10 | What v1.2.3 added — the three v1.2 roadmap items that slipped past 1.2.0/1.2.1/1.2.2 (healthcheck --fix, code_symbols lint, fresh-install CI smoke). |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](changelog/v1-2-state-consolidation.md) | reference | active | 2026-05-09 | What v1.2.0 changed — three transient state files moved from .claude/.sidekick-* to .claude/.semantic-memory/. Read-with-fallback through v1.x. |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |

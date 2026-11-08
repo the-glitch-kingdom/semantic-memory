@@ -38,6 +38,8 @@ That single line is the source of truth for "what gets indexed." Everything foll
 
 If your file isn't `*.md` inside `<vault>`, it does not exist as far as `search_*` tools are concerned.
 
+**Code refs (v1.16):** each doc also records the code it cites (inline spans, non-`.md` link targets) as `codeRefs`; the code itself is not indexed, only graphed. See [code-graph.md](./code-graph.md).
+
 ### Files that fail to parse (v1.5.2+)
 
 One bad file no longer takes the whole corpus down. Before 1.5.2, `indexAll()` ran every file through one `Promise.all`, so a single doc with invalid YAML frontmatter made the whole build fail and left the corpus unindexed.

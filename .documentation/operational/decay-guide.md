@@ -102,6 +102,10 @@ In `git` mode the date is the last commit that changed the note's **body** (the 
 | Everything decayed at once after import | Bulk-imported notes share one old `last_verified` | `verify_note` the ones you've confirmed, or raise half-lives |
 | Decay isn't applying to keyword search | By design — decay is a semantic signal | It applies to `search_semantic`/`search_hybrid` only, not `search_text`/`search_graph` |
 
+## Code drift (v1.16+)
+
+A doc whose cited files changed after it was written or verified, or that cites a file that is gone, is down-weighted a little more (`decay.code`, never below 0.8) and shows `grounding` on its result. `verify_note` clears drift. Off: `decay.code.enabled: false`. Details: [code-graph](../architecture/code-graph.md#grounding).
+
 ## See also
 
 - [v1.3 changelog](../changelog/v1-3-confidence-decay.md) — the model and what shipped

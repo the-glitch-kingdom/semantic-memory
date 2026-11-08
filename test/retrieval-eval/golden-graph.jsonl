@@ -1,0 +1,13 @@
+// Code-graph golden set for test/fixtures/code-graph-vault (code-graph Phase 2, semantic-memory#58), train split. Tiers: drift = two near-identical docs, the answer cites stable code and its twin cites code changed after the doc; dead = the twin cites a script that no longer exists; identifier = names a script (entity card, later phases); plain = control; undocumented = names code that no doc mentions (no answer; expects missing_terms today, undocumented later).
+// Written before any ranking was run against it. Held-out is never used to choose constants, rules or thresholds.
+{"id":"drift-t1","tier":"drift","q":"How do old snapshots get cleaned off the storage volume?","answer":"operational/backup-pruning-a.md","twin":"operational/backup-pruning-b.md"}
+{"id":"drift-t2","tier":"drift","q":"What removes login sessions that nobody uses anymore?","answer":"operational/session-cleanup-b.md","twin":"operational/session-cleanup-a.md"}
+{"id":"drift-t3","tier":"drift","q":"How do customers get nudged before an invoice falls due?","answer":"operational/invoice-reminders-a.md","twin":"operational/invoice-reminders-b.md"}
+{"id":"dead-t4","tier":"dead","q":"Search results trail the database. How do I catch the index up?","answer":"operational/queue-reindex-b.md","twin":"operational/queue-reindex-a.md"}
+{"id":"dead-t5","tier":"dead","q":"A region still shows old feature behavior after a flag change. What do I run?","answer":"operational/flag-sync-a.md","twin":"operational/flag-sync-b.md"}
+{"id":"dead-t6","tier":"dead","q":"How are old high-resolution metrics shrunk down?","answer":"operational/metrics-compaction-b.md","twin":"operational/metrics-compaction-a.md"}
+{"id":"i1","tier":"identifier","q":"What does check_rls_coverage.py check?","answer":"operational/row-security-audit.md","entity":"backend/scripts/check_rls_coverage.py"}
+{"id":"i2","tier":"identifier","q":"What does scripts/ci/guards.sh enforce?","answer":"operational/ci-guards.md","entity":"scripts/ci/guards.sh"}
+{"id":"p1","tier":"plain","q":"What does a new hire receive on the first day?","answer":"operational/onboarding-checklist.md"}
+{"id":"u1","tier":"undocumented","q":"Where is rotate_tenant_keys defined?","missing":["rotate_tenant_keys"],"entity":"backend/scripts/rotate_tenant_keys.py"}
+{"id":"u2","tier":"undocumented","q":"What does purge_expired_tokens do?","missing":["purge_expired_tokens"],"entity":"backend/scripts/purge_expired_tokens.py"}

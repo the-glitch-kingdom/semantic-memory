@@ -12,7 +12,7 @@ const DAY_MS = 86_400_000;
  * `touched` files then get a frontmatter-only commit dated now (one added key, body bytes untouched): the git date of the file moves to today, its body does not.
  */
 export async function gitHistory(dir: string, ages: Record<string, number> = {}, defaultAge = 10, touched: string[] = []): Promise<void> {
-  const files = await glob("**/*.md", { cwd: dir });
+  const files = await glob("**/*.{md,py,sh}", { cwd: dir, dot: true, ignore: ".git/**" }); // code files too, for the code-graph fixture
   const byAge = new Map<number, string[]>();
   for (const f of files) byAge.set(ages[f] ?? defaultAge, [...(byAge.get(ages[f] ?? defaultAge) ?? []), f]);
   const git = (args: string[], date?: string) =>
@@ -36,7 +36,7 @@ export async function gitHistory(dir: string, ages: Record<string, number> = {},
 
 /** Replace `{{ago:N}}` tokens in every fixture file with the ISO date N days ago, so relative `last_verified` values never drift. */
 export async function stampDates(dir: string): Promise<void> {
-  for (const f of await glob("**/*.md", { cwd: dir })) {
+  for (const f of await glob("**/*.md", { cwd: dir, dot: true })) {
     const p = join(dir, f);
     const s = readFileSync(p, "utf-8");
     const out = s.replace(/\{\{ago:(\d+)\}\}/g, (_, n) => new Date(Date.now() - Number(n) * DAY_MS).toISOString().slice(0, 10));

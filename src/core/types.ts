@@ -6,6 +6,10 @@ export interface IndexedDocument {
   wikilinks: string[];
   /** vault-relative targets of markdown `[text](x.md)` links; absent in caches from before schemaVersion 2 */
   mdLinks?: string[];
+  /** inline code spans and non-`.md` link targets (vault-relative, `../` kept); absent in caches from before schemaVersion 8 */
+  codeRefs?: string[];
+  /** what the code says about this doc (drift, dead refs, verdict); set at index time from the export or the span fallback, absent when there is nothing to report */
+  grounding?: Grounding;
   tags: string[];
   headers: string[];
   chunks: string[];
@@ -69,7 +73,8 @@ export interface GraphNode {
 
 /** `link` = markdown link, `related` = frontmatter related_docs, `tag` = shared rare tag */
 /** `cites` = playbook symptom -> knowledge-base fact, `supersedes` = live doc -> its archived copy (`archived_from`), `same-incident` = files under one `incidents/<id>/` */
-export type EdgeType = "link" | "wikilink" | "related" | "tag" | "cites" | "supersedes" | "same-incident";
+export type EdgeType = "link" | "wikilink" | "related" | "tag" | "cites" | "supersedes" | "same-incident" | "cites_code" | "defined_in";
+/** `cites_code` = doc -> code file or symbol, `defined_in` = symbol -> its file; neither is a link between notes, so neither is in LINK_EDGE_TYPES */
 
 export interface GraphEdge {
   source: string;
@@ -79,11 +84,13 @@ export interface GraphEdge {
 }
 
 export interface GraphStats {
+  /** documents only; `codeNodes` counts the code: and symbol: nodes */
   totalNodes: number;
   totalEdges: number;
   orphanCount: number;
   mostConnected: Array<{ path: string; connections: number }>;
   density: number;
+  codeNodes: number;
 }
 
 export type IndexState = "empty" | "loading" | "stale" | "indexing" | "ready";
@@ -124,4 +131,12 @@ export interface SearchTextOptions {
   pathGlob?: string;
   tagFilter?: string[];
   limit?: number;
+}
+
+/** Code facts about one doc: files changed after the doc was written or verified, file refs that no longer exist, and hewtd's verdict. */
+export interface Grounding {
+  source: "export" | "code-spans";
+  verdict?: string;
+  code_drift: string[];
+  dead_refs: string[];
 }

@@ -1,0 +1,146 @@
+{
+  "operational/backup-pruning-a.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/backup-pruning-b.md": {
+    "dead": [],
+    "drift": [
+      "backend/jobs/prune_backups.py"
+    ]
+  },
+  "operational/session-cleanup-b.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/session-cleanup-a.md": {
+    "dead": [],
+    "drift": [
+      "backend/jobs/reap_sessions.py"
+    ]
+  },
+  "operational/invoice-reminders-a.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/invoice-reminders-b.md": {
+    "dead": [],
+    "drift": [
+      "backend/jobs/send_invoice_reminders.py"
+    ]
+  },
+  "operational/queue-reindex-b.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/queue-reindex-a.md": {
+    "dead": [
+      "backend/scripts/reindex_queue_old.py"
+    ],
+    "drift": []
+  },
+  "operational/flag-sync-a.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/flag-sync-b.md": {
+    "dead": [
+      "backend/scripts/sync_feature_flags_old.py"
+    ],
+    "drift": []
+  },
+  "operational/metrics-compaction-b.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/metrics-compaction-a.md": {
+    "dead": [
+      "backend/scripts/compact_metrics_old.py"
+    ],
+    "drift": []
+  },
+  "operational/cert-renewal-a.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/cert-renewal-b.md": {
+    "dead": [],
+    "drift": [
+      "backend/jobs/renew_certs.py"
+    ]
+  },
+  "operational/webhook-replay-b.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/webhook-replay-a.md": {
+    "dead": [],
+    "drift": [
+      "backend/jobs/replay_webhooks.py"
+    ]
+  },
+  "operational/thumbnail-rebuild-a.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/thumbnail-rebuild-b.md": {
+    "dead": [],
+    "drift": [
+      "backend/jobs/regen_thumbnails.py"
+    ]
+  },
+  "operational/geo-cache-warmup-b.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/geo-cache-warmup-a.md": {
+    "dead": [
+      "backend/scripts/warm_geo_cache_old.py"
+    ],
+    "drift": []
+  },
+  "operational/audit-export-a.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/audit-export-b.md": {
+    "dead": [
+      "backend/scripts/export_audit_log_old.py"
+    ],
+    "drift": []
+  },
+  "operational/tenant-offboarding-b.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/tenant-offboarding-a.md": {
+    "dead": [
+      "backend/scripts/offboard_tenant_old.py"
+    ],
+    "drift": []
+  },
+  "operational/row-security-audit.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/ci-guards.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/release-checklist.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/onboarding-checklist.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/holiday-calendar.md": {
+    "dead": [],
+    "drift": []
+  },
+  "operational/office-network.md": {
+    "dead": [],
+    "drift": []
+  }
+}

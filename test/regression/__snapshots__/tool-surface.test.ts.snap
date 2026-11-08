@@ -164,7 +164,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "apply_patch",
   },
   {
-    "description": "Find all notes that link TO a given note",
+    "description": "Find all notes that link TO a given note, file path or symbol name (code files and symbols list the notes citing them)",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -182,7 +182,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'cites_code' / 'defined_in' for code edges (backlinks and forwardlinks show them by default), 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
@@ -192,6 +192,8 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
               "same-incident",
               "supersedes",
               "tag",
+              "cites_code",
+              "defined_in",
             ],
             "type": "string",
           },
@@ -308,7 +310,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "find_stale",
   },
   {
-    "description": "Find all notes linked FROM a given note",
+    "description": "Find all notes linked FROM a given note, plus the code files and symbols it cites",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -326,7 +328,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'cites_code' / 'defined_in' for code edges (backlinks and forwardlinks show them by default), 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
@@ -336,6 +338,8 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
               "same-incident",
               "supersedes",
               "tag",
+              "cites_code",
+              "defined_in",
             ],
             "type": "string",
           },
@@ -398,7 +402,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
           "type": "string",
         },
         "types": {
-          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
+          "description": "Edge types to follow (default link, wikilink, related, cites, same-incident; add 'cites_code' / 'defined_in' for code edges (backlinks and forwardlinks show them by default), 'supersedes' for live->archived copies or 'tag' for shared-topic neighbours)",
           "items": {
             "enum": [
               "link",
@@ -408,6 +412,8 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
               "same-incident",
               "supersedes",
               "tag",
+              "cites_code",
+              "defined_in",
             ],
             "type": "string",
           },
@@ -1024,7 +1030,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "search_graph",
   },
   {
-    "description": "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\`: those names are not in the docs (they may still exist in code). For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). \`full: true\` returns whole chunks and frontmatter fields.",
+    "description": "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\` (not in the docs or the code) or \`undocumented: [{entity, path}]\` (in the code, in no doc). A query naming a symbol or file the docs cite gets an \`entity\` card on result #1: its path ("defined in" or "found in") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). \`full: true\` returns whole chunks and frontmatter fields.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,
@@ -1070,7 +1076,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
     "name": "search_hybrid",
   },
   {
-    "description": "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\`: those names are not in the docs (they may still exist in code). \`full: true\` returns whole chunks and frontmatter fields.",
+    "description": "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a \`decay\` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry \`confidence\` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has \`no_strong_match: true\`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with \`missing_terms: [...]\` (not in the docs or the code) or \`undocumented: [{entity, path}]\` (in the code, in no doc). A query naming a symbol or file the docs cite gets an \`entity\` card on result #1: its path ("defined in" or "found in") and the docs citing it. \`full: true\` returns whole chunks and frontmatter fields.",
     "inputSchema": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "additionalProperties": false,

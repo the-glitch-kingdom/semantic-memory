@@ -8,12 +8,12 @@ import { glob } from "glob";
 import { createServer } from "../../src/mcp/server.js";
 import { armsOf } from "../../src/core/retrieval-eval/runner.js";
 
-/** An in-process server over a temp copy of `source` (index dirs left behind), plus the arms and doc texts the facet eval needs. */
-export async function startEval(source: string, prefix: string, prepare?: (dir: string) => Promise<void>) {
+/** An in-process server over a temp copy of `source` (index dirs left behind), plus the arms and doc texts the facet eval needs. `vault` is the notes folder inside `source` (a repo whose docs sit in `.documentation`); the copy keeps the rest of the repo around it. */
+export async function startEval(source: string, prefix: string, prepare?: (dir: string) => Promise<void>, vault = "") {
   const dir = await mkdtemp(join(tmpdir(), prefix));
   await cp(source, dir, { recursive: true, filter: (s) => !s.includes(".semantic-sidekick-index") });
   await prepare?.(dir);
-  const server = await createServer(dir, { watch: false, waitForReady: true, model: process.env.EVAL_MODEL });
+  const server = await createServer(join(dir, vault), { watch: false, waitForReady: true, model: process.env.EVAL_MODEL });
   const [ct, st] = InMemoryTransport.createLinkedPair();
   await server.connect(st);
   const client = new Client({ name: prefix, version: "1.0.0" });
@@ -21,6 +21,6 @@ export async function startEval(source: string, prefix: string, prepare?: (dir: 
 
   const { call, tool } = armsOf(client);
   const texts = new Map<string, string>();
-  for (const p of await glob("**/*.md", { cwd: source })) texts.set(p, readFileSync(join(source, p), "utf-8"));
+  for (const p of await glob("**/*.md", { cwd: join(source, vault) })) texts.set(p, readFileSync(join(source, vault, p), "utf-8"));
   return { dir, client, call, tool, textOf: (p: string) => texts.get(p) ?? "" };
 }
