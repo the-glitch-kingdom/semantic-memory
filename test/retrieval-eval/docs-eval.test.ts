@@ -31,6 +31,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   let tempDir: string;
   const arms: Record<string, ArmMetrics> = {};
   const heldArms: Record<string, ArmMetrics> = {};
+  const flowArms: Record<string, ArmMetrics> = {}; // search_hybrid with mode:"flow" forced on every case: what the reading path adds when the classifier is right
   let heldCases: FacetCase[];
   const idArms: Record<string, ArmMetrics> = {};
   let recall: number;
@@ -51,7 +52,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   };
   const tool = (name: string, extra: Record<string, unknown> = {}): ArmFn => async (q, limit) => {
     const { parsed, bytes } = await call(name, { query: q, limit, ...extra });
-    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match), related: (parsed[0]?.related ?? []).map((r: any) => r.path) };
+    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match), related: (parsed[0]?.related ?? []).map((r: any) => r.path), readingPath: (parsed[0]?.reading_path ?? []).map((r: any) => r.path) };
   };
   // the "grep" arm: every content word of the question as one alternation, in the tool's own order
   const text: ArmFn = async (q, limit) => {
@@ -85,6 +86,8 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     heldCases = allHeld.filter((c) => !isId(c));
     idArms["fixture-train"] = await runFacetEval(allCases.filter(isId), tool("search_hybrid"), textOf);
     idArms["fixture-heldout"] = await runFacetEval(allHeld.filter(isId), tool("search_hybrid"), textOf);
+    flowArms["fixture-train"] = await runFacetEval(cases, tool("search_hybrid", { mode: "flow" }), textOf);
+    flowArms["fixture-heldout"] = await runFacetEval(heldCases, tool("search_hybrid", { mode: "flow" }), textOf);
     heldArms.search_semantic = await runFacetEval(heldCases, tool("search_semantic"), textOf);
     heldArms.search_hybrid = await runFacetEval(heldCases, tool("search_hybrid"), textOf);
     recall = await hnswRecall(tempDir, [...allCases, ...allHeld].map((c) => c.q), 24);
@@ -98,6 +101,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     process.stderr.write(
       "\nFacet eval\n" + Object.entries(arms).map(([n, m]) => formatArm(n, m)).join("\n") +
       "\nHeld-out (golden-docs-heldout)\n" + Object.entries(heldArms).map(([n, m]) => formatArm(n, m)).join("\n") +
+      "\nsearch_hybrid, mode flow forced\n" + Object.entries(flowArms).map(([n, m]) => formatArm(n, m)).join("\n") +
       "\nIdentifier negatives (search_hybrid)\n" + Object.entries(idArms).map(([n, m]) => `  ${n}: flagged ${m.negativesFlagged}/${m.negativeTop.length}`).join("\n") +
       `\n  hnsw recall@24 vs exact cosine=${recall.toFixed(3)}` +
       `\n  search_hybrid full:true mean-payload=${fullBytes}B` +
@@ -170,6 +174,12 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     const h = arms.search_hybrid.tiers;
     expect(h.all.expandedAt1).toBeGreaterThanOrEqual(baseline.arms.search_hybrid.expandedAt1);
     expect(h.multi.expandedAt1).toBeGreaterThanOrEqual(baseline.arms.search_hybrid.multiExpandedAt1);
+  });
+
+  // semantic-memory#61 check 2: with the reading path attached, #1 + path answers the multi tier at least as well as #1 + related and as plain @3
+  it("with mode flow, #1 plus the reading path answers the train multi tier as well as #1 + related and @3", () => {
+    const m = flowArms["fixture-train"].tiers.multi;
+    expect(m.pathAt1).toBeGreaterThanOrEqual(Math.max(m.expandedAt1, m.at[3]));
   });
 
   it("archive hits never rise above the recorded baseline", () => {

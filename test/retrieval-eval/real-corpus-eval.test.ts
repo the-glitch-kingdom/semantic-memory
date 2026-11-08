@@ -26,6 +26,7 @@ describe("Facet eval (real corpus: .documentation)", () => {
   let env: Awaited<ReturnType<typeof startEval>>;
   let recall: number;
   const idArms: Record<string, ArmMetrics> = {};
+  const flowArms: Record<string, ArmMetrics> = {}; // mode:"flow" forced on every case
   let allQs: string[] = [];
 
   beforeAll(async () => {
@@ -35,6 +36,7 @@ describe("Facet eval (real corpus: .documentation)", () => {
       const cases = all.filter((c) => c.negative_kind !== "identifier");
       allQs.push(...all.map((c) => c.q));
       idArms[name] = await runFacetEval(all.filter((c) => c.negative_kind === "identifier"), env.tool("search_hybrid"), env.textOf);
+      flowArms[name] = await runFacetEval(cases, env.tool("search_hybrid", { mode: "flow" }), env.textOf);
       splits[name] = { cases, arms: {
         search_semantic: await runFacetEval(cases, env.tool("search_semantic"), env.textOf),
         search_hybrid: await runFacetEval(cases, env.tool("search_hybrid"), env.textOf),
@@ -44,6 +46,7 @@ describe("Facet eval (real corpus: .documentation)", () => {
     process.stderr.write(
       "\nReal-corpus facet eval\n" +
       Object.entries(splits).map(([n, s]) => `  ${n}\n` + Object.entries(s.arms).map(([a, m]) => formatArm(a, m)).join("\n")).join("\n") +
+      "\nsearch_hybrid, mode flow forced\n" + Object.entries(flowArms).map(([n, m]) => formatArm(n, m)).join("\n") +
       "\nIdentifier negatives (search_hybrid)\n" + Object.entries(idArms).map(([n, m]) => `  ${n}: flagged ${m.negativesFlagged}/${m.negativeTop.length}`).join("\n") +
       `\n  hnsw recall@24 vs exact cosine=${recall.toFixed(3)}\n\n`
     );
@@ -75,6 +78,12 @@ describe("Facet eval (real corpus: .documentation)", () => {
   // expected failures until identifier-abstention Phase 4 wires missingTerms into no_strong_match
   identifierGate("real train", () => idArms["real-train"]);
   identifierGate("real held-out", () => idArms["real-heldout"]);
+
+  // semantic-memory#61 check 2 on the real corpus; HNSW is random per build, so one case of slack
+  it("with mode flow, #1 plus the reading path answers the train multi tier as well as #1 + related and @3, within one case", () => {
+    const m = flowArms["real-train"].tiers.multi;
+    expect(m.pathAt1).toBeGreaterThanOrEqual(Math.max(m.expandedAt1, m.at[3]) - 1);
+  });
 
   // v1.9.0 searched at hnswlib's default ef=10 (recall 0.929 here); VectorIndex.search sets ef >= 100.
   it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {

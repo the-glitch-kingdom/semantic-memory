@@ -70,3 +70,17 @@ Printed by `npm run eval` (test/retrieval-eval/qtype-labels.test.ts); train floo
 - Choices: seeds are exempt from maxDegree and skip is not applied to them; maxDegree counts all edges incl. code edges; isolated nodes' mass restarts at the seeds; ties break by path. Returns seeds too (Phase 5 picks members).
 - Note: on a chain a-b-c-d seeded at a, b outranks a (a's only neighbour collects its whole walk). Phase 5 should drop seeds or weight as the plan says, not assume the seed is first.
 - Full npm test: freshness-scale warm start and hook-failure Jev-hang failed under load, both pass alone.
+
+## Eval results: Phase 5 (reading path; seeds clear NO_STRONG_MATCH_BELOW 0.36)
+Multi tier, `#1 + reading_path` against max(`#1 + related`, @3). "Forced" = `mode: "flow"` on every case (what the path adds when the classifier is right); "as shipped" = mode auto, so the path attaches only to the few questions classified flow (multi rows are mostly two facts and classify as fact).
+
+| split | @1 | @3 | #1+related | #1+path forced | target max(related, @3) | #1+path as shipped |
+|---|---|---|---|---|---|---|
+| fixture-train | 4/12 | 10/12 | 8/12 | 11/12 | 10/12 met | 5/12 |
+| fixture-heldout | 2/7 | 5/7 | 4/7 | 5/7 | 5/7 met | 2/7 |
+| real-train | 7/9 | 8/9 | 8/9 | 9/9 | 8/9 met | 8/9 |
+| real-heldout | 4/6 | 5/6 | 6/6 | 6/6 | 6/6 met | 4/6 |
+
+Seed threshold sweep, fixture-train / fixture-heldout multi `#1+path` forced (train chose it; held-out shown for the record only): 0.5: 9/12, 4/7; 0.4: 10/12, 5/7; 0.3: 11/12, 5/7; 0: 11/12, 5/7. Real splits were 9/9 and 6/6 at every threshold. Chosen: 0.36 (existing constant), measured 11/12 and 5/7.
+As shipped the path does not reach the target on the multi tier (5/12 on fixture-train vs 10/12): the gate is on forced flow. Plain @1, fact-tier @1 and @3 are unchanged (the path never reorders; `npm run eval` floors pass). Payload cost of the path: mean payload +~800 B per forced-flow case on the fixture (4372 -> 5197 B), +1.2 kB on real. Latency of the path not measured separately (Phase 9).
+Gates added: docs-eval (train, exact) and real-corpus-eval (train, one case of slack) assert forced-flow `pathAt1 >= max(expandedAt1, @3)`; the eval prints `#1+path` per tier and a "mode flow forced" block.

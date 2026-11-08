@@ -51,13 +51,13 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
         from the seeds (both directions) up to `maxNodes`, power iteration on it as undirected until `maxSteps` or L1
         change < 1e-6, nodes above `maxDegree` skipped (like `TAG_EDGE_MAX_DOCS`), deterministic. Code/symbol nodes
         are traversed, never returned.
-- [ ] Phase 5: Reading path for flow
-  - [ ] Seeds: the top 5 hybrid hits above `RELATED_MIN_CONFIDENCE`, weighted by fused score. Members: up to 5 doc
+- [x] Phase 5: Reading path for flow
+  - [x] Seeds: the top 5 hybrid hits above `NO_STRONG_MATCH_BELOW` (0.36, not `RELATED_MIN_CONFIDENCE`: see Decisions Made), weighted by fused score. Members: up to 5 doc
         nodes by PPR × (1 + hybrid score when present). Order: a `kind: overview` member (or one next to a seed) first,
         then the others in its link order (`mdLinks` keeps document order); otherwise PPR order.
-  - [ ] `bestSection(doc, queryVec)`: the doc's chunk nearest the query vector (no re-embedding, no extra search), mapped
+  - [x] `bestSection(doc, queryVec)` (`VectorIndex.bestChunk` + `sectionFields`, in `src/core/reading-path.ts`): the doc's chunk nearest the query vector (no re-embedding, no extra search), mapped
         through `sectionFields`. Each member `{path, title, section: {anchor, trail}, via}`.
-  - [ ] Attached to result #1 as `reading_path`; no reordering.
+  - [x] Attached to result #1 as `reading_path`; no reordering.
 - [ ] Phase 6: Identifier route
   - [ ] Identifier queries put #58's entity card first and get no reading path. If #58 already does this, #61 only labels.
   - [ ] Remove the stale "x1.3" comment in `src/mcp/tools/search.ts`.
@@ -97,13 +97,18 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
 - Classifier rules (train-tuned): identifier = #57 `identifiers()` hit, or PascalCase of 3+ words, `--flag`, `name()`; flow = end to end, walk through, step by step, lifecycle, whole life, journey, big picture, one-page summary, overview of, fit together, flow, "from X to Y". Dropped from the plan's list: "two wh-clauses joined by and" (on train it caught 2 flows and mislabelled 14 two-fact questions, which Phase 2 labelled fact), "pipeline" (fact question about a pipeline wait), bare ALL_CAPS (SAML, CUDA are prose; the real env vars have underscores), "2+ action verbs" (never fires on a train flow row), the "<= 4 content tokens" limit on `()`. Kebab-case (sluice-drain) and "tool subcommand" (warmctl prime) stay misses: #57 excludes kebab on purpose.
 - `mode` is on search_hybrid only; `query_type` rides on result #1 and the search usage event.
 
+- Phase 5: seeds clear `NO_STRONG_MATCH_BELOW` (0.36, the existing weak-match line) instead of `RELATED_MIN_CONFIDENCE` (0.5). On fixture train, forced-flow multi `#1 + path` was 9/12 at 0.5, 10/12 at 0.4, 11/12 at 0.3 and 0 (target 10/12); most multi questions have no hit at 0.5, so the path came back empty. Picked from train only, and the value is an existing constant, not a new knob. Held-out was measured, not used.
+- Phase 5: members are PPR x (1 + hybrid score) as planned; seeds are members (via "hit"); other members name the seed (or member) they hang off in `via`. An overview among the top 5 goes first, else an overview next to a seed replaces the last slot; the rest follow the overview's `mdLinks` order, unlinked ones in walk order. No fixture doc has `kind: overview`, so that rule is covered by a unit test only. `section` is `{anchor, trail}` (trail drops the H1 as `sectionFields` does).
+- Phase 5: `reading_path` is attached when the query type is flow and there is at least one seed; the path is not filtered by `status`/`tier`/`domain`/date filters (neighbours that were not hits can fall outside them).
+
 ## Errors Encountered
+- Phase 5: known load flakes in the first full `npm test` (freshness-scale warm start, hook-failure Jev-hang, the graph-walk 10 ms wall-clock benchmark once at 11.4 ms); all passed re-run alone.
 - (none yet)
 - Phase 3: unrelated known flake again: hook-failure Jev-hang passed alone. Snapshots updated for the new `mode` arg (tool-surface) and `query_type` (tool-outputs); the v1.16.0 granularity-doc snapshot test ignores `query_type`.
 - Phase 2: hook-failure Jev-hang test flaked under full-suite load and passed alone (known flake). Labels cover the six routing-eval splits (docs, real, code, train and held-out); the other golden files (golden.jsonl, decay, graph, section) are not routing-eval inputs and stay unlabelled.
 
 ## Status
-**Currently in Phase 5** - Reading path for flow
+**Currently in Phase 6** - Identifier route
 
 ---
 

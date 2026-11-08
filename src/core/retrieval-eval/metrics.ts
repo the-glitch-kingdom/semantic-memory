@@ -140,6 +140,8 @@ export interface ArmResponse {
   weak?: boolean;
   /** paths of the `related` neighbours attached to the #1 result (context expansion) */
   related?: string[];
+  /** paths of the `reading_path` attached to the #1 result (flow questions) */
+  readingPath?: string[];
   /** the `decay` block of each result that carried one, by path (`source` is the age source: last_verified / git / mtime / penalty / fresh) */
   decay?: Record<string, { multiplier: number; source?: string }>;
 }
@@ -150,7 +152,7 @@ export const FACET_KS = [1, 3, 8];
 
 export interface ArmMetrics {
   /** answered counts out of `n` answerable cases, per tier and overall: { tier: { n, at: { "1": count, ... } } } */
-  tiers: Record<string, { n: number; at: Record<number, number>; /** answered by the #1 result plus its `related` neighbours */ expandedAt1: number }>;
+  tiers: Record<string, { n: number; at: Record<number, number>; /** answered by the #1 result plus its `related` neighbours */ expandedAt1: number; /** answered by the #1 result plus its `reading_path` */ pathAt1: number }>;
   /** Top score of each negative case (null when the arm returned nothing). */
   negativeTop: (number | null)[];
   /** Results under an archive/ folder across the top 8 of every case, negatives included. */
@@ -197,7 +199,7 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
   let rrSum = 0;
   for (const c of cases) {
     const t0 = performance.now();
-    const { results, bytes: b, weak, related } = await arm(c.q, maxK);
+    const { results, bytes: b, weak, related, readingPath } = await arm(c.q, maxK);
     latencies.push(performance.now() - t0);
     const top = results.slice(0, maxK);
     bytes += b;
@@ -217,10 +219,12 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
     if (weak) answerableFlagged++;
     if (weak && rank === 1) answeredFlagged++;
     const expanded = top.length > 0 && facetRank(c.facets ?? [], [top[0].path, ...(related ?? [])], textOf) !== null;
+    const pathed = top.length > 0 && facetRank(c.facets ?? [], [top[0].path, ...(readingPath ?? [])], textOf) !== null;
     for (const key of [c.tier, "all"]) {
-      const t = (tiers[key] ??= { n: 0, at: Object.fromEntries(FACET_KS.map((k) => [k, 0])), expandedAt1: 0 });
+      const t = (tiers[key] ??= { n: 0, at: Object.fromEntries(FACET_KS.map((k) => [k, 0])), expandedAt1: 0, pathAt1: 0 });
       t.n++;
       if (expanded) t.expandedAt1++;
+      if (pathed) t.pathAt1++;
       for (const k of FACET_KS) if (rank !== null && rank <= k) t.at[k]++;
     }
   }
@@ -255,7 +259,7 @@ export function invertLinks(forward: Record<string, string[]>): Record<string, s
 export function formatArm(name: string, m: ArmMetrics): string {
   const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  flagged: negatives ${m.negativesFlagged}/${m.negativeTop.length}, answered@1 ${m.answeredFlagged}, answerable ${m.answerableFlagged}  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
   for (const [tier, t] of Object.entries(m.tiers).sort()) {
-    lines.push(`    ${tier.padEnd(11)} (${String(t.n).padStart(2)}): ${FACET_KS.map((k) => `@${k}=${t.at[k]}/${t.n}`).join("  ")}  #1+related=${t.expandedAt1}/${t.n}`);
+    lines.push(`    ${tier.padEnd(11)} (${String(t.n).padStart(2)}): ${FACET_KS.map((k) => `@${k}=${t.at[k]}/${t.n}`).join("  ")}  #1+related=${t.expandedAt1}/${t.n}  #1+path=${t.pathAt1}/${t.n}`);
   }
   return lines.join("\n");
 }

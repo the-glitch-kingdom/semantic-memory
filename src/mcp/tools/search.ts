@@ -8,8 +8,9 @@ import { entityCard, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { fold } from "../../core/fold.js";
 import { classifyQuery, type QueryType } from "../../core/query-type.js";
+import { readingPath } from "../../core/reading-path.js";
 import { sectionFields } from "../../core/section-fields.js";
-import { excerpt, isWeak, standaloneConfidence, withConfidence, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
+import { excerpt, isWeak, standaloneConfidence, withConfidence, NO_STRONG_MATCH_BELOW, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
@@ -45,7 +46,7 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
  * and a ~600-char excerpt around the match; `full` keeps the whole enriched result. A weak top result marks every
  * returned result `no_strong_match` (the response is an array, so the flag rides on its items).
  */
-function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null, granularity: Granularity = "section", queryType?: QueryType) {
+function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null, granularity: Granularity = "section", queryType?: QueryType, bestChunk?: (path: string) => string | undefined) {
   const scored = withConfidence(granularity === "section" ? fold(ranked, ctx.getDocByPath(), ctx.getCode()) : ranked);
   const page = scored.slice(0, limit);
   const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase());
@@ -53,6 +54,10 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
   const weak = isWeak(scored, bm25Min) || absent.length > 0;
   const scoreOf = new Map(scored.map((r) => [r.path, r.score]));
   const card = entityCard(query, ctx.getCode(), ctx.getDocByPath(), (p) => scoreOf.get(p) ?? -Infinity);
+  // flow only, and attached to #1: the ranked list is never reordered. `dropped` = copies fold merged into their owner.
+  const path = queryType === "flow" && bestChunk && page.length
+    ? readingPath(ctx.graph, scored, ctx.getDocByPath(), { dropped: new Set(ranked.map((r) => r.path).filter((p) => !scoreOf.has(p))), minConfidence: NO_STRONG_MATCH_BELOW, skip: ctx.isExcluded, bestChunk })
+    : [];
   return page.map((r, i) => {
     const { cosine: _c, lexical: _l, bm25: _b, ...e } = ctx.enrichResult(r);
     const sec = sectionFields(ctx.getDocByPath().get(r.path), e.matchedChunk ?? e.snippet, e.title);
@@ -73,7 +78,7 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
         };
     if (full && granularity === "section") Object.assign(out, { ...(sec.section && { section: sec.section }), ...(sec.anchor && { anchor: sec.anchor }), ...(sec.code && { code: sec.code }) });
     const typed = i === 0 && queryType ? { ...out, query_type: queryType } : out;
-    const withCard = i === 0 && card ? { ...typed, entity: card } : typed;
+    const withCard = i === 0 && (card || path.length) ? { ...typed, ...(card && { entity: card }), ...(path.length && { reading_path: path }) } : typed;
     if (weak) return { ...withCard, no_strong_match: true, ...(missing.length && { missing_terms: missing }), ...(undocumented.length && { undocumented }) };
     const related = i === 0 ? relatedTo(ctx, r.path, scored) : [];
     return related.length ? { ...withCard, related } : withCard;
@@ -213,7 +218,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
 
       if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
-      const enriched = shape(ctx, hybrid, query, limit, full, ctx.bm25Min(), granularity, mode === "auto" ? classifyQuery(query) : mode);
+      const enriched = shape(ctx, hybrid, query, limit, full, ctx.bm25Min(), granularity, mode === "auto" ? classifyQuery(query) : mode, (p) => vectorIndex.bestChunk(p, queryEmbed));
       await logSearch(ctx, "search_hybrid", query, enriched);
       return ctx.textResponse(JSON.stringify(enriched, null, 2));
     }

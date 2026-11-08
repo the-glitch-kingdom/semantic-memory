@@ -16,7 +16,7 @@ export function armsOf(client: Client) {
   };
   const tool = (name: string, extra: Record<string, unknown> = {}): ArmFn => async (q, limit) => {
     const { parsed, bytes } = await call(name, { query: q, limit, ...extra });
-    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match), related: (parsed[0]?.related ?? []).map((r: any) => r.path), decay: Object.fromEntries(parsed.filter((r: any) => r.decay).map((r: any) => [r.path, { multiplier: r.decay.multiplier, source: r.decay.source }])) };
+    return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes, weak: parsed.some((r: any) => r.no_strong_match), related: (parsed[0]?.related ?? []).map((r: any) => r.path), readingPath: (parsed[0]?.reading_path ?? []).map((r: any) => r.path), decay: Object.fromEntries(parsed.filter((r: any) => r.decay).map((r: any) => [r.path, { multiplier: r.decay.multiplier, source: r.decay.source }])) };
   };
   return { call, tool };
 }
