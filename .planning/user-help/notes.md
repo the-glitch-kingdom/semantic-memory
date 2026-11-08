@@ -53,3 +53,6 @@ Search more: `add-index` (another-index, second-vault, more-docs); `federated-se
 Measure and improve: `eval` (measure, floors, baseline, retrieval-eval); `gaps` (unanswered, usage-set, handoff-hewtd); `embedder` (embedders, pooling, query-prompt, model); `decay` (decay-git, git-dates, stale, last-verified); `code-graph` (grounding, code, drift, entity-card).
 Working modes: `modes` (vault-first, research, outage-silence, mode).
 Maps to the plan's 13 required topics plus `hewtd-search` (Phase 4 item); `add-index` and `getting-started` share doc links with federation-guide and installation-guide.
+
+## Eval results: Phase 2
+No retrieval change; no eval numbers. Added test/unit/help-topics.test.ts (9 tests: unique ids/aliases, doc files exist, matching incl. the plan's six task phrases, rendering).

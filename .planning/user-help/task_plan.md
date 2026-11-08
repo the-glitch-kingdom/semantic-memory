@@ -43,10 +43,10 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
         healthcheck and troubleshooting, offline install, updating)
   - [x] No tracking issue: the user did not ask for one; the PR describes the feature (2026-11-08)
   - [x] Sync main (019c63c, v1.19.0), cut `feat/user-help`, commit this plan
-- [ ] Phase 2: Topic source and renderer
-  - [ ] Topics in one source with id, title, aliases, summary, steps, commands, verify, doc link; a renderer for plain
+- [x] Phase 2: Topic source and renderer
+  - [x] Topics in one source with id, title, aliases, summary, steps, commands, verify, doc link; a renderer for plain
         text (CLI), markdown (command and MCP)
-  - [ ] `help` with no topic lists topics grouped by task; `help <words>` matches by id, alias or title words
+  - [x] `help` with no topic lists topics grouped by task; `help <words>` matches by id, alias or title words
 - [ ] Phase 3: Surfaces
   - [ ] CLI `semantic-memory help [topic]` (commander's own `--help` stays for flags)
   - [ ] MCP tool `help({topic?})` in the inventory and the tool-surface snapshot
@@ -79,13 +79,14 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 1. Resolved: TypeScript objects in `src/core/help/topics.ts` (type-checked; the coverage and drift tests read them directly).
 
 ## Decisions Made
+- Phase 2: all 15 topics are written now with real commands (summary/steps/commands/verify/doc); Phase 4 re-checks each command in a temp vault and fills out detail. `hewtd-search` names `search --paths`, which Phase 4 adds. Matching: exact id/alias, else shared-word score (id/alias word 3, title word 1), ties return several; stop words include search/doc/docs because nearly every topic mentions them.
 - Planned after the series so it documents the final surface; the coverage and drift tests keep it current afterwards.
 
 ## Errors Encountered
 - (none yet)
 
 ## Status
-**Currently in Phase 2** - topic source and renderer (Phase 1 done: inventory and topic list in notes.md)
+**Currently in Phase 3** - surfaces (Phase 2 done: src/core/help/topics.ts with 15 topics, findTopics, renderHelp)
 
 ---
 
