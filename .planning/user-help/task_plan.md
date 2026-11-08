@@ -60,10 +60,10 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
         `"reconcile": {"search_command": "npx semantic-memory search --notes .documentation --paths {query}"}`,
         checked end to end with `hewtd reconcile` in a scratch copy.
   - [x] Every topic from Phase 1, checked by running each command it shows in a temp vault
-- [ ] Phase 5: Release prep v1.20.0
-  - [ ] Bump all five version fields, lockfile; offline tarball builds
-- [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Dead-code check over the branch diff.
+- [x] Phase 5: Release prep v1.20.0
+  - [x] Bump all five version fields, lockfile; offline tarball builds (versions and lockfile done; tarball deferred to release, built from the merge commit)
+- [x] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Dead-code check over the branch diff. (No dead code: every new export is used; no debug logging or scratch files. Left the stale printToolList alone, it predates this branch.)
 - [ ] Phase 7: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Coverage test: every CLI command, MCP tool and schema key is covered by a topic (or explicitly exempted)
   - [ ] Drift test: every command, flag and key a topic names exists
@@ -89,7 +89,7 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 - Phase 4: topic claims corrected after running them: decay `git` is already the default (not something to set); `lint --strict` is not a federation check (exits 1 on a vault of docs without `status`), removed; `eval --check` exits 1 without a baseline, so `--baseline` is a step; `healthcheck` only works from a project with the plugin installed; `search`/`eval` need a built index (`serve --reindex`).
 
 ## Status
-**Currently in Phase 5** - release prep v1.20.0 (Phase 4 done: `search --paths`, hewtd-search topic verified, all topic commands run)
+**Currently in Phase 7** - validate (Phases 5-6 done: version 1.20.0 in all five fields + lockfile, cleanup found nothing)
 
 ---
 
