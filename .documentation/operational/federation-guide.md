@@ -49,7 +49,7 @@ federation:
 ```
 
 - `label` must match `[\w.-]+`. `primary` is reserved for this vault.
-- `related_repos`: when hit-em-with-the-docs 2.21+ has `reconcile.related_repos: [{name, path}]` in `.claude/hit-em-with-the-docs.json`, each sibling repo's docs tree (its `docs_root`, else `.documentation`) joins as a source named `name`. **This is on by default: a vault whose hewtd config lists related repos federates with no semantic-memory setting.** Without the hewtd config nothing changes. A `docs_root` that points outside the sibling is ignored.
+- `related_repos`: when hit-em-with-the-docs 2.21+ has `reconcile.related_repos: [{name, path}]` in `.claude/hit-em-with-the-docs.json`, each sibling repo's docs tree (its `docs_root`, or `docs_path` before hewtd 3.0, else `.documentation`) joins as a source named `name`. **This is on by default: a vault whose hewtd config lists related repos federates with no semantic-memory setting.** Without the hewtd config nothing changes. A docs folder that points outside the sibling is ignored. Turn it off with `federation: {related_repos: false}`.
 - Bad entries are dropped with one warning on stderr; bad YAML or JSON never stops the server. Duplicates (same real path, then same label) are dropped.
 - A source's own `federation` block is ignored (no recursion). Two servers that federate each other each show the other's docs.
 

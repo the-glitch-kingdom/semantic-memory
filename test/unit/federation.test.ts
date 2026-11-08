@@ -85,6 +85,14 @@ describe("loadFederation", () => {
       expect(f.warnings).toHaveLength(1);
     });
 
+    it("reads a sibling's docs_path (hewtd 2.x) when it has no docs_root", async () => {
+      await mkdir(join(root, "d", "guides"), { recursive: true });
+      await mkdir(join(root, "d", ".claude"), { recursive: true });
+      await writeFile(join(root, "d", ".claude", "hit-em-with-the-docs.json"), JSON.stringify({ docs_path: "guides" }));
+      await hewtd({ reconcile: { related_repos: [{ name: "d", path: "d" }] } });
+      expect(loadFederation(vault).sources).toEqual([{ label: "d", path: join(root, "d", "guides"), weight: 1 }]);
+    });
+
     it("is off with related_repos: false, and ignores a malformed hewtd config", async () => {
       await mkdir(join(root, "b", ".documentation"), { recursive: true });
       await hewtd({ reconcile: { related_repos: [{ name: "b", path: "b" }, { name: "bad name", path: "b" }, 3] } });

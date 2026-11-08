@@ -42,7 +42,7 @@ function projectRoot(from: string): string | undefined {
   }
 }
 
-/** hewtd `reconcile.related_repos[{name, path}]`: each sibling's docs tree is its own `docs_root`, else `.documentation`. */
+/** hewtd `reconcile.related_repos[{name, path}]`: each sibling's docs tree is its own `docs_root` (`docs_path` before hewtd 3.0), else `.documentation`. */
 function relatedRepos(notesPath: string, warnings: string[]): FederationSource[] {
   const root = projectRoot(notesPath);
   if (!root) return [];
@@ -58,7 +58,8 @@ function relatedRepos(notesPath: string, warnings: string[]): FederationSource[]
       continue;
     }
     const repo = resolve(root, e.path);
-    const own = asRecord(readJson(join(repo, HEWTD_CONFIG)))?.docs_root;
+    const sib = asRecord(readJson(join(repo, HEWTD_CONFIG)));
+    const own = sib?.docs_root ?? sib?.docs_path; // `docs_path` up to hewtd 2.x, `docs_root` from 3.0.0
     // a sibling's own config must not point the index outside that sibling (e.g. docs_root: "../../.ssh")
     const inside = (d: string) => !relative(repo, d).startsWith("..") && !isAbsolute(relative(repo, d));
     const docs = [typeof own === "string" && own ? resolve(repo, own) : "", join(repo, ".documentation")].find((d) => d && inside(d) && isDir(d));
