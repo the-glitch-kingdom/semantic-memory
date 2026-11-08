@@ -50,10 +50,10 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
   - [x] Every case is validated against the live docs: facets no doc matches are reported as stale and skipped.
   - [x] Reports arms `search_hybrid`, `search_semantic`, `search_text` and grep; tiers; "all" and "clean" (questions
         not marked `tune`); negatives split by `negative_kind`.
-- [ ] Phase 5: Floors
-  - [ ] `--baseline` writes `<evaldir>/baseline.json`: plugin version, set hash, corpus fingerprint (doc count + hash of
+- [x] Phase 5: Floors
+  - [x] `--baseline` writes `<evaldir>/baseline.json`: plugin version, set hash, corpus fingerprint (doc count + hash of
         paths and mtimes), per-metric counts, per-case outcomes.
-  - [ ] `--check` exits 1 when a count drops by more than the band (default 1 question); prints the binomial SD and
+  - [x] `--check` exits 1 when a count drops by more than the band (default 1 question); prints the binomial SD and
         the questions that flipped. A changed corpus fingerprint warns, never fails.
 - [ ] Phase 6: Question generator
   - [ ] `eval generate --notes <dir> [--docs N] [--model]`: deterministic doc sample (evenly spaced over non-hidden,
@@ -107,7 +107,7 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - Stale-index warning (Phase 3 open question) not built: `meta.files` lists commit files, not docs, so a doc-count comparison is wrong (it said 5 vs 38). The server reconciles changed docs on open, so results track the folder.
 
 ## Status
-**Currently in Phase 5** - Floors
+**Currently in Phase 6** - Question generator
 
 ---
 

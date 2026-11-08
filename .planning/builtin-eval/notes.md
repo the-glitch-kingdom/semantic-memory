@@ -29,3 +29,7 @@
 - `semantic-memory eval` (src/cli/retrieval-eval.ts, src/core/retrieval-eval/suite.ts). On the docs-vault fixture with golden-docs.jsonl (69 questions, 57 answerable, 12 negatives): search_hybrid all @1=43/57 @3=55/57 @8=57/57, negatives flagged 11/12; search_semantic @1=42/57 @3=53/57; same as `npm run eval`. Wall time 1.3 s including model load; latency p50 4 ms / p95 10 ms (hybrid). "clean" prints only when a set marks `split: tune`.
 - Arms: search_hybrid, search_semantic, search_text (raw question), grep (search_text with grepPattern).
 - Gate: lint, build, `npm test` 915 passed; freshness-scale warm start and hook-failure Jev-hang failed under load, both pass alone (16 tests, --no-file-parallelism). `npm run eval` 64 passed, 5 expected fail.
+
+## Eval results: Phase 5
+- `eval --baseline` writes `<evaldir>/baseline.json` (version, setHash, corpus {docs, hash of paths+mtimes}, per-arm a1/a3/a8/negFlagged with n, per-case outcome). `--check --band <n>` (default 1) exits 1 when a count drops by more than the band, prints the binomial SD per metric and flipped questions; a changed corpus or set hash only warns.
+- Tests: checkBaseline unit (one-question drop passes, two fail with flipped list, corpus change warns), CLI round trip (check without baseline exits 1, baseline, check passes, inflated baseline fails). Gate: lint, build, npm test 918 passed (hook-failure Jev-hang flaked under load, passes alone), npm run eval 66 passed, 5 expected fail.
