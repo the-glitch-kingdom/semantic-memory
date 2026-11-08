@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join, basename } from "node:path";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
@@ -119,6 +120,7 @@ async function runFastTier(opts: HealthcheckOptions): Promise<DriftFinding[]> {
     checkSessionStaleness(opts.projectRoot),
     checkAgentsContract(opts.projectRoot),
     checkLegacyStateFiles(opts.projectRoot),
+    checkUsageLogIgnored(opts.projectRoot),
     ...(await skillManifestChecks(opts.projectRoot)),
   ];
   const results = await Promise.all(checks.map((p) => p.catch((err) => failOpenWarn(err))));
@@ -357,6 +359,20 @@ async function checkLegacyStateFiles(projectRoot: string): Promise<DriftFinding 
       `Files: ${present.join(", ")}. Run \`bin/semantic-memory migrate-state\` to move them under .claude/.semantic-memory/. ` +
       `These files are still being read for backwards-compat through v1.x; the legacy fallback is removed in v2.0.`,
     fixable_via: "state-migrate",
+  };
+}
+
+async function checkUsageLogIgnored(projectRoot: string): Promise<DriftFinding | null> {
+  const log = join(projectRoot, ".claude", ".semantic-memory", "usage.jsonl");
+  if (!existsSync(log)) return null;
+  // exit 0 = ignored, 1 = not ignored, anything else (no git, not a repo) = nothing to say
+  const r = spawnSync("git", ["check-ignore", "-q", log], { cwd: projectRoot, stdio: "ignore" });
+  if (r.status !== 1) return null;
+  return {
+    check: "usage_log_ignored",
+    severity: "warn",
+    summary: ".claude/.semantic-memory/usage.jsonl is not gitignored",
+    detail: "The usage log holds redacted search queries and doc paths; add `.claude/.semantic-memory/` to .gitignore so it is not committed.",
   };
 }
 

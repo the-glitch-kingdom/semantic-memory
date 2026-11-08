@@ -191,6 +191,13 @@ export function computeGaps(events: UsageEvent[], opts: { since?: string; includ
   });
 }
 
+/** The `gaps.v1` document hewtd's `reconcile --gaps` reads: no extra fields (signals stay in the text report). */
+export const toGapsV1 = (gaps: Gap[], version: string) => ({
+  version: 1 as const,
+  source: `semantic-memory ${version}`,
+  gaps: gaps.map(({ query, used_doc, suggested, count, last_seen }) => ({ query, used_doc, suggested, count, last_seen })),
+});
+
 /** Deterministic tune/heldout split on the normalized query: the same query always lands on the same side. */
 export const splitOf = (q: string): "tune" | "heldout" => {
   let h = 0;

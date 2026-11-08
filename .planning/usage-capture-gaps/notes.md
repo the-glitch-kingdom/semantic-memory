@@ -49,3 +49,6 @@ Captured live: a temp settings file with a PostToolUse hook (matcher `.*`) appen
 No retrieval-eval change (hook only); `npm run eval` green (76 passed, 5 expected fail).
 Hook cost on a non-matching Bash call (`ls -la`, 20 runs, node 18-20 ms bare): usage-capture.js ~20 ms avg vs bare `node -e 0` ~18 ms, so about 2 ms over node startup (doc-search-redirect.js ~23 ms). It exits before reading .mcp.json, the log or dist/.
 Not done: search `weak` flag is not recorded (optional field).
+
+## Eval results: Phase 5
+No retrieval change; `npm run eval` green (76 passed, 5 expected fail). `gaps --json` validates with Ajv2020 against hewtd 2.21.0 gaps.v1.schema.json; `signals` is stripped by `toGapsV1` (text report keeps it).

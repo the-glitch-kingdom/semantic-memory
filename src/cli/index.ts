@@ -1215,6 +1215,22 @@ registerFeatureCommands(program, {
   },
 });
 registerSkillLoopCommands(program);
+
+program
+  .command("gaps")
+  .description("Searches that did not end well (no read, grep fallback, or a doc outside the results), from the usage log. --json is hewtd's gaps.v1 for `hewtd reconcile --gaps`")
+  .option("--root <dir>", "Repo root (default: the repo of the current directory)")
+  .option("--since <iso>", "Only searches at or after this ISO date")
+  .option("--include-repo-grep", "Count grep fallbacks outside a vault too")
+  .option("--json", "Print gaps.v1 JSON")
+  .action(async (opts) => {
+    const { repoRoot } = await import("../core/skill-evidence.js");
+    const { readUsage, computeGaps, toGapsV1 } = await import("../core/usage-log.js");
+    const gaps = computeGaps(readUsage(opts.root ?? repoRoot(process.cwd())), { since: opts.since, includeRepoGrep: opts.includeRepoGrep });
+    if (opts.json) console.log(JSON.stringify(toGapsV1(gaps, version), null, 2));
+    else if (!gaps.length) console.log("gaps: []");
+    else for (const g of gaps) console.log(`${g.count}x  ${g.query}\n     ${g.used_doc ? `used ${g.used_doc}` : "no doc used"}  -> ${g.suggested}  [${g.signals.join(", ")}]  last ${g.last_seen}`);
+  });
 registerSkillEvalCommands(program);
 registerEvalCommand(program);
 

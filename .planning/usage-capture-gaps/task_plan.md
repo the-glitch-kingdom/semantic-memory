@@ -54,12 +54,12 @@ built-in eval and #57). Every missed target is stated in the PR.
         (longest matching source path). Only then read the last 256 KB of the log. Respect the searched vault's
         `telemetry.enabled`. Fails open on bad input. (Note: Read/Bash exits sit before the .mcp.json read; the 256 KB log tail is read only for use/fallback, after a source and a tool shape match.)
   - [x] Read maps to `{server, vault-relative path}`; rank from that search's results.
-- [ ] Phase 5: `semantic-memory gaps [--root <dir>] [--since <iso>] [--json] [--include-repo-grep]`
-  - [ ] A search is a gap when it has no `use` in the window, a `fallback` came before its first `use`, or the doc
+- [x] Phase 5: `semantic-memory gaps [--root <dir>] [--since <iso>] [--json] [--include-repo-grep]`
+  - [x] A search is a gap when it has no `use` in the window, a `fallback` came before its first `use`, or the doc
         used was not in its results. By default only fallbacks inside a vault count (`--include-repo-grep` widens it).
-  - [ ] Clustering without an LLM: group by `used_doc`; searches with none are grouped greedily by token Jaccard
+  - [x] Clustering without an LLM: group by `used_doc`; searches with none are grouped greedily by token Jaccard
         ≥ 0.5; the representative query is the most frequent wording.
-  - [ ] `--json` is exactly `gaps.v1`: `{version: 1, source: "semantic-memory <version>", gaps: [{query, used_doc,
+  - [x] `--json` is exactly `gaps.v1`: `{version: 1, source: "semantic-memory <version>", gaps: [{query, used_doc,
         suggested, count, last_seen}]}`; `used_doc` vault-relative or null; `suggested` is `symptoms.user_phrase`
         when `used_doc` is set, else `new doc`; `last_seen` YYYY-MM-DD. A query that still holds `[REDACTED]` after
         redaction is dropped. The text report may also show the signals (no selection, grep fallback, not in results).
@@ -131,12 +131,13 @@ built-in eval and #57). Every missed target is stated in the PR.
   held-out usage and blind-set @1 do not drop; and a decision on the old query-independent `usage_boost`.
 
 ## Errors Encountered
+- Phase 5: full suite had the 2 known flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. Healthcheck gitignore warning (`usage_log_ignored`) fires only when usage.jsonl exists and `git check-ignore` exits 1; tested in test/integration/gaps-command.test.ts.
 - Phase 4: tsup had no entries for usage-log/telemetry, so the plain-JS hook could not import them from dist; added both to tsup.config.ts. Full suite had the 2 known flakes (hook-failure Jev-hang, freshness-scale warm start); both pass alone.
 - Phase 3: full suite had the 2 known load flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. `usageEvalSet` emits tier `paraphrase` (FacetCase needs a tier). Fallback `scope` is `vault` | `repo`; the hook (Phase 4) decides which.
 - Phase 2: no errors. Live capture succeeded on the second try (first used a library file as the server entry).
 
 ## Status
-**Currently in Phase 5** - the gaps command
+**Currently in Phase 6** - the usage eval set
 
 ---
 
