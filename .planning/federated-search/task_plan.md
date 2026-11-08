@@ -52,10 +52,10 @@ is stated in the PR.
 - [x] Phase 5: Eval fixture
   - [x] Two sources (`test/fixtures/docs-vault` + `test/fixtures/vault`) and a cross-source question set whose expected
         paths carry their source; train and held-out halves.
-- [ ] Phase 6: Release prep v1.19.0
-  - [ ] Bump all five version fields, lockfile; offline tarball builds
-- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove the losing calibration variants and sweep scripts; dead-code check over the branch diff.
+- [x] Phase 6: Release prep v1.19.0
+  - [x] Bump all five version fields, lockfile; offline tarball builds (tarball deferred to release, built from the merge commit)
+- [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove the losing calibration variants and sweep scripts; dead-code check over the branch diff. (variants already gone in Phase 4; /tmp sweep dir removed; every new export is used; no debug logging in the diff)
 - [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review: writes into a source, a second embedder per source, single-source output changes,
         `source` on single-source results, calibration chosen on held-out.
@@ -112,7 +112,7 @@ is stated in the PR.
 - Phase 3: full-suite freshness-scale warm start (5269 ms) and hook-failure Jev budget (7174 ms) failed under load; both passed alone (16/16). Known flakes.
 
 ## Status
-**Currently in Phase 6** - release prep v1.19.0
+**Currently in Phase 8** - validation
 
 ---
 
