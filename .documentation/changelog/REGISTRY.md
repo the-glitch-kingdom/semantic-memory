@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 31 |
+| Documents | 32 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -39,14 +39,14 @@ purpose: Quick reference for changelog documentation
 - [v1.16.0 - code graph](v1-16-0-code-graph.md) - 2026-11-08
 - [v1.17.0 - section results](v1-17-0-section-results.md) - 2026-11-08
 - [v1.18.0 - query routing](v1-18-0-query-routing.md) - 2026-11-08
+- [v1.19.0 - federated search](v1-19-0-federated-search.md) - 2026-11-08
 - [v1.10.0 — retrieval-ready fields](v1-10-0-retrieval-fields.md) - 2026-11-07
-- [v1.11.0 — graph boost removed, decay age fallback, stale marker](v1-11-0-boost-decay-fallback.md) - 2026-11-07
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 31 |
+| active | 32 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

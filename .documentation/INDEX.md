@@ -32,8 +32,8 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 31 | Release notes per version and phase |
-| [Operational](#operational) | 18 | Day-to-day operating guides for the plugin |
+| [Changelog](#changelog) | 32 | Release notes per version and phase |
+| [Operational](#operational) | 19 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 7 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
 | [Deployment](#deployment) | 1 | Publishing and offline packaging |
@@ -231,6 +231,7 @@ purpose: Navigation hub for all documentation
 | [v1.16.0 - code graph](changelog/v1-16-0-code-graph.md) | reference | active | 2026-11-08 | What v1.16.0 changed (issue 58), the measured results on the code-graph fixture, and the targets that were missed. |
 | [v1.17.0 - section results](changelog/v1-17-0-section-results.md) | reference | active | 2026-11-08 | What v1.17.0 changed (issue 60), the measured results on the section fixture, and the targets that were missed. |
 | [v1.18.0 - query routing](changelog/v1-18-0-query-routing.md) | reference | active | 2026-11-08 | What v1.18.0 changed (issue 61), the measured results against v1.17.0, and the targets that were missed. |
+| [v1.19.0 - federated search](changelog/v1-19-0-federated-search.md) | reference | active | 2026-11-08 | What v1.19.0 changed (issue 62), the measured results, and the targets that were missed. |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](changelog/v1-2-3-hygiene-completion.md) | reference | active | 2026-07-10 | What v1.2.3 added — the three v1.2 roadmap items that slipped past 1.2.0/1.2.1/1.2.2 (healthcheck --fix, code_symbols lint, fresh-install CI smoke). |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](changelog/v1-2-state-consolidation.md) | reference | active | 2026-05-09 | What v1.2.0 changed — three transient state files moved from .claude/.sidekick-* to .claude/.semantic-memory/. Read-with-fallback through v1.x. |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
@@ -264,6 +265,7 @@ purpose: Navigation hub for all documentation
 | [Entity Dossiers — Operating Guide](operational/dossiers-guide.md) | guide | active | 2026-07-11 | How to operate v1.5.0 entity dossiers day to day — create them, accrete incidents and current state in place, understand two-hop retrieval, feed the lexicon via aliases, seed from babel-fish, and troubleshoot resolution misses. |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](operational/drift-detection.md) | guide | active | 2026-10-28 | Operational guide to drift detection. The fast-tier auto-check that fires on every SessionStart, the manual /healthcheck deep audit, what each finding means, and how to fix them. |
 | [Failure-time fact lookup — enabling it, writing findable facts, measuring it](operational/failure-lookup-guide.md) | guide | active | 2026-10-25 | How to turn on the opt-in PostToolUseFailure fact lookup, what it injects and when, how to write gotcha facts it can find (symptoms with the literal error), how it coexists with other failure hooks, and how to measure it on your own failures with eval-failures. |
+| [Federation guide](operational/federation-guide.md) | guide | active | 2026-11-08 | How to search other vaults and sibling docs trees from one search_hybrid call, what it costs, and its limits. |
 | [Jev mode — closed-set decisions through jev-loop](operational/jev-mode.md) | guide | active | 2026-10-25 | What jev mode does, what it needs, what is sent to TypeSafe and how, what it costs, the measured judge agreement and failure-hook results, the skill-loop questions it answers, and how to turn it off. |
 | [Lexicon & Query Expansion — Operating Guide](operational/lexicon-guide.md) | guide | active | 2026-07-10 | How to operate the v1.4.0 human-to-LLM bridge day to day — add and inspect lexicon aliases, resolve alias_conflicts, capture verbatim symptoms, and understand Tier-1/Tier-2 query expansion. |
 | [Logs and Events (log.md)](operational/logs-and-events.md) | reference | active | 2026-04-23 | log.md format, auto-kinds, state-delta preload, future-Claude usage |

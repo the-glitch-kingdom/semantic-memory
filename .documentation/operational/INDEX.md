@@ -15,7 +15,7 @@ purpose: Complete listing of operational documentation
 
 ## Overview
 
-- **Total Documents:** 18
+- **Total Documents:** 19
 - **Domain:** `operational/`
 - **Category:** features
 - **Load Priority:** 6/10
@@ -32,6 +32,7 @@ purpose: Complete listing of operational documentation
 | [Entity Dossiers — Operating Guide](dossiers-guide.md) | active | 2026-07-11 | 1,114 | How to operate v1.5.0 entity dossiers day to day — create them, accrete incidents and current state in place, understand two-hop retrieval, feed the lexicon via aliases, seed from babel-fish, and troubleshoot resolution misses. |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) | active | 2026-10-28 | 1,589 | Operational guide to drift detection. The fast-tier auto-check that fires on every SessionStart, the manual /healthcheck deep audit, what each finding means, and how to fix them. |
 | [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) | active | 2026-10-25 | 775 | How to turn on the opt-in PostToolUseFailure fact lookup, what it injects and when, how to write gotcha facts it can find (symptoms with the literal error), how it coexists with other failure hooks, and how to measure it on your own failures with eval-failures. |
+| [Federation guide](federation-guide.md) | active | 2026-11-08 | 387 | How to search other vaults and sibling docs trees from one search_hybrid call, what it costs, and its limits. |
 | [Jev mode — closed-set decisions through jev-loop](jev-mode.md) | active | 2026-10-25 | 728 | What jev mode does, what it needs, what is sent to TypeSafe and how, what it costs, the measured judge agreement and failure-hook results, the skill-loop questions it answers, and how to turn it off. |
 | [Lexicon & Query Expansion — Operating Guide](lexicon-guide.md) | active | 2026-07-10 | 988 | How to operate the v1.4.0 human-to-LLM bridge day to day — add and inspect lexicon aliases, resolve alias_conflicts, capture verbatim symptoms, and understand Tier-1/Tier-2 query expansion. |
 | [Modes Guide](modes-guide.md) | active | 2026-10-28 | 1,113 | vault-first / research / outage-silence entry signals, behavior, misroute recovery |

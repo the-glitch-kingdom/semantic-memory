@@ -15,7 +15,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 31
+- **Total Documents:** 32
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -41,6 +41,7 @@ purpose: Complete listing of changelog documentation
 | [v1.16.0 - code graph](v1-16-0-code-graph.md) | active | 2026-11-08 | 200 | What v1.16.0 changed (issue 58), the measured results on the code-graph fixture, and the targets that were missed. |
 | [v1.17.0 - section results](v1-17-0-section-results.md) | active | 2026-11-08 | 568 | What v1.17.0 changed (issue 60), the measured results on the section fixture, and the targets that were missed. |
 | [v1.18.0 - query routing](v1-18-0-query-routing.md) | active | 2026-11-08 | 525 | What v1.18.0 changed (issue 61), the measured results against v1.17.0, and the targets that were missed. |
+| [v1.19.0 - federated search](v1-19-0-federated-search.md) | active | 2026-11-08 | 300 | What v1.19.0 changed (issue 62), the measured results, and the targets that were missed. |
 | [v1.2.3 — hygiene line completed (--fix, code_symbols, CI smoke)](v1-2-3-hygiene-completion.md) | active | 2026-07-10 | 613 | What v1.2.3 added — the three v1.2 roadmap items that slipped past 1.2.0/1.2.1/1.2.2 (healthcheck --fix, code_symbols lint, fresh-install CI smoke). |
 | [v1.2 — state consolidation under .claude/.semantic-memory/](v1-2-state-consolidation.md) | active | 2026-05-09 | 671 | What v1.2.0 changed — three transient state files moved from .claude/.sidekick-* to .claude/.semantic-memory/. Read-with-fallback through v1.x. |
 | [v1.3.1 — selection-logging telemetry](v1-3-1-telemetry.md) | active | 2026-07-10 | 653 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
