@@ -2,7 +2,8 @@ import { tokenize, type Bm25Index } from "./bm25.js";
 
 const DOTTED = /^\p{L}[\p{L}\p{N}_-]+(\.\p{L}[\p{L}\p{N}_-]+)+$/u; // every part starts with a letter and has 2+ chars: `v1.12.0`, `e.g.` are not names
 const CAMEL = /^[a-z]+[A-Z]\w*$/;
-const EDGE = /^[^\p{L}\p{N}/]+|[^\p{L}\p{N}/]+$/gu; // also strips the `_` and `*` of `__init__` and `**bold**`
+const EDGE = /^[^\p{L}\p{N}/_]+|[^\p{L}\p{N}/_]+$/gu; // keeps `_`: the index tokens of `__init__.py` and `_helper` carry theirs
+const UNDERSCORES = /^_+|_+$/g; // `__init__`, `_italic_`: decided without them, so prose emphasis is not a name
 
 /**
  * Identifier-shaped terms of a query, in their original spelling: snake_case, lower camelCase, paths, dotted names and
@@ -11,10 +12,12 @@ const EDGE = /^[^\p{L}\p{N}/]+|[^\p{L}\p{N}/]+$/gu; // also strips the `_` and `
 export function identifiers(query: string): string[] {
   const out = new Set<string>();
   for (const m of query.matchAll(/`([^`\s]+)`/g)) out.add(m[1].replace(EDGE, ""));
-  for (const w of query.replace(/`[^`]*`/g, " ").split(/\s+/)) {
-    const t = w.replace(EDGE, "");
-    if (t.includes("://")) continue;
-    if (t.includes("_") || t.includes("/") || CAMEL.test(t) || DOTTED.test(t)) out.add(t);
+  for (const w of query.replace(/`[^`]*`/g, " ").split(/[\s=]+/)) {
+    const raw = w.replace(EDGE, "");
+    const t = raw.replace(UNDERSCORES, "");
+    if (raw.includes("://")) continue;
+    // a path has an extension or 2+ slashes: `TCP/IP`, `client/server`, `pass/fail` are prose
+    if (t.includes("_") || (t.includes("/") && (t.includes(".") || t.split("/").length > 2)) || CAMEL.test(t) || DOTTED.test(t)) out.add(raw);
   }
   out.delete("");
   return [...out];

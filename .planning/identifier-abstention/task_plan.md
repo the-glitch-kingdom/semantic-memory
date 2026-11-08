@@ -51,19 +51,19 @@ measured with #56's `eval`. Every missed target is stated in the PR.
   - [x] Bump all five version fields, lockfile; offline tarball builds
 - [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Dead-code check over the branch diff (no unused locals, debug output or scratch files in the diff; `identifiers()` stays exported for #58/#61 per Decisions).
-- [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review: false-flag paths (path words, code spans, table cells, `__init__`), a second detector,
+- [x] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review: false-flag paths (path words, code spans, table cells, `__init__`), a second detector,
         wording that claims non-existence, CLI/MCP drift.
-  - [ ] Unit `missingTerms`: flags `FOO_BAR`, `fooBar`, `x/y/zz_missing.py`; does not flag present terms, a term only
+  - [x] Unit `missingTerms`: flags `FOO_BAR`, `fooBar`, `x/y/zz_missing.py`; does not flag present terms, a term only
         in a code span or table cell, a term only in a file name, `__init__`, `v1.12.0`, `e.g.`, `SLA`; returns the
         original spelling.
-  - [ ] #57 check 1: a query naming an absent identifier returns `no_strong_match: true` and lists it.
-  - [ ] #57 check 2: no answerable question in any golden set gains a flag (deterministic, no embedder).
-  - [ ] #57 check 3: identifier negatives flagged rise (≥ 4 of 7 per split), false flags ≤ the existing ceiling. The
+  - [x] #57 check 1: a query naming an absent identifier returns `no_strong_match: true` and lists it.
+  - [x] #57 check 2: no answerable question in any golden set gains a flag (deterministic, no embedder).
+  - [x] (external set not available here; release step) #57 check 3: identifier negatives flagged rise (≥ 4 of 7 per split), false flags ≤ the existing ceiling. The
         external "4 of 7 / ≤ 2 of 34" target is run with `eval` on the external set as a release step, if available.
-  - [ ] #57 check 4: every plain-English golden question gets `missingTerms = []` and its flag equals `isWeak` alone.
-  - [ ] #57 check 5: CI has no export or gaps file; one assertion that #57 reads neither.
-  - [ ] CLI/MCP parity case with a missing identifier. Full suite; known flakes re-run alone. Answer each #57 item in notes.md.
+  - [x] #57 check 4: every plain-English golden question gets `missingTerms = []` and its flag equals `isWeak` alone.
+  - [x] #57 check 5: CI has no export or gaps file; one assertion that #57 reads neither.
+  - [x] CLI/MCP parity case with a missing identifier. Full suite; known flakes re-run alone. Answer each #57 item in notes.md.
 - [ ] Phase 9: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New `.documentation/changelog/v1-14-0-identifier-abstention.md` (`npx hewtd integrate -a`); `CHANGELOG.md`
   - [ ] `.documentation/reference/mcp-tools-reference.md` (`missing_terms`), `.documentation/reference/cli-reference.md`
@@ -86,11 +86,12 @@ measured with #56's `eval`. Every missed target is stated in the PR.
 - Phase 4: the 4 identifier gates became real gates here (not Phase 5): once wired they pass 8/8, and `npm test` fails on an `it.fails` that passes. The detector is deterministic (no HNSW), so no slack is needed. The hook says "Not in the docs: `X`" in place of the weak-match line when `missing_terms` is present; its existing score gate (top score < 0.35 injects nothing) is unchanged.
 
 ## Errors Encountered
+- Phase 8 review: false flags on `__init__.py`/`_helper` (edge `_` stripped before lookup) and slash prose (`TCP/IP`); fixed with tests. Full run: hook-failure Jev-hang flake, passes alone.
 - Phase 5 full run: freshness-scale and skill-eval concurrency failed under load, both pass alone; lint, build, eval clean.
 - Phase 3 full run: freshness-scale and hook-failure (Jev-hang) failed under load, both pass alone; lint, build, eval (72 passed, 9 expected fail) clean.
 
 ## Status
-**Currently in Phase 8** - Validate
+**Currently in Phase 9** - Documentation
 
 ---
 
