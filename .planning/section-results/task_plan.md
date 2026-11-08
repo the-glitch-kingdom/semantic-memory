@@ -69,8 +69,8 @@ target is stated in the PR.
         size floor.
         Done: src/core/fold.ts (FOLD_MIN_CHARS = 300), export parsing in loadExport (`duplicates`, `pointsTo`), wired in shape() and the CLI
         (not in granularity "doc"); `also_in` on result items. Unit: test/unit/fold.test.ts. The four fold gates in section-eval.test.ts are real gates now.
-- [ ] Phase 6: Release prep v1.17.0
-  - [ ] Bump all five version fields, lockfile; offline tarball builds
+- [x] Phase 6: Release prep v1.17.0
+  - [x] Bump all five version fields, lockfile; offline tarball build deferred to release (built from the merge commit)
 - [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove the losing chunking variant and sweep scripts; dead-code check over the branch diff.
 - [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
@@ -112,7 +112,7 @@ target is stated in the PR.
 - Phase 2: hook-failure Jev-hang test failed once under full-suite load (3827ms vs 3000); passes alone. Known flake.
 
 ## Status
-**Currently in Phase 6** - release prep
+**Currently in Phase 7** - cleanup
 
 ---
 
