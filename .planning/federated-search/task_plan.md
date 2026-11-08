@@ -1,0 +1,118 @@
+# Task Plan: federated-search
+
+## Goal
+Ship semantic-memory#62: `federation.sources` in `vault.schema.yml` (other vaults or sibling docs trees, read-only,
+each with a label and weight), plus hit-em-with-the-docs' `related_repos` when its config exists. One `search_hybrid`
+fans out to every source's index, merges with per-source calibration, and labels each result with `source`. A single
+source behaves byte-for-byte as today. One PR from `feat/federated-search`. Series step 5 (last). Every missed target
+is stated in the PR.
+
+## Prerequisites
+- #56 (`builtin-eval`): per-source calibration and the cross-source question set are judged with it.
+- Built after #61, so the federated path wraps the final single-index pipeline.
+
+## Rules for every phase
+- **Verify before ticking.** Confirm in code, or with a test, that a box is actually done before ticking it.
+- **Eval discipline.** The calibration method is chosen on train only; held-out is reported as measured.
+- **Never write into a source.** Source indexes live under the primary's index dir (`sources/<label>-<hash8>/`);
+  sibling repos are read-only (hit-em-with-the-docs' own rule).
+- **Single source unchanged.** With no federation configured, output is byte-identical to today (test).
+- **Response shape.** `content[0]` stays a bare JSON array; `source` is added to results only when more than one source
+  answered. Skipped or stale sources are reported in a trailing text block (like the stale marker), never in `content[0]`.
+- **Works without hit-em-with-the-docs.** Federation is configured in our own schema; `related_repos` is read only when
+  hewtd's config file exists.
+- **No new dependencies.**
+
+## Phases
+- [x] Phase 1: Verify and plan
+  - [x] Verify #62 against main @ 29e74db (notes.md)
+  - [x] Re-verify against main @ 003bef1 (v1.18.0): one index per context and one Embedder per context still hold
+  - [x] Post the verification comment on #62
+  - [x] Sync main, cut `feat/federated-search`, commit this plan
+- [ ] Phase 2: Config
+  - [ ] `src/core/federation.ts` `loadFederation(notesPath)`: `federation: {sources: [{label, path, weight}],
+        related_repos: true|false}`. Lenient parse (bad entries dropped with one warning), paths relative to the vault,
+        de-duplicated by realpath, the primary left out.
+  - [ ] `related_repos`: find the project root (walk up to `.claude/hit-em-with-the-docs.json` or `.git`), read
+        `reconcile.related_repos[{name, path}]`; each sibling's docs tree is its own `docs_root`, else `.documentation`,
+        else skipped. Never index a whole code repo.
+  - [ ] Commented block in `schema-default.ts`. Unit tests (no hewtd config; malformed config).
+- [ ] Phase 3: Source contexts
+  - [ ] `buildContext(path, {readOnly: true, indexPath, embedder})` (two new optional `ServerOptions`); in-process, not
+        by querying sibling servers; one shared Embedder (sources use the primary's model and pooling).
+  - [ ] Contexts are created lazily on the first federated search; the first build runs in the background. A missing,
+        unreadable or still-indexing source is skipped and reported once per process (stderr plus a trailing text block).
+- [ ] Phase 4: Federated `search_hybrid`
+  - [ ] Extract the per-context pipeline in `src/mcp/tools/search.ts` into `hybridRanked(ctx, …)` unchanged; run it per
+        source with one query embedding.
+  - [ ] Calibration: choose on train between raw fused, BM25 normalized by each source's `selfTop` (capped at 1) ×
+        source weight, and RRF. Merge so each source keeps its own order.
+  - [ ] `related` from #1's own source graph; `no_strong_match` only when every source is weak by its own `bm25Min`;
+        stale if any source is stale; `read_note` takes `source`; telemetry paths logged as `label:path`.
+- [ ] Phase 5: Eval fixture
+  - [ ] Two sources (`test/fixtures/docs-vault` + `test/fixtures/vault`) and a cross-source question set whose expected
+        paths carry their source; train and held-out halves.
+- [ ] Phase 6: Release prep v1.19.0
+  - [ ] Bump all five version fields, lockfile; offline tarball builds
+- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [ ] Remove the losing calibration variants and sweep scripts; dead-code check over the branch diff.
+- [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [ ] Independent review: writes into a source, a second embedder per source, single-source output changes,
+        `source` on single-source results, calibration chosen on held-out.
+  - [ ] Integration: two sources, one `search_hybrid`, labelled results from both (#62 check 1); a missing path and a
+        `chmod 000` dir each reported once and the search succeeds (#62 check 2); a source with no index is built
+        under the primary's index dir and its own files' mtimes are unchanged; single source byte-identical.
+  - [ ] Eval (#62 check 3): federated found@3 above either index alone on the joint set, AND on each source's own
+        questions federated @1 ≥ that source alone minus one case (the issue's check alone passes by construction);
+        p95 within budget with 3 sources.
+  - [ ] Works without hit-em-with-the-docs (#62 check 4): CI with no hewtd config file.
+  - [ ] Memory: measure heap and RSS with 1 and 3 sources and record it (estimate 50-100 MB heap per source with a
+        shared embedder; not measured yet).
+  - [ ] Full suite; known flakes re-run alone and recorded. Answer each #62 acceptance item in notes.md.
+- [ ] Phase 9: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [ ] New `.documentation/operational/federation-guide.md` and a changelog doc (`npx hewtd integrate -a`); `CHANGELOG.md`
+  - [ ] `.documentation/reference/configuration-reference.md` (`federation`), `.documentation/reference/mcp-tools-reference.md`
+        (`source`, `read_note` `source`), `.documentation/architecture/indices-and-storage.md` (`sources/`, memory),
+        `.documentation/testing/tests-and-validation.md`
+  - [ ] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
+
+## Key Questions
+(Resolved at branch time, 2026-11-08; see Decisions Made.)
+
+## Decisions Made
+- A source is always indexed with the primary's model and pooling (we build its index under the primary's index dir),
+  so a source's own model never matters; its own `embeddings.json` is not reused (deferred).
+- A source's own `federation` block is ignored: no recursion. Two servers that federate each other each show the
+  other's docs; documented in the guide, not prevented.
+- The prompt hook keeps its current per-server merge (out of scope).
+- hewtd 2.21.0 confirms `reconcile.related_repos: [{name, path}]`, `path` relative to the project root, `name`
+  `[\w.-]+`, siblings read-only, sibling docs under `<sibling>/.documentation` by default.
+- In-process source contexts with a shared embedder, not MCP calls to sibling servers: siblings may have no server,
+  and a client adds processes and latency.
+- Source indexes under the primary's index dir: nothing is written into a source.
+
+## Errors Encountered
+- (none yet)
+
+## Status
+**Currently in Phase 2** - config
+
+---
+
+## Notes
+- This file persists across sessions
+- Update status after each phase
+- Mark completed phases with [x]
+- Save research to notes.md instead of stuffing context
+
+## On Completion
+This plan is complete when every checkbox above is checked. That IS the
+completion signal -- there is no separate status to remember to flip.
+
+When complete, archive it instead of deleting it:
+
+    /plan-status                  # confirm this plan reads COMPLETE
+    /archive-plan federated-search    # -> .planning/.archive/federated-search/
+
+Archiving moves this directory to the gitignored .planning/.archive/ and stamps
+it archived. Nothing is destroyed.
