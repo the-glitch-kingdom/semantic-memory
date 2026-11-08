@@ -14,7 +14,7 @@ Issue #60. Numbers and misses: `.documentation/changelog/v1-17-0-section-results
 
 ### Measured
 
-Section anchor@1 3/12 and 4/12 to 12/12 on train and held-out; owner first in 4/4 and 2/2 fold cases. Real train answer@1 14/17 to 18/21, real held-out hybrid 13 to 18.
+Section anchor@1 3/12 and 4/12 to 12/12 on train and held-out; owner first in 4/4 and 2/2 fold cases. Doc answer@1 against v1.16.0's packing in the same run (semantic / hybrid): fixture train 42/43 to 40/41, fixture held-out 25/26 to 23/24, real train 19/19 to 18/21, real held-out 13/18 to 11/18.
 
 ### Missed targets
 

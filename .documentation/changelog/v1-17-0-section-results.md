@@ -50,7 +50,7 @@ Section set (our own questions, held-out never used to choose anything): hybrid 
 
 ## Missed targets
 
-- **Existing @1/@3 did drop.** Floors were lowered to measured values: fixture-train semantic multi@1 4 to 2 and hybrid multi 5/11 to 4/10; fixture-held-out hybrid all@1 25 to 24, hybrid paraphrase@1 13 to 11, semantic paraphrase@1 13 to 12, symptom@3 3 to 2 (semantic) and 4 to 3 (hybrid). Gains: real train answer@1 14/17 to 18/21, real held-out hybrid 13 to 18.
+- **Existing @1/@3 did drop.** Floors were lowered to measured values: fixture-train semantic multi@1 4 to 2 and hybrid multi 5/11 to 4/10; fixture-held-out hybrid all@1 25 to 24, hybrid paraphrase@1 13 to 11, semantic paraphrase@1 13 to 12, symptom@3 3 to 2 (semantic) and 4 to 3 (hybrid). Against v1.16.0's packing measured in the same run, answer@1 (semantic / hybrid): fixture train 42/43 to 40/41, fixture held-out 25/26 to 23/24, real train 19/19 to 18/21, real held-out 13/18 to 11/18. Only real-train hybrid gains; the rest drop by one or two.
 - **Abstention is weaker.** Real held-out negatives flagged by `no_strong_match` fell from 7-8/8 to 5/8; off-topic queries get higher cosines against short, trail-prefixed chunks. The slack went from 1 to 3. Raising the cutoff (0.36 to 0.44) on train gained no train negatives below 0.44 and doubled false flags, so it stays 0.36.
 - **A pointer is folded only with an export** (`points_to` plus a link). With no `.hewtd`, only identical text folds, and a pointer can still rank above its target. A pointer whose target is outside the top `limit*3` candidates stays.
 - A short section carried into the next chunk reports the later section's anchor.
