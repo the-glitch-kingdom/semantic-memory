@@ -69,23 +69,23 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
   - [x] Bump all five version fields, `npm install --package-lock-only --ignore-scripts`; offline tarball builds (1.13.0-4b686305b0, 922M; the model cache dir holds several models so it is above the 0.55 GB norm; rebuilt from the merge commit later)
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Dead-code check over the branch diff (no unused new exports, no stray debug output; console.log only in CLI output); `scripts/retrieval-eval/real-corpus.mjs` kept: it times cold/warm spawn and payload bytes through the production launch of an older checkout, which the src engine cannot do.
-- [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review: engine drift between src and tests, any eval path that writes to the index or the logs, a
+- [x] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review: engine drift between src and tests, any eval path that writes to the index or the logs, a
         model mismatch that re-embeds, held-out used for tuning, generated cases kept without validation.
-  - [ ] Unit: moved metrics tests pass from the src path; band and check logic (a one-question drop passes, two fail,
+  - [x] Unit: moved metrics tests pass from the src path; band and check logic (a one-question drop passes, two fail,
         flipped list right); generator validation with the fake claude (bad regex rejected, facet missing from the doc
         rejected, a "negative" whose term exists rejected, records carry `doc`, `doc_sha256`, `generator`; two runs give
         the same sample and split).
-  - [ ] Integration, #56 check 1: on the docs-vault fixture with a built index, `eval` with a 40-case set finishes in
+  - [x] Integration, #56 check 1: on the docs-vault fixture with a built index, `eval` with a 40-case set finishes in
         under 2 minutes, prints every metric, and leaves `selection.jsonl` unchanged.
-  - [ ] Integration, #56 check 2: `--baseline` with `search_hybrid`, then `--check` with the arm swapped for
+  - [x] Integration, #56 check 2: `--baseline` with `search_hybrid`, then `--check` with the arm swapped for
         `search_semantic` (BM25 dropped) exits 1 on the real corpus (`.documentation`, held-out @1 17 vs 12) or the
         code-vault. The docs-vault fixture does not separate them (43 vs 42), so do not use it for this check.
-  - [ ] #56 check 3: generated questions carry the doc, its sha256 and the generator version; a re-run reproduces the set.
-  - [ ] #56 check 4 (external kit agreement) cannot run in CI. In CI: the CLI's counts equal `real-corpus-eval.test.ts`
+  - [x] #56 check 3: generated questions carry the doc, its sha256 and the generator version; a re-run reproduces the set.
+  - [x] #56 check 4 (external kit agreement; the external run was NOT done, no set available, release step) cannot run in CI. In CI: the CLI's counts equal `real-corpus-eval.test.ts`
         on the same set within one question. As a release step: run `eval` on the external blind set if available
         and record it in the changelog.
-  - [ ] Full suite; known flakes re-run alone and recorded. Answer each #56 acceptance item in notes.md.
+  - [x] Full suite; known flakes re-run alone and recorded. Answer each #56 acceptance item in notes.md.
 - [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New `.documentation/operational/retrieval-eval-guide.md` (sets, generation, floors, noise band, clean vs all)
   - [ ] New `.documentation/changelog/v1-13-0-builtin-eval.md` (`npx hewtd integrate -a`); `CHANGELOG.md`
@@ -107,10 +107,11 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - `eval generate` is a subcommand of `eval`: commander gives `--notes` to a parent that declares it, so `eval`'s `--notes` is checked in its action (not `requiredOption`) and `enablePositionalOptions()` is set on the program and on `eval`.
 
 ## Errors Encountered
+- Phase 9: `eval --baseline --check` together overwrote the floor before checking; now refused.
 - Stale-index warning (Phase 3 open question) not built: `meta.files` lists commit files, not docs, so a doc-count comparison is wrong (it said 5 vs 38). The server reconciles changed docs on open, so results track the folder.
 
 ## Status
-**Currently in Phase 9** - Validate success through comprehensive testing
+**Currently in Phase 10** - Documentation pass
 
 ---
 

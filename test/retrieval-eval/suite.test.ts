@@ -56,7 +56,7 @@ describe("eval CLI", () => {
     dir = await mkdtemp(join(tmpdir(), "sp-eval-cli-"));
     await cp(FIXTURE, dir, { recursive: true, filter: (s) => !s.includes(".semantic-sidekick-index") });
     const set = join(dir, "..", `${dir.split("/").pop()}-set.jsonl`);
-    const lines = (await import("node:fs")).readFileSync(join(HERE, "golden-docs.jsonl"), "utf-8").split("\n").filter((l) => l.startsWith("{")).slice(0, 12);
+    const lines = (await import("node:fs")).readFileSync(join(HERE, "golden-docs.jsonl"), "utf-8").split("\n").filter((l) => l.startsWith("{")).slice(0, 40);
     await writeFile(set, lines.join("\n") + "\n" + JSON.stringify({ id: "stale", tier: "exact", q: "x", facets: ["zzqqxx-no-such-term"] }) + "\n");
 
     const run = (...a: string[]) => spawnSync("node", [CLI, "eval", "--notes", dir, "--set", set, ...a], { encoding: "utf-8" });
@@ -65,7 +65,9 @@ describe("eval CLI", () => {
     expect(none.stderr).toMatch(/--reindex/);
 
     await createServer(dir, { watch: false, waitForReady: true });
+    const t0 = Date.now();
     const r = run("--json");
+    expect(Date.now() - t0).toBeLessThan(120_000); // #56 check 1
     expect(r.status).toBe(0);
     const out = JSON.parse(r.stdout);
     expect(Object.keys(out.arms)).toEqual(["search_hybrid", "search_semantic", "search_text", "grep"]);
@@ -77,6 +79,7 @@ describe("eval CLI", () => {
 
     const evalDir = join(dir, "evaldir");
     expect(run("--check", "--dir", evalDir).status).toBe(1);
+    expect(run("--baseline", "--check", "--dir", evalDir).stderr).toMatch(/separate runs/);
     expect(run("--baseline", "--dir", evalDir).status).toBe(0);
     expect(existsSync(join(evalDir, "baseline.json"))).toBe(true);
     expect(run("--check", "--dir", evalDir).status).toBe(0);

@@ -38,3 +38,19 @@
 - No retrieval numbers change. `eval generate` (src/core/retrieval-eval/generate.ts, prompts/generate.ts, GENERATOR_VERSION "1") samples docs evenly (non-generated, non-archive), one `runClaude({tools: [], maxTurns: 1})` per doc, validates (regex compiles and matches source, facet matches <= 20% of docs, paraphrase shares <= 1 rare term (df <= max(2, 10% of docs)), negative `absent_terms` absent from every raw doc case-insensitively, multi covers both docs). Cases carry doc, doc_sha256, generator {version, model}, split (parity of first hex digit of sha256(q): 50/50), expected (so found@k/MRR work), negative_kind. Tests: test/retrieval-eval/generate.test.ts with the fake claude (no real claude).
 - Not measured on a real vault (no real claude in tests); the generation quality numbers wait for the Phase 9 release step.
 - Gate: lint, build, npm test 923 passed (freshness-scale and hook-failure flaked under load, pass alone), npm run eval 72 passed, 5 expected fail.
+
+## Eval results: Phase 9 (review and #56 acceptance)
+Review of `git diff main...HEAD`:
+- Engine drift: none; `test/retrieval-eval/eval.ts` re-exports `src/core/retrieval-eval/metrics.ts`, docs-eval, real-corpus-eval and the CLI share `armsOf`/`runFacetEval`.
+- Writes: searches and `read_note` log nothing (`telemetry:false`); the server is readOnly; no `selection.jsonl` appears (checked on the real-corpus copy and in suite.test.ts). One caveat: if the notes tree changed since the last index, opening the server reconciles and updates the index incrementally (only changed files embedded). A model/pooling/prompt mismatch cannot trigger a re-embed because `openEval` opens with meta's settings.
+- Held-out use: none for constants. Generator thresholds (facet share 20%, rare-term df) are untuned guesses fixed in code; held-out files are only read by the eval tests.
+- Generated cases: every kept case passes `rejectReason`; nothing is kept unvalidated.
+- Bug fixed: `eval --baseline --check` in one run overwrote the floor before reading it, so the check could never fail. It now refuses ("separate runs"); regression assert in suite.test.ts.
+
+#56 acceptance:
+1. Fixture, 40-case set (golden-docs.jsonl first 40 plus one stale case): `eval --json` asserted < 120 s in suite.test.ts (measured ~1-2 s warm), prints every metric (all/clean, found@k, MRR, p50/p95, negatives per kind), `selection.jsonl` absent after. PASS.
+2. Real corpus (.documentation copy, 567 chunks, git history seeded as real-corpus-eval does), held-out set (27 answerable): hybrid @1/@3/@8 = 17/24/26, semantic 12/16/24. `--baseline` on hybrid, `--check` with the search_semantic floor set to hybrid's counts: exit 1, "FAIL, a1, a3 dropped", 10 flipped questions listed (h03, h09, h11, ...). Control `--check` unchanged: exit 0. PASS. (Without seeded git history semantic is 14/19/25, since decay applies; the issue's "17 vs 12" matches the seeded run.)
+3. Generated cases carry doc, doc_sha256, generator {version, model}; two runs with the fake claude give the same set and split (generate.test.ts). PASS in CI. Quality with a real model not measured (no real claude in tests).
+4. CI part: CLI counts equal real-corpus-eval.test.ts on the same sets. Train hybrid 21/25/27, semantic 18/25/26 in the CLI vs hybrid 21/25/27 and semantic 18/24/26 in the test (the test run also showed one @3 differing by one: HNSW is random per build); held-out hybrid 17/24/26 vs 17/25/26, semantic 12/16/24 vs 12/16/24 once git history is seeded. All within one question. External blind-kit run: NOT RUN (no external set available); release step, record in the changelog if available. PARTIAL.
+
+Gate: lint, build clean; npm test 924 passed, 1 failure (hook-failure Jev-hang, load flake) passes alone (14 tests); npm run eval 72 passed, 5 expected fail.

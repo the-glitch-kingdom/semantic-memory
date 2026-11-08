@@ -23,6 +23,8 @@ export function registerEvalCommand(program: Command): void {
       try {
         // not requiredOption: commander would demand it on `eval generate` too, before the subcommand's own --notes
         if (!opts.notes) throw new Error("required option --notes <path> not specified");
+        // --baseline would overwrite the floor before --check read it, so the check could never fail
+        if (opts.baseline && opts.check) throw new Error("--baseline and --check are separate runs");
         const report = await runSuite(opts.notes, loadSets(opts.notes, opts.set, opts.dir));
         console.log(opts.json ? JSON.stringify(report, null, 2) : formatSuite(report));
         const file = baselinePath(opts.notes, opts.dir);
