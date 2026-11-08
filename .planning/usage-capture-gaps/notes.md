@@ -78,3 +78,7 @@ Tarball: `npm pack` output extracted, contains hooks/usage-capture.js and dist/c
 5. The prior does not lower blind @1: NOT IN SCOPE (plan B). No ranking change here; eval identical.
 6. Works with the other plugin absent: PASS (missing log gives `gaps: []`, exit 0; no hewtd reference or spawn).
 Known weak spots: `computeGaps` counts every search with no `use`, including ones answered from the search snippet, so it is noisy; a Bash grep with no path assumes cwd; a plugin server whose `.mcp.json` name differs from its tool-name server is skipped; the stale-block parse is only tested with a synthetic block; the hook is tested only with fixtures, not a fresh live Claude Code run.
+
+## Eval results: Phase 10
+Docs only; code unchanged. See the eval run below in the commit message / final report.
+Floors lowered for the new docs; measured: real-train hybrid @1 18 (was 21), semantic @1 19 (was 14), real-heldout hybrid false flags 1/9. See Errors Encountered in the plan.

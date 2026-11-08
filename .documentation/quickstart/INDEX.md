@@ -5,6 +5,7 @@ domains: [quickstart]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Complete listing of quickstart documentation
 ---
 
@@ -23,10 +24,10 @@ purpose: Complete listing of quickstart documentation
 
 ### Guides
 
-| Document | Status | Updated | Words |
-|----------|--------|---------|-------|
-| [Installation Guide](installation-guide.md) | active | 2026-10-28 | 957 |
-| [semantic-sidekick — Overview](sidekick-overview.md) | active | 2026-10-24 | 768 |
+| Document | Status | Updated | Words | Purpose |
+|----------|--------|---------|-------|---------|
+| [Installation Guide](installation-guide.md) | active | 2026-10-28 | 957 | Three install routes (plugin / npm / dev), what a fresh install gets, updating, post-install housekeeping, uninstall |
+| [semantic-sidekick — Overview](sidekick-overview.md) | active | 2026-10-24 | 768 | Value proposition, five-layer summary, firing timeline, design principles |
 
 ## Keywords
 
@@ -34,9 +35,7 @@ This domain covers: quickstart, quick-start, getting-started, setup, install, in
 
 ## Related Domains
 
-- [Workflows](../workflows/) - Process documentation, multi-step operations
-- [Features](../features/) - Feature implementation guides, admin docs
-- [Procedures](../procedures/) - Step-by-step operational procedures (SOP)
+- [Operational](../operational/) - Day-to-day operating guides for the plugin
 
 ---
 

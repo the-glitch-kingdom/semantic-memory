@@ -2,6 +2,25 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.15.0] - 2026-11-07 — Usage capture and search gaps
+
+Issue #59, plan A. Full numbers and misses: `.documentation/changelog/v1-15-0-usage-capture-gaps.md`.
+
+### Added
+
+- **Usage-capture hook** (`hooks/usage-capture.js`, PostToolUse): records "searched, then read X" and "searched, then grepped" in `.claude/.semantic-memory/usage.jsonl`. No file contents, responses or grep patterns; queries redacted; no `selection` events, so ranking is unchanged. Off: `SEMANTIC_MEMORY_USAGE_CAPTURE=0` or `usage_capture: off`.
+- **`semantic-memory gaps [--json]`**: searches that ended in no doc; `--json` is hit-em-with-the-docs' `gaps.v1`.
+- **`semantic-memory usage-set`**: writes `eval/usage.jsonl` for `eval`.
+- Healthcheck warning `usage_log_ignored`.
+
+### Removed
+
+- `scripts/retrieval-eval/mine-selection.mjs` (replaced by `usage-set`).
+
+### Missed targets
+
+`hewtd reconcile --gaps` not run end to end (schema validated only); search `weak` flag not recorded; `gaps` is noisy (counts searches answered from the snippet); tested on captured payloads, not a fresh live run; offline tarball built at release.
+
 ## [1.14.0] - 2026-11-07 — Identifier abstention
 
 Issue #57. Full numbers and misses: `.documentation/changelog/v1-14-0-identifier-abstention.md`.

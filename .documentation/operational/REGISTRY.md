@@ -5,6 +5,7 @@ domains: [operational]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Quick reference for operational documentation
 ---
 
@@ -16,7 +17,7 @@ purpose: Quick reference for operational documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 17 |
+| Documents | 18 |
 | Category | features |
 | Load Priority | 6/10 |
 
@@ -37,15 +38,15 @@ purpose: Quick reference for operational documentation
 
 - [Retrieval Eval Guide](retrieval-eval-guide.md) - 2026-11-07
 - [Retrieval Tuning Guide](retrieval-tuning-guide.md) - 2026-11-07
+- [Search gaps - reading gaps and handing it to hewtd](search-gaps-guide.md) - 2026-11-07
 - [The skill loop — learned skills between sessions](skill-loop.md) - 2026-11-03
 - [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) - 2026-10-28
-- [Modes Guide](modes-guide.md) - 2026-10-28
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 17 |
+| active | 18 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

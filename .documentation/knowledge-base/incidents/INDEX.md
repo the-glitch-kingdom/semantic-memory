@@ -7,6 +7,7 @@ domains:
 status: active
 last_updated: '0000-00-00'
 version: '1.0.0'
+generated: true
 purpose: Auto-generated chronological index of all incidents in the knowledge base.
 ---
 

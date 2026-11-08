@@ -5,6 +5,7 @@ domains: [troubleshooting]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Complete listing of troubleshooting documentation
 ---
 
@@ -23,9 +24,9 @@ purpose: Complete listing of troubleshooting documentation
 
 ### Guides
 
-| Document | Status | Updated | Words |
-|----------|--------|---------|-------|
-| [Troubleshooting](troubleshooting.md) | active | 2026-10-28 | 5,294 |
+| Document | Status | Updated | Words | Purpose |
+|----------|--------|---------|-------|---------|
+| [Troubleshooting](troubleshooting.md) | active | 2026-10-28 | 5,294 | Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command. |
 
 ## Keywords
 
@@ -33,9 +34,7 @@ This domain covers: troubleshooting, troubleshoot, debug, debugging, issue, issu
 
 ## Related Domains
 
-- [Agents](../agents/) - Expert agent documentation, specialty matrix
-- [Backups](../backups/) - Backup/restore guides, disaster recovery
-- [Plans](../plans/) - Planning documents, roadmaps, proposals
+- [Legacy](../legacy/) - Pre-rebrand substrate docs, kept for history
 
 ---
 

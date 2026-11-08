@@ -5,6 +5,7 @@ domains: [testing]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Complete listing of testing documentation
 ---
 
@@ -23,9 +24,9 @@ purpose: Complete listing of testing documentation
 
 ### Guides
 
-| Document | Status | Updated | Words |
-|----------|--------|---------|-------|
-| [Tests and Validation](tests-and-validation.md) | active | 2026-04-23 | 1,525 |
+| Document | Status | Updated | Words | Purpose |
+|----------|--------|---------|-------|---------|
+| [Tests and Validation](tests-and-validation.md) | active | 2026-04-23 | 1,507 | Test layout, per-file coverage, Phase 1 activation suite, fresh-install validation |
 
 ## Keywords
 
@@ -34,7 +35,6 @@ This domain covers: test, testing, tests, unit, unit-test, integration, integrat
 ## Related Domains
 
 - [Architecture](../architecture/) - System design, AI coach, project registry, patterns
-- [Standards](../standards/) - Coding standards (backend, frontend, database, devops, security)
 - [Changelog](../changelog/) - Release notes per version and phase
 
 ---

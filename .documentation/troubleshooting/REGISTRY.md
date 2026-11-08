@@ -5,6 +5,7 @@ domains: [troubleshooting]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Quick reference for troubleshooting documentation
 ---
 

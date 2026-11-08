@@ -11,10 +11,11 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 ## Status
 
-**v1.14.0** (next release; 1.8.0 is the latest on npm), package `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
+**v1.15.0** (next release; 1.8.0 is the latest on npm), package `@theglitchking/semantic-memory`. Per-version notes are in [CHANGELOG.md](./CHANGELOG.md) and `.documentation/changelog/`. Recent releases:
 
 | Version | What it adds |
 |---|---|
+| **1.15.0** | Usage capture: a PostToolUse hook logs searches, reads and grep fallbacks; `semantic-memory gaps [--json]` reports what the docs missed (hewtd `gaps.v1`); `usage-set` builds an eval set from usage |
 | **1.14.0** | Identifier abstention: a query naming an identifier no doc contains gets `no_strong_match` and `missing_terms` (MCP, CLI and hook) |
 | **1.13.0** | `semantic-memory eval`: measure retrieval on your own vault (question sets, `eval generate`, `--baseline` / `--check` floors with a noise band) |
 | **1.12.0** | Code, table cells and `snake_case` identifiers stay in the indexed text (one-time re-embed on upgrade), pooling and query prompt read from the embedding model's own config (`embedding.pooling`, `embedding.query_prompt`), git decay dates by the last body change |
