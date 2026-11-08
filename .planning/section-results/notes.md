@@ -91,3 +91,16 @@ Full suite: 1 failure, freshness-scale warm start (known load flake), passes alo
 
 ## Eval results: Phase 9 (docs only, code unchanged)
 Docs added: changelog/v1-17-0-section-results.md, KB fact remark-heading-text-drops-inline-code.md; tight edits to what-gets-indexed, mcp-tools-reference, retrieval-tuning-guide, README, CHANGELOG. AGENTS.md regenerated from branch code (only the timestamp differs, tools unchanged, so reverted). `hewtd maintain --quick` ran.
+
+## Release check (main session): no_strong_match cutoff after section chunking
+Real held-out topic negatives flagged fell from 7-8/8 to 5/8 with the heading-trail prefix (cosines of short, prefixed chunks rise). Swept `NO_STRONG_MATCH_BELOW` with a temporary env override (reverted), search_hybrid:
+
+| cutoff | fixture train neg / false flags | real train neg / false flags | fixture held-out neg / ff | real held-out neg / ff |
+|---|---|---|---|---|
+| 0.36 | 11/12, 4/57 | 9/12, 0/27 | 8/8, 5/36 | 5/8, 2/27 |
+| 0.38 | 11/12, 6/57 | 9/12, 0/27 | 8/8, 6/36 | 6/8, 5/27 |
+| 0.40 | 11/12, 8/57 | 9/12, 0/27 | 8/8, 7/36 | 7/8, 5/27 |
+| 0.42 | 11/12, 9/57 | 9/12, 1/27 | 8/8, 9/36 | 7/8, 6/27 |
+| 0.44 | 12/12, 10/57 | 9/12, 2/27 | 8/8, 9/36 | 8/8, 6/27 |
+
+Train gains no negatives until 0.44 while false flags more than double, so the train-chosen value stays 0.36. Only held-out would improve, and it is not tuned on. Answer@1 is identical at every cutoff. The real held-out drop is a stated missed target; the gate keeps negativesSlack 3.
