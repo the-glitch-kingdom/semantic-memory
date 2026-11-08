@@ -65,18 +65,18 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
   - [x] Bump all five version fields, lockfile; offline tarball builds (tarball deferred to release, built from the merge commit)
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Remove trial knobs and sweep scripts; dead-code check over the branch diff. (no sweep scripts or trial knobs found; unexported unused PATH_SEEDS/PATH_MAX)
-- [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review: list reordering for flow, a second identifier detector, unbounded walks, code nodes in the
+- [x] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review: list reordering for flow, a second identifier detector, unbounded walks, code nodes in the
         path, `content[0]` shape changes, constants tuned on held-out.
-  - [ ] Unit: classifier edge cases (handwritten); PPR on a small graph with a known answer, caps respected,
+  - [x] Unit: classifier edge cases (handwritten); PPR on a small graph with a known answer, caps respected,
         deterministic; reading-path ordering with and without an overview.
-  - [ ] Latency: the walk on a synthetic 5k-node / 50k-edge graph under 10 ms; `search_hybrid` p95 ≤ 100 ms on the
+  - [x] Latency: the walk on a synthetic 5k-node / 50k-edge graph under 10 ms; `search_hybrid` p95 ≤ 100 ms on the
         docs-vault eval (#61 check 4).
-  - [ ] Eval: fact-tier @1 not below baseline (#61 check 1); on the multi tier, "#1 + reading_path" ≥ max(#1 + related,
+  - [x] Eval: fact-tier @1 not below baseline (#61 check 1); on the multi tier, "#1 + reading_path" ≥ max(#1 + related,
         @3) on train, held-out reported (#61 check 2; on v1.12 plain @3 was already 0.87 vs #1 + related 0.69 on the
         external blind set, so beating @3 is the real target); classifier accuracy reported (#61 check 3).
-  - [ ] Works without hit-em-with-the-docs: CI with no `.hewtd/graph.json`; doc-only walk (#61 check 5).
-  - [ ] Full suite; known flakes re-run alone and recorded. Answer each #61 acceptance item in notes.md.
+  - [x] Works without hit-em-with-the-docs: CI with no `.hewtd/graph.json`; doc-only walk (#61 check 5).
+  - [x] Full suite; known flakes re-run alone and recorded. Answer each #61 acceptance item in notes.md. (full suite: only the two known load flakes failed, both pass alone)
 - [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New changelog doc under `.documentation/changelog/` (`npx hewtd integrate -a`) and a `CHANGELOG.md` entry
   - [ ] `.documentation/reference/mcp-tools-reference.md`: `mode`, `query_type`, `reading_path`
@@ -99,16 +99,17 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
 
 - Phase 5: seeds clear `NO_STRONG_MATCH_BELOW` (0.36, the existing weak-match line) instead of `RELATED_MIN_CONFIDENCE` (0.5). On fixture train, forced-flow multi `#1 + path` was 9/12 at 0.5, 10/12 at 0.4, 11/12 at 0.3 and 0 (target 10/12); most multi questions have no hit at 0.5, so the path came back empty. Picked from train only, and the value is an existing constant, not a new knob. Held-out was measured, not used.
 - Phase 5: members are PPR x (1 + hybrid score) as planned; seeds are members (via "hit"); other members name the seed (or member) they hang off in `via`. An overview among the top 5 goes first, else an overview next to a seed replaces the last slot; the rest follow the overview's `mdLinks` order, unlinked ones in walk order. No fixture doc has `kind: overview`, so that rule is covered by a unit test only. `section` is `{anchor, trail}` (trail drops the H1 as `sectionFields` does).
-- Phase 5: `reading_path` is attached when the query type is flow and there is at least one seed; the path is not filtered by `status`/`tier`/`domain`/date filters (neighbours that were not hits can fall outside them).
+- Phase 5: `reading_path` is attached when the query type is flow and there is at least one seed. (Phase 9: path members now obey the status/tier/domain/date filters too.)
 
 ## Errors Encountered
+- Phase 9: reading_path ignored status/tier/domain/date filters for non-hit members (Phase 5 had recorded it as a decision); fixed with an `allowed` predicate in the walk skip and a regression test. As shipped (mode auto) the multi-tier #1+path target is NOT met on 3 of 4 splits (forced flow meets it on all 4); the PR states it.
 - Phase 5: known load flakes in the first full `npm test` (freshness-scale warm start, hook-failure Jev-hang, the graph-walk 10 ms wall-clock benchmark once at 11.4 ms); all passed re-run alone.
 - (none yet)
 - Phase 3: unrelated known flake again: hook-failure Jev-hang passed alone. Snapshots updated for the new `mode` arg (tool-surface) and `query_type` (tool-outputs); the v1.16.0 granularity-doc snapshot test ignores `query_type`.
 - Phase 2: hook-failure Jev-hang test flaked under full-suite load and passed alone (known flake). Labels cover the six routing-eval splits (docs, real, code, train and held-out); the other golden files (golden.jsonl, decay, graph, section) are not routing-eval inputs and stay unlabelled.
 
 ## Status
-**Currently in Phase 9** - Validate
+**Currently in Phase 10** - Documentation pass
 
 ---
 

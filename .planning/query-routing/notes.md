@@ -87,3 +87,36 @@ Gates added: docs-eval (train, exact) and real-corpus-eval (train, one case of s
 
 ## Eval results: Phase 6
 Label only. No ranking change, so no eval numbers move. Identifier queries keep #58's entity card on #1 and get no reading_path (path is flow-only); asserted in test/integration/search-payload.test.ts. Stale "x1.3" comment trimmed in src/mcp/tools/search.ts.
+
+## Eval results: Phase 9 (independent review and validation, same run, 2026-11-08)
+**Review (git diff main...HEAD, adversarial).** Checked: no reordering for flow (`shape` only adds fields to #1; payload test asserts equal path order under mode fact vs flow); one identifier detector (`query-type.ts` imports #57's `identifiers()`, adds only PascalCase3+/--flag/name()); walk bounded (maxNodes 300, maxSteps 20, maxDegree 50, tested); code nodes never returned (`walk` filters `isCode`, unit-tested); `content[0]` still a bare array (flags ride on #1); constants not tuned on held-out (classifier rules and the 0.36 seed line chosen on train; the Phase 5 sweep printed held-out beside train for the record, and 0.36 is an existing constant). One real bug found and fixed: **reading_path members that were not hits ignored `status`/`tier`/`domain`/`modifiedAfter`/`modifiedBefore`** (Phase 5 recorded this as a decision; it is a defect, a filtered search could name a doc the filter excludes). `search.ts` now passes an `allowed(path)` predicate into the walk's `skip`; regression test `test/integration/reading-path-filter.test.ts` (fails without the fix: 4 extra neighbours, passes with it). Also made the 5k/50k walk benchmark best-of-9 (it flaked twice under load: 11.4 ms, 304 ms).
+Ticked boxes audited against code: all Phase 2-8 boxes hold (labels on 6 splits, `mode` param, `query_type` on #1 and in the usage event, `GraphBuilder.walk`, `readingPath`, `VectorIndex.bestChunk`, x1.3 comment gone, five version fields 1.18.0).
+
+**#61 acceptance checks** (numbers from `npm run eval` in this run; Phase 2 baseline rows are identical):
+1. Fact-tier @1 (exact+paraphrase+symptom+nofield, search_hybrid), now vs baseline: fixture-train 37/45 vs 37/45, fixture-heldout 22/29 vs 22/29, real-train 14/18 vs 14/18, real-heldout 14/21 vs 14/21. **Met** (the path never reorders; mode fact vs flow give identical @1/@3 in the forced arm).
+2. Multi tier, `#1+reading_path` vs max(`#1+related`, @3):
+
+| split | @3 | #1+related | #1+path as shipped (auto) | #1+path forced flow | verdict |
+|---|---|---|---|---|---|
+| fixture-train | 10/12 | 8/12 | 5/12 | 11/12 | forced met, shipped **not met** |
+| fixture-heldout | 5/7 | 4/7 | 2/7 | 5/7 | forced met, shipped **not met** |
+| real-train | 8/9 | 8/9 | 8/9 | 9/9 | forced met, shipped met (equal) |
+| real-heldout | 5/6 | 6/6 | 4/6 | 6/6 | forced met, shipped **not met** |
+
+   Why: most multi questions are two facts and classify as fact, so they get no path; `related` still rides on them. The gate (train, forced flow) passes. The PR must say the shipped multi-tier target is not met; the path helps only questions classified flow. Held-out values were measured, not used to tune.
+3. Classifier accuracy: train fixture 75/77 = 0.97, real 47/47 = 1.00, code 8/10 = 0.80; held-out fixture 50/52 = 0.96, real 41/43 = 0.95, code 9/10 = 0.90. Reported. Flow recall is thinly tested (4 flow rows on train, 3+1 held-out).
+4. Latency, in-process, search_hybrid limit 8, all golden questions of both splits, 3 passes, modes interleaved per question in one run (`auto` = shipped, `fact` = no path, same as v1.17 work, `flow` = path on every call):
+
+| corpus | mode | n | p50 ms | p95 ms | max ms |
+|---|---|---|---|---|---|
+| fixture | auto | 387 | 3.5 | 7.0 | 20.4 |
+| fixture | fact | 387 | 3.4 | 6.0 | 19.7 |
+| fixture | flow | 387 | 4.0 | 7.8 | 27.1 |
+| real (.documentation) | auto | 270 | 5.6 | 12.6 | 14.7 |
+| real (.documentation) | fact | 270 | 5.5 | 8.1 | 14.8 |
+| real (.documentation) | flow | 270 | 11.8 | 16.4 | 45.6 |
+
+   p95 <= 100 ms: **met** (worst 16.4 ms p95, 45.6 ms max). The path costs about +0.6 ms p50 on the fixture and +6 ms p50 on the real corpus when it runs; the classifier alone is free (auto ~ fact). Walk on 5k nodes / 50k edges: under 10 ms (best of 9, asserted in `test/unit/graph-walk.test.ts`). Idle-ish machine; the 33 ms p95 external-kit figure is a different harness.
+5. Works without hit-em-with-the-docs: **Met.** `test/integration/reading-path-filter.test.ts` asserts the fixture has no `.hewtd/graph.json` and still returns a path on the doc-only graph (and `search-payload.test.ts` builds a path on the same fixture).
+
+**Suite.** lint, build pass; `npm run eval` 125 passed, 5 expected fail. Full `npm test` (run twice): the only failures both times were freshness-scale "warm start under a second" and hook-failure "Jev error or hang" (known load flakes); both pass alone (16/16). Not re-run clean in one pass.
