@@ -68,9 +68,9 @@ built-in eval and #57). Every missed target is stated in the PR.
         question-set format (#56), only searches whose doc was used, split by a deterministic hash of the normalized
         query (`tune` / `heldout`). `eval` picks it up when present.
   - [x] Delete `scripts/retrieval-eval/mine-selection.mjs` and update its doc references. (refs were in retrieval-tuning-guide.md and tests-and-validation.md; the guide now lists usage-set)
-- [ ] Phase 7: Release prep v1.15.0
-  - [ ] Bump all five version fields, `npm install --package-lock-only --ignore-scripts`
-  - [ ] Offline tarball builds (rebuilt from the merge commit with a clean model cache before publishing)
+- [x] Phase 7: Release prep v1.15.0
+  - [x] Bump all five version fields, `npm install --package-lock-only --ignore-scripts`
+  - [x] Offline tarball builds (deferred to release; rebuilt from the merge commit with a clean model cache before publishing)
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove payload-capture scaffolding and debug logging; dead-code check over the branch diff.
 - [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
