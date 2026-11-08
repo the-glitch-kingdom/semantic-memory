@@ -93,8 +93,8 @@ Series step 2. Every missed target is stated in the PR.
         (Done in `splitUndocumented`, used by MCP `shape()` and CLI `openSearch`; `no_strong_match` is still set; `missing_terms` keeps only names found in neither docs nor code.)
 - [x] Phase 8: Release prep v1.16.0
   - [x] Bump all five version fields, lockfile (offline tarball: deferred to release, built from the merge commit)
-- [ ] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove trial knobs and sweep scripts; dead-code check over the branch diff.
+- [x] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove trial knobs and sweep scripts; dead-code check over the branch diff. (none found: no sweep scripts or trial env knobs, no debug logging or commented-out code in the diff; every exported function in code-graph.ts is used by src or tests; the only export used solely in its own file is gitFiles, kept as a small helper)
 - [ ] Phase 10: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review: trusting the export (crash on bad input, `null` counted dead, unknown versions read), git
         at query time or per file, `cites_code` leaking into walks or `related`, CLI/MCP drift in grounding, payload.
@@ -149,7 +149,7 @@ Series step 2. Every missed target is stated in the PR.
 - (none yet)
 
 ## Status
-**Currently in Phase 8** - Release prep v1.16.0 (Phase 7 done: entity cards and `undocumented`)
+**Currently in Phase 10** - Validate (Phases 8-9 done: version 1.16.0, cleanup)
 
 ---
 
