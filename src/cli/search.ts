@@ -9,6 +9,7 @@ import { TextSearch } from "../core/search-text.js";
 import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
+import { missingTerms } from "../core/identifiers.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { decayForDoc, loadDecayConfig, type DecayBlock } from "../core/decay.js";
 import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
@@ -33,6 +34,8 @@ export interface SearchHit {
   /** 0..1 */
   confidence?: number;
   no_strong_match?: true;
+  /** identifiers of the query that no indexed doc contains */
+  missing_terms?: string[];
   /** a server is rebuilding the index this hit came from */
   stale?: true;
   /** present when the note is down-weighted or its age came from a fallback; same block as the MCP tools */
@@ -120,6 +123,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
   const decayConfig = loadDecayConfig(notesPath);
   const decayOf = (path: string) => (decayConfig.enabled && docByPath.get(path) ? decayForDoc(docByPath.get(path)!, decayConfig) : { multiplier: 1 });
   const selfTop = (await readMeta(indexPath))?.bm25SelfTop ?? bm25SelfTop(bm25, docs);
+  const paths = docs.map((d) => d.path).join("\n").toLowerCase();
   const bm25Min = selfTop === null ? null : selfTop * BM25_FRACTION;
   return {
     async search(query, limit = 8) {
@@ -142,7 +146,8 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
           pathClass
         )
       );
-      const weak = isWeak(all, bm25Min);
+      const missing = missingTerms(query, bm25, paths);
+      const weak = isWeak(all, bm25Min) || missing.length > 0;
       const stale = await indexRebuilding(indexPath);
       const ranked = all.slice(0, limit);
 
@@ -153,7 +158,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
         confidence: r.confidence,
         snippet: excerpt(r.matchedChunk ?? r.snippet, query),
         ...(r.matched && { matched: r.matched }),
-        ...(weak && { no_strong_match: true as const }),
+        ...(weak && { no_strong_match: true as const, ...(missing.length && { missing_terms: missing }) }),
         ...(stale && { stale: true as const }),
         ...(decayOf(r.path).block && { decay: decayOf(r.path).block }),
       }));

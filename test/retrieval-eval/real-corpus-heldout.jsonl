@@ -36,3 +36,11 @@
 {"id": "xh20", "tier": "multi", "q": "Tell me everything about how modes work, including the incident one and what is captured when leaving one", "facets": ["Transition capture", "incident mode"]}
 {"id": "xh21", "tier": "multi", "q": "What did the big v1 refactor change in the server layout, and which tools became shims?", "facets": ["organizational refactor", "deprecation shims"]}
 {"id": "xh22", "tier": "multi", "q": "What storage names stay the same after the rebrand, and how is a session finish gated?", "facets": ["Storage layout PRESERVED", "Hard gate semantics"]}
+{"id":"i01","tier":"negative","q":"What is search.rerank.depth_limit by default?","negative_kind":"identifier"}
+{"id":"i02","tier":"negative","q":"When does evict_cold_chunks run?","negative_kind":"identifier"}
+{"id":"i03","tier":"negative","q":"What is CHUNK_REPLAY_BUDGET?","negative_kind":"identifier"}
+{"id":"i04","tier":"negative","q":"What does sealNoteDigest return?","negative_kind":"identifier"}
+{"id":"i05","tier":"negative","q":"How do I use tools/audit/dump_bm25_vocab.py?","negative_kind":"identifier"}
+{"id":"i06","tier":"negative","q":"What does retrieval.fusion.k_const tune?","negative_kind":"identifier"}
+{"id":"i07","tier":"negative","q":"When do I need migrate_sidecar_epoch?","negative_kind":"identifier"}
+{"id":"i08","tier":"negative","q":"What does `purgeShardLedger` remove?","negative_kind":"identifier"}

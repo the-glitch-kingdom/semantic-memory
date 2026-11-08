@@ -9,7 +9,7 @@ import { glob } from "glob";
 import { createServer } from "../../src/mcp/server.js";
 import { cleanupTempDir } from "../setup.js";
 import { gitHistory } from "./git-history.js";
-import { splitGates } from "./gates.js";
+import { splitGates, identifierGate } from "./gates.js";
 import {
   runFacetEval, scoreLinks, invertLinks, facetRank, formatArm, parseGolden, hnswRecall, grepPattern,
   type FacetCase, type ArmFn, type ArmMetrics, type LinkMetrics,
@@ -32,10 +32,13 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   const arms: Record<string, ArmMetrics> = {};
   const heldArms: Record<string, ArmMetrics> = {};
   let heldCases: FacetCase[];
+  const idArms: Record<string, ArmMetrics> = {};
   let recall: number;
   let backlinks: LinkMetrics;
   let forwardlinks: LinkMetrics;
   let cases: FacetCase[];
+  let allCases: FacetCase[];
+  let allHeld: FacetCase[];
   let fullBytes: number;
   const baseline = JSON.parse(readFileSync(join(HERE, "baseline.json"), "utf-8"));
 
@@ -68,7 +71,9 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     client = new Client({ name: "docs-eval", version: "1.0.0" });
     await client.connect(ct);
 
-    cases = parseGolden(await readFile(join(HERE, "golden-docs.jsonl"), "utf-8")) as unknown as FacetCase[];
+    allCases = parseGolden(await readFile(join(HERE, "golden-docs.jsonl"), "utf-8")) as unknown as FacetCase[];
+    const isId = (c: FacetCase) => c.negative_kind === "identifier";
+    cases = allCases.filter((c) => !isId(c));
     const texts = new Map<string, string>();
     for (const p of await glob("**/*.md", { cwd: FIXTURE })) texts.set(p, readFileSync(join(FIXTURE, p), "utf-8"));
     const textOf = (p: string) => texts.get(p) ?? "";
@@ -76,10 +81,13 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     arms.search_semantic = await runFacetEval(cases, tool("search_semantic"), textOf);
     arms.search_hybrid = await runFacetEval(cases, tool("search_hybrid"), textOf);
     arms.search_text = await runFacetEval(cases, text, textOf);
-    heldCases = parseGolden(await readFile(join(HERE, "golden-docs-heldout.jsonl"), "utf-8")) as unknown as FacetCase[];
+    allHeld = parseGolden(await readFile(join(HERE, "golden-docs-heldout.jsonl"), "utf-8")) as unknown as FacetCase[];
+    heldCases = allHeld.filter((c) => !isId(c));
+    idArms["fixture-train"] = await runFacetEval(allCases.filter(isId), tool("search_hybrid"), textOf);
+    idArms["fixture-heldout"] = await runFacetEval(allHeld.filter(isId), tool("search_hybrid"), textOf);
     heldArms.search_semantic = await runFacetEval(heldCases, tool("search_semantic"), textOf);
     heldArms.search_hybrid = await runFacetEval(heldCases, tool("search_hybrid"), textOf);
-    recall = await hnswRecall(tempDir, [...cases, ...heldCases].map((c) => c.q), 24);
+    recall = await hnswRecall(tempDir, [...allCases, ...allHeld].map((c) => c.q), 24);
     fullBytes = (await runFacetEval(cases, tool("search_hybrid", { full: true }), textOf)).meanBytes;
 
     const truth: Record<string, string[]> = JSON.parse(await readFile(join(HERE, "docs-graph-truth.json"), "utf-8"));
@@ -90,6 +98,7 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
     process.stderr.write(
       "\nFacet eval\n" + Object.entries(arms).map(([n, m]) => formatArm(n, m)).join("\n") +
       "\nHeld-out (golden-docs-heldout)\n" + Object.entries(heldArms).map(([n, m]) => formatArm(n, m)).join("\n") +
+      "\nIdentifier negatives (search_hybrid)\n" + Object.entries(idArms).map(([n, m]) => `  ${n}: flagged ${m.negativesFlagged}/${m.negativeTop.length}`).join("\n") +
       `\n  hnsw recall@24 vs exact cosine=${recall.toFixed(3)}` +
       `\n  search_hybrid full:true mean-payload=${fullBytes}B` +
       `\n  forwardlinks precision=${forwardlinks.precision.toFixed(3)} recall=${forwardlinks.recall.toFixed(3)}` +
@@ -131,6 +140,10 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
 
   splitGates("fixture train", () => arms as any, baseline.splits["fixture-train"], KNOWN["fixture-train"], baseline.tiers["fixture-train"]);
   splitGates("fixture held-out", () => heldArms as any, baseline.splits["fixture-heldout"], KNOWN["fixture-heldout"], baseline.tiers["fixture-heldout"]);
+
+  // expected failures until identifier-abstention Phase 4 wires missingTerms into no_strong_match
+  identifierGate("fixture train", () => idArms["fixture-train"]);
+  identifierGate("fixture held-out", () => idArms["fixture-heldout"]);
 
   it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {
     expect(recall).toBeGreaterThanOrEqual(baseline.hnswRecallMin);

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFile, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { splitGates } from "./gates.js";
+import { splitGates, identifierGate } from "./gates.js";
 import { startEval } from "./harness.js";
 import { runFacetEval, formatArm, parseGolden, facetRank, hnswRecall, type FacetCase, type ArmMetrics } from "./eval.js";
 import { glob } from "glob";
@@ -25,20 +25,26 @@ describe("Facet eval (real corpus: .documentation)", () => {
   const splits: Record<string, { cases: FacetCase[]; arms: Record<string, ArmMetrics> }> = {};
   let env: Awaited<ReturnType<typeof startEval>>;
   let recall: number;
+  const idArms: Record<string, ArmMetrics> = {};
+  let allQs: string[] = [];
 
   beforeAll(async () => {
     env = await startEval(DOCS, "sp-real-eval-", (dir) => gitHistory(dir));
     for (const [name, file] of [["real-train", "real-corpus.jsonl"], ["real-heldout", "real-corpus-heldout.jsonl"]] as const) {
-      const cases = parseGolden(await readFile(join(HERE, file), "utf-8")) as unknown as FacetCase[];
+      const all = parseGolden(await readFile(join(HERE, file), "utf-8")) as unknown as FacetCase[];
+      const cases = all.filter((c) => c.negative_kind !== "identifier");
+      allQs.push(...all.map((c) => c.q));
+      idArms[name] = await runFacetEval(all.filter((c) => c.negative_kind === "identifier"), env.tool("search_hybrid"), env.textOf);
       splits[name] = { cases, arms: {
         search_semantic: await runFacetEval(cases, env.tool("search_semantic"), env.textOf),
         search_hybrid: await runFacetEval(cases, env.tool("search_hybrid"), env.textOf),
       } };
     }
-    recall = await hnswRecall(env.dir, Object.values(splits).flatMap((s) => s.cases.map((c) => c.q)), 24);
+    recall = await hnswRecall(env.dir, allQs, 24);
     process.stderr.write(
       "\nReal-corpus facet eval\n" +
       Object.entries(splits).map(([n, s]) => `  ${n}\n` + Object.entries(s.arms).map(([a, m]) => formatArm(a, m)).join("\n")).join("\n") +
+      "\nIdentifier negatives (search_hybrid)\n" + Object.entries(idArms).map(([n, m]) => `  ${n}: flagged ${m.negativesFlagged}/${m.negativeTop.length}`).join("\n") +
       `\n  hnsw recall@24 vs exact cosine=${recall.toFixed(3)}\n\n`
     );
     if (process.env.EVAL_OUT) await writeFile(`${process.env.EVAL_OUT}.real`, JSON.stringify({ splits, recall }, null, 2));
@@ -65,6 +71,10 @@ describe("Facet eval (real corpus: .documentation)", () => {
 
   splitGates("real train", () => splits["real-train"].arms as any, baseline.splits["real-train"], KNOWN["real-train"], baseline.tiers["real-train"]);
   splitGates("real held-out", () => splits["real-heldout"].arms as any, baseline.splits["real-heldout"], KNOWN["real-heldout"], baseline.tiers["real-heldout"]);
+
+  // expected failures until identifier-abstention Phase 4 wires missingTerms into no_strong_match
+  identifierGate("real train", () => idArms["real-train"]);
+  identifierGate("real held-out", () => idArms["real-heldout"]);
 
   // v1.9.0 searched at hnswlib's default ef=10 (recall 0.929 here); VectorIndex.search sets ef >= 100.
   it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {

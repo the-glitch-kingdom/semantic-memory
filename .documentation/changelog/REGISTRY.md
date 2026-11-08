@@ -16,7 +16,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 26 |
+| Documents | 27 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -39,13 +39,13 @@ purpose: Quick reference for changelog documentation
 - [v1.11.0 — graph boost removed, decay age fallback, stale marker](v1-11-0-boost-decay-fallback.md) - 2026-11-07
 - [v1.12.0 — code stays in the indexed text, pooling and query prompt from the model config, git decay by body change](v1-12-0-index-text-pooling-body-dates.md) - 2026-11-07
 - [v1.13.0 - built-in retrieval eval](v1-13-0-builtin-eval.md) - 2026-11-07
-- [v1.9.0 — retrieval and graph quality, index freshness](v1-9-0-retrieval-graph-quality.md) - 2026-11-06
+- [v1.14.0 - identifier abstention](v1-14-0-identifier-abstention.md) - 2026-11-07
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 26 |
+| active | 27 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

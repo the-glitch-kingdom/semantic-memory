@@ -70,3 +70,11 @@
 {"id": "q06", "tier": "symptom", "q": "messages pile up on the queue and nobody is draining them fast enough", "facets": ["exceeds 10,000 messages"]}
 {"id": "q07", "tier": "paraphrase", "q": "What is the longest the pipeline waits before pushing out a partial batch?", "facets": ["TIDEWATCH_FLUSH_MS"]}
 {"id": "q08", "tier": "paraphrase", "q": "Which role may change alert conditions but cannot manage accounts?", "facets": ["engineer: dashboards plus rule editing"]}
+{"id":"i01","tier":"negative","q":"What does the rotate_harbor_keys job do?","negative_kind":"identifier"}
+{"id":"i02","tier":"negative","q":"What is HARBOR_SYNC_WINDOW set to on the gateways?","negative_kind":"identifier"}
+{"id":"i03","tier":"negative","q":"Where is flushTideBuffer called from?","negative_kind":"identifier"}
+{"id":"i04","tier":"negative","q":"How do I run scripts/reconcile_manifests.py?","negative_kind":"identifier"}
+{"id":"i05","tier":"negative","q":"What does gateway.relay.timeout_ms control?","negative_kind":"identifier"}
+{"id":"i06","tier":"negative","q":"When does purge_stale_tracks run?","negative_kind":"identifier"}
+{"id":"i07","tier":"negative","q":"What is the default for BERTH_ALLOC_LIMIT?","negative_kind":"identifier"}
+{"id":"i08","tier":"negative","q":"What does `syncCrewRoster` return?","negative_kind":"identifier"}

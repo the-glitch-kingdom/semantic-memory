@@ -61,6 +61,10 @@ load_priority: 9
 - **Cause:** the top result's confidence is under 0.50. Deep paraphrases score low on cosine (2 of 23 correct #1 answers on the fixture, 4 of 15 on the real corpus). The results are still returned.
 - **Fix:** rephrase with the doc's own words, or read the top result anyway. If it is wrong for your corpus, see the [retrieval tuning guide](../operational/retrieval-tuning-guide.md) to measure it with your own questions.
 
+### A result says `missing_terms` for a name the docs mention
+- **Cause:** the check is an exact token lookup. A doc that writes `some-name` or "some name" does not contain `some_name`, and a name seen only in a doc's title or path is matched on path words only. Very new notes are covered once indexed.
+- **Fix:** search with the doc's own spelling, or add the exact name in a code span to the doc. See the [KB fact](../knowledge-base/facts/path-words-replace-underscores-with-spaces.md) and the [retrieval tuning guide](../operational/retrieval-tuning-guide.md#reading-the-result).
+
 ### A search just after an edit does not show the edit
 - **Cause:** results carry `_meta.stale: true` while the first reconcile after a warm start runs, and a search inside the 2 s reconcile throttle reuses the last pass. A file that is not `.md`, or sits under `node_modules/`, `.git/` or `.semantic-sidekick-index/`, is never indexed.
 - **Fix:** repeat the search after a couple of seconds. Check `get_stats` for `indexState`; call `reindex` to force a full rebuild.
