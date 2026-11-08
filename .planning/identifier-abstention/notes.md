@@ -58,3 +58,6 @@ Review of `git diff main...HEAD` found two real false-flag paths, both fixed in 
 5. PASS. Fixtures and CI have no `.hewtd` export or gaps file; new assertion that identifiers.ts and bm25.ts reference neither `graph.json`, `gaps.json` nor `.hewtd`.
 
 Gates: lint, build clean; npm test 939 passed, 5 expected fail, 1 load flake (hook-failure Jev-hang) that passes alone (14/14); npm run eval 76 passed, 5 expected fail.
+
+## Eval results: Phase 9 (documentation)
+Docs only; code unchanged. Added v1-14-0-identifier-abstention.md (changelog), a KB fact (path words replace `_`), updated mcp-tools-reference, cli-reference, retrieval-tuning-guide, troubleshooting, README, CHANGELOG; AGENTS.md regenerated from branch code (only the timestamp changed). `npm run eval` after the docs: 76 passed, 5 expected fail, no floor moved. Planted identifier terms are absent from every new doc.

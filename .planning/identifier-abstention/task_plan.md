@@ -64,12 +64,12 @@ measured with #56's `eval`. Every missed target is stated in the PR.
   - [x] #57 check 4: every plain-English golden question gets `missingTerms = []` and its flag equals `isWeak` alone.
   - [x] #57 check 5: CI has no export or gaps file; one assertion that #57 reads neither.
   - [x] CLI/MCP parity case with a missing identifier. Full suite; known flakes re-run alone. Answer each #57 item in notes.md.
-- [ ] Phase 9: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New `.documentation/changelog/v1-14-0-identifier-abstention.md` (`npx hewtd integrate -a`); `CHANGELOG.md`
-  - [ ] `.documentation/reference/mcp-tools-reference.md` (`missing_terms`), `.documentation/reference/cli-reference.md`
+- [x] Phase 9: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New `.documentation/changelog/v1-14-0-identifier-abstention.md` (`npx hewtd integrate -a`); `CHANGELOG.md`
+  - [x] `.documentation/reference/mcp-tools-reference.md` (`missing_terms`), `.documentation/reference/cli-reference.md`
         (search output), `.documentation/operational/retrieval-tuning-guide.md`, `.documentation/troubleshooting/troubleshooting.md`
-  - [ ] KB fact (gotcha): BM25 path words replace `_` with spaces, so a file named after an identifier is not a body match
-  - [ ] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
+  - [x] KB fact (gotcha): BM25 path words replace `_` with spaces, so a file named after an identifier is not a body match
+  - [x] `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so `/plan-status` reads COMPLETE
 
 ## Decisions Made
 - `undocumented: [...]` (a name in code but in no doc) is left to #58, which builds the symbol table; #58's plan adds it.
@@ -86,12 +86,13 @@ measured with #56's `eval`. Every missed target is stated in the PR.
 - Phase 4: the 4 identifier gates became real gates here (not Phase 5): once wired they pass 8/8, and `npm test` fails on an `it.fails` that passes. The detector is deterministic (no HNSW), so no slack is needed. The hook says "Not in the docs: `X`" in place of the weak-match line when `missing_terms` is present; its existing score gate (top score < 0.35 injects nothing) is unchanged.
 
 ## Errors Encountered
+- Phase 9 full run: freshness-scale, hook-failure Jev-hang and skill-eval concurrency failed under load; all pass alone (38/38). `hewtd integrate -a` stripped the KB fact's id/confidence/provenance fields and misfiled it under troubleshooting; moved to knowledge-base/facts and restored them.
 - Phase 8 review: false flags on `__init__.py`/`_helper` (edge `_` stripped before lookup) and slash prose (`TCP/IP`); fixed with tests. Full run: hook-failure Jev-hang flake, passes alone.
 - Phase 5 full run: freshness-scale and skill-eval concurrency failed under load, both pass alone; lint, build, eval clean.
 - Phase 3 full run: freshness-scale and hook-failure (Jev-hang) failed under load, both pass alone; lint, build, eval (72 passed, 9 expected fail) clean.
 
 ## Status
-**Currently in Phase 9** - Documentation
+**COMPLETE** - all phases done
 
 ---
 

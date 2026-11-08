@@ -55,6 +55,7 @@ here before grepping it), which Claude Code loads at session start even while to
 Vector similarity search over chunk embeddings.
 **Args:** `{ query, limit?=10, full?=false, modifiedAfter?, modifiedBefore?, status?, tier?, domain? }`
 **v1.9.0:** vector only (no lexical fusion, no graph boost); same `confidence`, `no_strong_match`, excerpt and `full` as `search_hybrid`.
+**v1.14.0:** `search_hybrid` and `search_semantic` also set `no_strong_match: true` and `missing_terms: [...]` on every result when the query names an identifier (snake_case, ALL_CAPS with an underscore, camelCase, a path, a dotted name, a backticked span) that no indexed doc contains. Read it as "not in the docs" (it may exist in code). `content[0]` stays a plain JSON array; the fields ride on the items. See [retrieval tuning guide](../operational/retrieval-tuning-guide.md#reading-the-result).
 **Use when:** conceptual/semantic queries ("authentication flows").
 **Skip when:** looking for exact strings — prefer `search_text`.
 **v1.3+ confidence decay:** results are down-weighted by time since `last_verified`. Decayed results carry a `decay: { multiplier, age_days, effective_half_life, reason }` block. See [configuration-reference.md](./configuration-reference.md#decay-vaultschemayml).

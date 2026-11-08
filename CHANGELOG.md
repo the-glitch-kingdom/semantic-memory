@@ -2,6 +2,22 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.14.0] - 2026-11-07 — Identifier abstention
+
+Issue #57. Full numbers and misses: `.documentation/changelog/v1-14-0-identifier-abstention.md`.
+
+### Added
+
+- **`missing_terms`** on search results (`search_hybrid`, `search_semantic`, `search` CLI, prompt hook): identifiers in the query (snake_case, ALL_CAPS with an underscore, camelCase, paths, dotted names, backticked spans) that no indexed doc contains. `no_strong_match` is now the score rule OR a missing identifier; plain-English queries are unchanged. The hook says "Not in the docs".
+
+### Measured
+
+Identifier negatives flagged, fixture train / held-out and real train / held-out: 3/8, 3/8, 2/8, 1/8 before; 8/8 in all four after. No false flags on any answerable golden question.
+
+### Missed targets
+
+External blind-set run (4 of 7 / at most 2 of 34) not done; bare ALL_CAPS and `*.py` not detected; offline tarball 922 MB (cause unknown) and to be rebuilt from the merge commit.
+
 ## [1.13.0] - 2026-11-07 — Built-in retrieval eval
 
 Issue #56. Full numbers and misses: `.documentation/changelog/v1-13-0-builtin-eval.md`.
