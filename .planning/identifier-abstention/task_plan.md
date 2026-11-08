@@ -49,8 +49,8 @@ measured with #56's `eval`. Every missed target is stated in the PR.
         flags unchanged, plain-English questions unchanged. Gates for the new negatives; raise the negatives floors.
 - [x] Phase 6: Release prep v1.14.0
   - [x] Bump all five version fields, lockfile; offline tarball builds
-- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Dead-code check over the branch diff.
+- [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Dead-code check over the branch diff (no unused locals, debug output or scratch files in the diff; `identifiers()` stays exported for #58/#61 per Decisions).
 - [ ] Phase 8: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review: false-flag paths (path words, code spans, table cells, `__init__`), a second detector,
         wording that claims non-existence, CLI/MCP drift.
@@ -90,7 +90,7 @@ measured with #56's `eval`. Every missed target is stated in the PR.
 - Phase 3 full run: freshness-scale and hook-failure (Jev-hang) failed under load, both pass alone; lint, build, eval (72 passed, 9 expected fail) clean.
 
 ## Status
-**Currently in Phase 6** - Release prep v1.14.0
+**Currently in Phase 8** - Validate
 
 ---
 
