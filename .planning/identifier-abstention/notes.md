@@ -33,3 +33,12 @@
 - Wired: `shape()` (MCP), `openSearch` (CLI), hook line, tool description, server instructions, tool-surface snapshot.
 - search_hybrid identifier negatives flagged: fixture 8/8 train and held-out, real 8/8 train and held-out (was 3/8, 3/8, 2/8, 1/8). Gates flipped from it.fails to real; target 5/8 met. Held-out measured, not tuned on.
 - npm run eval: 76 passed, 5 expected fail (the old ones). Parity test: MCP and CLI agree on flag and missing_terms; plain English carries none. Load flakes (freshness-scale, hook-failure Jev-hang) pass alone.
+
+## Eval results: Phase 5
+Measured with `npm run eval` (2 runs); held-out never used to pick anything.
+- Identifier negatives flagged (search_hybrid), before (shipped) -> after: fixture-train 3/8 -> 8/8, fixture-heldout 3/8 -> 8/8, real-train 2/8 -> 8/8, real-heldout 1/8 -> 8/8. Target 5/8 (ceil(8*4/7)) met in all four.
+- Floor raised: identifierGate now requires every case (8/8) with no slack, since missingTerms is BM25-only and deterministic (no HNSW); it is a real gate (no `it.fails` left in the identifier gates).
+- Main negatives (12 train / 8 held-out, identifier cases excluded from these arms): fixture hybrid 11/12 train, 8/8 held-out; real hybrid 9/12 train, 8/8 held-out; unchanged vs the pre-plan gates, which have no per-count floor beyond the existing slack.
+- Answerable false flags: unchanged. Hybrid flagged-answerable counts from the eval output (answerable N): fixture-train 4, fixture-heldout 6, real-train 1, real-heldout 2; all within the existing gates, which pass. Plain-English: no missing_terms on any golden question (Phase 3 unit proof).
+- Answer@1 floors unchanged (retrieval untouched): all split/tier floors in baseline.json still pass; none raised, none dropped.
+- Remaining `5 expected fail` are older known-gap gates, not this plan's.

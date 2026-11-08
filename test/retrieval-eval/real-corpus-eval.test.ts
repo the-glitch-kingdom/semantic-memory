@@ -73,8 +73,8 @@ describe("Facet eval (real corpus: .documentation)", () => {
   splitGates("real held-out", () => splits["real-heldout"].arms as any, baseline.splits["real-heldout"], KNOWN["real-heldout"], baseline.tiers["real-heldout"]);
 
   // expected failures until identifier-abstention Phase 4 wires missingTerms into no_strong_match
-  identifierGate("real train", () => idArms["real-train"], false);
-  identifierGate("real held-out", () => idArms["real-heldout"], false);
+  identifierGate("real train", () => idArms["real-train"]);
+  identifierGate("real held-out", () => idArms["real-heldout"]);
 
   // v1.9.0 searched at hnswlib's default ef=10 (recall 0.929 here); VectorIndex.search sets ef >= 100.
   it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {

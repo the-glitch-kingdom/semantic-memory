@@ -39,10 +39,10 @@ export function splitGates(label: string, get: () => { search_semantic: ArmMetri
   });
 }
 
-/** Identifier negatives (`negative_kind: identifier`) run apart from the main arms so they leave the old gates alone. `known` runs it as an expected failure until identifier-abstention ships. */
-export function identifierGate(label: string, get: () => ArmMetrics, known: boolean) {
-  (known ? it.fails : it)(`${label}: at least 4 of 7 identifier negatives are flagged no_strong_match`, () => {
+/** Identifier negatives (`negative_kind: identifier`) run apart from the main arms so they leave the old gates alone. missingTerms is deterministic (BM25, no HNSW), so the floor is every case: measured 8/8 in all four splits. */
+export function identifierGate(label: string, get: () => ArmMetrics) {
+  it(`${label}: every identifier negative is flagged no_strong_match`, () => {
     const m = get();
-    expect(m.negativesFlagged).toBeGreaterThanOrEqual(Math.ceil((m.negativeTop.length * 4) / 7));
+    expect(m.negativesFlagged).toBeGreaterThanOrEqual(m.negativeTop.length);
   });
 }
