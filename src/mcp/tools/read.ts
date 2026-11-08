@@ -3,23 +3,31 @@ import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { appendEvent, wasRecentlySearched } from "../../core/telemetry.js";
 import { extractSection } from "../../core/section.js";
+import { PRIMARY_LABEL, registryFor } from "../sources.js";
 
 export function registerReadTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
     "read_note",
-    "Read a note by path. Pass `section` (a heading name, or `#anchor` as search results give it) to read only that heading's section instead of the whole file — cheaper when you only need one part (e.g. a dossier's 'Knobs' section).",
-    { path: z.string(), section: z.string().optional().describe("Heading name or #anchor — return only that section (heading through the next same-or-higher heading).") },
-    async ({ path, section }) => {
-      const content = await ctx.crud.read(path);
+    "Read a note by path. Pass `source` (the label a federated search result carries) to read from that source instead of this vault. Pass `section` (a heading name, or `#anchor` as search results give it) to read only that heading's section instead of the whole file — cheaper when you only need one part (e.g. a dossier's 'Knobs' section).",
+    { path: z.string(), source: z.string().optional().describe("Source label from a federated search result; omit for this vault."), section: z.string().optional().describe("Heading name or #anchor — return only that section (heading through the next same-or-higher heading).") },
+    async ({ path, source, section }) => {
+      let crud = ctx.crud;
+      if (source && source !== PRIMARY_LABEL) {
+        const hit = (await registryFor(ctx).open()).ready.find((h) => h.label === source);
+        if (!hit) return ctx.textResponse(`Unknown or unavailable source "${source}". Use the label a search result carries.`);
+        crud = hit.ctx.crud;
+      }
+      const content = await crud.read(path);
       // Selection telemetry (v1.3.1): reading a note is a "this got used" signal —
       // the valuable, low-frequency half of the log. Awaited so it's durably
       // recorded before we return; appendEvent never throws and respects the opt-out,
       // so it can add tiny latency but can never fail the read.
+      const notePath = source && source !== PRIMARY_LABEL ? `${source}:${path}` : path; // as search_hybrid logs a source's hits
       if (ctx.options.telemetry !== false) await appendEvent(ctx.notesPath, {
         kind: "selection",
-        note_path: path,
+        note_path: notePath,
         via: "read_note",
-        correlated: wasRecentlySearched(ctx.notesPath, path),
+        correlated: wasRecentlySearched(ctx.notesPath, notePath),
       }, undefined, ctx.telemetryDir);
       if (section) {
         const extracted = extractSection(content, section);

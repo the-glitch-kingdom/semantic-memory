@@ -12,6 +12,8 @@ import { readingPath } from "../../core/reading-path.js";
 import { sectionFields } from "../../core/section-fields.js";
 import { excerpt, isWeak, standaloneConfidence, withConfidence, NO_STRONG_MATCH_BELOW, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
+import { mergeSources, type SourceRun } from "../../core/federation-merge.js";
+import { PRIMARY_LABEL, registryFor } from "../sources.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
 /**
@@ -92,7 +94,60 @@ type Granularity = "section" | "doc";
 const granularityArg = z.enum(["section", "doc"]).optional().default("section").describe("\"section\" (default) adds the best section's `section` trail, `anchor` and `code` refs to each result; \"doc\" returns whole-doc results without them");
 const fullArg = z.boolean().optional().default(false).describe("Return the whole result (full matched chunk, frontmatter fields) instead of the trimmed default");
 
+interface HybridArgs {
+  query: string;
+  limit: number;
+  modifiedAfter?: string;
+  modifiedBefore?: string;
+  status?: string;
+  tier?: string;
+  domain?: string;
+  full: boolean;
+  granularity: Granularity;
+  queryType: QueryType;
+}
+
+/** One context's whole hybrid pipeline (both arms, boosts, coverage, filters, rerank) from a ready query embedding, up to the page: `ranked` before fold, `items` after. */
+async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnType<ServerContext["getVectorIndex"]>>, queryEmbed: Float32Array, a: HybridArgs) {
+  const { query, limit, modifiedAfter, modifiedBefore, status, tier, domain } = a;
+  await ctx.refreshUsageBoost();
+  // Boosts act on each arm's own scores, before fusion.
+  const adjust = (rs: SearchResult[]) =>
+    rs
+      .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
+      .sort((a, b) => b.score - a.score);
+  const semanticResults = adjust(vectorIndex.search(queryEmbed, limit * 3));
+  let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
+  hybrid = ctx.filterPathClass(hybrid);
+
+  hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);
+  const docByPath = ctx.getDocByPath();
+  if (status) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.status === status);
+  if (tier) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.tier === tier);
+  if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
+
+  if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
+  // path members that were not hits must pass the same filters as the hits
+  const allowed = (p: string) => {
+    const d = docByPath.get(p);
+    return (!status || d?.status === status) && (!tier || d?.tier === tier) && (!domain || !!d?.domains?.includes(domain)) && ctx.applyDateFilter([{ path: p }], modifiedAfter, modifiedBefore).length > 0;
+  };
+  return { hybrid, allowed };
+}
+
+async function hybridSearch(ctx: ServerContext, vectorIndex: NonNullable<ReturnType<ServerContext["getVectorIndex"]>>, queryEmbed: Float32Array, a: HybridArgs) {
+  const { hybrid, allowed } = await hybridRanked(ctx, vectorIndex, queryEmbed, a);
+  const items = shape(ctx, hybrid, a.query, a.limit, a.full, ctx.bm25Min(), a.granularity, a.queryType, (p) => vectorIndex.bestChunk(p, queryEmbed), allowed);
+  return { ranked: hybrid, items };
+}
+
+/** Trailing text block (like the stale marker) for skipped or stale sources; content[0] stays the plain JSON array. */
+function respond(res: { content: { type: "text"; text: string }[] }, notes: string[], stale = false) {
+  return { content: notes.length ? [...res.content, { type: "text" as const, text: notes.join("\n") }] : res.content, ...(stale && { _meta: { stale: true } }) };
+}
+
 export function registerSearchTools(server: McpServer, ctx: ServerContext): void {
+  const sources = registryFor(ctx);
   server.tool(
     "search_semantic",
     "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. `full: true` returns whole chunks and frontmatter fields. Each result also carries its best section: `section` (heading trail), `anchor` (heading anchor, hewtd's rules) and `code` (up to 3 code refs in the section); `granularity: \"doc\"` leaves them out.",
@@ -181,7 +236,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). `full: true` returns whole chunks and frontmatter fields. Each result also carries its best section: `section` (heading trail), `anchor` (heading anchor, hewtd's rules) and `code` (up to 3 code refs in the section); `granularity: \"doc\"` leaves them out.",
+    "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). `full: true` returns whole chunks and frontmatter fields. Each result also carries its best section: `section` (heading trail), `anchor` (heading anchor, hewtd's rules) and `code` (up to 3 code refs in the section); `granularity: \"doc\"` leaves them out. With `federation.sources` configured, one search covers this vault and every source; when two or more answer, each result carries `source` (pass it to read_note) and skipped or stale sources are named in a trailing text block.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -201,31 +256,27 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       }
 
       const queryEmbed = await ctx.embedder.embedQuery(query);
-      await ctx.refreshUsageBoost();
-      // Boosts act on each arm's own scores, before fusion.
-      const adjust = (rs: SearchResult[]) =>
-        rs
-          .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
-          .sort((a, b) => b.score - a.score);
-      const semanticResults = adjust(vectorIndex.search(queryEmbed, limit * 3));
-      let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
-      hybrid = ctx.filterPathClass(hybrid);
+      const args: HybridArgs = { query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity, queryType: mode === "auto" ? classifyQuery(query) : mode };
+      const { ready, notes } = await sources.open();
+      if (ready.length === 0) {
+        const { items } = (await hybridSearch(ctx, vectorIndex, queryEmbed, args))!;
+        await logSearch(ctx, "search_hybrid", query, items);
+        return respond(ctx.textResponse(JSON.stringify(items, null, 2)), notes);
+      }
 
-      hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);
-      const docByPath = ctx.getDocByPath();
-      if (status) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.status === status);
-      if (tier) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.tier === tier);
-      if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
-
-      if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
-      // path members that were not hits must pass the same filters as the hits
-      const allowed = (p: string) => {
-        const d = docByPath.get(p);
-        return (!status || d?.status === status) && (!tier || d?.tier === tier) && (!domain || !!d?.domains?.includes(domain)) && ctx.applyDateFilter([{ path: p }], modifiedAfter, modifiedBefore).length > 0;
-      };
-      const enriched = shape(ctx, hybrid, query, limit, full, ctx.bm25Min(), granularity, mode === "auto" ? classifyQuery(query) : mode, (p) => vectorIndex.bestChunk(p, queryEmbed), allowed);
-      await logSearch(ctx, "search_hybrid", query, enriched);
-      return ctx.textResponse(JSON.stringify(enriched, null, 2));
+      // Federated: one query embedding, each source ranked by its own pipeline, then merged. A source that is not ready
+      // is skipped (reported in `notes`), so the primary alone answers exactly as it does without federation.
+      await Promise.all(ready.map((h) => h.ctx.ensureFresh()));
+      const runs: SourceRun[] = [{ label: PRIMARY_LABEL, weight: 1, bm25Min: ctx.bm25Min(), ...(await hybridSearch(ctx, vectorIndex, queryEmbed, args))! }];
+      for (const h of ready) {
+        const vi = h.ctx.getVectorIndex();
+        const run = vi && (await hybridSearch(h.ctx, vi, queryEmbed, args));
+        if (run) runs.push({ label: h.label, weight: h.weight, bm25Min: h.ctx.bm25Min(), ...run });
+      }
+      const items = mergeSources(runs, limit);
+      const staleNotes = ready.filter((h) => h.ctx.isStale()).map((h) => `[federation: source "${h.label}" is stale, an older index is answering while it refreshes]`);
+      await logSearch(ctx, "search_hybrid", query, items.map((r) => (r.source && r.source !== PRIMARY_LABEL ? { ...r, path: `${r.source}:${r.path}` } : r)));
+      return respond(ctx.textResponse(JSON.stringify(items, null, 2)), [...notes, ...staleNotes], staleNotes.length > 0);
     }
   );
   // the one tool kept out of Claude Code's tool search, so a session can call it without looking it up first (v1.7.2)

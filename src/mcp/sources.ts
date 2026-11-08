@@ -31,6 +31,13 @@ function unreadable(path: string): string | undefined {
   }
 }
 
+/** Label of the server's own vault in `source` fields and `read_note`. */
+export const PRIMARY_LABEL = "primary";
+
+const registries = new WeakMap<ServerContext, SourceRegistry>();
+/** The one registry per server context, shared by the search and read tools. */
+export const registryFor = (primary: ServerContext): SourceRegistry => registries.get(primary) ?? (registries.set(primary, createSourceRegistry(primary)), registries.get(primary)!);
+
 export function createSourceRegistry(primary: ServerContext): SourceRegistry {
   let handles: Promise<SourceHandle[]> | null = null;
   const skipped = new Map<string, string>(); // label -> reason, fixed at first open

@@ -29,3 +29,17 @@ Config only; no retrieval change. `npm run eval` green (14 files, 125 passed, 5 
 Plumbing only; no retrieval change. `npm run eval` green (14 files, 125 passed, 5 expected fail); fixture train/heldout @1 9/9 @3 9/9 unchanged.
 Integration: test/integration/federation-sources.test.ts (source built under primary index dir, source tree mtimes unchanged,
 no index dir in source, missing and chmod 000 paths each reported once, shared embedder).
+
+## Eval results: Phase 4
+Calibration chosen on TRAIN only (docs-vault train questions from golden-docs.jsonl with one facet, mapped to the docs holding the facet, 44 questions; plus the 14 questions of golden.jsonl for test/fixtures/vault; 58 total; both orientations, so each fixture is primary once, weight 1). found@1 / found@3 with the expected path AND source:
+
+| calibration | docs primary + vault source | vault primary + docs source |
+|---|---|---|
+| raw fused | 45 / 53 | 39 / 47 |
+| BM25 / selfTop (capped 1) | **46 / 54** | **46 / 54** |
+| RRF | 36 / 52 | 11 / 49 |
+
+Chosen: selfTop. It is also the only one that does not depend on which vault is primary. The two others were removed.
+Held-out (golden-docs-heldout.jsonl, 29 single-facet questions, docs-vault answers, vault as distractor; measured once per arm, not used to choose): selfTop 22 / 26, raw 21 / 25 (docs primary), 18 / 19 (vault primary), RRF 22 / 24 and 0 / 22. The cross-source held-out set is Phase 5.
+Single-source: test/integration/single-source-snapshot.test.ts compares 10 search_hybrid calls on docs-vault with a snapshot taken from the v1.18.0 code before the extraction (numbers within 1e-4, everything else exact, one content block, no `source`). Real-corpus and fixture eval numbers unchanged (npm run eval: 14 files, 125 passed, 5 expected fail).
+Tests: test/unit/federation-merge.test.ts (5), test/integration/federated-search.test.ts (4: skipped source in trailing block, labels from both sources, read_note source, per-source order, nothing written into a source).
