@@ -49,8 +49,8 @@ is stated in the PR.
         source weight, and RRF. Merge so each source keeps its own order.
   - [x] `related` from #1's own source graph; `no_strong_match` only when every source is weak by its own `bm25Min`;
         stale if any source is stale; `read_note` takes `source`; telemetry paths logged as `label:path`.
-- [ ] Phase 5: Eval fixture
-  - [ ] Two sources (`test/fixtures/docs-vault` + `test/fixtures/vault`) and a cross-source question set whose expected
+- [x] Phase 5: Eval fixture
+  - [x] Two sources (`test/fixtures/docs-vault` + `test/fixtures/vault`) and a cross-source question set whose expected
         paths carry their source; train and held-out halves.
 - [ ] Phase 6: Release prep v1.19.0
   - [ ] Bump all five version fields, lockfile; offline tarball builds
@@ -103,13 +103,16 @@ is stated in the PR.
 
 - Phase 4: `hybridRanked(ctx, vectorIndex, queryEmbed, args)` holds the pipeline up to the filtered, reranked list; `hybridSearch` adds `shape`. Federated path runs it per ready source, merges pages in `src/core/federation-merge.ts` (k-way, each source's order kept, key = fused score with BM25 rescaled by the source's selfTop capped at 1, times weight). The primary's `source` label is `primary`; `read_note` accepts `source` (omitted or `primary` = this vault). Source hits are logged as `label:path`, the primary's unchanged. `source` appears only when 2+ sources answered; with none ready the path is the old code with an optional trailing note block. Stale source: note in the trailing block plus `_meta.stale`. Calibration losers (raw, RRF) were deleted after the sweep; the sweep script is in /tmp only.
 
+- Phase 5: `test/retrieval-eval/federation-eval.test.ts` runs docs-vault (primary) + vault (source "vault") against each alone; questions in `golden-federation.jsonl` (train, 21) and `golden-federation-heldout.jsonl` (20), expected = any-of (source, path). Gates are relative (found@3 above either alone; per-source @1 >= alone - 1), so they carry the one-case slack and need no baseline.json entry. Written before running; no question was changed after seeing results. The Phase 8 eval item is satisfied by this test (p95 with 3 sources and memory remain Phase 8).
+
 ## Errors Encountered
+- Phase 5: full-suite hook-failure Jev budget failed once under load (4911 ms vs 3000); passed alone (14/14). Known flake.
 - Phase 4: `tool-surface` golden snapshot changed on purpose (`read_note` `source`, `search_hybrid` description); updated with `-u`. Full-suite flakes freshness-scale warm start and hook-failure Jev budget failed under load, passed alone (16/16).
 - Phase 2: hook-failure "Jev error or hang" budget test failed once under full-suite load (3161 ms vs 3000); passed alone (14/14). Known flake.
 - Phase 3: full-suite freshness-scale warm start (5269 ms) and hook-failure Jev budget (7174 ms) failed under load; both passed alone (16/16). Known flakes.
 
 ## Status
-**Currently in Phase 5** - eval fixture
+**Currently in Phase 6** - release prep v1.19.0
 
 ---
 

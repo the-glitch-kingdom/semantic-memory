@@ -43,3 +43,13 @@ Chosen: selfTop. It is also the only one that does not depend on which vault is 
 Held-out (golden-docs-heldout.jsonl, 29 single-facet questions, docs-vault answers, vault as distractor; measured once per arm, not used to choose): selfTop 22 / 26, raw 21 / 25 (docs primary), 18 / 19 (vault primary), RRF 22 / 24 and 0 / 22. The cross-source held-out set is Phase 5.
 Single-source: test/integration/single-source-snapshot.test.ts compares 10 search_hybrid calls on docs-vault with a snapshot taken from the v1.18.0 code before the extraction (numbers within 1e-4, everything else exact, one content block, no `source`). Real-corpus and fixture eval numbers unchanged (npm run eval: 14 files, 125 passed, 5 expected fail).
 Tests: test/unit/federation-merge.test.ts (5), test/integration/federated-search.test.ts (4: skipped source in trailing block, labels from both sources, read_note source, per-source order, nothing written into a source).
+
+## Eval results: Phase 5
+Fixture: docs-vault (primary) + vault (source "vault"); test/retrieval-eval/federation-eval.test.ts. found@k with source-qualified paths (train 21 cases, held-out 20; measured once, nothing tuned):
+
+| split | joint federated @1 / @3 | docs alone @1 / @3 | vault alone @1 / @3 | primary-own federated @1 vs alone | vault-own federated @1 vs alone |
+|---|---|---|---|---|---|
+| train | 17 / 20 of 21 | 11 / 12 | 8 / 8 | 10 vs 10 | 7 vs 8 |
+| held-out | 16 / 20 of 20 | 10 / 13 | 8 / 8 | 9 vs 10 | 6 vs 7 |
+
+Federated found@3 beats either alone on both splits; per-source @1 is within one case of alone. Misses: train 1 of 21 at @3, held-out 0.
