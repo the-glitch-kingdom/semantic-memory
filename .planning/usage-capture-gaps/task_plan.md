@@ -37,15 +37,15 @@ built-in eval and #57). Every missed target is stated in the PR.
   - [x] Capture one real PostToolUse payload each for an MCP `search_hybrid`, `read_note`, `Read`, `Grep`, `Glob` and a
         Bash grep (debug hook or `SIDEKICK_DEBUG=1`), redact them, and store them as test fixtures. Record the
         `tool_response` shape of MCP tools in notes.md before writing the parser.
-- [ ] Phase 3: Usage log module (`src/core/usage-log.ts`)
-  - [ ] Log at `<repoRoot>/.claude/.semantic-memory/usage.jsonl`, one per project. Every line has `"v":1`. Events:
+- [x] Phase 3: Usage log module (`src/core/usage-log.ts`)
+  - [x] Log at `<repoRoot>/.claude/.semantic-memory/usage.jsonl`, one per project. Every line has `"v":1`. Events:
         `search {ts, session, id, server, tool, query, results[≤20 vault-relative paths], weak?}`,
         `use {ts, session, search, server, path, rank|null, via}`, `fallback {ts, session, search, via, scope}`.
         Rotate to `.1` past 5 MB.
-  - [ ] `parseSearchResponse` (string, `[{text}]`, `{content:[…]}`; `[]` for the indexing message; ignores the
+  - [x] `parseSearchResponse` (string, `[{text}]`, `{content:[…]}`; `[]` for the indexing message; ignores the
         trailing `[stale: …]` block), `matchSearch` (same session, 10-minute window, the newest search whose results
         hold the doc, else the newest), `computeGaps`, `usageEvalSet`.
-  - [ ] Unit tests for each, including session isolation, the window edge and the stale block.
+  - [x] Unit tests for each, including session isolation, the window edge and the stale block.
 - [ ] Phase 4: The hook (`hooks/usage-capture.js`, second PostToolUse entry in `hooks/hooks.json`)
   - [ ] Matcher `Read|Grep|Glob|Bash|mcp__.*semantic-.*__(search_hybrid|search_semantic|search_text|read_note)`
         (server names matched by suffix, so plugin-provided servers match).
@@ -131,10 +131,11 @@ built-in eval and #57). Every missed target is stated in the PR.
   held-out usage and blind-set @1 do not drop; and a decision on the old query-independent `usage_boost`.
 
 ## Errors Encountered
+- Phase 3: full suite had the 2 known load flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. `usageEvalSet` emits tier `paraphrase` (FacetCase needs a tier). Fallback `scope` is `vault` | `repo`; the hook (Phase 4) decides which.
 - Phase 2: no errors. Live capture succeeded on the second try (first used a library file as the server entry).
 
 ## Status
-**Currently in Phase 3** - usage log module
+**Currently in Phase 4** - the hook
 
 ---
 
