@@ -71,8 +71,8 @@ built-in eval and #57). Every missed target is stated in the PR.
 - [x] Phase 7: Release prep v1.15.0
   - [x] Bump all five version fields, `npm install --package-lock-only --ignore-scripts`
   - [x] Offline tarball builds (deferred to release; rebuilt from the merge commit with a clean model cache before publishing)
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove payload-capture scaffolding and debug logging; dead-code check over the branch diff.
+- [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove payload-capture scaffolding and debug logging; dead-code check over the branch diff. (Nothing to remove: Phase 2 used temp files outside the repo, fixtures are test inputs, console.log lines are CLI output; only unused-outside exports are the UseEvent/FallbackEvent/Gap types, kept as part of the module's typed surface.)
 - [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review of `git diff main...HEAD`: any path that writes `selection` events, doc text or tool
         responses in the log, unredacted queries in the export, hook work before the cheap exits, hewtd references.
@@ -137,7 +137,7 @@ built-in eval and #57). Every missed target is stated in the PR.
 - Phase 2: no errors. Live capture succeeded on the second try (first used a library file as the server entry).
 
 ## Status
-**Currently in Phase 7** - release prep v1.15.0
+**Currently in Phase 9** - validation
 
 ---
 
