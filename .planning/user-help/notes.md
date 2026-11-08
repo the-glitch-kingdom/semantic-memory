@@ -67,3 +67,15 @@ Topic commands run in a temp vault: healthcheck (needs installed plugin), serve 
 
 ## Eval results: Phase 5-6
 No retrieval code changed. Version 1.20.0 in package.json, both marketplace.json fields, plugin.json, AGENTS.md frontmatter, lockfile. Offline tarball deferred to release. Dead-code check: none found. Gate: lint, build green; npm test had 2 known load flakes (freshness-scale warm start, hook-failure Jev-hang), both pass alone; eval 132 passed, 5 expected fail.
+
+## Eval results: Phase 7
+No retrieval code changed; `npm run eval`: 132 passed, 5 expected fail. `npm test`: 1154 passed, 5 expected fail, 1 flake (hook-failure Jev-hang), passes alone.
+
+Review findings and fixes:
+- Unknown topic only dumped the index; now `closestTopics` suggests up to 3 ("embeder" -> embedder, "federted" -> federated-search). Tested.
+- New test/unit/help-coverage.test.ts: coverage of every CLI command (from `--help`), MCP tool (inventory) and schema key (default schema + federation, embedding) by a topic or a reasoned exemption; drift of every `semantic-memory` command and flag (checked against `<sub> --help`), slash commands, scripts, doc files, MCP pseudo-call tool names and param keys, and dotted schema keys.
+- New test/integration/help-topics-e2e.test.ts: add-index (`serve --reindex`, `serve --stats` on a second tree) and federated-search (`install-schema`, uncomment the block, server, `search_hybrid` items carry the label) followed in temp dirs; the slash command runs the CLI help. Both topics worked as written.
+- Render parity: CLI == MCP == renderHelp already tested in help-topics.test.ts; the slash command delegates to the CLI.
+
+Goal items: task-shaped help from CLI, MCP and /help (done, one source); coverage and drift kept current by tests (done); hewtd reconcile uses semantic search via `search --paths` (verified Phase 4).
+Not checked: hewtd-search, eval, gaps commands are not re-run end to end here (done in Phase 4); `npx hewtd` commands are not drift-checked; tool coverage is by group exemption, not per tool.

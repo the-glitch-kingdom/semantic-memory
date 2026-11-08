@@ -64,12 +64,12 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
   - [x] Bump all five version fields, lockfile; offline tarball builds (versions and lockfile done; tarball deferred to release, built from the merge commit)
 - [x] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Dead-code check over the branch diff. (No dead code: every new export is used; no debug logging or scratch files. Left the stale printToolList alone, it predates this branch.)
-- [ ] Phase 7: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Coverage test: every CLI command, MCP tool and schema key is covered by a topic (or explicitly exempted)
-  - [ ] Drift test: every command, flag and key a topic names exists
-  - [ ] CLI, MCP and slash-command output render the same topic; unknown topic suggests the closest ones
-  - [ ] The "add another index" and "federated search" topics followed step by step in a temp project work end to end
-  - [ ] Full suite; known flakes re-run alone. Answer each goal item in notes.md.
+- [x] Phase 7: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Coverage test: every CLI command, MCP tool and schema key is covered by a topic (or explicitly exempted)
+  - [x] Drift test: every command, flag and key a topic names exists
+  - [x] CLI, MCP and slash-command output render the same topic; unknown topic suggests the closest ones
+  - [x] The "add another index" and "federated search" topics followed step by step in a temp project work end to end
+  - [x] Full suite; known flakes re-run alone. Answer each goal item in notes.md.
 - [ ] Phase 8: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] Changelog doc and `CHANGELOG.md`; `.documentation/reference/cli-reference.md`, `.documentation/reference/mcp-tools-reference.md`;
         `README.md` points at `help`; `npx hewtd maintain --quick`; regenerate AGENTS.md; tick the last boxes so
@@ -79,17 +79,19 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 1. Resolved: TypeScript objects in `src/core/help/topics.ts` (type-checked; the coverage and drift tests read them directly).
 
 ## Decisions Made
+- Phase 7: unknown topics list up to 3 closest (edit distance within a third of the word, over id/alias words) before the full index. Coverage exemptions (CLI commands, tool groups, schema keys) live in test/unit/help-coverage.test.ts, each with a reason; a stale exemption fails the test.
 - Phase 4: `search --paths` prints unique `hit.path` values (vault-relative, the form hewtd matches against its docs-relative index); the config template uses `npx semantic-memory` (resolves from node_modules/.bin in a project with the package). The hewtd-search topic links cli-reference.md until Phase 8 documents `--paths` there.
 - Phase 2: all 15 topics are written now with real commands (summary/steps/commands/verify/doc); Phase 4 re-checks each command in a temp vault and fills out detail. `hewtd-search` names `search --paths`, which Phase 4 adds. Matching: exact id/alias, else shared-word score (id/alias word 3, title word 1), ties return several; stop words include search/doc/docs because nearly every topic mentions them.
 - Planned after the series so it documents the final surface; the coverage and drift tests keep it current afterwards.
 
 ## Errors Encountered
+- Phase 7: full runs had load flakes (freshness-scale warm start, hook-failure Jev-hang 4775 ms vs 3000); both pass alone. My drift test timed out under load (5 s default, ~20 CLI spawns): help output cached per subcommand and timeout set to 60 s.
 - Phase 3: first full `npm test` had 2 load flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. Tool-count tests (44 -> 45, read-only 20 -> 21) and the tool-surface snapshot updated for the new `help` tool: intended, not a floor change.
 - Phase 4: one load flake (hook-failure Jev-hang, 3827 ms vs 3000) in the full run; passes alone.
 - Phase 4: topic claims corrected after running them: decay `git` is already the default (not something to set); `lint --strict` is not a federation check (exits 1 on a vault of docs without `status`), removed; `eval --check` exits 1 without a baseline, so `--baseline` is a step; `healthcheck` only works from a project with the plugin installed; `search`/`eval` need a built index (`serve --reindex`).
 
 ## Status
-**Currently in Phase 7** - validate (Phases 5-6 done: version 1.20.0 in all five fields + lockfile, cleanup found nothing)
+**Currently in Phase 8** - documentation pass (Phase 7 done: coverage, drift, parity, closest-topic suggestions, add-index and federated-search e2e)
 
 ---
 

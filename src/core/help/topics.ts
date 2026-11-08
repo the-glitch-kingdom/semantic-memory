@@ -162,6 +162,27 @@ export function findTopics(words: string): HelpTopic[] {
   return scored.filter((x) => x.s === top).map((x) => x.t);
 }
 
+const editDistance = (a: string, b: string): number => {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    row = next;
+  }
+  return row[b.length];
+};
+
+/** Topics with a name word within about a third of a typo of a query word, nearest first (at most 3). */
+export function closestTopics(words: string): HelpTopic[] {
+  const q = tokens(words).filter((w) => !STOP.has(w) && w.length > 2);
+  return TOPICS.map((t) => {
+    const names = [t.id, ...t.aliases].flatMap(tokens);
+    let d = Infinity;
+    for (const w of q) for (const n of names) if (editDistance(w, n) <= Math.floor(Math.max(w.length, n.length) / 3)) d = Math.min(d, editDistance(w, n));
+    return { t, d };
+  }).filter((x) => x.d < Infinity).sort((a, b) => a.d - b.d).slice(0, 3).map((x) => x.t);
+}
+
 const md = (f: HelpFormat) => f === "markdown";
 
 export function renderTopic(t: HelpTopic, f: HelpFormat): string {
@@ -193,7 +214,7 @@ export function renderHelp(words: string | undefined, f: HelpFormat): string {
   if (!words?.trim()) return renderIndex(f);
   const hits = findTopics(words);
   if (hits.length === 1) return renderTopic(hits[0], f);
-  if (!hits.length) return `No help topic matches "${words}".\n\n${renderIndex(f)}`;
-  const list = hits.map((t) => (md(f) ? `- \`${t.id}\`: ${t.title}` : `  ${t.id.padEnd(18)} ${t.title}`)).join("\n");
+  const list = (hits.length ? hits : closestTopics(words)).map((t) => (md(f) ? `- \`${t.id}\`: ${t.title}` : `  ${t.id.padEnd(18)} ${t.title}`)).join("\n");
+  if (!hits.length) return `No help topic matches "${words}".\n\n${list ? `Closest:\n\n${list}\n\n` : ""}${renderIndex(f)}`;
   return `"${words}" matches more than one topic:\n\n${list}`;
 }
