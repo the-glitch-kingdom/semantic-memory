@@ -50,8 +50,8 @@ Series step 2. Every missed target is stated in the PR.
         export for this repo with `npx hewtd index` in a scratch git copy (never in the repo: it rewrites INDEX.md files)
         and keep a redacted, trimmed copy as a fixture. Questions and gates (train/held-out) for the acceptance checks, and a "top-3 docs citing no
         missing references" metric in the eval. `startEval` takes a vault-subfolder argument. Record the baseline.
-- [ ] Phase 3: Extract code refs (`indexer.ts`, `types.ts`)
-  - [ ] `codeRefs?: string[]` per doc from inline code spans and links to non-`.md` targets (resolved from the doc's
+- [x] Phase 3: Extract code refs (`indexer.ts`, `types.ts`)
+  - [x] `codeRefs?: string[]` per doc from inline code spans and links to non-`.md` targets (resolved from the doc's
         folder, `../` allowed). Fenced blocks are not used (too noisy). `INDEX_SCHEMA_VERSION` 7 → 8 (re-parse only;
         chunk text unchanged, nothing re-embedded; test it).
 - [ ] Phase 4: `src/core/code-graph.ts`
@@ -124,7 +124,7 @@ Series step 2. Every missed target is stated in the PR.
   This differs from the contract's wording on purpose.
 - No new `code_to_docs` / `doc_to_code` tools: `backlinks` / `forwardlinks` accept files and symbols.
 - `undocumented` (from #57) is added here, where the symbol table exists.
-- Schema 8 is a re-parse only.
+- Schema 8 is a re-parse only. `codeRefs` holds raw inline-span text (no whitespace, <= 120 chars) plus non-`.md` link targets normalised against the doc folder (`../` kept, trailing `/` dropped); deciding which are files/symbols is Phase 4's job. Proven by `index-upgrade.test.ts` (schema 7 cache: `embedBatch` never called, `codeRefs` appear in `docs.cache.json`).
 - Phase 2 fixture (`test/fixtures/code-graph-vault/`): the vault is `.documentation/` inside a small repo (scripts, `.hewtd/graph.json` v1,
   `truth.json` = hand-written ground truth for dead and drifted refs). 12 twin topics (6 drift, 6 dead; the clean twin alternates a/b),
   3 identifier docs (`guards.sh` cited by three), 3 plain docs, 4 undocumented scripts. Train/held-out split by topic.
@@ -139,7 +139,7 @@ Series step 2. Every missed target is stated in the PR.
 - (none yet)
 
 ## Status
-**Currently in Phase 3** - extract code refs (Phase 2 done: fixture, exports, questions, metric and baseline in place)
+**Currently in Phase 4** - `src/core/code-graph.ts` (Phase 3 done: `codeRefs` extracted, schema 8)
 
 ---
 

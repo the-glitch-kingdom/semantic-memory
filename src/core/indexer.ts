@@ -15,7 +15,7 @@ const DOCS_CACHE_FILE = "docs.cache.json";
 const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
-export const INDEX_SCHEMA_VERSION = 7; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed)
+export const INDEX_SCHEMA_VERSION = 8; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed); 8: codeRefs (re-parse only, chunk text unchanged)
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -105,6 +105,7 @@ export class Indexer {
 
     const wikilinks = this.extractWikilinks(tree);
     const mdLinks = this.extractMarkdownLinks(tree, relativePath);
+    const codeRefs = this.extractCodeRefs(tree, relativePath);
     const tags = this.extractTags(content, frontmatter);
     const headers = this.extractHeaders(tree);
     const plainText = this.stripMarkdown(content);
@@ -159,6 +160,7 @@ export class Indexer {
       frontmatter,
       wikilinks,
       mdLinks,
+      ...(codeRefs.length > 0 && { codeRefs }),
       tags,
       headers,
       chunks: hidden ? [] : chunks,
@@ -230,6 +232,33 @@ export class Indexer {
           try { decoded = decodeURIComponent(url); } catch { /* keep the raw text */ }
           const target = posix.normalize(posix.join(posix.dirname(sourcePath), decoded));
           if (target.endsWith(".md") && !target.startsWith("..")) out.add(target);
+        }
+      }
+      for (const child of node.children ?? []) walk(child);
+    };
+    walk(tree);
+    return [...out];
+  }
+
+  /**
+   * What a doc says about code: inline code spans, and links to non-`.md` targets resolved from the doc's folder
+   * (`../` kept, code lives outside the vault). Fenced blocks are skipped (too noisy). Spans are raw text; deciding
+   * which are files or symbols needs the repo, so that is the code graph's job. shortcut: a span with spaces
+   * (a command line) is dropped, not split into tokens.
+   */
+  extractCodeRefs(tree: any, sourcePath: string): string[] {
+    const out = new Set<string>();
+    const walk = (node: any) => {
+      if (node.type === "inlineCode" && typeof node.value === "string") {
+        const v = node.value.trim();
+        if (v && v.length <= 120 && !/\s/.test(v)) out.add(v);
+      } else if ((node.type === "link" || node.type === "definition") && typeof node.url === "string") {
+        const url = node.url.split(/[#?]/)[0];
+        if (url && !/^([a-z][a-z0-9+.-]*:|\/)/i.test(url)) {
+          let decoded = url;
+          try { decoded = decodeURIComponent(url); } catch { /* keep the raw text */ }
+          const target = posix.normalize(posix.join(posix.dirname(sourcePath), decoded));
+          if (!target.endsWith(".md") && target !== ".") out.add(target.replace(/\/$/, ""));
         }
       }
       for (const child of node.children ?? []) walk(child);

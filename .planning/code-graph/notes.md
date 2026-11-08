@@ -54,3 +54,7 @@ Per tier answer@1 (hybrid): train drift 1/3, dead 1/3, identifier 2/2, plain 1/1
 Twin pairs are a coin flip today, as designed. Floors recorded in `baseline.json` under `codeGraph` (test allows one case of slack); the known gate
 "answer above its twin in every pair" runs as `it.fails` and turns into a real gate when Phases 5-6 make it pass.
 The real-corpus eval copies only `.documentation`, so a local `.hewtd/graph.json` does not change its numbers; the existing floors are untouched.
+
+## Eval results: Phase 3
+No retrieval numbers: `codeRefs` is parse-only, chunk text is unchanged, so `npm run eval` is unchanged. Re-parse proof: `test/integration/index-upgrade.test.ts` schema 7 to 8 embeds 0 chunks.
+- Phase 3 full run: freshness-scale warm start and hook-failure Jev-hang failed under load, both passed alone.

@@ -191,3 +191,33 @@ describe("schema 6 to 7 (chunk text keeps code)", () => {
     }
   }, 180_000);
 });
+
+describe("schema 7 to 8 (codeRefs)", () => {
+  it("re-parses every doc and embeds nothing", async () => {
+    const dir = await createTempVault();
+    try {
+      await writeFile(join(dir, "code-note.md"), "# Checks\n\nRun `scripts/ci/guards.sh` before every release.\n");
+      await createServer(dir, { waitForReady: true });
+      const meta = await readJson(dir, "meta.json");
+      // what v1.15.0 left behind: schema 7, docs without codeRefs
+      const docs = (await readJson(dir, "docs.cache.json") as Record<string, unknown>[]).map(({ codeRefs, ...d }) => d);
+      await writeFile(idx(dir, "docs.cache.json"), JSON.stringify(docs));
+      await writeFile(idx(dir, "meta.json"), JSON.stringify({ ...meta, schemaVersion: 7 }));
+
+      const embedded: string[] = [];
+      const real = Embedder.prototype.embedBatch;
+      vi.spyOn(Embedder.prototype, "embedBatch").mockImplementation(async function (this: Embedder, texts, onProgress) {
+        embedded.push(...texts);
+        return real.call(this, texts, onProgress);
+      });
+      await createServer(dir, { waitForReady: true });
+      expect((await readJson(dir, "meta.json")).schemaVersion).toBe(INDEX_SCHEMA_VERSION);
+      const note = (await readJson(dir, "docs.cache.json") as { path: string; codeRefs?: string[] }[]).find((d) => d.path === "code-note.md");
+      expect(note?.codeRefs).toEqual(["scripts/ci/guards.sh"]);
+      expect(embedded).toEqual([]);
+    } finally {
+      vi.restoreAllMocks();
+      await cleanupTempDir(dir);
+    }
+  }, 180_000);
+});

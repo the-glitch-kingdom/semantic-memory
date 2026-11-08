@@ -6,6 +6,8 @@ export interface IndexedDocument {
   wikilinks: string[];
   /** vault-relative targets of markdown `[text](x.md)` links; absent in caches from before schemaVersion 2 */
   mdLinks?: string[];
+  /** inline code spans and non-`.md` link targets (vault-relative, `../` kept); absent in caches from before schemaVersion 8 */
+  codeRefs?: string[];
   tags: string[];
   headers: string[];
   chunks: string[];
