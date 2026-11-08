@@ -37,7 +37,7 @@ describe("E2E: stdio MCP server", () => {
 
   it("should connect and list tools", async () => {
     const { tools } = await client.listTools();
-    expect(tools.length).toBe(44);
+    expect(tools.length).toBe(45);
     const names = tools.map((t) => t.name);
     expect(names).toContain("search_semantic");
     expect(names).toContain("create_note");

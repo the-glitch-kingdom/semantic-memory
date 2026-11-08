@@ -617,6 +617,15 @@ program
   });
 
 program
+  .command("help [topic...]")
+  .description("Task-shaped help: no topic lists them, or pass an id or words (commander's --help still lists flags)")
+  .action(async (topic: string[]) => {
+    const { renderHelp } = await import("../core/help/topics.js");
+    console.log(renderHelp(topic.join(" "), "text"));
+    process.exit(0);
+  });
+
+program
   .command("serve", { isDefault: true })
   .description("Start the MCP server (default command)")
   .requiredOption("--notes <path>", "Path to markdown notes directory")

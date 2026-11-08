@@ -56,3 +56,6 @@ Maps to the plan's 13 required topics plus `hewtd-search` (Phase 4 item); `add-i
 
 ## Eval results: Phase 2
 No retrieval change; no eval numbers. Added test/unit/help-topics.test.ts (9 tests: unique ids/aliases, doc files exist, matching incl. the plan's six task phrases, rendering).
+
+## Eval results: Phase 3
+No retrieval code changed; `npm run eval` 132 passed, 5 expected fail. Tool surface 44 -> 45 (read-only 21). `help` is in the minimal (outage) surface via registerSystemTools.

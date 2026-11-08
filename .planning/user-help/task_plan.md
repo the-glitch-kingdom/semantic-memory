@@ -47,10 +47,10 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
   - [x] Topics in one source with id, title, aliases, summary, steps, commands, verify, doc link; a renderer for plain
         text (CLI), markdown (command and MCP)
   - [x] `help` with no topic lists topics grouped by task; `help <words>` matches by id, alias or title words
-- [ ] Phase 3: Surfaces
-  - [ ] CLI `semantic-memory help [topic]` (commander's own `--help` stays for flags)
-  - [ ] MCP tool `help({topic?})` in the inventory and the tool-surface snapshot
-  - [ ] `commands/help.md` slash command that runs the CLI (the hewtd pattern)
+- [x] Phase 3: Surfaces
+  - [x] CLI `semantic-memory help [topic]` (commander's own `--help` stays for flags)
+  - [x] MCP tool `help({topic?})` in the inventory and the tool-surface snapshot
+  - [x] `commands/help.md` slash command that runs the CLI (the hewtd pattern)
 - [ ] Phase 4: Write the topics
   - [ ] `semantic-memory search --paths`: one vault-relative doc path per line (no JSON), so hit-em-with-the-docs'
         `reconcile.search_command` can use our search. hewtd (2.21.0, `src/core/reconcile/search.ts`) splits the
@@ -83,10 +83,11 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 - Planned after the series so it documents the final surface; the coverage and drift tests keep it current afterwards.
 
 ## Errors Encountered
+- Phase 3: first full `npm test` had 2 load flakes (freshness-scale warm start, hook-failure Jev-hang); both pass alone. Tool-count tests (44 -> 45, read-only 20 -> 21) and the tool-surface snapshot updated for the new `help` tool: intended, not a floor change.
 - (none yet)
 
 ## Status
-**Currently in Phase 3** - surfaces (Phase 2 done: src/core/help/topics.ts with 15 topics, findTopics, renderHelp)
+**Currently in Phase 4** - write the topics (Phase 3 done: CLI `help`, MCP `help` tool, commands/help.md)
 
 ---
 

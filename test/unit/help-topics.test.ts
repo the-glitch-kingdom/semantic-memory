@@ -38,3 +38,28 @@ describe("task phrases from the plan", () => {
     ["check the install", "healthcheck"],
   ])("%s", (q, id) => expect(findTopics(q).map((t) => t.id)).toContain(id));
 });
+
+describe("help surfaces", () => {
+  it("CLI and MCP tool render the same topic source", async () => {
+    const { execFileSync } = await import("node:child_process");
+    const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+    const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
+    const { createServer } = await import("../../src/mcp/server.js");
+    const { createTempVault, cleanupTempDir } = await import("../setup.js");
+    const dir = await createTempVault();
+    try {
+      const server = await createServer(dir, { watch: false, waitForReady: false });
+      const [ct, st] = InMemoryTransport.createLinkedPair();
+      await server.connect(st);
+      const client = new Client({ name: "help", version: "1.0.0" });
+      await client.connect(ct);
+      const r: any = await client.callTool({ name: "help", arguments: { topic: "federated search" } });
+      expect(r.content[0].text).toBe(renderHelp("federated search", "markdown"));
+      await client.close();
+      const out = execFileSync("node", ["bin/semantic-memory", "help", "federated", "search"], { encoding: "utf8" });
+      expect(out.trim()).toBe(renderHelp("federated search", "text").trim());
+    } finally {
+      await cleanupTempDir(dir);
+    }
+  }, 60_000);
+});

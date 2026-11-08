@@ -65,6 +65,7 @@ export const CURRENT_TOOL_INVENTORY: readonly ToolInventoryEntry[] = [
   // system
   { name: "get_stats", description: "Vault and index statistics.", group: "system" },
   { name: "reindex", description: "Force a full reindex of the vault.", group: "system" },
+  { name: "help", description: "How to use semantic-memory in task terms; no topic lists topics, a topic id or words returns steps and commands.", group: "system" },
   // contract (Phase 3)
   { name: "regenerate_contract", description: "Generate or refresh AGENTS.md at the project root with a managed-block contract.", group: "contract" },
   { name: "inspect_contract", description: "Read-only inspection of AGENTS.md state.", group: "contract" },
