@@ -54,12 +54,12 @@ Series step 2. Every missed target is stated in the PR.
   - [x] `codeRefs?: string[]` per doc from inline code spans and links to non-`.md` targets (resolved from the doc's
         folder, `../` allowed). Fenced blocks are not used (too noisy). `INDEX_SCHEMA_VERSION` 7 → 8 (re-parse only;
         chunk text unchanged, nothing re-embedded; test it).
-- [ ] Phase 4: `src/core/code-graph.ts`
-  - [ ] `loadExport(gitRoot)` per the rules above. Doc keys: use a `docs_root` field if the export has one; otherwise
+- [x] Phase 4: `src/core/code-graph.ts`
+  - [x] `loadExport(gitRoot)` per the rules above. Doc keys: use a `docs_root` field if the export has one; otherwise
         read hewtd's `docs_root` or `docs_path` from `.claude/hit-em-with-the-docs.json` (default `.documentation`) and map keys from
         it to vault paths; else vault-relative. Fewer than half the keys matching gives one warning and the docs
         table is ignored.
-  - [ ] Fallback: `gitFiles(root)` (one `git ls-files -z`) and `gitLastChanged(root, files)` (one `git log`, pathspecs
+  - [x] Fallback: `gitFiles(root)` (one `git ls-files -z`) and `gitLastChanged(root, files)` (one `git log`, pathspecs
         in batches). A span matches a file by exact repo path, or by basename when that name is unique; symbol-like
         spans become symbols with no file. Dead refs only for a link to a missing file or a span with `/` whose
         top-level folder exists. The repo root comes from `repoRoot()` (`skill-evidence.ts`).
@@ -135,11 +135,15 @@ Series step 2. Every missed target is stated in the PR.
 - The "top-3 clean" metric counts the twin of a dead pair even when it is demoted to rank 2, so on a 2-doc twin it barely moves; the drift/dead
   pair gate (`it.fails`, answer above twin) is the sensitive check on the fixture, and the metric is the one to watch on the real tree.
 
+- Phase 4 module API: `loadExport(gitRoot, vaultDir, vaultPaths)` and `fallbackCode(gitRoot, vaultDir, docs)` both return `CodeData {docs: Map<vaultPath, DocCode>, symbols: Map<name, {file?, fileKind?, citedBy[]}>}`; `loadCodeData(vaultDir, docs)` merges them (export wins per doc; null outside git). Only `file` and `symbol` refs are kept; dates are ms.
+- Fallback dead refs are conservative: a `/` in the ref, no match, and the (repo-root) top folder exists. A link to a missing file inside the vault is not reported dead (a raw `codeRefs` string cannot be told from a span); `../` links are resolved to the repo first. Symbol spans: `identifiers()` shape, no `/` or `.`, not ALL_CAPS (env names).
+- One `git ls-files -z`; `git log --name-only` in batches of 500 pathspecs (one for a normal build).
+
 ## Errors Encountered
 - (none yet)
 
 ## Status
-**Currently in Phase 4** - `src/core/code-graph.ts` (Phase 3 done: `codeRefs` extracted, schema 8)
+**Currently in Phase 5** - Graph (Phase 4 done: `src/core/code-graph.ts` with `loadExport`, `fallbackCode`, `loadCodeData`)
 
 ---
 

@@ -58,3 +58,6 @@ The real-corpus eval copies only `.documentation`, so a local `.hewtd/graph.json
 ## Eval results: Phase 3
 No retrieval numbers: `codeRefs` is parse-only, chunk text is unchanged, so `npm run eval` is unchanged. Re-parse proof: `test/integration/index-upgrade.test.ts` schema 7 to 8 embeds 0 chunks.
 - Phase 3 full run: freshness-scale warm start and hook-failure Jev-hang failed under load, both passed alone.
+
+## Eval results: Phase 4
+No retrieval numbers: the module is not wired in yet. `npm run eval` unchanged (83 passed, 7 expected fail). Full `npm test`: only the hook-failure Jev-hang timing failed under load; passed alone.
