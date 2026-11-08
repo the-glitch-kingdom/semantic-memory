@@ -107,7 +107,7 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - `eval generate` is a subcommand of `eval`: commander gives `--notes` to a parent that declares it, so `eval`'s `--notes` is checked in its action (not `requiredOption`) and `enablePositionalOptions()` is set on the program and on `eval`.
 
 ## Errors Encountered
-- Real held-out search_semantic floors 12 -> 11 @1 (split and tier all@1) and 16 -> 15 @3 (tier all@3), set after the workflow. The Phase 10 docs added to `.documentation` (the real-corpus fixture) moved one held-out question: 12 at 76ada0e (two runs, worktree), 11/15 after (three identical runs). No code change; hybrid unchanged at 17/24.
+- Real held-out search_semantic floors 12 -> 11 @1 (split and tier all@1) and 16 -> 15 @3 (tier all@3); the moved question is a paraphrase, so paraphrase 6/10 -> 5/9, set after the workflow. The Phase 10 docs added to `.documentation` (the real-corpus fixture) moved one held-out question: 12 at 76ada0e (two runs, worktree), 11/15 after (three identical runs). No code change; hybrid unchanged at 17/24.
 - Phase 9: `eval --baseline --check` together overwrote the floor before checking; now refused.
 - Stale-index warning (Phase 3 open question) not built: `meta.files` lists commit files, not docs, so a doc-count comparison is wrong (it said 5 vs 38). The server reconciles changed docs on open, so results track the folder.
 
