@@ -210,7 +210,9 @@ export function formatContextBlock(source, query, hits) {
     }
   }
   if (shown.some((h) => h.stale)) lines.push(`\nStale: the index is being rebuilt and an older one answered; re-run the search to confirm.`);
-  if (shown.every((h) => h.no_strong_match)) lines.push(`\nWeak match: these are the nearest notes, verify they answer the prompt before citing them, and say so if they do not.`);
+  const missing = [...new Set(shown.flatMap((h) => h.missing_terms || []))];
+  if (missing.length) lines.push(`\nNot in the docs: ${missing.map((t) => `\`${t}\``).join(", ")}. The notes above do not mention it (it may still exist in code); say so rather than guessing.`);
+  else if (shown.every((h) => h.no_strong_match)) lines.push(`\nWeak match: these are the nearest notes, verify they answer the prompt before citing them, and say so if they do not.`);
   lines.push("");
   lines.push(`Instructions: Apply cite-or-deflect ONLY to project prose lookups (how/why/where does X work here) — cite the hit paths, or say "not in vault". For meta/tool/debug/status/directive/conversational prompts, ignore this block silently. Do NOT narrate "X unrelated" or "not in vault" on those.`);
   lines.push(`</vault-context>`);

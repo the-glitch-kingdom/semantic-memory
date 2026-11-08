@@ -38,12 +38,12 @@ measured with #56's `eval`. Every missed target is stated in the PR.
         Shortcut comment: parts are checked, not adjacency; upgrade to a literal check over `doc.content` if the eval
         shows misses.
   - [x] `Bm25Index.has(term)` (the df map is private today).
-- [ ] Phase 4: Wire it up
-  - [ ] `shape()` in `src/mcp/tools/search.ts`: `weak = isWeak(...) || missing.length > 0`; `missing_terms` on every
+- [x] Phase 4: Wire it up
+  - [x] `shape()` in `src/mcp/tools/search.ts`: `weak = isWeak(...) || missing.length > 0`; `missing_terms` on every
         item (covers `search_hybrid` and `search_semantic`).
-  - [ ] CLI `openSearch` (`src/cli/search.ts`): the same, `missing_terms?: string[]` on `SearchHit`; parity test.
-  - [ ] `hooks/vault-context.js`: say "not in the docs: X" instead of a bare weak-match line.
-  - [ ] Tool description and server instructions; update the tool-surface snapshot.
+  - [x] CLI `openSearch` (`src/cli/search.ts`): the same, `missing_terms?: string[]` on `SearchHit`; parity test.
+  - [x] `hooks/vault-context.js`: say "not in the docs: X" instead of a bare weak-match line.
+  - [x] Tool description and server instructions; update the tool-surface snapshot.
 - [ ] Phase 5: Measure
   - [ ] All splits with `eval`: identifier negatives flagged (target: at least 4 of 7 per split), answerable false
         flags unchanged, plain-English questions unchanged. Gates for the new negatives; raise the negatives floors.
@@ -82,11 +82,13 @@ measured with #56's `eval`. Every missed target is stated in the PR.
 
 - Phase 3: `missingTerms(query, index, paths)` takes the lowercased joined doc paths as a string (the caller already holds the docs); `identifiers(query)` is exported separately for #58/#61. Presence is checked per token (a term with several tokens is missing if any is). DOTTED parts need 2+ chars so `e.g.` is excluded. A `://` word is skipped (URLs).
 
+- Phase 4: the 4 identifier gates became real gates here (not Phase 5): once wired they pass 8/8, and `npm test` fails on an `it.fails` that passes. The detector is deterministic (no HNSW), so no slack is needed. The hook says "Not in the docs: `X`" in place of the weak-match line when `missing_terms` is present; its existing score gate (top score < 0.35 injects nothing) is unchanged.
+
 ## Errors Encountered
 - Phase 3 full run: freshness-scale and hook-failure (Jev-hang) failed under load, both pass alone; lint, build, eval (72 passed, 9 expected fail) clean.
 
 ## Status
-**Currently in Phase 4** - Wire it up
+**Currently in Phase 5** - Measure
 
 ---
 

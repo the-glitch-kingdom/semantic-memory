@@ -28,3 +28,8 @@
 ## Eval results: Phase 3
 - Deterministic (real `Bm25Index` over `Indexer.indexAll`, no embedder), test/unit/identifiers.test.ts: 0 answerable questions get a missing term across golden-docs(+heldout), real-corpus(+heldout), golden-code(+heldout), golden-decay(+heldout), golden. Identifier-bearing answerable cases: docs 3/2, real 3/1, code 6/7 (train/held-out).
 - Detector alone flags all 8/8 identifier negatives in each of the four splits (vs 3/8, 3/8, 2/8, 1/8 for the score rule), so the Phase 5 target of 5/8 is met by missingTerms; remaining risk is wiring. Held-out was measured, not used to choose rules.
+
+## Eval results: Phase 4
+- Wired: `shape()` (MCP), `openSearch` (CLI), hook line, tool description, server instructions, tool-surface snapshot.
+- search_hybrid identifier negatives flagged: fixture 8/8 train and held-out, real 8/8 train and held-out (was 3/8, 3/8, 2/8, 1/8). Gates flipped from it.fails to real; target 5/8 met. Held-out measured, not tuned on.
+- npm run eval: 76 passed, 5 expected fail (the old ones). Parity test: MCP and CLI agree on flag and missing_terms; plain English carries none. Load flakes (freshness-scale, hook-failure Jev-hang) pass alone.

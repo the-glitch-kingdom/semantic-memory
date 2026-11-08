@@ -142,8 +142,8 @@ describe("Facet eval (golden-docs vs docs-vault)", () => {
   splitGates("fixture held-out", () => heldArms as any, baseline.splits["fixture-heldout"], KNOWN["fixture-heldout"], baseline.tiers["fixture-heldout"]);
 
   // expected failures until identifier-abstention Phase 4 wires missingTerms into no_strong_match
-  identifierGate("fixture train", () => idArms["fixture-train"], true);
-  identifierGate("fixture held-out", () => idArms["fixture-heldout"], true);
+  identifierGate("fixture train", () => idArms["fixture-train"], false);
+  identifierGate("fixture held-out", () => idArms["fixture-heldout"], false);
 
   it(`HNSW recall against exact cosine is at least ${baseline.hnswRecallMin}`, () => {
     expect(recall).toBeGreaterThanOrEqual(baseline.hnswRecallMin);

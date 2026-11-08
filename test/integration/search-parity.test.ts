@@ -84,6 +84,21 @@ describe("docs fixture through the MCP client and the CLI search", () => {
     expect(stats.indexState).toBe("ready");
   }, 120_000);
 
+  it("a query naming an identifier the docs lack gets the same flag and missing_terms from MCP and the CLI (#57)", async () => {
+    const searcher = await openSearch(dir);
+    for (const q of ["What does the rotate_harbor_keys job do?", "how do I rotate API keys with fooBarBaz"]) {
+      const mcp = await call("search_hybrid", { query: q, limit: 3 });
+      const cli = await searcher.search(q, 3);
+      expect(mcp.every((r: any) => r.no_strong_match === true && r.missing_terms?.length > 0), q).toBe(true);
+      expect(cli.map((r) => r.missing_terms), q).toEqual(mcp.map((r: any) => r.missing_terms));
+      expect(cli.every((r) => r.no_strong_match === true), q).toBe(true);
+    }
+    const sem = await call("search_semantic", { query: "what does rotate_harbor_keys do", limit: 2 });
+    expect(sem[0].missing_terms).toEqual(["rotate_harbor_keys"]);
+    // plain English with no identifier carries no missing_terms
+    expect((await call("search_hybrid", { query: "how do I rotate API keys", limit: 3 })).some((r: any) => r.missing_terms)).toBe(false);
+  }, 60_000);
+
   it("an off-topic question is marked no_strong_match on every result", async () => {
     const res = await call("search_hybrid", { query: "recipe for sourdough bread starter", limit: 3 });
     expect(res.every((r: any) => r.no_strong_match === true)).toBe(true);

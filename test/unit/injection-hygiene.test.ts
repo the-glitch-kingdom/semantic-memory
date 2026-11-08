@@ -57,6 +57,13 @@ describe("injection hygiene (formatContextBlock)", () => {
     expect(formatContextBlock("prompt", "q", [hit("a.md", 0.5)])).not.toContain("confidence");
   });
 
+  it("names the identifiers the docs lack instead of the bare weak-match line (#57)", () => {
+    const block = formatContextBlock("prompt", "q", [{ ...hit("a.md", 0.5), no_strong_match: true, missing_terms: ["FOO_BAR"] }]);
+    expect(block).toContain("Not in the docs: `FOO_BAR`");
+    expect(block).not.toContain("does not exist");
+    expect(block).not.toContain("Weak match");
+  });
+
   it("drops archive/ hits at any depth before the score gate (v1.7.2)", () => {
     const block = formatContextBlock("prompt", "q", [hit("archive/old.md", 0.9), hit("docs/archive/x.md", 0.8), hit("live.md", 0.5)]);
     expect(block).toContain("live.md");
