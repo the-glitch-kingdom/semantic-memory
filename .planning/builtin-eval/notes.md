@@ -33,3 +33,8 @@
 ## Eval results: Phase 5
 - `eval --baseline` writes `<evaldir>/baseline.json` (version, setHash, corpus {docs, hash of paths+mtimes}, per-arm a1/a3/a8/negFlagged with n, per-case outcome). `--check --band <n>` (default 1) exits 1 when a count drops by more than the band, prints the binomial SD per metric and flipped questions; a changed corpus or set hash only warns.
 - Tests: checkBaseline unit (one-question drop passes, two fail with flipped list, corpus change warns), CLI round trip (check without baseline exits 1, baseline, check passes, inflated baseline fails). Gate: lint, build, npm test 918 passed (hook-failure Jev-hang flaked under load, passes alone), npm run eval 66 passed, 5 expected fail.
+
+## Eval results: Phase 6
+- No retrieval numbers change. `eval generate` (src/core/retrieval-eval/generate.ts, prompts/generate.ts, GENERATOR_VERSION "1") samples docs evenly (non-generated, non-archive), one `runClaude({tools: [], maxTurns: 1})` per doc, validates (regex compiles and matches source, facet matches <= 20% of docs, paraphrase shares <= 1 rare term (df <= max(2, 10% of docs)), negative `absent_terms` absent from every raw doc case-insensitively, multi covers both docs). Cases carry doc, doc_sha256, generator {version, model}, split (parity of first hex digit of sha256(q): 50/50), expected (so found@k/MRR work), negative_kind. Tests: test/retrieval-eval/generate.test.ts with the fake claude (no real claude).
+- Not measured on a real vault (no real claude in tests); the generation quality numbers wait for the Phase 9 release step.
+- Gate: lint, build, npm test 923 passed (freshness-scale and hook-failure flaked under load, pass alone), npm run eval 72 passed, 5 expected fail.

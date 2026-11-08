@@ -55,15 +55,16 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
         paths and mtimes), per-metric counts, per-case outcomes.
   - [x] `--check` exits 1 when a count drops by more than the band (default 1 question); prints the binomial SD and
         the questions that flipped. A changed corpus fingerprint warns, never fails.
-- [ ] Phase 6: Question generator
-  - [ ] `eval generate --notes <dir> [--docs N] [--model]`: deterministic doc sample (evenly spaced over non-hidden,
+- [x] Phase 6: Question generator
+  - [x] `eval generate --notes <dir> [--docs N] [--model]`: deterministic doc sample (evenly spaced over non-hidden,
         non-generated docs); one `runClaude({tools: [], maxTurns: 1})` per doc; prompt in
         `src/core/retrieval-eval/prompts/generate.ts` with `GENERATOR_VERSION`; keyword, paraphrase and negative
         questions; multi-doc questions get one linked neighbour.
-  - [ ] Validation before a case is kept: facet regexes compile, match the source doc and match ≤ ~20% of docs;
+        (Prompt lives in `prompts/generate.ts`, logic in `generate.ts`; sampled docs are asked 5 at a time; output `<evaldir>/generated.jsonl`.)
+  - [x] Validation before a case is kept: facet regexes compile, match the source doc and match ≤ ~20% of docs;
         paraphrase questions share at most one rare term with the doc; negatives return `absent_terms`, checked
         case-insensitively against every raw doc, and are tagged `negative_kind`.
-  - [ ] Stored per case: `doc`, `doc_sha256`, `generator {version, model}`, `split` (50/50 by sha256 of the question).
+  - [x] Stored per case: `doc`, `doc_sha256`, `generator {version, model}`, `split` (50/50 by sha256 of the question).
 - [ ] Phase 7: Release prep v1.13.0
   - [ ] Bump all five version fields, `npm install --package-lock-only --ignore-scripts`; offline tarball builds
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -103,11 +104,13 @@ code. One PR from `feat/builtin-eval`. Series step 1. Every missed target is sta
 - The usage-derived set comes from #59's `usage-set`; this plan does not port `mine-selection.mjs`.
 - "Re-run on every release" means this repo's CI and release checklist; no auto-run for users after update.
 
+- `eval generate` is a subcommand of `eval`: commander gives `--notes` to a parent that declares it, so `eval`'s `--notes` is checked in its action (not `requiredOption`) and `enablePositionalOptions()` is set on the program and on `eval`.
+
 ## Errors Encountered
 - Stale-index warning (Phase 3 open question) not built: `meta.files` lists commit files, not docs, so a doc-count comparison is wrong (it said 5 vs 38). The server reconciles changed docs on open, so results track the folder.
 
 ## Status
-**Currently in Phase 6** - Question generator
+**Currently in Phase 7** - Release prep v1.13.0
 
 ---
 
