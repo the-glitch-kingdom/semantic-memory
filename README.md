@@ -62,21 +62,25 @@ Update an existing install with `claude plugin update semantic-memory@semantic-m
 | `/mode status` | Print the current mode. |
 | `/vault <query>` | Explicit vault query. Always works, even in outage-silence. |
 
-## 44 MCP tools
+## 45 MCP tools
 
 Search (4): `search_semantic`, `search_text`, `search_graph`, `search_hybrid`
 Read (3): `read_note`, `read_multiple_notes`, `list_notes`
 Write (4): `create_note`, `update_note`, `delete_note`, `move_note`
 Metadata (4): `get_frontmatter`, `update_frontmatter`, `manage_tags`, `rename_tag`
 Graph (4): `backlinks`, `forwardlinks`, `graph_path`, `graph_statistics`
-System (2): `get_stats`, `reindex`
+System (3): `get_stats`, `reindex`, `help`
 Patch/Synthesis (9): `apply_patch`, `synthesize_note`, `synthesize_promote`, `ingest_source`, `install_schema`, `verify_note`, `manage_lexicon`, `manage_dossier`, `manage_profile`
 Lint (5): `lint_vault`, plus the deprecated `find_schema_violations`, `find_missing_provenance`, `find_stale`, `find_broken_links`
 Log/Maintenance (3): `log_event`, `log_query`, `regenerate_index`
 Contract (2): `regenerate_contract`, `inspect_contract`
 Sessions (4): `session_start`, `session_run`, `session_finish`, `session_status`
 
-A `--read-only` server (the docs folder) exposes 20: search, read, graph, system, lint, `get_frontmatter` and `log_query`. Full reference: [.documentation/reference/mcp-tools-reference.md](.documentation/reference/mcp-tools-reference.md).
+A `--read-only` server (the docs folder) exposes 21: search, read, graph, system, lint, `get_frontmatter` and `log_query`. Full reference: [.documentation/reference/mcp-tools-reference.md](.documentation/reference/mcp-tools-reference.md).
+
+## Help (v1.20+)
+
+`semantic-memory help`, the MCP tool `help` and `/help` answer how-do-I questions (add an index, federated search, eval, decay and more). `semantic-memory help <topic>` shows one.
 
 ## Federated search (v1.19+)
 

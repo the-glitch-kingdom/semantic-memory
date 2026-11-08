@@ -70,8 +70,8 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
   - [x] CLI, MCP and slash-command output render the same topic; unknown topic suggests the closest ones
   - [x] The "add another index" and "federated search" topics followed step by step in a temp project work end to end
   - [x] Full suite; known flakes re-run alone. Answer each goal item in notes.md.
-- [ ] Phase 8: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] Changelog doc and `CHANGELOG.md`; `.documentation/reference/cli-reference.md`, `.documentation/reference/mcp-tools-reference.md`;
+- [x] Phase 8: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] Changelog doc and `CHANGELOG.md`; `.documentation/reference/cli-reference.md`, `.documentation/reference/mcp-tools-reference.md`;
         `README.md` points at `help`; `npx hewtd maintain --quick`; regenerate AGENTS.md; tick the last boxes so
         `/plan-status` reads COMPLETE
 
@@ -91,7 +91,7 @@ One PR from `feat/user-help`. Built last, so it documents the final feature surf
 - Phase 4: topic claims corrected after running them: decay `git` is already the default (not something to set); `lint --strict` is not a federation check (exits 1 on a vault of docs without `status`), removed; `eval --check` exits 1 without a baseline, so `--baseline` is a step; `healthcheck` only works from a project with the plugin installed; `search`/`eval` need a built index (`serve --reindex`).
 
 ## Status
-**Currently in Phase 8** - documentation pass (Phase 7 done: coverage, drift, parity, closest-topic suggestions, add-index and federated-search e2e)
+**COMPLETE** - all 8 phases done (Phase 8: changelog doc + CHANGELOG, cli/mcp references, README, hewtd maintain, AGENTS.md regenerated)
 
 ---
 

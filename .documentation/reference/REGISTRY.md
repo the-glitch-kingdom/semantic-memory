@@ -28,16 +28,16 @@ purpose: Quick reference for reference documentation
 - [Frontmatter spec — every field, what it does, who reads it](frontmatter-spec.md)
 - [gaps.v1 export - what semantic-memory fills](gaps-format.md)
 - [Hooks Reference](hooks-reference.md)
-- [MCP Tools Reference (44 tools)](mcp-tools-reference.md)
+- [MCP Tools Reference (45 tools)](mcp-tools-reference.md)
 - [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md)
 
 ## Recently Updated
 
+- [CLI Reference](cli-reference.md) - 2026-11-08
+- [MCP Tools Reference (45 tools)](mcp-tools-reference.md) - 2026-11-08
 - [Configuration Reference](configuration-reference.md) - 2026-11-07
 - [gaps.v1 export - what semantic-memory fills](gaps-format.md) - 2026-11-07
-- [MCP Tools Reference (44 tools)](mcp-tools-reference.md) - 2026-11-07
 - [Learned skill format — the skill_loop frontmatter block and its lint rules](skill-format.md) - 2026-11-03
-- [CLI Reference](cli-reference.md) - 2026-10-25
 
 ## By Status
 

@@ -2,6 +2,19 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.20.0] - 2026-11-08 — User help
+
+Details and misses: `.documentation/changelog/v1-20-0-user-help.md`.
+
+### Added
+
+- **`help`**: `semantic-memory help [topic...]`, the MCP tool `help({ topic? })` (45 tools; 21 read-only) and `/help` answer 15 how-do-I topics from one source (`src/core/help/topics.ts`); unknown topics suggest the closest.
+- **`search --paths`**: prints unique doc paths, one per line, for hit-em-with-the-docs `reconcile`'s `search_command`.
+
+### Measured
+
+No retrieval change; `npm run eval` 132 passed, 5 expected fail.
+
 ## [1.19.0] - 2026-11-08 — Federated search
 
 Issue #62. Numbers and misses: `.documentation/changelog/v1-19-0-federated-search.md`; usage: `.documentation/operational/federation-guide.md`.

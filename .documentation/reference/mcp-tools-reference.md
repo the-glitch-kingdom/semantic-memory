@@ -1,19 +1,19 @@
 ---
-title: MCP Tools Reference (44 tools)
+title: MCP Tools Reference (45 tools)
 tier: reference
 domains: [reference]
 audience: [developers]
 tags: [mcp, tools, api, reference, tools-catalog, v1.7.0, v1.7.2]
 status: active
-last_updated: '2026-11-07'
+last_updated: '2026-11-08'
 version: '1.7.2'
-purpose: All 44 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check, the v1.7 opt-in `skills` lint check, and the v1.7.2 server instructions and always-loaded `search_hybrid`.
+purpose: All 45 MCP tools by category with args, use-when/skip-when guidance. Includes v1.1+ contract + session tools, the v1.1 deprecation shims, the v1.3 confidence-decay verify_note tool, the v1.3.1 decay_candidates lint check, the v1.4.0 manage_lexicon tool, and the v1.5.0 manage_dossier + manage_profile tools plus the usage-feedback usage block and decoys lint check, the v1.7 opt-in `skills` lint check, and the v1.7.2 server instructions and always-loaded `search_hybrid`.
 load_priority: 9
 ---
 
 # MCP tools reference
 
-> 44 tools served by the `semantic-memory` MCP server over stdio (write mode); 20 in `--read-only` mode (v1.6.1+; 21 before, when `log_event` was still exposed there). `verify_note`, `manage_lexicon`, `manage_dossier`, `manage_profile` and `log_event` are write-gated. When the plugin is installed and `.mcp.json` is wired, they appear in Claude's tool list as `mcp__semantic-vault__<name>` (the entry name in `.mcp.json` controls the prefix; `semantic-vault` is the convention).
+> 45 tools served by the `semantic-memory` MCP server over stdio (write mode); 21 in `--read-only` mode (v1.20 added `help`; 20 before, v1.6.1+; 21 before that, when `log_event` was still exposed there). `verify_note`, `manage_lexicon`, `manage_dossier`, `manage_profile` and `log_event` are write-gated. When the plugin is installed and `.mcp.json` is wired, they appear in Claude's tool list as `mcp__semantic-vault__<name>` (the entry name in `.mcp.json` controls the prefix; `semantic-vault` is the convention).
 
 Tools fall into 11 categories. Write tools are gated by the `--read-only` flag on the server; read tools are always available.
 
@@ -273,13 +273,16 @@ Read + filter entries.
 Force `INDEX.md` regen.
 **Args:** either `{ directory }` (single dir) or `{ paths: string[] }` (dedupe to affected dirs).
 
-## System (2) — always available
+## System (3) — always available
 
 ### `get_stats`
 Vault + index stats: note count, chunks, embedding dims, graph density, model, indexedAt, state (ready/stale/indexing/empty), and (v1.10.0) `fieldCoverage: { docs, fields }`, the share of searchable notes carrying each indexed frontmatter field.
 
 ### `reindex` — (v1.9.0: forces a full rebuild; day to day the index reconciles itself before searches)  actually a write op but no readOnly gate (rebuilds derived state)
 Force full reindex. Blocks until ready.
+
+### `help` 🆕 v1.20+
+`{ topic? }` — how-do-I topics as markdown. No `topic` lists them all; a topic id, alias or words returns its steps, commands and a check. Same text as `semantic-memory help` and `/help`.
 
 ## Contract (2) — 🆕 v1.1+ — read-only disables both
 

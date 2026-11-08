@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 32 |
+| Documents | 33 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -40,13 +40,13 @@ purpose: Quick reference for changelog documentation
 - [v1.17.0 - section results](v1-17-0-section-results.md) - 2026-11-08
 - [v1.18.0 - query routing](v1-18-0-query-routing.md) - 2026-11-08
 - [v1.19.0 - federated search](v1-19-0-federated-search.md) - 2026-11-08
-- [v1.10.0 — retrieval-ready fields](v1-10-0-retrieval-fields.md) - 2026-11-07
+- [v1.20.0 - user help](v1-20-0-user-help.md) - 2026-11-08
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 32 |
+| active | 33 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
