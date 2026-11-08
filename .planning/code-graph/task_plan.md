@@ -43,8 +43,8 @@ Series step 2. Every missed target is stated in the PR.
   - [x] Re-verify against main @ f616f73 (v1.15.0): claims unchanged; hewtd 2.21.0 ships the export and `graph.v1.schema.json`
   - [x] Post the verification comment on #58
   - [x] Sync main, cut `feat/code-graph`, commit this plan (with the archive move of the previous plan)
-- [ ] Phase 2: Eval first
-  - [ ] Fixture `test/fixtures/code-graph-vault/`: a `.documentation/` vault plus `backend/scripts/check_rls_coverage.py`
+- [x] Phase 2: Eval first
+  - [x] Fixture `test/fixtures/code-graph-vault/`: a `.documentation/` vault plus `backend/scripts/check_rls_coverage.py`
         and `scripts/ci/guards.sh`, backdated history (temp copy, `git-history.ts`), and `.hewtd/graph.json` v1 plus a
         v2 variant (fixture exports validate against hewtd's `graph.v1.schema.json` with Ajv2020). Also generate a **real**
         export for this repo with `npx hewtd index` in a scratch git copy (never in the repo: it rewrites INDEX.md files)
@@ -125,12 +125,21 @@ Series step 2. Every missed target is stated in the PR.
 - No new `code_to_docs` / `doc_to_code` tools: `backlinks` / `forwardlinks` accept files and symbols.
 - `undocumented` (from #57) is added here, where the symbol table exists.
 - Schema 8 is a re-parse only.
+- Phase 2 fixture (`test/fixtures/code-graph-vault/`): the vault is `.documentation/` inside a small repo (scripts, `.hewtd/graph.json` v1,
+  `truth.json` = hand-written ground truth for dead and drifted refs). 12 twin topics (6 drift, 6 dead; the clean twin alternates a/b),
+  3 identifier docs (`guards.sh` cited by three), 3 plain docs, 4 undocumented scripts. Train/held-out split by topic.
+  Other exports live outside the vault in `test/fixtures/code-graph-exports/` (`v2.json`, `real-trimmed.json`).
+- `startEval(source, prefix, prepare, vault)` serves `source/vault`; `gitHistory` now commits `*.{md,py,sh}` including dot dirs (existing fixtures have none).
+- `.gitignore` gets `/.hewtd/` anchored at the root so the fixture's `.hewtd/graph.json` stays tracked.
+- Ajv2020 for the fixture validation comes from the hoisted `ajv` (hewtd's dependency); not added to package.json (test only).
+- The "top-3 clean" metric counts the twin of a dead pair even when it is demoted to rank 2, so on a 2-doc twin it barely moves; the drift/dead
+  pair gate (`it.fails`, answer above twin) is the sensitive check on the fixture, and the metric is the one to watch on the real tree.
 
 ## Errors Encountered
 - (none yet)
 
 ## Status
-**Currently in Phase 2** - eval first
+**Currently in Phase 3** - extract code refs (Phase 2 done: fixture, exports, questions, metric and baseline in place)
 
 ---
 

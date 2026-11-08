@@ -30,3 +30,27 @@
 - **Verdicts:** verified, fields-only, check, stale, archive-candidate, secret, unreviewed.
 - The file is byte-identical for an unchanged tree. Additive fields keep v1; for an unknown version, ignore it with one warning.
 - No doc text or secrets. A missing file means "no export".
+
+## Real export (Phase 2)
+- `npx hewtd index` in a scratch `git clone --local` of this repo @ 75d4e9f (hewtd 2.21.0, ~5.7 s): `.hewtd/graph.json` 451 KB, 95 docs, 281 symbols,
+  `source_commit` = HEAD. Ref kinds: file 712, symbol 901, doc 319, column 115, env 123, command 42. `resolved`: 303 false, 148 null. Verdicts: unreviewed 78,
+  secret 16 (false positives on docs about secrets), archive-candidate 1; none `verified`/`stale`/`check` because nothing went through `/reconcile`, so
+  `unreviewed` is the common verdict. Doc keys docs-relative; no `docs_root` field; no `repo` refs in this repo. `last_verified` is null for all.
+  Many "dead" refs are prose (`crud.update` column kind, paths in other repos), so dead-ref ranking must stay damped.
+- Fixture `test/fixtures/code-graph-exports/real-trimmed.json`: 11 docs (the dead-ref-heavy ones, the archive-candidate, secret ones, the two with
+  `owner_of`/`points_to`), symbols filtered to them, `source_commit` null. Holds paths, names and dates only. Validated by `test/unit/graph-export-fixtures.test.ts`.
+
+## Eval results: Phase 2 (baseline, v1.15.0, no graph code)
+`npx vitest run test/retrieval-eval/graph-eval.test.ts` (fixture `code-graph-vault`, `.hewtd/graph.json` present but unread). 9 answerable + 2 undocumented per split.
+
+| split | arm | answer@1 | answer@3 | clean-top3 share | fully clean top-3 | answer above twin (12 pairs: 6 per split) | undocumented flagged |
+|---|---|---|---|---|---|---|---|
+| train | semantic | 5/9 | 9/9 | 0.778 | 4/9 | 2/6 | 2/2 |
+| train | hybrid | 5/9 | 9/9 | 0.778 | 4/9 | 2/6 | 2/2 |
+| held-out | semantic | 4/9 | 9/9 | 0.778 | 3/9 | 3/6 | 2/2 |
+| held-out | hybrid | 6/9 | 9/9 | 0.778 | 3/9 | 3/6 | 2/2 |
+
+Per tier answer@1 (hybrid): train drift 1/3, dead 1/3, identifier 2/2, plain 1/1; held-out drift 1/3, dead 2/3, identifier 2/2, plain 1/1.
+Twin pairs are a coin flip today, as designed. Floors recorded in `baseline.json` under `codeGraph` (test allows one case of slack); the known gate
+"answer above its twin in every pair" runs as `it.fails` and turns into a real gate when Phases 5-6 make it pass.
+The real-corpus eval copies only `.documentation`, so a local `.hewtd/graph.json` does not change its numbers; the existing floors are untouched.

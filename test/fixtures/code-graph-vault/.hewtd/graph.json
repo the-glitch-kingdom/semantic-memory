@@ -1,0 +1,714 @@
+{
+  "docs": {
+    "operational/audit-export-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/export_audit_log.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/export_audit_log.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "export_audit_log"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/audit-export-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "backend/scripts/export_audit_log_old.py"
+        }
+      ],
+      "verdict": "check"
+    },
+    "operational/backup-pruning-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/prune_backups.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/prune_backups.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "prune_backups"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/backup-pruning-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-11-04",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/jobs/prune_backups.py"
+        },
+        {
+          "code_changed": "2026-11-04",
+          "file": "backend/jobs/prune_backups.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "prune_backups_job"
+        }
+      ],
+      "verdict": "stale"
+    },
+    "operational/cert-renewal-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/renew_certs.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/renew_certs.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "renew_certs"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/cert-renewal-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-11-04",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/jobs/renew_certs.py"
+        },
+        {
+          "code_changed": "2026-11-04",
+          "file": "backend/jobs/renew_certs.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "renew_certs_job"
+        }
+      ],
+      "verdict": "stale"
+    },
+    "operational/ci-guards.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "scripts/ci/guards.sh"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/flag-sync-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/sync_feature_flags.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/sync_feature_flags.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "sync_feature_flags"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/flag-sync-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "backend/scripts/sync_feature_flags_old.py"
+        }
+      ],
+      "verdict": "check"
+    },
+    "operational/geo-cache-warmup-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "backend/scripts/warm_geo_cache_old.py"
+        }
+      ],
+      "verdict": "check"
+    },
+    "operational/geo-cache-warmup-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/warm_geo_cache.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/warm_geo_cache.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "warm_geo_cache"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/holiday-calendar.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "operational/invoice-reminders-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/send_invoice_reminders.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/send_invoice_reminders.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "send_invoice_reminders"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/invoice-reminders-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-11-04",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/jobs/send_invoice_reminders.py"
+        },
+        {
+          "code_changed": "2026-11-04",
+          "file": "backend/jobs/send_invoice_reminders.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "send_invoice_reminders_job"
+        }
+      ],
+      "verdict": "stale"
+    },
+    "operational/metrics-compaction-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "backend/scripts/compact_metrics_old.py"
+        }
+      ],
+      "verdict": "check"
+    },
+    "operational/metrics-compaction-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/compact_metrics.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/compact_metrics.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "compact_metrics"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/office-network.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "operational/onboarding-checklist.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [],
+      "verdict": "verified"
+    },
+    "operational/queue-reindex-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "backend/scripts/reindex_queue_old.py"
+        }
+      ],
+      "verdict": "check"
+    },
+    "operational/queue-reindex-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/reindex_queue.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/reindex_queue.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "reindex_queue"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/release-checklist.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "scripts/ci/guards.sh"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/row-security-audit.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/check_rls_coverage.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/check_rls_coverage.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "check_rls_coverage"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "scripts/ci/guards.sh"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/session-cleanup-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-11-04",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/jobs/reap_sessions.py"
+        },
+        {
+          "code_changed": "2026-11-04",
+          "file": "backend/jobs/reap_sessions.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "reap_sessions_job"
+        }
+      ],
+      "verdict": "stale"
+    },
+    "operational/session-cleanup-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/reap_sessions.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/reap_sessions.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "reap_sessions"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/tenant-offboarding-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "kind": "file",
+          "resolved": false,
+          "target": "backend/scripts/offboard_tenant_old.py"
+        }
+      ],
+      "verdict": "check"
+    },
+    "operational/tenant-offboarding-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/offboard_tenant.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/offboard_tenant.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "offboard_tenant"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/thumbnail-rebuild-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/regen_thumbnails.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/regen_thumbnails.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "regen_thumbnails"
+        }
+      ],
+      "verdict": "verified"
+    },
+    "operational/thumbnail-rebuild-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-11-04",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/jobs/regen_thumbnails.py"
+        },
+        {
+          "code_changed": "2026-11-04",
+          "file": "backend/jobs/regen_thumbnails.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "regen_thumbnails_job"
+        }
+      ],
+      "verdict": "stale"
+    },
+    "operational/webhook-replay-a.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-11-04",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/jobs/replay_webhooks.py"
+        },
+        {
+          "code_changed": "2026-11-04",
+          "file": "backend/jobs/replay_webhooks.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "replay_webhooks_job"
+        }
+      ],
+      "verdict": "stale"
+    },
+    "operational/webhook-replay-b.md": {
+      "body_changed": "2026-01-10",
+      "duplicates": [],
+      "last_verified": "2026-10-08",
+      "owner_of": [],
+      "points_to": [],
+      "refs": [
+        {
+          "code_changed": "2026-02-15",
+          "kind": "file",
+          "resolved": true,
+          "target": "backend/scripts/replay_webhooks.py"
+        },
+        {
+          "code_changed": "2026-02-15",
+          "file": "backend/scripts/replay_webhooks.py",
+          "kind": "symbol",
+          "resolved": true,
+          "target": "replay_webhooks"
+        }
+      ],
+      "verdict": "verified"
+    }
+  },
+  "source_commit": null,
+  "symbols": {
+    "check_rls_coverage": {
+      "cited_by": [
+        "operational/row-security-audit.md"
+      ],
+      "file": "backend/scripts/check_rls_coverage.py"
+    },
+    "compact_metrics": {
+      "cited_by": [
+        "operational/metrics-compaction-b.md"
+      ],
+      "file": "backend/scripts/compact_metrics.py"
+    },
+    "export_audit_log": {
+      "cited_by": [
+        "operational/audit-export-a.md"
+      ],
+      "file": "backend/scripts/export_audit_log.py"
+    },
+    "offboard_tenant": {
+      "cited_by": [
+        "operational/tenant-offboarding-b.md"
+      ],
+      "file": "backend/scripts/offboard_tenant.py"
+    },
+    "prune_backups": {
+      "cited_by": [
+        "operational/backup-pruning-a.md"
+      ],
+      "file": "backend/scripts/prune_backups.py"
+    },
+    "prune_backups_job": {
+      "cited_by": [
+        "operational/backup-pruning-b.md"
+      ],
+      "file": "backend/jobs/prune_backups.py"
+    },
+    "reap_sessions": {
+      "cited_by": [
+        "operational/session-cleanup-b.md"
+      ],
+      "file": "backend/scripts/reap_sessions.py"
+    },
+    "reap_sessions_job": {
+      "cited_by": [
+        "operational/session-cleanup-a.md"
+      ],
+      "file": "backend/jobs/reap_sessions.py"
+    },
+    "regen_thumbnails": {
+      "cited_by": [
+        "operational/thumbnail-rebuild-a.md"
+      ],
+      "file": "backend/scripts/regen_thumbnails.py"
+    },
+    "regen_thumbnails_job": {
+      "cited_by": [
+        "operational/thumbnail-rebuild-b.md"
+      ],
+      "file": "backend/jobs/regen_thumbnails.py"
+    },
+    "reindex_queue": {
+      "cited_by": [
+        "operational/queue-reindex-b.md"
+      ],
+      "file": "backend/scripts/reindex_queue.py"
+    },
+    "renew_certs": {
+      "cited_by": [
+        "operational/cert-renewal-a.md"
+      ],
+      "file": "backend/scripts/renew_certs.py"
+    },
+    "renew_certs_job": {
+      "cited_by": [
+        "operational/cert-renewal-b.md"
+      ],
+      "file": "backend/jobs/renew_certs.py"
+    },
+    "replay_webhooks": {
+      "cited_by": [
+        "operational/webhook-replay-b.md"
+      ],
+      "file": "backend/scripts/replay_webhooks.py"
+    },
+    "replay_webhooks_job": {
+      "cited_by": [
+        "operational/webhook-replay-a.md"
+      ],
+      "file": "backend/jobs/replay_webhooks.py"
+    },
+    "send_invoice_reminders": {
+      "cited_by": [
+        "operational/invoice-reminders-a.md"
+      ],
+      "file": "backend/scripts/send_invoice_reminders.py"
+    },
+    "send_invoice_reminders_job": {
+      "cited_by": [
+        "operational/invoice-reminders-b.md"
+      ],
+      "file": "backend/jobs/send_invoice_reminders.py"
+    },
+    "sync_feature_flags": {
+      "cited_by": [
+        "operational/flag-sync-a.md"
+      ],
+      "file": "backend/scripts/sync_feature_flags.py"
+    },
+    "warm_geo_cache": {
+      "cited_by": [
+        "operational/geo-cache-warmup-b.md"
+      ],
+      "file": "backend/scripts/warm_geo_cache.py"
+    }
+  },
+  "version": 1
+}

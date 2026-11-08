@@ -1,0 +1,13 @@
+// Code-graph golden set for test/fixtures/code-graph-vault (code-graph Phase 2, semantic-memory#58), held-out split. Tiers: drift = two near-identical docs, the answer cites stable code and its twin cites code changed after the doc; dead = the twin cites a script that no longer exists; identifier = names a script (entity card, later phases); plain = control; undocumented = names code that no doc mentions (no answer; expects missing_terms today, undocumented later).
+// Written before any ranking was run against it. Held-out is never used to choose constants, rules or thresholds.
+{"id":"drift-h1","tier":"drift","q":"How do we keep the TLS certificates from expiring?","answer":"operational/cert-renewal-a.md","twin":"operational/cert-renewal-b.md"}
+{"id":"drift-h2","tier":"drift","q":"A partner missed some webhook deliveries. How can we resend them?","answer":"operational/webhook-replay-b.md","twin":"operational/webhook-replay-a.md"}
+{"id":"drift-h3","tier":"drift","q":"Image previews are blank after the cache was wiped. How do I rebuild them?","answer":"operational/thumbnail-rebuild-a.md","twin":"operational/thumbnail-rebuild-b.md"}
+{"id":"dead-h4","tier":"dead","q":"Location lookups are slow right after a deploy. What speeds them up?","answer":"operational/geo-cache-warmup-b.md","twin":"operational/geo-cache-warmup-a.md"}
+{"id":"dead-h5","tier":"dead","q":"How do we produce the quarterly activity trail for the auditors?","answer":"operational/audit-export-a.md","twin":"operational/audit-export-b.md"}
+{"id":"dead-h6","tier":"dead","q":"A customer is leaving. How do we remove their data?","answer":"operational/tenant-offboarding-b.md","twin":"operational/tenant-offboarding-a.md"}
+{"id":"i3","tier":"identifier","q":"What does warm_geo_cache.py do?","answer":"operational/geo-cache-warmup-b.md","entity":"backend/scripts/warm_geo_cache.py"}
+{"id":"i4","tier":"identifier","q":"Where is export_audit_log.py used?","answer":"operational/audit-export-a.md","entity":"backend/scripts/export_audit_log.py"}
+{"id":"p2","tier":"plain","q":"On which days is the office closed?","answer":"operational/holiday-calendar.md"}
+{"id":"u3","tier":"undocumented","q":"Where is compact_audit_log defined?","missing":["compact_audit_log"],"entity":"backend/jobs/compact_audit_log.py"}
+{"id":"u4","tier":"undocumented","q":"What does rebuild_search_shards do?","missing":["rebuild_search_shards"],"entity":"backend/scripts/rebuild_search_shards.sh"}

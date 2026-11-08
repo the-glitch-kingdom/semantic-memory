@@ -1,5 +1,5 @@
 {
-  "_comment": "Measured floor for docs-eval.test.ts and real-corpus-eval.test.ts. arms: fixture train split (35+ answerable, 12 negatives). splits: answer@1 per split. tiers: answer@1 and @3 per split, arm and tier (exact = keyword, paraphrase, symptom, nofield = answer doc carries no fields, multi = broad or cross-doc), set by retrieval-ready-fields Phase 2 on the field fixture; the eval fails when any tier drops below its floor. Raise at the end of each phase; never lower (answeredFlagged and meanBytes are ceilings). Real-corpus floors sit 1 below the best run: the HNSW graph is random per build.",
+  "_comment": "Measured floor for docs-eval.test.ts and real-corpus-eval.test.ts. arms: fixture train split (35+ answerable, 12 negatives). splits: answer@1 per split. tiers: answer@1 and @3 per split, arm and tier (exact = keyword, paraphrase, symptom, nofield = answer doc carries no fields, multi = broad or cross-doc), set by retrieval-ready-fields Phase 2 on the field fixture; the eval fails when any tier drops below its floor. Raise at the end of each phase; never lower (answeredFlagged and meanBytes are ceilings). Real-corpus floors sit 1 below the best run: the HNSW graph is random per build. codeGraph: floors of graph-eval.test.ts measured on v1.15.0 before any graph code (code-graph Phase 2); the test allows one case (0.05 of the clean share) below them.",
   "arms": {
     "search_semantic": {
       "answeredAt1": 39,
@@ -228,6 +228,32 @@
           "at1": 9,
           "at3": 15
         }
+      }
+    }
+  },
+  "codeGraph": {
+    "train": {
+      "search_semantic": {
+        "at1": 5,
+        "at3": 9,
+        "cleanShare": 0.778
+      },
+      "search_hybrid": {
+        "at1": 5,
+        "at3": 9,
+        "cleanShare": 0.778
+      }
+    },
+    "heldout": {
+      "search_semantic": {
+        "at1": 4,
+        "at3": 9,
+        "cleanShare": 0.778
+      },
+      "search_hybrid": {
+        "at1": 6,
+        "at3": 9,
+        "cleanShare": 0.778
       }
     }
   }

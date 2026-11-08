@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# hit-em-with-the-docs graph export (derived by `hewtd index`; the fixture under test/ keeps its own)
+/.hewtd/
+
 # Index (rebuilt on demand)
 .semantic-sidekick-index/
 
