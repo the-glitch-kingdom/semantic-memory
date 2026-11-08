@@ -24,3 +24,8 @@
 ## Eval results: Phase 2
 Config only; no retrieval change. `npm run eval` green (14 files, 125 passed, 5 expected fail); real-corpus numbers unchanged
 (train @1 21/27 @3 25/27 @8 27/27; held-out @1 18/27 @3 25/27 @8 27/27). Unit: test/unit/federation.test.ts (7 tests).
+
+## Eval results: Phase 3
+Plumbing only; no retrieval change. `npm run eval` green (14 files, 125 passed, 5 expected fail); fixture train/heldout @1 9/9 @3 9/9 unchanged.
+Integration: test/integration/federation-sources.test.ts (source built under primary index dir, source tree mtimes unchanged,
+no index dir in source, missing and chmod 000 paths each reported once, shared embedder).

@@ -37,10 +37,10 @@ is stated in the PR.
         `reconcile.related_repos[{name, path}]`; each sibling's docs tree is its own `docs_root`, else `.documentation`,
         else skipped. Never index a whole code repo.
   - [x] Commented block in `schema-default.ts`. Unit tests (no hewtd config; malformed config).
-- [ ] Phase 3: Source contexts
-  - [ ] `buildContext(path, {readOnly: true, indexPath, embedder})` (two new optional `ServerOptions`); in-process, not
+- [x] Phase 3: Source contexts
+  - [x] `buildContext(path, {readOnly: true, indexPath, embedder})` (two new optional `ServerOptions`); in-process, not
         by querying sibling servers; one shared Embedder (sources use the primary's model and pooling).
-  - [ ] Contexts are created lazily on the first federated search; the first build runs in the background. A missing,
+  - [x] Contexts are created lazily on the first federated search; the first build runs in the background. A missing,
         unreadable or still-indexing source is skipped and reported once per process (stderr plus a trailing text block).
 - [ ] Phase 4: Federated `search_hybrid`
   - [ ] Extract the per-context pipeline in `src/mcp/tools/search.ts` into `hybridRanked(ctx, …)` unchanged; run it per
@@ -94,12 +94,19 @@ is stated in the PR.
   defaults to on (it only does anything when hewtd's config file exists); `false` opts out. A sibling's `name` is its
   label, weight 1. Missing source paths are kept (Phase 3 reports them); duplicates dropped by realpath, then by label.
   Label must match `[\w.-]+`, weight a positive number. Project root = first ancestor with hewtd config or `.git`.
+- Phase 3: `src/mcp/sources.ts` `createSourceRegistry(primary).open()` returns `{ready, notes}`; contexts are built on the
+  first call (readOnly, telemetry off, primary's embedder, index at `<primary index>/sources/<label>-<hash8>`). Unreadable or
+  missing paths are checked by stat+readdir before building. "Still indexing" counts as skipped. Each skip line is reported
+  once per process (stderr, and returned in `notes` for the trailing text block). `Embedder.init()` now memoizes its in-flight
+  promise so contexts sharing one embedder load one ONNX session. A sibling's `docs_root` is not clamped inside the sibling
+  (left as hewtd defines it; read-only anyway).
 
 ## Errors Encountered
 - Phase 2: hook-failure "Jev error or hang" budget test failed once under full-suite load (3161 ms vs 3000); passed alone (14/14). Known flake.
+- Phase 3: full-suite freshness-scale warm start (5269 ms) and hook-failure Jev budget (7174 ms) failed under load; both passed alone (16/16). Known flakes.
 
 ## Status
-**Currently in Phase 3** - source contexts
+**Currently in Phase 4** - federated `search_hybrid`
 
 ---
 

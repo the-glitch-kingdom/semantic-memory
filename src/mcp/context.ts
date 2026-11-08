@@ -39,6 +39,10 @@ export interface ServerOptions {
   pooling?: "mean" | "cls";
   queryPrompt?: string;
   readOnly?: boolean;
+  /** Where the index lives. Default `<notes>/.semantic-sidekick-index`; a federation source's goes under the primary's. */
+  indexPath?: string;
+  /** Use this embedder instead of making one (federation sources share the primary's model and pooling). */
+  embedder?: Embedder;
   /** false: searches and reads are not logged (the retrieval eval must not feed usage-boost). Default true. */
   telemetry?: boolean;
   onProgress?: (embedded: number, total: number) => void;
@@ -146,16 +150,18 @@ export interface ServerContext {
 }
 
 export async function buildContext(notesPath: string, options: ServerOptions = {}): Promise<ServerContext> {
-  const indexPath = join(notesPath, ".semantic-sidekick-index");
+  const indexPath = options.indexPath ?? join(notesPath, ".semantic-sidekick-index");
   await mkdir(indexPath, { recursive: true });
 
   const indexer = new Indexer(notesPath);
   const fields = loadIndexFields(notesPath);
-  const embedder = new Embedder(options.model, options.workers, options.batchSize, options.quantized, {
-    ...loadEmbeddingOverrides(notesPath),
-    ...(options.pooling ? { pooling: options.pooling } : {}),
-    ...(options.queryPrompt !== undefined ? { queryPrompt: options.queryPrompt } : {}),
-  });
+  const embedder =
+    options.embedder ??
+    new Embedder(options.model, options.workers, options.batchSize, options.quantized, {
+      ...loadEmbeddingOverrides(notesPath),
+      ...(options.pooling ? { pooling: options.pooling } : {}),
+      ...(options.queryPrompt !== undefined ? { queryPrompt: options.queryPrompt } : {}),
+    });
   const rerankConfig = loadRerankConfig(notesPath);
   const reranker = rerankConfig.enabled ? new Reranker(rerankConfig.model) : null;
   const graph = new GraphBuilder({

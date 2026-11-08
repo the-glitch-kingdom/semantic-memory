@@ -138,8 +138,15 @@ export class Embedder {
     this.quantized = quantized;
   }
 
-  async init(): Promise<void> {
-    if (this.initialized) return;
+  private initing: Promise<void> | null = null;
+
+  /** One shared embedder is initialised by several contexts at once: they must share the one session. */
+  init(): Promise<void> {
+    if (this.initialized) return Promise.resolve();
+    return (this.initing ??= this.load().finally(() => { this.initing = null; }));
+  }
+
+  private async load(): Promise<void> {
 
     const modelDir = join(CACHE_DIR, this.model.replace(/\//g, "--"));
     await mkdir(modelDir, { recursive: true });
