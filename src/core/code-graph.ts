@@ -2,8 +2,10 @@ import { execFile } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, posix, relative, sep } from "node:path";
 import { promisify } from "node:util";
+import { normalizeVerifiedDate } from "./decay.js";
 import { identifiers } from "./identifiers.js";
 import { repoRoot } from "./skill-evidence.js";
+import type { Grounding } from "./types.js";
 
 const run = promisify(execFile);
 
@@ -222,4 +224,32 @@ export async function loadCodeData(vaultDir: string, docs: { path: string; codeR
     else exp.symbols.set(n, s);
   }
   return exp;
+}
+
+/**
+ * Sets `grounding` on each doc from its code data (cleared when there is none or nothing to report); true when anything changed.
+ * Drift = a ref whose file changed after max(body date, last_verified): the export's body_changed, else the git body date, and a real
+ * verification clears it. No usable date means no drift claim. Only file refs can be dead (symbol refs are prose-noisy).
+ */
+export function groundDocs(docs: { path: string; frontmatter?: Record<string, unknown>; gitDate?: string; grounding?: Grounding }[], code: CodeData | null): boolean {
+  let changed = false;
+  for (const d of docs) {
+    const c = code?.docs.get(d.path);
+    let g: Grounding | undefined;
+    if (c) {
+      const verified = Date.parse(normalizeVerifiedDate(d.frontmatter?.last_verified) ?? "");
+      const dates = [c.bodyChanged ?? Date.parse(d.gitDate ?? ""), c.lastVerified ?? NaN, verified <= Date.now() ? verified : NaN].filter((n) => !isNaN(n));
+      const from = dates.length ? Math.max(...dates) : NaN;
+      const drift = isNaN(from) ? [] : c.refs.filter((r) => r.changed !== undefined && r.changed > from).map((r) => r.file ?? r.target);
+      const dead = c.refs.filter((r) => r.kind === "file" && r.resolved === false).map((r) => r.target);
+      const verdict = c.verdict && c.verdict !== "unreviewed" ? c.verdict : undefined;
+      if (drift.length || dead.length || verdict) g = { source: c.source, ...(verdict && { verdict }), code_drift: [...new Set(drift)], dead_refs: [...new Set(dead)] };
+    }
+    if (JSON.stringify(g) !== JSON.stringify(d.grounding)) {
+      changed = true;
+      if (g) d.grounding = g;
+      else delete d.grounding;
+    }
+  }
+  return changed;
 }

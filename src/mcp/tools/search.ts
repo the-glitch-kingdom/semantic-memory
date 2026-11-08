@@ -57,6 +57,7 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
           snippet: excerpt(e.matchedChunk ?? e.snippet, query),
           ...(e.matched && { matched: e.matched }),
           ...((e as any).decay && { decay: (e as any).decay }),
+          ...((e as any).grounding && { grounding: (e as any).grounding }),
           ...((e as any).usage && { usage: (e as any).usage }),
         };
     if (weak) return { ...out, no_strong_match: true, ...(missing.length && { missing_terms: missing }) };

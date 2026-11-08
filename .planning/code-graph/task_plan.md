@@ -71,17 +71,18 @@ Series step 2. Every missed target is stated in the PR.
         `code_to_docs` / `doc_to_code`; no new tools.
   - [x] Code data is rebuilt in `sync()`; `ensureFresh` also rebuilds when the export's mtime or `<gitdir>/logs/HEAD`'s
         mtime changes (one `stat`, no spawn).
-- [ ] Phase 6: Grounding and ranking
-  - [ ] Per doc `grounding = {source: "export" | "code-spans", verdict?, code_drift[], dead_refs[]}`, stored like
+- [x] Phase 6: Grounding and ranking
+  - [x] Per doc `grounding = {source: "export" | "code-spans", verdict?, code_drift[], dead_refs[]}`, stored like
         `gitDate`. The export's `body_changed` replaces the git body date for docs it covers; its `last_verified` and
         `verdict` are used when present.
-  - [ ] Drift = refs whose `code_changed` is later than max(`body_changed`, `last_verified`), so a real verification
+  - [x] Drift = refs whose `code_changed` is later than max(`body_changed`, `last_verified`), so a real verification
         clears drift.
-  - [ ] One shared `groundingMultiplier(doc, cfg)` used by MCP and CLI: default 0.97 per drifted file (≤ 3) × 0.95
+  - [x] One shared `groundingMultiplier(doc, cfg)` used by MCP and CLI: default 0.97 per drifted file (≤ 3) × 0.95
         per dead ref (≤ 3), floor 0.8, `archive-candidate` × 0.85; others add nothing (their causes already count).
         Settings in a `decay.code` block, tuned on train with `eval`.
-  - [ ] Result block only when there is something to report: `grounding: {source, verdict?, code_drift: [≤3],
+  - [x] Result block only when there is something to report: `grounding: {source, verdict?, code_drift: [≤3],
         dead_refs: [≤3], more?}`; `verdict` shown only for `check`, `stale`, `archive-candidate`, `secret`.
+        (Done in `decay.ts` `groundingMultiplier`/`groundingBlock`, called by `decayForDoc`, which MCP `applyDecay` and the CLI both use; `groundDocs` in `code-graph.ts` sets `doc.grounding`, saved in docs.cache.json so the CLI reads it. Defaults needed no tuning. Deviation: the export's `body_changed` replaces the git body date for drift only, not for the age decay.)
 - [ ] Phase 7: Entity cards and `undocumented`
   - [ ] Query tokens through #57's detector, looked up against symbols and file paths / unique basenames. The card
         rides on result #1: `entity: {entity, kind, path, cited_by: [{path, title, stale}] ≤ 5}`; citers ordered by
@@ -146,7 +147,7 @@ Series step 2. Every missed target is stated in the PR.
 - (none yet)
 
 ## Status
-**Currently in Phase 6** - Grounding and ranking (Phase 5 done: code/symbol nodes, cites_code/defined_in, backlinks/forwardlinks on files and symbols)
+**Currently in Phase 7** - Entity cards and `undocumented` (Phase 6 done: grounding multiplier, `grounding` block, decay.code)
 
 ---
 

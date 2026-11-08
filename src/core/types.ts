@@ -8,6 +8,8 @@ export interface IndexedDocument {
   mdLinks?: string[];
   /** inline code spans and non-`.md` link targets (vault-relative, `../` kept); absent in caches from before schemaVersion 8 */
   codeRefs?: string[];
+  /** what the code says about this doc (drift, dead refs, verdict); set at index time from the export or the span fallback, absent when there is nothing to report */
+  grounding?: Grounding;
   tags: string[];
   headers: string[];
   chunks: string[];
@@ -129,4 +131,12 @@ export interface SearchTextOptions {
   pathGlob?: string;
   tagFilter?: string[];
   limit?: number;
+}
+
+/** Code facts about one doc: files changed after the doc was written or verified, file refs that no longer exist, and hewtd's verdict. */
+export interface Grounding {
+  source: "export" | "code-spans";
+  verdict?: string;
+  code_drift: string[];
+  dead_refs: string[];
 }

@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadExport, loadCodeData, fallbackCode, gitLastChanged } from "../../src/core/code-graph.js";
+import { groundDocs, loadExport, loadCodeData, fallbackCode, gitLastChanged } from "../../src/core/code-graph.js";
 
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "code-graph-vault");
 const mdIn = (dir: string) => new Set((readdirSync(dir, { recursive: true }) as string[]).filter((f) => f.endsWith(".md")).map((f) => f.split("\\").join("/")));
@@ -185,5 +185,46 @@ describe("loadCodeData", () => {
     expect(d.docs.get("a.md")!.source).toBe("export");
     expect(d.docs.get("b.md")!.source).toBe("code-spans");
     expect(d.symbols.get("nope_sym")!.citedBy).toEqual(["b.md"]); // a.md is covered by the export, whose refs win
+  });
+});
+
+describe("groundDocs", () => {
+  const D = (s: string) => Date.parse(s);
+  const code = (over: object = {}) => ({
+    docs: new Map([["a.md", { source: "export" as const, bodyChanged: D("2026-01-10"), refs: [
+      { kind: "file" as const, target: "x.py", file: "x.py", resolved: true, changed: D("2026-02-01") },
+      { kind: "file" as const, target: "old.py", resolved: false },
+      { kind: "symbol" as const, target: "foo_bar", resolved: false },
+    ], ...over }]]),
+    symbols: new Map(),
+  });
+  it("reports files changed after the body date and dead file refs (not symbols), and clears when nothing is left", () => {
+    const d: any = { path: "a.md" };
+    expect(groundDocs([d], code())).toBe(true);
+    expect(d.grounding).toEqual({ source: "export", code_drift: ["x.py"], dead_refs: ["old.py"] });
+    expect(groundDocs([d], code())).toBe(false);
+    expect(groundDocs([d], null)).toBe(true);
+    expect(d.grounding).toBeUndefined();
+  });
+  it("a verification after the code change clears drift (export or frontmatter); no date means no drift claim", () => {
+    const a: any = { path: "a.md" };
+    groundDocs([a], code({ lastVerified: D("2026-03-01") }));
+    expect(a.grounding.code_drift).toEqual([]);
+    const b: any = { path: "a.md", frontmatter: { last_verified: "2026-03-01" } };
+    groundDocs([b], code());
+    expect(b.grounding.code_drift).toEqual([]);
+    const c: any = { path: "a.md" };
+    groundDocs([c], code({ bodyChanged: undefined }));
+    expect(c.grounding.code_drift).toEqual([]);
+    const e: any = { path: "a.md", gitDate: "2026-01-20T00:00:00Z" }; // fallback body date
+    groundDocs([e], code({ bodyChanged: undefined }));
+    expect(e.grounding.code_drift).toEqual(["x.py"]);
+  });
+  it("keeps hewtd's verdict (unreviewed is nothing)", () => {
+    const d: any = { path: "a.md" };
+    groundDocs([d], code({ verdict: "unreviewed", refs: [] }));
+    expect(d.grounding).toBeUndefined();
+    groundDocs([d], code({ verdict: "stale", refs: [] }));
+    expect(d.grounding).toMatchObject({ verdict: "stale" });
   });
 });

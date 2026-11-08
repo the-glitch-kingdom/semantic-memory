@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeDecay, normalizeVerifiedDate, DEFAULT_DECAY_CONFIG, type DecayConfig } from "../../src/core/decay.js";
+import { groundingBlock, groundingMultiplier, computeDecay, normalizeVerifiedDate, DEFAULT_DECAY_CONFIG, type DecayConfig } from "../../src/core/decay.js";
 
 const NOW = Date.parse("2026-07-10T00:00:00Z");
 function daysAgo(n: number): string {
@@ -146,5 +146,29 @@ describe("computeDecay missing_last_verified", () => {
     expect(loadDecayConfig(d)).toMatchObject({ missing_last_verified: "mtime", missing_penalty: 0.5 });
     writeFileSync(join(d, "vault.schema.yml"), "decay:\n  missing_last_verified: sometimes\n  missing_penalty: 7\n");
     expect(loadDecayConfig(d)).toMatchObject({ missing_last_verified: "git", missing_penalty: 0.85 });
+  });
+});
+
+describe("groundingMultiplier and groundingBlock", () => {
+  const c = DEFAULT_DECAY_CONFIG.code;
+  const g = (drift: number, dead: number, verdict?: string) => ({ source: "export" as const, verdict, code_drift: Array.from({ length: drift }, (_, i) => `f${i}`), dead_refs: Array.from({ length: dead }, (_, i) => `d${i}`) });
+  it("is 1 with no grounding or when disabled", () => {
+    expect(groundingMultiplier(undefined, c)).toBe(1);
+    expect(groundingMultiplier(g(2, 1), { ...c, enabled: false })).toBe(1);
+  });
+  it("multiplies per drifted file and dead ref, each capped at 3, floored", () => {
+    expect(groundingMultiplier(g(1, 0), c)).toBeCloseTo(0.97);
+    expect(groundingMultiplier(g(10, 0), c)).toBeCloseTo(0.97 ** 3);
+    expect(groundingMultiplier(g(2, 2), c)).toBeCloseTo(0.97 ** 2 * 0.95 ** 2);
+    expect(groundingMultiplier(g(3, 3), { ...c, drift_penalty: 0.5 })).toBe(0.8);
+  });
+  it("archive-candidate adds a factor after the floor; other verdicts add nothing", () => {
+    expect(groundingMultiplier(g(0, 0, "archive-candidate"), c)).toBeCloseTo(0.85);
+    expect(groundingMultiplier(g(0, 0, "stale"), c)).toBe(1);
+  });
+  it("the block is absent with nothing to report, shows a verdict only for the flagged ones, and counts what it cuts", () => {
+    expect(groundingBlock(g(0, 0, "verified"))).toBeUndefined();
+    expect(groundingBlock(g(0, 0, "check"))).toMatchObject({ verdict: "check" });
+    expect(groundingBlock(g(5, 4))).toMatchObject({ code_drift: ["f0", "f1", "f2"], dead_refs: ["d0", "d1", "d2"], more: 3 });
   });
 });

@@ -99,6 +99,14 @@ decay:
   hotness_boost:
     enabled: false              # extend half-life for heavily-backlinked notes (opt-in)
     cap: 2.0
+  # Grounding (code-graph): a doc whose cited files changed after it was written or verified, or that cites a file
+  # that is gone, is down-weighted a little per file (at most 3 of each), never below floor.
+  code:
+    enabled: true
+    drift_penalty: 0.97
+    dead_penalty: 0.95
+    floor: 0.8
+    archive_candidate: 0.85       # hewtd verdict archive-candidate
 
 # Path-class ranking (v1.4). Down-weights whole regions of the vault by path glob
 # (composes multiplicatively with decay + load_priority). First matching rule wins.

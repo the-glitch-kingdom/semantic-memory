@@ -7,6 +7,7 @@ import { startEval } from "./harness.js";
 import { gitHistory, stampDates } from "./git-history.js";
 import { parseGolden } from "./eval.js";
 import { cleanTopK } from "./graph-metrics.js";
+import { openSearch } from "../../src/cli/search.js";
 import { cleanupTempDir } from "../setup.js";
 
 /**
@@ -81,7 +82,7 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
     }
   });
 
-  // The shipped code knows nothing about code: these are the floors it measured. Real-corpus-free, so HNSW noise is one case.
+  // Floors measured with grounding on (Phase 6; Phase 2 measured 5/9 and 0.778 without it). Real-corpus-free, so HNSW noise is one case.
   for (const s of ["train", "heldout"]) {
     for (const arm of ["search_semantic", "search_hybrid"]) {
       it(`${s}: ${arm} answer@1 and the clean share of the top 3 never drop below the recorded floor`, () => {
@@ -91,8 +92,8 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
         expect(m.clean.share).toBeGreaterThanOrEqual(f.cleanShare - 0.05);
       });
     }
-    // Known gate: v1.15.0 sees no difference between a doc and its twin (about a coin flip). Phases 5 and 6 make it pass; the it.fails then flips red and becomes a real gate.
-    it.fails(`${s}: search_hybrid ranks the answer above its twin in every drift and dead pair`, () => {
+    // v1.15.0 saw no difference between a doc and its twin (a coin flip); grounding (decay.code) makes the answer win every pair.
+    it(`${s}: search_hybrid ranks the answer above its twin in every drift and dead pair`, () => {
       const m = summary(table[s].search_hybrid);
       expect(m.beaten).toBe(m.pairs);
     });
@@ -111,5 +112,18 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
     expect(fwd).toContain("code:scripts/ci/guards.sh");
     const walk = (await env.call("forwardlinks", { path: "operational/ci-guards.md", types: ["link", "wikilink", "related", "cites", "same-incident"] })).parsed;
     expect(walk.every((x: any) => x.path.endsWith(".md"))).toBe(true);
+  });
+
+  // #58 check 3 and CLI/MCP parity: the drifted twin says which file changed, the answer carries no block, and the CLI hook path reports the same.
+  it("a drifted doc carries grounding.code_drift and ranks below its twin, the same through the CLI search", async () => {
+    const q = "How do old snapshots get cleaned off the storage volume?";
+    const mcp = (await env.call("search_hybrid", { query: q, limit: 8 })).parsed;
+    const byPath = (rs: any[], p: string) => rs.find((r) => r.path === p);
+    expect(byPath(mcp, "operational/backup-pruning-a.md").grounding).toBeUndefined();
+    expect(byPath(mcp, "operational/backup-pruning-b.md").grounding).toMatchObject({ source: "export", code_drift: ["backend/jobs/prune_backups.py"] });
+    expect(mcp.findIndex((r: any) => r.path.endsWith("-a.md"))).toBeLessThan(mcp.findIndex((r: any) => r.path.endsWith("-b.md")));
+    const cli = await (await openSearch(join(env.dir, ".documentation"))).search(q, 8);
+    expect(cli.map((r) => r.path)).toEqual(mcp.map((r: any) => r.path));
+    expect(cli.map((r) => r.grounding)).toEqual(mcp.map((r: any) => r.grounding));
   });
 });

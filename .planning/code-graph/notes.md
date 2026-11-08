@@ -64,3 +64,14 @@ No retrieval numbers: the module is not wired in yet. `npm run eval` unchanged (
 
 ## Eval results: Phase 5
 Ranking is untouched, so `npm run eval` is unchanged (train hybrid @1 5/9, twin-beaten 2/6; held-out hybrid @1 6/9, twin-beaten 3/6; 84 passed, 7 expected fail). New: unit `graph-code.test.ts` (nodes, edges, dead refs, walks/paths/stats unchanged) and a graph-eval integration test (`backlinks("scripts/ci/guards.sh")` lists its 3 docs; `forwardlinks(doc)` has the code node; default walk types return only notes). Full `npm test`: freshness-scale warm start and hook-failure Jev-hang failed under load, both passed alone (16/16).
+
+## Eval results: Phase 6
+Grounding on, `decay.code` defaults (0.97 per drifted file, 0.95 per dead file ref, each capped at 3, floor 0.8, archive-candidate x0.85). The train split already gave 6/6 twin pairs with the defaults, so nothing was tuned; held-out was measured once, as is.
+
+| split | arm | answer@1 | answer@3 | clean-top3 share | answer above twin |
+|---|---|---|---|---|---|
+| train | semantic / hybrid | 9/9 (was 5/9) | 9/9 | 0.815 (was 0.778) | 6/6 (was 2/6) |
+| held-out | semantic / hybrid | 9/9 (was 4/9, 6/9) | 9/9 | 0.778 (unchanged) | 6/6 (was 3/6) |
+
+Stable over 3 repeat runs. The held-out clean share cannot move on this fixture: a demoted dead twin still sits in the top 3 (see Phase 2). The `it.fails` pair gates are now real gates; codeGraph floors in baseline.json raised to these numbers (test keeps one case of slack). Real-corpus and docs-vault eval unchanged (87 passed, 5 expected fail; mean payload 4746 B hybrid, ceiling 4750): those vaults have no code refs to ground. The `grounding` block only appears with something to report. Bug caught by the unit test: `Math.max` with a NaN date silently dropped all drift; dates are filtered first.
+Full `npm test`: only the hook-failure Jev-hang timing failed under load; passed alone (14/14).

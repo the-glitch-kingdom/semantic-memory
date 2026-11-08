@@ -11,7 +11,7 @@ import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { missingTerms } from "../core/identifiers.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
-import { decayForDoc, loadDecayConfig, type DecayBlock } from "../core/decay.js";
+import { decayForDoc, groundingBlock, loadDecayConfig, type DecayBlock } from "../core/decay.js";
 import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
 import { indexRebuilding, parserInputs, readConsistentMeta, readMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
@@ -40,6 +40,7 @@ export interface SearchHit {
   stale?: true;
   /** present when the note is down-weighted or its age came from a fallback; same block as the MCP tools */
   decay?: DecayBlock;
+  grounding?: ReturnType<typeof groundingBlock>;
 }
 
 export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
@@ -161,6 +162,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean } = {
         ...(weak && { no_strong_match: true as const, ...(missing.length && { missing_terms: missing }) }),
         ...(stale && { stale: true as const }),
         ...(decayOf(r.path).block && { decay: decayOf(r.path).block }),
+        ...(decayOf(r.path).grounding && { grounding: decayOf(r.path).grounding }),
       }));
     },
   };

@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { join } from "node:path";
-import { loadCodeData, type CodeData } from "../core/code-graph.js";
+import { groundDocs, loadCodeData, type CodeData } from "../core/code-graph.js";
 import { repoRoot } from "../core/skill-evidence.js";
 import { Indexer } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
@@ -15,7 +15,7 @@ import { TextSearch } from "../core/search-text.js";
 import { NoteCrud } from "../core/crud.js";
 import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
-import { decayForDoc, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
+import { decayForDoc, groundingBlock, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
 import { gitBlobId, gitBodyDates, gitCommitDates } from "../core/git-dates.js";
 import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
@@ -117,7 +117,7 @@ export interface ServerContext {
    * is fresh. Semantic ranking signal only — callers wire it into
    * search_semantic / search_hybrid, never search_text / search_graph.
    */
-  applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock };
+  applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock; grounding?: ReturnType<typeof groundingBlock> };
   /**
    * Apply the path-class multiplier (e.g. archive/** down-weight) to a scored
    * result. Composes multiplicatively with decay/priority at the same rank site.
@@ -242,7 +242,9 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   async function loadCode(docs: IndexedDocument[]): Promise<CodeData | null> {
     lastCodeStamp = codeStamp();
     try {
-      return await loadCodeData(notesPath, docs);
+      const code = await loadCodeData(notesPath, docs);
+      groundDocs(docs, code);
+      return code;
     } catch (e: any) {
       process.stderr.write(`Code graph skipped: ${e?.message ?? e}\n`);
       return null;
@@ -335,7 +337,11 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     const plan = await reconcile(notesPath, rebuild ? {} : manifest);
     if (!plan.changed && !rebuild) {
       // the tree is unchanged but the code may not be: a new export or a commit moves the stamp
-      if (codeStamp() !== lastCodeStamp) graph.buildFromDocuments(documents, await loadCode(documents));
+      if (codeStamp() !== lastCodeStamp) {
+        const before = JSON.stringify(documents.map((d) => d.grounding));
+        graph.buildFromDocuments(documents, await loadCode(documents));
+        if (before !== JSON.stringify(documents.map((d) => d.grounding))) { dirty = true; scheduleSave(); } // the CLI reads grounding from the saved cache
+      }
       if (stale || indexState === "stale") {
         stale = false;
         indexState = "ready";
@@ -607,14 +613,13 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     return decayConfig;
   }
 
-  function applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock } {
+  function applyDecay<T extends { path: string; score: number }>(r: T): T & { decay?: DecayBlock; grounding?: ReturnType<typeof groundingBlock> } {
     const cfg = getDecayConfig();
     if (!cfg.enabled) return r;
     const doc = docByPath.get(r.path);
     if (!doc) return r;
-    const { multiplier, block } = decayForDoc(doc, cfg);
-    const scored = { ...r, score: r.score * multiplier };
-    return block ? { ...scored, decay: block } : scored;
+    const { multiplier, block, grounding } = decayForDoc(doc, cfg);
+    return { ...r, score: r.score * multiplier, ...(block && { decay: block }), ...(grounding && { grounding }) };
   }
 
   let pathClassConfig: PathClassConfig | null = null;
