@@ -5,7 +5,7 @@ domains: [reference]
 audience: [developers]
 tags: [cli, commands, flags, reference, v1.7.0]
 status: active
-last_updated: '2026-10-25'
+last_updated: '2026-11-08'
 version: '1.7.0'
 purpose: Every semantic-memory subcommand + flags + env vars + exit codes. Covers v1.1 skills tree, v1.2 migrate-state, v1.3 confidence-decay (healthcheck --fix, decay-config, decay-trace), v1.3.1 selection-stats telemetry introspection, the v1.4.0 lexicon subcommand group, the v1.5.0 dossier + profile subcommand groups, and the v1.7.0 skill-loop, jev-mode, skills lint and skill-eval commands.
 load_priority: 9
@@ -20,7 +20,8 @@ Binary: `node node_modules/@theglitchking/semantic-memory/bin/semantic-memory` (
 | Command | Category | Purpose |
 |---|---|---|
 | `serve` (default) | MCP | Start MCP stdio server |
-| `search <query>` | Hook backing | Hybrid/text-only search, JSON output |
+| `search <query>` | Hook backing | Hybrid/text-only search, JSON output; `--paths` prints doc paths |
+| `help [topic...]` (v1.20+) | Info | How-do-I topics; no topic lists them all |
 | `lint` | Maintenance | Run all lints; exit code = errors count |
 | `log-event` | Hook backing | Append structured event to log.md |
 | `log-query` | Hook backing | Read entries by kind/date/limit |
@@ -82,9 +83,21 @@ semantic-memory search "<query>" --notes <path> [--limit N] [--text-only] [--jso
 - `--limit <n>` — max results (default 8).
 - `--text-only` — skip ONNX embedder, use TextSearch only. Faster cold start but noisier for natural-language queries.
 - `--json` — default is also JSON; flag exists for self-documentation.
+- `--paths` (v1.20+) — print the unique vault-relative doc paths, one per line, instead of JSON. For hit-em-with-the-docs `reconcile`: `search_command: npx semantic-memory search --notes .documentation --paths {query}`.
 
 **Output:** JSON array of `{ path, title, score, confidence, snippet, mtime }` (v1.9.0: `confidence`, `no_strong_match` when weak, ~600-char snippet). Ranks like `search_hybrid` (vector + BM25 fused, archive excluded) and, since v1.11, applies the same decay (hits carry the `decay` block with `source`), without usage boosts. While another process holds `index.lock`, hits carry `stale: true`. v1.14.0: when the query names an identifier absent from the docs, hits carry `no_strong_match: true` and `missing_terms: [...]`, as in MCP search. Read-only: it never writes the index.
 **Uses parsed-doc cache** at `.semantic-sidekick-index/docs.cache.json` for ~0.7s latency on cache hit.
+
+---
+
+## `help [topic...]` (v1.20+)
+
+```bash
+semantic-memory help                 # list every topic
+semantic-memory help add an index    # a topic by id, alias or words
+```
+
+Same text as the MCP tool `help` and the `/help` slash command. An unknown topic lists up to 3 closest. Replaces commander's built-in `help` subcommand; `--help` still lists flags.
 
 ---
 

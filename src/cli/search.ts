@@ -62,6 +62,12 @@ export async function runSearch(opts: SearchCliOptions): Promise<SearchHit[]> {
   return searcher.search(opts.query, opts.limit ?? 8);
 }
 
+/** One doc path per line, best first, no repeats: the stdout contract of hewtd's reconcile.search_command. */
+export function pathsOutput(hits: SearchHit[]): string {
+  const paths = [...new Set(hits.map((h) => h.path))];
+  return paths.length ? paths.join("\n") + "\n" : "";
+}
+
 type SearchHitRaw = ReturnType<VectorIndex["search"]>[number];
 
 export interface Searcher {

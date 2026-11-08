@@ -15,6 +15,7 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
   "get_stats",
   "graph_path",
   "graph_statistics",
+  "help",
   "ingest_source",
   "inspect_contract",
   "install_schema",
@@ -436,6 +437,21 @@ exports[`Regression: MCP tool surface (golden snapshots) > matches the golden to
       "type": "object",
     },
     "name": "graph_statistics",
+  },
+  {
+    "description": "How to use semantic-memory, in task terms. No topic lists the topics; a topic id or a few words (e.g. "federated search") returns the steps, commands and a check.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "topic": {
+          "description": "Topic id or words; omit to list topics",
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "name": "help",
   },
   {
     "description": "Build + apply a ChangeSet that ingests a source (paper, doc, URL) and the notes extracted from it. Produces one sources/<slug>.md note (type=source) plus one create per extracted unit, each stamped with derived_from pointing at the source. Routes through apply_patch — atomic, validated, rollback-capable, dry-run supported.",
@@ -1497,6 +1513,7 @@ exports[`Regression: MCP tool surface in --read-only mode > matches the golden t
   "get_stats",
   "graph_path",
   "graph_statistics",
+  "help",
   "lint_vault",
   "list_notes",
   "log_query",

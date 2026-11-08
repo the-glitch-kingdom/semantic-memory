@@ -46,9 +46,9 @@ describe("Regression: MCP tool surface (golden snapshots)", () => {
     await cleanupTempDir(tempDir);
   });
 
-  it("exposes the expected number of tools (write mode = 44)", async () => {
+  it("exposes the expected number of tools (write mode = 45)", async () => {
     const { tools } = await client.listTools();
-    expect(tools.length).toBe(44);
+    expect(tools.length).toBe(45);
   });
 
   it("matches the golden tool-surface snapshot", async () => {
@@ -102,11 +102,11 @@ describe("Regression: MCP tool surface in --read-only mode", () => {
     await cleanupTempDir(tempDir);
   });
 
-  it("suppresses the expected number of write tools (read-only mode = 20)", async () => {
+  it("suppresses the expected number of write tools (read-only mode = 21)", async () => {
     const { tools } = await client.listTools();
     // Contract tools (regenerate_contract, inspect_contract) are gated behind
     // !readOnly because they write AGENTS.md; log_event too (writes log.md) — read-only count is 20.
-    expect(tools.length).toBe(20);
+    expect(tools.length).toBe(21);
   });
 
   it("matches the golden tool-name list in read-only mode", async () => {

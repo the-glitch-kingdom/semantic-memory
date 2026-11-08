@@ -35,7 +35,7 @@ describe("E2E: lazy index on connect", () => {
 
     // Tools should be registered immediately (before full indexing)
     const { tools } = await client.listTools();
-    expect(tools.length).toBe(44);
+    expect(tools.length).toBe(45);
 
     // Connection should be fast (model init may take time on first run,
     // but tool listing should not depend on index completion)

@@ -33,12 +33,12 @@ describe("Conditional tool registration (v1.4)", () => {
   }
 
   it("registers the full surface by default (conditional off), even in outage mode", async () => {
-    expect(await toolCount("tools:\n  conditional: false\n", "outage-silence")).toBe(44);
+    expect(await toolCount("tools:\n  conditional: false\n", "outage-silence")).toBe(45);
   }, 180_000);
 
   it("registers a reduced surface when conditional on AND mode is outage-silence", async () => {
     const n = await toolCount("tools:\n  conditional: true\n", "outage-silence");
-    expect(n).toBeLessThan(44);
+    expect(n).toBeLessThan(45);
     expect(n).toBeGreaterThan(0); // search + read + system remain
   }, 180_000);
 });

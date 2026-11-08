@@ -1,7 +1,7 @@
 ---
 generated_by: semantic-memory
-version: 1.19.0
-last_generated: 2026-11-08T20:27:53.234Z
+version: 1.20.0
+last_generated: 2026-11-08T22:09:38.683Z
 ---
 
 # Project Agent Contract
@@ -56,6 +56,7 @@ last_generated: 2026-11-08T20:27:53.234Z
 - `graph_statistics` — Knowledge graph stats — most connected nodes, orphans, density.
 - `get_stats` — Vault and index statistics.
 - `reindex` — Force a full reindex of the vault.
+- `help` — How to use semantic-memory in task terms; no topic lists topics, a topic id or words returns steps and commands.
 - `regenerate_contract` — Generate or refresh AGENTS.md at the project root with a managed-block contract.
 - `inspect_contract` — Read-only inspection of AGENTS.md state.
 - `session_start` — Open a verification-gated session for a multi-step task.

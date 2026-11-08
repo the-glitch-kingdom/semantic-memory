@@ -3,6 +3,8 @@ import type { ServerContext } from "../context.js";
 import type { VaultStats } from "../../core/types.js";
 import { fieldCoverage } from "../../core/fields.js";
 import { docChunks } from "../../core/vector.js";
+import { renderHelp } from "../../core/help/topics.js";
+import { z } from "zod";
 
 export function registerSystemTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
@@ -47,5 +49,12 @@ export function registerSystemTools(server: McpServer, ctx: ServerContext): void
         `Reindexed: ${documents.length} notes, ${documents.reduce((n, d) => n + docChunks(d).length, 0)} chunks`
       );
     }
+  );
+
+  server.tool(
+    "help",
+    "How to use semantic-memory, in task terms. No topic lists the topics; a topic id or a few words (e.g. \"federated search\") returns the steps, commands and a check.",
+    { topic: z.string().optional().describe("Topic id or words; omit to list topics") },
+    async ({ topic }) => ctx.textResponse(renderHelp(topic, "markdown"))
   );
 }
