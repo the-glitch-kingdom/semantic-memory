@@ -52,6 +52,10 @@ Current `hooks/hooks.json`:
       { "matcher": "Skill",
         "hooks": [
           { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-loop.js\"" }
+      ] },
+      { "matcher": "Read|Grep|Glob|Bash|mcp__.*semantic-.*__(search_hybrid|search_semantic|search_text|read_note)",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/usage-capture.js\"" }
       ] }
     ],
     "SessionEnd": [
@@ -243,6 +247,20 @@ Why a veto and not a yes-gate: on 1,171 labelled pairs Jev's confident no's were
 
 ---
 
+## PostToolUse usage capture (v1.15+)
+
+`hooks/usage-capture.js` records `search`, `use` and `fallback` events in `.claude/.semantic-memory/usage.jsonl` for [`semantic-memory gaps`](../operational/search-gaps-guide.md). It never writes `selection` events, so ranking is unchanged, and it never stores file contents, tool responses, snippets or grep patterns. Queries are redacted (broad); if the redactor cannot load, nothing is written.
+
+- **Search**: an MCP search tool on a `semantic-*` server (matched by suffix); the result paths are kept (at most 20).
+- **Use**: a `read_note`, or a `Read` of a `.md` file under a source; the longest matching source path wins, and the rank comes from the matched search.
+- **Fallback**: Grep, Glob or a grep-style Bash call within 10 minutes of a search in the same session. Scope is `vault` if a path argument is inside a source, else `repo`.
+- **Exits, cheapest first**: `SEMANTIC_MEMORY_REVIEWER=1`, off switch, Bash that is not a grep, Read that is not `.md`, no semantic source in `.mcp.json`; only then the last 256 KB of the log is read. A non-matching Bash call costs about 2 ms over Node's start. It fails open on bad input and respects the searched vault's `telemetry.enabled`.
+- **Off**: `SEMANTIC_MEMORY_USAGE_CAPTURE=0` or `usage_capture: off` in the [repo config](./configuration-reference.md#repo-config-file--projectclaudesemantic-memoryconfig-v17).
+
+Its tsup entries `core/usage-log` and `core/telemetry` must stay, because the plain-JS hook imports them from `dist/`.
+
+---
+
 ## Error handling (Phase 4.5)
 
 Uncaught exceptions in `main()` trigger the global catch block:
@@ -264,6 +282,7 @@ Uncaught exceptions in `main()` trigger the global catch block:
 | `.claude/.semantic-memory/failure-shown.json` (v1.6+) | PostToolUseFailure | Facts already shown this session | Yes |
 | `.claude/.semantic-memory/skill-usage.jsonl`, `failures.jsonl`, `corrections.jsonl` (v1.7) | `vault-context.js` + `skill-loop.js` (skill loop on) | Redacted evidence for the review | Yes |
 | `~/.semantic-memory/review-queue/` (v1.7) | `skill-loop.js` SessionEnd | Review jobs (+ `done/`, `failed/`) | n/a (home) |
+| `.claude/.semantic-memory/usage.jsonl` (v1.15) | `usage-capture.js` | Search, use and fallback events for `gaps` and `usage-set` (rotates at 5 MB) | Yes |
 | `.claude/.semantic-sidekick-update-cache.json` | Plugin runtime | Auto-update policy cache | Yes |
 | `.claude/.vault/` | Plugin runtime reconcile | Default vault path (auto-created) | No (user content) |
 
@@ -280,4 +299,5 @@ All project-local. The pre-1.2 `.claude/.sidekick-*` names are still read as a f
 - **Clear mode:** `rm .claude/.semantic-memory/mode` (SessionStart recreates).
 - **Skill loop:** `semantic-memory skill-loop on|off` (global, in `~/.claude/settings.json` env) or `--repo` for one repo. Off is 1.6.1 behaviour.
 - **Jev mode:** `semantic-memory jev-mode on|off`. Off is 1.6.1 behaviour. `SEMANTIC_MEMORY_FAILURE_HOOK=0` keeps the failure hook off even in jev mode.
+- **Usage capture:** `SEMANTIC_MEMORY_USAGE_CAPTURE=0` or `usage_capture: off` in the repo config.
 - **See what the hook is doing:** `SIDEKICK_DEBUG=1 claude` then expand hook lines with `ctrl+o`.

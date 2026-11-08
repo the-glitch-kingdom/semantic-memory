@@ -1,0 +1,27 @@
+{
+  "session_id": "SESSION-ID",
+  "transcript_path": "/home/user/.claude/projects/proj/SESSION-ID.jsonl",
+  "cwd": "/home/user/proj",
+  "prompt_id": "PROMPT-ID",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "/home/user/proj/.documentation/operational/log-rotation.md"
+  },
+  "tool_response": {
+    "type": "text",
+    "file": {
+      "filePath": "/home/user/proj/.documentation/operational/log-rotation.md",
+      "content": "---\ntitle: Log Rotation\ntags: [operational]\ndomain: operational\n---\n\n# Log Rotation\n\nGateway logs roll over at 50 MB and the newest 5 files are kept. Change the size with `log_max_mb`.\n",
+      "numLines": 10,
+      "startLine": 1,
+      "totalLines": 10
+    }
+  },
+  "tool_use_id": "TOOL-USE-ID",
+  "duration_ms": 1
+}

@@ -5,6 +5,7 @@ domains: [legacy]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Complete listing of legacy documentation
 ---
 
@@ -23,18 +24,18 @@ purpose: Complete listing of legacy documentation
 
 ### Guides
 
-| Document | Status | Updated | Words |
-|----------|--------|---------|-------|
-| [Performance Tuning (substrate)](performance-tuning.md) | active | 2026-04-23 | 952 |
+| Document | Status | Updated | Words | Purpose |
+|----------|--------|---------|-------|---------|
+| [Performance Tuning (substrate)](performance-tuning.md) | active | 2026-04-23 | 952 | ONNX workers, batch size, quantization tradeoffs |
 
 ### References
 
-| Document | Status | Updated | Words |
-|----------|--------|---------|-------|
-| [Legacy Changelog (semantic-pages)](changelog.md) | active | 2026-04-23 | 2,306 |
-| [Embedder Guide (substrate)](embedder-guide.md) | active | 2026-10-24 | 1,051 |
-| [Frontmatter Guide (substrate)](frontmatter-guide.md) | active | 2026-10-24 | 674 |
-| [How Semantic Pages Works (substrate)](how-it-works.md) | active | 2026-04-23 | 952 |
+| Document | Status | Updated | Words | Purpose |
+|----------|--------|---------|-------|---------|
+| [Legacy Changelog (semantic-pages)](changelog.md) | active | 2026-04-23 | 2,306 | semantic-pages version history prior to the fork |
+| [Embedder Guide (substrate)](embedder-guide.md) | active | 2026-10-24 | 1,051 | ONNX embedder options, model choices, quality/speed tradeoffs |
+| [Frontmatter Guide (substrate)](frontmatter-guide.md) | active | 2026-10-24 | 674 | Indexer-consumed frontmatter fields (title, tags, load_priority, etc.) |
+| [How Semantic Pages Works (substrate)](how-it-works.md) | active | 2026-04-23 | 952 | Substrate-level: MCP server startup, indexer, embedder internals |
 
 ## Keywords
 
@@ -42,9 +43,7 @@ This domain covers: legacy, substrate, semantic-pages
 
 ## Related Domains
 
-- [Agents](../agents/) - Expert agent documentation, specialty matrix
-- [Backups](../backups/) - Backup/restore guides, disaster recovery
-- [Plans](../plans/) - Planning documents, roadmaps, proposals
+- [Troubleshooting](../troubleshooting/) - Debug guides, common issues, solutions
 
 ---
 

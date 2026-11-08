@@ -5,6 +5,7 @@ domains: [security]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Complete listing of security documentation
 ---
 
@@ -23,9 +24,9 @@ purpose: Complete listing of security documentation
 
 ### References
 
-| Document | Status | Updated | Words |
-|----------|--------|---------|-------|
-| [Secret redaction — design, write points, and how to add a pattern](secret-redaction.md) | active | 2026-10-25 | 767 |
+| Document | Status | Updated | Words | Purpose |
+|----------|--------|---------|-------|---------|
+| [Secret redaction — design, write points, and how to add a pattern](secret-redaction.md) | active | 2026-10-25 | 767 | How semantic-memory keeps API keys, tokens and passwords off disk: the redactor (src/core/redact.ts), its precise and broad pattern sets, every write point it covers, the lint_vault secrets check, its limits, and how to add a pattern safely. |
 
 ## Keywords
 
@@ -33,9 +34,8 @@ This domain covers: security, auth, authentication, authorization, oauth, jwt, k
 
 ## Related Domains
 
-- [Database](../database/) - Schema, migrations, RLS, queries, procedures
-- [API](../api/) - API endpoints, routes, specifications, contracts
-- [DevOps](../devops/) - Deployment, CI/CD, Docker, environments, infrastructure
+- [Reference](../reference/) - Tool, CLI, configuration and frontmatter reference
+- [Deployment](../deployment/) - Publishing and offline packaging
 
 ---
 

@@ -5,6 +5,7 @@ domains: [deployment]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Complete listing of deployment documentation
 ---
 
@@ -23,9 +24,9 @@ purpose: Complete listing of deployment documentation
 
 ### Guides
 
-| Document | Status | Updated | Words |
-|----------|--------|---------|-------|
-| [Release Process](release-process.md) | active | 2026-10-24 | 337 |
+| Document | Status | Updated | Words | Purpose |
+|----------|--------|---------|-------|---------|
+| [Release Process](release-process.md) | active | 2026-10-24 | 337 | How a semantic-memory release goes out — version fields, PR, npm publish, the plugin marketplace, the offline tarball, and the checks after each |
 
 ## Keywords
 
@@ -33,9 +34,9 @@ This domain covers: deployment, publish, release, tarball, offline
 
 ## Related Domains
 
-- [DevOps](../devops/) - Deployment, CI/CD, Docker, environments, infrastructure
-- [API](../api/) - API endpoints, routes, specifications, contracts
-- [Database](../database/) - Schema, migrations, RLS, queries, procedures
+- [Security](../security/) - Security, auth, Vault, Keycloak, RLS
+- [Reference](../reference/) - Tool, CLI, configuration and frontmatter reference
+- [Changelog](../changelog/) - Release notes per version and phase
 
 ---
 

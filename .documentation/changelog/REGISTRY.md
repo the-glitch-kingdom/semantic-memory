@@ -5,6 +5,7 @@ domains: [changelog]
 status: active
 last_updated: '2026-11-08'
 version: '1.0.0'
+generated: true
 purpose: Quick reference for changelog documentation
 ---
 
@@ -16,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 27 |
+| Documents | 28 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -45,7 +46,7 @@ purpose: Quick reference for changelog documentation
 
 | Status | Count |
 |--------|-------|
-| active | 27 |
+| active | 28 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

@@ -41,6 +41,8 @@ Binary: `node node_modules/@theglitchking/semantic-memory/bin/semantic-memory` (
 | `jev-mode <action>` (v1.7+) | Jev mode | Turn jev mode on/off, show its state |
 | `skills lint` (v1.7+) | Maintenance | Lint the learned skills this repo loads |
 | `skill-eval <action>` (v1.7+) | Measurement | Trigger, task and description-tuning evals for one skill |
+| `gaps` (v1.15+) | Measurement | Report searches that ended in no doc; `--json` is hewtd's `gaps.v1` |
+| `usage-set` (v1.15+) | Measurement | Write `eval/usage.jsonl` from searches that ended in a used doc |
 | `eval`, `eval generate` (v1.13+) | Measurement | Measure retrieval on your vault; generate blind questions |
 | `update` / `policy` | Plugin runtime | Inherited from `@theglitchking/claude-plugin-runtime` |
 
@@ -465,6 +467,22 @@ semantic-memory eval generate --notes <dir> [--docs 20] [--model <name>] [--dir 
 - `generate` — blind questions from sampled docs via the host `claude`, validated, written to `generated.jsonl`; exit 1 when none were kept.
 
 Never re-embeds the index or writes search logs. Notes changed since the last index are indexed first, as on a server start. Guide: [retrieval eval guide](../operational/retrieval-eval-guide.md).
+
+## `gaps` (v1.15+) — searches that found nothing
+
+```
+semantic-memory gaps [--root <dir>] [--since <iso>] [--include-repo-grep] [--json]
+```
+
+Reads `<root>/.claude/.semantic-memory/usage.jsonl`. Text output lists each gap with its signals (no read, grep fallback, doc not in results). `--json` prints the `gaps.v1` object ([format](./gaps-format.md)). `--include-repo-grep` also counts greps outside a vault. A missing log prints `gaps: []` and exits 0. See the [guide](../operational/search-gaps-guide.md).
+
+## `usage-set` (v1.15+) — question set from usage
+
+```
+semantic-memory usage-set [--root <dir>] [--out <file>]
+```
+
+Writes `.claude/.semantic-memory/eval/usage.jsonl` (default) in `eval`'s question-set format: only searches whose doc was used, split `tune` / `heldout` by a hash of the normalized query. `eval` loads it with the other `*.jsonl` there. Paths are vault-relative, so with several vaults in one repo the set can mix them.
 
 ## `skill-loop` (v1.7+) — learned skills between sessions
 

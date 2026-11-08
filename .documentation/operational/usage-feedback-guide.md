@@ -29,7 +29,7 @@ multiplier = min(cap, 1 + citations × per_citation)
 
 Defaults (from `vault.schema.yml`'s `usage_boost` block): `cap: 1.5`, `per_citation: 0.1`. So a note cited once is 1.1×, cited five times is 1.5× (capped — the 6th citation adds nothing further). Zero citations is an exact 1.0× no-op.
 
-"Citations" here means `read_note` calls that followed the note appearing in a `search_semantic`/`search_hybrid` result — the same `selection`-kind events the v1.3.1 telemetry log (`.claude/.semantic-memory/selection.jsonl`) already records. Usage-feedback ranking doesn't add new instrumentation; it just reads that log back.
+"Citations" here means every `read_note` call the server logs as a `selection` event (the code does not check that a search preceded it) — the same `selection`-kind events the v1.3.1 telemetry log (`.claude/.semantic-memory/selection.jsonl`) already records. Usage-feedback ranking doesn't add new instrumentation; it just reads that log back.
 
 The citation snapshot is cached for 15 seconds and refreshed before each search batch, so a citation you make mid-session takes effect on your next search in the same session — you don't need to wait for a new process.
 
@@ -88,6 +88,10 @@ usage_boost:
 ```
 
 Reproduces byte-identical pre-v1.5 ranking. The `decoys` lint check keeps working independently of this flag — it reads the same selection log regardless of whether boosting is enabled, since it's a pure read/surface operation, not a ranking change.
+
+## Two logs (v1.15)
+
+`selection.jsonl` (written by the server) feeds `usage_boost`. A `--read-only` server writes it under `<vault>/.semantic-sidekick-index/` instead of `.claude/.semantic-memory/` (see the [fact](../knowledge-base/facts/read-only-server-selection-log-location.md)). `usage.jsonl` (written by the PostToolUse hook) feeds `gaps` and `usage-set` and never touches ranking. The two report different numbers; see the [search gaps guide](./search-gaps-guide.md).
 
 ## Troubleshooting
 

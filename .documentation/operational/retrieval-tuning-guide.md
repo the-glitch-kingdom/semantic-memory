@@ -154,7 +154,7 @@ EVAL_RERANK=1 npm run eval         # try the reranker
 EVAL_MODEL=<hf-model> npm run eval # try another 384-d embedder
 node scripts/retrieval-eval/stale-audit.mjs <notes>   # stale vectors, orphans, index vs disk
 node scripts/retrieval-eval/real-corpus.mjs           # own questions against a real docs tree
-node scripts/retrieval-eval/mine-selection.mjs        # draft eval questions from selection.jsonl (hand review)
+semantic-memory usage-set                                # usage.jsonl -> eval/usage.jsonl (searches that ended in a used doc); `eval` loads it
 ```
 
 The gate is `test/retrieval-eval/baseline.json`: @1 floors per arm, archive hits, `answeredFlagged` and `meanBytes` ceilings, link precision and recall. Raise a floor when a change earns it. Add cases to `test/retrieval-eval/golden.jsonl` with `facets` (regexes the answer must match), `negative: true` for questions the corpus does not answer.

@@ -1,0 +1,42 @@
+{
+  "session_id": "SESSION-ID",
+  "transcript_path": "/home/user/.claude/projects/proj/SESSION-ID.jsonl",
+  "cwd": "/home/user/proj",
+  "prompt_id": "PROMPT-ID",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Glob",
+  "tool_input": {
+    "pattern": "**/*.md",
+    "path": "/home/user/proj/.documentation"
+  },
+  "tool_response": {
+    "filenames": [
+      "/home/user/proj/.documentation/operational/backup-schedule.md",
+      "/home/user/proj/.documentation/operational/gateway-disk-layout.md",
+      "/home/user/proj/.documentation/operational/rotating-api-keys.md",
+      "/home/user/proj/.documentation/operational/uplink-cost-controls.md",
+      "/home/user/proj/.documentation/operational/deploying-edge-agent.md",
+      "/home/user/proj/.documentation/operational/offline-sync.md",
+      "/home/user/proj/.documentation/operational/scaling-consumers.md",
+      "/home/user/proj/.documentation/operational/log-rotation.md",
+      "/home/user/proj/.documentation/reference/message-schema.md",
+      "/home/user/proj/.documentation/reference/display-settings.md",
+      "/home/user/proj/.documentation/reference/cli-reference.md",
+      "/home/user/proj/.documentation/reference/units-and-timezones.md",
+      "/home/user/proj/.documentation/reference/rate-limits.md",
+      "/home/user/proj/.documentation/reference/config-reference.md",
+      "/home/user/proj/.documentation/reference/telemetry-glossary.md"
+    ],
+    "durationMs": 11,
+    "numFiles": 15,
+    "truncated": false,
+    "totalMatches": 15,
+    "countIsComplete": true
+  },
+  "tool_use_id": "TOOL-USE-ID",
+  "duration_ms": 1
+}

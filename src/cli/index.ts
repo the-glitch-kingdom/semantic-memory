@@ -2,7 +2,7 @@
 
 import { program } from "commander";
 import { resolve, join, dirname, relative } from "node:path";
-import { existsSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -1215,6 +1215,38 @@ registerFeatureCommands(program, {
   },
 });
 registerSkillLoopCommands(program);
+
+program
+  .command("usage-set")
+  .description("Write the usage eval set (searches that ended in a used doc) in `eval` question-set format; `eval` loads it from the eval dir")
+  .option("--root <dir>", "Repo root (default: the repo of the current directory)")
+  .option("--out <file>", "Output file (default <root>/.claude/.semantic-memory/eval/usage.jsonl)")
+  .action(async (opts) => {
+    const { repoRoot } = await import("../core/skill-evidence.js");
+    const { readUsage, usageEvalSet } = await import("../core/usage-log.js");
+    const root = opts.root ?? repoRoot(process.cwd());
+    const out = opts.out ?? join(root, ".claude", ".semantic-memory", "eval", "usage.jsonl");
+    const cases = usageEvalSet(readUsage(root));
+    mkdirSync(dirname(out), { recursive: true });
+    writeFileSync(out, cases.map((c) => JSON.stringify(c)).join("\n") + (cases.length ? "\n" : ""));
+    console.log(`${cases.length} questions (${cases.filter((c) => c.split === "heldout").length} heldout) -> ${out}`);
+  });
+
+program
+  .command("gaps")
+  .description("Searches that did not end well (no read, grep fallback, or a doc outside the results), from the usage log. --json is hewtd's gaps.v1 for `hewtd reconcile --gaps`")
+  .option("--root <dir>", "Repo root (default: the repo of the current directory)")
+  .option("--since <iso>", "Only searches at or after this ISO date")
+  .option("--include-repo-grep", "Count grep fallbacks outside a vault too")
+  .option("--json", "Print gaps.v1 JSON")
+  .action(async (opts) => {
+    const { repoRoot } = await import("../core/skill-evidence.js");
+    const { readUsage, computeGaps, toGapsV1 } = await import("../core/usage-log.js");
+    const gaps = computeGaps(readUsage(opts.root ?? repoRoot(process.cwd())), { since: opts.since, includeRepoGrep: opts.includeRepoGrep });
+    if (opts.json) console.log(JSON.stringify(toGapsV1(gaps, version), null, 2));
+    else if (!gaps.length) console.log("gaps: []");
+    else for (const g of gaps) console.log(`${g.count}x  ${g.query}\n     ${g.used_doc ? `used ${g.used_doc}` : "no doc used"}  -> ${g.suggested}  [${g.signals.join(", ")}]  last ${g.last_seen}`);
+  });
 registerSkillEvalCommands(program);
 registerEvalCommand(program);
 
