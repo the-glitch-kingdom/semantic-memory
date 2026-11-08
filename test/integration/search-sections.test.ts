@@ -80,7 +80,7 @@ describe("granularity doc is the v1.16.0 output", () => {
     const snap = JSON.parse(await readFile(join(FIX, "flat-vault-v1.16.0.json"), "utf-8")) as any[];
     expect(snap.length).toBe(24);
     for (const s of snap) {
-      const got = (await h.call(s.tool, { query: s.q, limit: 3, full: s.full, granularity: "doc" })).map((x: any) => ({ ...x, score: Math.round(x.score * 1e4) / 1e4, mtime: undefined }));
+      const got = (await h.call(s.tool, { query: s.q, limit: 3, full: s.full, granularity: "doc" })).map((x: any) => ({ ...x, score: Math.round(x.score * 1e4) / 1e4, mtime: undefined, query_type: undefined })); // query_type is v1.18.0
       const norm = (rs: any[]) => rs.map((x) => ({ ...x, score: undefined, cosine: undefined }));
       expect(norm(got), `${s.tool} ${s.full} ${s.q}`).toEqual(norm(s.results));
       got.forEach((x: any, i: number) => expect(Math.abs(x.score - s.results[i].score)).toBeLessThan(2e-3));

@@ -7,6 +7,7 @@ import { missingTerms } from "../../core/identifiers.js";
 import { entityCard, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { fold } from "../../core/fold.js";
+import { classifyQuery, type QueryType } from "../../core/query-type.js";
 import { sectionFields } from "../../core/section-fields.js";
 import { excerpt, isWeak, standaloneConfidence, withConfidence, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
@@ -25,8 +26,9 @@ async function logSearch(ctx: ServerContext, tool: string, query: string, enrich
     score: r.score,
     ...(r.decay ? { decay: r.decay.multiplier } : {}),
   }));
+  const queryType: QueryType | undefined = enriched[0]?.query_type;
   recordSearchForCorrelation(ctx.notesPath, results.map((r) => r.path));
-  await appendEvent(ctx.notesPath, { kind: "search", tool, query, results }, undefined, ctx.telemetryDir);
+  await appendEvent(ctx.notesPath, { kind: "search", tool, query, results, ...(queryType && { query_type: queryType }) }, undefined, ctx.telemetryDir);
 }
 
 /** Context expansion: the #1 result's direct link neighbours that the search also found and that clear the confidence bar. */
@@ -43,7 +45,7 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
  * and a ~600-char excerpt around the match; `full` keeps the whole enriched result. A weak top result marks every
  * returned result `no_strong_match` (the response is an array, so the flag rides on its items).
  */
-function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null, granularity: Granularity = "section") {
+function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null, granularity: Granularity = "section", queryType?: QueryType) {
   const scored = withConfidence(granularity === "section" ? fold(ranked, ctx.getDocByPath(), ctx.getCode()) : ranked);
   const page = scored.slice(0, limit);
   const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase());
@@ -70,7 +72,8 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
           ...((e as any).usage && { usage: (e as any).usage }),
         };
     if (full && granularity === "section") Object.assign(out, { ...(sec.section && { section: sec.section }), ...(sec.anchor && { anchor: sec.anchor }), ...(sec.code && { code: sec.code }) });
-    const withCard = i === 0 && card ? { ...out, entity: card } : out;
+    const typed = i === 0 && queryType ? { ...out, query_type: queryType } : out;
+    const withCard = i === 0 && card ? { ...typed, entity: card } : typed;
     if (weak) return { ...withCard, no_strong_match: true, ...(missing.length && { missing_terms: missing }), ...(undocumented.length && { undocumented }) };
     const related = i === 0 ? relatedTo(ctx, r.path, scored) : [];
     return related.length ? { ...withCard, related } : withCard;
@@ -184,8 +187,9 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       domain: z.string().optional().describe("Filter by frontmatter domain"),
       full: fullArg,
       granularity: granularityArg,
+      mode: z.enum(["auto", "identifier", "fact", "flow"]).optional().default("auto").describe("Query type: auto classifies the query; the other values override it. Reported as query_type on result #1; ranking is the same."),
     },
-    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity }) => {
+    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity, mode }) => {
       const vectorIndex = ctx.getVectorIndex();
       if (!vectorIndex) {
         return ctx.textResponse(ctx.indexingMessage());
@@ -209,7 +213,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
 
       if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
-      const enriched = shape(ctx, hybrid, query, limit, full, ctx.bm25Min(), granularity);
+      const enriched = shape(ctx, hybrid, query, limit, full, ctx.bm25Min(), granularity, mode === "auto" ? classifyQuery(query) : mode);
       await logSearch(ctx, "search_hybrid", query, enriched);
       return ctx.textResponse(JSON.stringify(enriched, null, 2));
     }

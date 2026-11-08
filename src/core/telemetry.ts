@@ -24,6 +24,8 @@ export interface SearchEvent {
   tool: string;
   query: string;
   results: { path: string; score: number; decay?: number }[];
+  /** Classifier label of a search_hybrid query (identifier | fact | flow). */
+  query_type?: string;
 }
 
 export interface SelectionEvent {

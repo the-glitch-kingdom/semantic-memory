@@ -51,3 +51,15 @@ Baseline, search_hybrid, `npm run eval` (docs-eval, real-corpus-eval; fact-tier 
 search_semantic (reference): fixture-train 38/45 fact @1, multi 2/12 @1, 12/12 @3; fixture-heldout 22/29, multi 1/7, 5/7; real-train 13/18, multi 5/9, 8/9; real-heldout 7/21, multi 4/6, 5/6.
 Code sets (answer ranked first, search_hybrid): train 10/10, heldout 10/10.
 Targets for later phases: the reading path on multi must reach `max(#1+related, @3)`: fixture-train 10/12, fixture-heldout 5/7, real-train 8/9, real-heldout 6/6 (the #1+related column already equals or beats @3 on real splits). Real-corpus numbers vary by about one case per run.
+
+## Eval results: Phase 3 (classifier accuracy, rules tuned on train only)
+| split | accuracy |
+|---|---|
+| fixture-train (golden-docs) | 75/77 = 0.97 |
+| real-train | 47/47 = 1.00 |
+| code-train | 8/10 = 0.80 |
+| fixture-heldout | 50/52 = 0.96 |
+| real-heldout | 41/43 = 0.95 |
+| code-heldout | 9/10 = 0.90 |
+
+Printed by `npm run eval` (test/retrieval-eval/qtype-labels.test.ts); train floor 0.8. Train misses: one kebab/subcommand identifier, one flow ("how does it catch up and where do payloads end up"), two code-set identifiers (sluice-drain, warmctl prime). Ranking unchanged: fact @1 and multi @3 identical to the Phase 2 baseline by construction (the label is attached after ranking; a test checks the path order is the same under a forced mode).

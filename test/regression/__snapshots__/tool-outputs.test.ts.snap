@@ -361,6 +361,7 @@ exports[`Regression: MCP tool outputs (golden snapshots) > search_hybrid > retur
   "anchor",
   "confidence",
   "path",
+  "query_type",
   "related",
   "score",
   "section",

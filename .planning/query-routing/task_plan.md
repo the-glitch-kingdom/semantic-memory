@@ -38,14 +38,14 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
         reading the question, not by copying the tier. Most `multi` rows are two facts joined by "and", not step flows:
         label honestly.
   - [x] Record the baseline per split with `eval`: fact-tier @1, multi @3, "#1 + related", p50/p95.
-- [ ] Phase 3: Classifier and label (no ranking change)
-  - [ ] `src/core/query-type.ts` `classifyQuery(q)`: identifier = backticks, snake_case, camelCase, ALL_CAPS, a path, a
+- [x] Phase 3: Classifier and label (no ranking change)
+  - [x] `src/core/query-type.ts` `classifyQuery(q)` (done; rules differ, see Decisions Made): identifier = backticks, snake_case, camelCase, ALL_CAPS, a path, a
         file extension or `()` with ≤ 4 content tokens, or a corpus identifier hit through the shared detector; flow =
         "end to end", "walk through", "step by step", "lifecycle", "flow", "pipeline", "from X to Y", ≥ 2 action verbs
         in a list, or two wh-clauses joined by "and"; fact = everything else.
-  - [ ] `search_hybrid` gains `mode: "auto" | "identifier" | "fact" | "flow"` (default auto); `query_type` on result #1;
+  - [x] `search_hybrid` gains `mode: "auto" | "identifier" | "fact" | "flow"` (default auto); `query_type` on result #1;
         the search event (#59 usage log, if present) records it.
-  - [ ] `eval` prints classifier accuracy per split (floor about 0.8 on train, held-out reported).
+  - [x] `eval` prints classifier accuracy per split (floor about 0.8 on train, held-out reported).
 - [ ] Phase 4: PPR walk (`GraphBuilder.walk` in `src/core/graph.ts`)
   - [ ] `walk(seeds: Map<path, score>, {alpha 0.15, maxNodes 300, maxSteps 20, maxDegree 50, skip})`: local subgraph
         from the seeds (both directions) up to `maxNodes`, power iteration on it as undirected until `maxSteps` or L1
@@ -94,12 +94,16 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
   joined by "and", which the issue's rules would miss.
 - The walk values are constants (alpha 0.15, 300 nodes, 20 steps, degree cap 50), tuned on train only if needed.
 
+- Classifier rules (train-tuned): identifier = #57 `identifiers()` hit, or PascalCase of 3+ words, `--flag`, `name()`; flow = end to end, walk through, step by step, lifecycle, whole life, journey, big picture, one-page summary, overview of, fit together, flow, "from X to Y". Dropped from the plan's list: "two wh-clauses joined by and" (on train it caught 2 flows and mislabelled 14 two-fact questions, which Phase 2 labelled fact), "pipeline" (fact question about a pipeline wait), bare ALL_CAPS (SAML, CUDA are prose; the real env vars have underscores), "2+ action verbs" (never fires on a train flow row), the "<= 4 content tokens" limit on `()`. Kebab-case (sluice-drain) and "tool subcommand" (warmctl prime) stay misses: #57 excludes kebab on purpose.
+- `mode` is on search_hybrid only; `query_type` rides on result #1 and the search usage event.
+
 ## Errors Encountered
 - (none yet)
+- Phase 3: unrelated known flake again: hook-failure Jev-hang passed alone. Snapshots updated for the new `mode` arg (tool-surface) and `query_type` (tool-outputs); the v1.16.0 granularity-doc snapshot test ignores `query_type`.
 - Phase 2: hook-failure Jev-hang test flaked under full-suite load and passed alone (known flake). Labels cover the six routing-eval splits (docs, real, code, train and held-out); the other golden files (golden.jsonl, decay, graph, section) are not routing-eval inputs and stay unlabelled.
 
 ## Status
-**Currently in Phase 3** - classifier and label (no ranking change)
+**Currently in Phase 4** - PPR walk
 
 ---
 
