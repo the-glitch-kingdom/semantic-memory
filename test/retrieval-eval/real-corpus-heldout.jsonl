@@ -1,46 +1,46 @@
 // Held-out real-corpus set for this repo's .documentation (v191-ranking-regression Phase 2). Written before any ranking change in that plan and never
 // used to choose weights or thresholds; tuning uses real-corpus.jsonl only. Questions are our own, symptom-heavy; paraphrases share no key terms with the answer doc.
-{"id":"h01","tier":"paraphrase","q":"A helper my unattended scheduled job launches cannot locate the assistant program","facets":["inherits that PATH"]}
-{"id":"h02","tier":"paraphrase","q":"The stripped-down mode of the assistant cannot sign in on my subscription laptop","facets":["ANTHROPIC_API_KEY"]}
-{"id":"h03","tier":"paraphrase","q":"A supposedly read-only background run was able to share or remove files from my cloud drive","facets":["share_file"]}
-{"id":"h04","tier":"paraphrase","q":"I fixed a skill by hand and the next package refresh silently reverted my fix","facets":["undoes it"]}
-{"id":"h05","tier":"paraphrase","q":"Two servers on one folder used up over a thousand kernel file-monitoring handles","facets":["inotify watch for every file"]}
-{"id":"h06","tier":"paraphrase","q":"Retired copies of live pages kept showing up beside them in answers","facets":["do not match a path segment that starts with a dot"]}
-{"id":"h07","tier":"paraphrase","q":"Retiring a page quietly replaced a different file that already sat in the retired folder","facets":["archive/README\\.md"]}
-{"id":"h08","tier":"paraphrase","q":"Dependency refresh throws a null-property error while resolving optional peers of the test runner","facets":["edgesOut"]}
-{"id":"h09","tier":"paraphrase","q":"My suite stayed green although the feature under test never worked","facets":["Skipping: filesystem events"]}
-{"id":"h10","tier":"paraphrase","q":"Every launch pulls a ninety megabyte model from the internet again","facets":["downloaded the 90 MB"]}
-{"id":"h11","tier":"paraphrase","q":"Prompt context stays empty even though my project notes clearly answer the question","facets":["searched only the first"]}
-{"id":"h12","tier":"paraphrase","q":"Which dotfiles moved into the new state folder and does the old location still work","facets":["Stop-hook capture queue"]}
-{"id":"h13","tier":"paraphrase","q":"Can a note people use constantly ever be pushed down in the ordering automatically","facets":["never auto-down-ranks"]}
-{"id":"h14","tier":"paraphrase","q":"Each lifecycle hook runs two times per event after I installed the plugin","facets":["hook_double_registration"]}
-{"id":"h15","tier":"paraphrase","q":"I want Claude to call one of the server's tools without searching for it first","facets":["exempt every tool of one server"]}
-{"id":"h16","tier":"paraphrase","q":"My vague shorthand for a component resolves to nothing; how do I teach the system what I mean","facets":["propose-and-confirm"]}
-{"id":"h17","tier":"paraphrase","q":"The end-of-conversation summary the assistant files: does it become permanent without my review","facets":["graduate it with"]}
-{"id":"e01","tier":"exact","q":"Which setting sets the minimum score for the failure-time fact lookup?","facets":["Optional: `SEMANTIC_MEMORY_FAILURE_MIN_SCORE"]}
-{"id":"e02","tier":"exact","q":"Where is the compiled lexicon cache stored?","facets":["compiled, fast-lookup cache lives at"]}
-{"id":"e03","tier":"exact","q":"Where does a dossier note live in the vault?","facets":["dossiers/<slug>\\.md"]}
-{"id":"e04","tier":"exact","q":"What does the hook_registration drift check warn about?","facets":["Missing one of `SessionStart`"]}
-{"id":"m01","tier":"multi","q":"How many inotify watches did a 537-file tree hold and how do I count a process's watches?","facets":["629 watches","fdinfo"]}
-{"id":"m02","tier":"multi","q":"What does failure lookup add to the conversation and how many facts per failure?","facets":["<vault-fact","One fact per failure"]}
-{"id":"m03","tier":"multi","q":"Which index directory keeps its legacy name and what does v2.0 do with it?","facets":["retains the legacy name","global model cache"]}
-{"id":"n01","tier":"negative","q":"How do I set up Slack notifications for failed builds?"}
-{"id":"n02","tier":"negative","q":"What does the mobile app do in offline mode?"}
-{"id":"n03","tier":"negative","q":"How do I rotate the TLS certificate for the production server?"}
-{"id":"n04","tier":"negative","q":"Which Terraform module provisions the cloud database?"}
-{"id":"n05","tier":"negative","q":"How do I translate the notes into French automatically?"}
-{"id":"n06","tier":"negative","q":"What does the enterprise pricing tier cost per seat?"}
-{"id":"n07","tier":"negative","q":"How do I sync the vault with Dropbox?"}
-{"id":"n08","tier":"negative","q":"Which Python version does the project require?"}
+{"id":"h01","tier":"paraphrase","qtype":"fact","q":"A helper my unattended scheduled job launches cannot locate the assistant program","facets":["inherits that PATH"]}
+{"id":"h02","tier":"paraphrase","qtype":"fact","q":"The stripped-down mode of the assistant cannot sign in on my subscription laptop","facets":["ANTHROPIC_API_KEY"]}
+{"id":"h03","tier":"paraphrase","qtype":"fact","q":"A supposedly read-only background run was able to share or remove files from my cloud drive","facets":["share_file"]}
+{"id":"h04","tier":"paraphrase","qtype":"fact","q":"I fixed a skill by hand and the next package refresh silently reverted my fix","facets":["undoes it"]}
+{"id":"h05","tier":"paraphrase","qtype":"fact","q":"Two servers on one folder used up over a thousand kernel file-monitoring handles","facets":["inotify watch for every file"]}
+{"id":"h06","tier":"paraphrase","qtype":"fact","q":"Retired copies of live pages kept showing up beside them in answers","facets":["do not match a path segment that starts with a dot"]}
+{"id":"h07","tier":"paraphrase","qtype":"fact","q":"Retiring a page quietly replaced a different file that already sat in the retired folder","facets":["archive/README\\.md"]}
+{"id":"h08","tier":"paraphrase","qtype":"fact","q":"Dependency refresh throws a null-property error while resolving optional peers of the test runner","facets":["edgesOut"]}
+{"id":"h09","tier":"paraphrase","qtype":"fact","q":"My suite stayed green although the feature under test never worked","facets":["Skipping: filesystem events"]}
+{"id":"h10","tier":"paraphrase","qtype":"fact","q":"Every launch pulls a ninety megabyte model from the internet again","facets":["downloaded the 90 MB"]}
+{"id":"h11","tier":"paraphrase","qtype":"fact","q":"Prompt context stays empty even though my project notes clearly answer the question","facets":["searched only the first"]}
+{"id":"h12","tier":"paraphrase","qtype":"fact","q":"Which dotfiles moved into the new state folder and does the old location still work","facets":["Stop-hook capture queue"]}
+{"id":"h13","tier":"paraphrase","qtype":"fact","q":"Can a note people use constantly ever be pushed down in the ordering automatically","facets":["never auto-down-ranks"]}
+{"id":"h14","tier":"paraphrase","qtype":"fact","q":"Each lifecycle hook runs two times per event after I installed the plugin","facets":["hook_double_registration"]}
+{"id":"h15","tier":"paraphrase","qtype":"fact","q":"I want Claude to call one of the server's tools without searching for it first","facets":["exempt every tool of one server"]}
+{"id":"h16","tier":"paraphrase","qtype":"fact","q":"My vague shorthand for a component resolves to nothing; how do I teach the system what I mean","facets":["propose-and-confirm"]}
+{"id":"h17","tier":"paraphrase","qtype":"fact","q":"The end-of-conversation summary the assistant files: does it become permanent without my review","facets":["graduate it with"]}
+{"id":"e01","tier":"exact","qtype":"fact","q":"Which setting sets the minimum score for the failure-time fact lookup?","facets":["Optional: `SEMANTIC_MEMORY_FAILURE_MIN_SCORE"]}
+{"id":"e02","tier":"exact","qtype":"fact","q":"Where is the compiled lexicon cache stored?","facets":["compiled, fast-lookup cache lives at"]}
+{"id":"e03","tier":"exact","qtype":"fact","q":"Where does a dossier note live in the vault?","facets":["dossiers/<slug>\\.md"]}
+{"id":"e04","tier":"exact","qtype":"identifier","q":"What does the hook_registration drift check warn about?","facets":["Missing one of `SessionStart`"]}
+{"id":"m01","tier":"multi","qtype":"fact","q":"How many inotify watches did a 537-file tree hold and how do I count a process's watches?","facets":["629 watches","fdinfo"]}
+{"id":"m02","tier":"multi","qtype":"fact","q":"What does failure lookup add to the conversation and how many facts per failure?","facets":["<vault-fact","One fact per failure"]}
+{"id":"m03","tier":"multi","qtype":"fact","q":"Which index directory keeps its legacy name and what does v2.0 do with it?","facets":["retains the legacy name","global model cache"]}
+{"id":"n01","tier":"negative","qtype":"fact","q":"How do I set up Slack notifications for failed builds?"}
+{"id":"n02","tier":"negative","qtype":"fact","q":"What does the mobile app do in offline mode?"}
+{"id":"n03","tier":"negative","qtype":"fact","q":"How do I rotate the TLS certificate for the production server?"}
+{"id":"n04","tier":"negative","qtype":"fact","q":"Which Terraform module provisions the cloud database?"}
+{"id":"n05","tier":"negative","qtype":"fact","q":"How do I translate the notes into French automatically?"}
+{"id":"n06","tier":"negative","qtype":"fact","q":"What does the enterprise pricing tier cost per seat?"}
+{"id":"n07","tier":"negative","qtype":"fact","q":"How do I sync the vault with Dropbox?"}
+{"id":"n08","tier":"negative","qtype":"fact","q":"Which Python version does the project require?"}
 // field-eval additions (retrieval-ready-fields Phase 2). Never tuned on.
-{"id": "xh20", "tier": "multi", "q": "Tell me everything about how modes work, including the incident one and what is captured when leaving one", "facets": ["Transition capture", "incident mode"]}
-{"id": "xh21", "tier": "multi", "q": "What did the big v1 refactor change in the server layout, and which tools became shims?", "facets": ["organizational refactor", "deprecation shims"]}
-{"id": "xh22", "tier": "multi", "q": "What storage names stay the same after the rebrand, and how is a session finish gated?", "facets": ["Storage layout PRESERVED", "Hard gate semantics"]}
-{"id":"i01","tier":"negative","q":"What is search.rerank.depth_limit by default?","negative_kind":"identifier"}
-{"id":"i02","tier":"negative","q":"When does evict_cold_chunks run?","negative_kind":"identifier"}
-{"id":"i03","tier":"negative","q":"What is CHUNK_REPLAY_BUDGET?","negative_kind":"identifier"}
-{"id":"i04","tier":"negative","q":"What does sealNoteDigest return?","negative_kind":"identifier"}
-{"id":"i05","tier":"negative","q":"How do I use tools/audit/dump_bm25_vocab.py?","negative_kind":"identifier"}
-{"id":"i06","tier":"negative","q":"What does retrieval.fusion.k_const tune?","negative_kind":"identifier"}
-{"id":"i07","tier":"negative","q":"When do I need migrate_sidecar_epoch?","negative_kind":"identifier"}
-{"id":"i08","tier":"negative","q":"What does `purgeShardLedger` remove?","negative_kind":"identifier"}
+{"id": "xh20", "tier": "multi", "qtype": "flow", "q": "Tell me everything about how modes work, including the incident one and what is captured when leaving one", "facets": ["Transition capture", "incident mode"]}
+{"id": "xh21", "tier": "multi", "qtype": "fact", "q": "What did the big v1 refactor change in the server layout, and which tools became shims?", "facets": ["organizational refactor", "deprecation shims"]}
+{"id": "xh22", "tier": "multi", "qtype": "fact", "q": "What storage names stay the same after the rebrand, and how is a session finish gated?", "facets": ["Storage layout PRESERVED", "Hard gate semantics"]}
+{"id":"i01","tier":"negative","qtype":"identifier","q":"What is search.rerank.depth_limit by default?","negative_kind":"identifier"}
+{"id":"i02","tier":"negative","qtype":"identifier","q":"When does evict_cold_chunks run?","negative_kind":"identifier"}
+{"id":"i03","tier":"negative","qtype":"identifier","q":"What is CHUNK_REPLAY_BUDGET?","negative_kind":"identifier"}
+{"id":"i04","tier":"negative","qtype":"identifier","q":"What does sealNoteDigest return?","negative_kind":"identifier"}
+{"id":"i05","tier":"negative","qtype":"identifier","q":"How do I use tools/audit/dump_bm25_vocab.py?","negative_kind":"identifier"}
+{"id":"i06","tier":"negative","qtype":"identifier","q":"What does retrieval.fusion.k_const tune?","negative_kind":"identifier"}
+{"id":"i07","tier":"negative","qtype":"identifier","q":"When do I need migrate_sidecar_epoch?","negative_kind":"identifier"}
+{"id":"i08","tier":"negative","qtype":"identifier","q":"What does `purgeShardLedger` remove?","negative_kind":"identifier"}

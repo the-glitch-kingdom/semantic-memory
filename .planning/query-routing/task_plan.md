@@ -33,11 +33,11 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
   - [x] Re-verify against main @ eb9bb00 (v1.17.0); phases adjusted (bestSection added in Phase 5; Phase 6 labels only)
   - [x] Post the verification comment on #61
   - [x] Sync main, cut `feat/query-routing`, commit this plan
-- [ ] Phase 2: Labelled questions and baseline
-  - [ ] Add a hand-labelled `qtype` (identifier | fact | flow) to every golden row (fixture, real, code sets); label by
+- [x] Phase 2: Labelled questions and baseline
+  - [x] Add a hand-labelled `qtype` (identifier | fact | flow) to every golden row (fixture, real, code sets); label by
         reading the question, not by copying the tier. Most `multi` rows are two facts joined by "and", not step flows:
         label honestly.
-  - [ ] Record the baseline per split with `eval`: fact-tier @1, multi @3, "#1 + related", p50/p95.
+  - [x] Record the baseline per split with `eval`: fact-tier @1, multi @3, "#1 + related", p50/p95.
 - [ ] Phase 3: Classifier and label (no ranking change)
   - [ ] `src/core/query-type.ts` `classifyQuery(q)`: identifier = backticks, snake_case, camelCase, ALL_CAPS, a path, a
         file extension or `()` with ≤ 4 content tokens, or a corpus identifier hit through the shared detector; flow =
@@ -96,9 +96,10 @@ PR from `feat/query-routing`. Series step 4. Every missed target is stated in th
 
 ## Errors Encountered
 - (none yet)
+- Phase 2: hook-failure Jev-hang test flaked under full-suite load and passed alone (known flake). Labels cover the six routing-eval splits (docs, real, code, train and held-out); the other golden files (golden.jsonl, decay, graph, section) are not routing-eval inputs and stay unlabelled.
 
 ## Status
-**Currently in Phase 2** - labelled questions and baseline
+**Currently in Phase 3** - classifier and label (no ranking change)
 
 ---
 

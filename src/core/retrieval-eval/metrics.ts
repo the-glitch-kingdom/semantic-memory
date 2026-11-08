@@ -120,6 +120,8 @@ export interface FacetCase {
   id: string;
   tier: "exact" | "paraphrase" | "symptom" | "nofield" | "multi" | "negative";
   q: string;
+  /** Hand-labelled by reading the question (not copied from the tier): what a query classifier should say. */
+  qtype?: "identifier" | "fact" | "flow";
   /** Regexes (case-insensitive). The case is answered at k when every one matches the text of some non-archive result in the top k. */
   facets?: string[];
   /** Expected doc paths: when set, found@k and MRR are reported too (a hit = any one of them ranks in top-k). */
