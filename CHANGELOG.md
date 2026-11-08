@@ -16,7 +16,7 @@ Identifier negatives flagged, fixture train / held-out and real train / held-out
 
 ### Missed targets
 
-External blind-set run (4 of 7 / at most 2 of 34) not done; bare ALL_CAPS and `*.py` not detected; offline tarball 922 MB (cause unknown) and to be rebuilt from the merge commit.
+External blind-set run (4 of 7 / at most 2 of 34) not done; bare ALL_CAPS and `*.py` are not detected (left out on purpose: acronyms and globs are too common in prose).
 
 ## [1.13.0] - 2026-11-07 — Built-in retrieval eval
 

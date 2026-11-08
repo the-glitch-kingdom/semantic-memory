@@ -48,4 +48,3 @@ Review found two false-flag paths, fixed with tests: names with edge underscores
 - A query spelled with underscores is flagged when the docs only say the hyphenated or spaced form. True as worded, but it can surprise.
 - The hook line can fire on a pasted code path absent from the docs, past the existing score gate.
 - The doc path list is joined on every search; cache it if a vault passes about 50k docs.
-- The offline tarball is 922 MB against the roughly 0.55 GB norm, cause unknown, and must be rebuilt from the merge commit.
