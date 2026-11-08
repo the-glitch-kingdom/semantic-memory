@@ -91,8 +91,8 @@ Series step 2. Every missed target is stated in the PR.
   - [x] `undocumented: [{entity, path}]` alongside `missing_terms`: an identifier in no doc that exists in code is reported as
         undocumented, not missing.
         (Done in `splitUndocumented`, used by MCP `shape()` and CLI `openSearch`; `no_strong_match` is still set; `missing_terms` keeps only names found in neither docs nor code.)
-- [ ] Phase 8: Release prep v1.16.0
-  - [ ] Bump all five version fields, lockfile; offline tarball builds
+- [x] Phase 8: Release prep v1.16.0
+  - [x] Bump all five version fields, lockfile (offline tarball: deferred to release, built from the merge commit)
 - [ ] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove trial knobs and sweep scripts; dead-code check over the branch diff.
 - [ ] Phase 10: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
