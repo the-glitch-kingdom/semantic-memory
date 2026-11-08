@@ -54,6 +54,10 @@ Lives inside the vault: `<vault>/.semantic-sidekick-index/`. Created on first `r
 | `graph.json` | Knowledge graph: nodes (notes), edges (wikilinks, related_docs, tag-based links). Used by `search_graph`, `search_hybrid`, `backlinks`, `forwardlinks`, `graph_path`, `graph_statistics`. | `src/core/graph.ts:197` | Yes — rebuilds |
 | `docs.cache.json` | Verbatim JSON dump of the last `indexAll()` result. The vault-context.js hook reads this to avoid re-parsing every note on every UserPromptSubmit (the 9× speedup). | `src/core/indexer.ts:58` | Yes — rebuilds (fast) |
 
+### Federated sources (v1.19.0+)
+
+Each federation source gets its own index under `<vault>/.semantic-sidekick-index/sources/<label>-<hash8>/` (same files, built with the primary's model); the source folder is never written. Memory is about +16 MB heap and +40 MB RSS per 183-doc source. See the [federation guide](../operational/federation-guide.md).
+
 ### Typical sizes (1000-note vault, ~10 KB average note)
 
 ```

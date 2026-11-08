@@ -149,6 +149,10 @@ The suite points at `/home/tmarlette/workspace/the-glitch-kingdom/sidekick-test-
 
 `unit/graph-walk.test.ts` (walk, caps, 5k-node benchmark), `unit/reading-path.test.ts`, `integration/search-payload.test.ts` (label, `mode`, no reordering), `integration/reading-path-filter.test.ts` (filters, no export), `retrieval-eval/qtype-labels.test.ts` (labels and classifier accuracy). The eval gates forced-flow `#1+path` on the train splits.
 
+### v1.19 federation
+
+`unit/federation.test.ts` (config parse, hewtd siblings, containment), `unit/federation-merge.test.ts`, `integration/federation-sources.test.ts` (read-only, shared embedder, missing and unreadable paths), `integration/federated-search.test.ts`, `integration/federation-notes.test.ts` (stale note, telemetry, no hewtd config), `integration/single-source-snapshot.test.ts` (single-source output equals v1.18.0), and `retrieval-eval/federation-eval.test.ts` (relative gates on train and held-out).
+
 ## Running subsets
 
 ```bash

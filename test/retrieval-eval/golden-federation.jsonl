@@ -1,0 +1,22 @@
+// Cross-source golden set (federated-search Phase 5): test/fixtures/docs-vault is the primary (source "primary"), test/fixtures/vault the second source ("vault"). Our own questions; `expected` is any-of (source, path); `own` names the source whose index alone can answer ("both" = either).
+{"id": "t01", "q": "At what pace are spooled messages replayed once the uplink returns?", "own": "primary", "expected": [{"source": "primary", "path": "operational/offline-sync.md"}]}
+{"id": "t02", "q": "Which roles can edit alert rules?", "own": "primary", "expected": [{"source": "primary", "path": "security/access-control.md"}]}
+{"id": "t03", "q": "How many requests per minute does one key get before throttling?", "own": "primary", "expected": [{"source": "primary", "path": "reference/rate-limits.md"}]}
+{"id": "t04", "q": "Where on the vessel computer do the spool files sit?", "own": "primary", "expected": [{"source": "primary", "path": "operational/gateway-disk-layout.md"}]}
+{"id": "t05", "q": "When does a certificate expire and when should I renew it?", "own": "primary", "expected": [{"source": "primary", "path": "security/certificate-renewal.md"}]}
+{"id": "t06", "q": "Which key scope may only publish telemetry?", "own": "primary", "expected": [{"source": "primary", "path": "security/api-key-scopes.md"}]}
+{"id": "t07", "q": "How long are nightly rule store snapshots retained?", "own": "primary", "expected": [{"source": "primary", "path": "operational/backup-schedule.md"}]}
+{"id": "t08", "q": "What happens to an alert that keeps firing over and over?", "own": "primary", "expected": [{"source": "primary", "path": "architecture/alerting-engine.md"}]}
+{"id": "t09", "q": "How much satellite data may a ship use per month?", "own": "primary", "expected": [{"source": "primary", "path": "operational/uplink-cost-controls.md"}]}
+{"id": "t10", "q": "Which unit are speeds recorded in?", "own": "primary", "expected": [{"source": "primary", "path": "reference/units-and-timezones.md"}]}
+{"id": "t11", "q": "What size do log files reach before they roll over?", "own": "primary", "expected": [{"source": "primary", "path": "operational/log-rotation.md"}]}
+{"id": "t12", "q": "Can I restore an earlier edit of an alert rule?", "own": "primary", "expected": [{"source": "primary", "path": "architecture/rule-store.md"}]}
+{"id": "t13", "q": "which database holds user accounts", "own": "vault", "expected": [{"source": "vault", "path": "user-service.md"}]}
+{"id": "t14", "q": "which message broker carries events between services", "own": "vault", "expected": [{"source": "vault", "path": "event-driven.md"}]}
+{"id": "t15", "q": "what must be installed before shipping a container image", "own": "vault", "expected": [{"source": "vault", "path": "deployment-guide.md"}]}
+{"id": "t16", "q": "how do I undo a bad kubernetes rollout", "own": "vault", "expected": [{"source": "vault", "path": "deployment-guide.md"}]}
+{"id": "t17", "q": "which services make up the backend", "own": "vault", "expected": [{"source": "vault", "path": "microservices.md"}]}
+{"id": "t18", "q": "what are the goals of the project", "own": "vault", "expected": [{"source": "vault", "path": "project-overview.md"}]}
+{"id": "t19", "q": "which login providers can users sign in with", "own": "vault", "expected": [{"source": "vault", "path": "user-service.md"}]}
+{"id": "t20", "q": "what endpoints does the front door expose", "own": "vault", "expected": [{"source": "vault", "path": "api-gateway.md"}]}
+{"id": "t21", "q": "how do we deploy", "own": "both", "expected": [{"source": "primary", "path": "operational/deploying-edge-agent.md"}, {"source": "vault", "path": "deployment-guide.md"}]}

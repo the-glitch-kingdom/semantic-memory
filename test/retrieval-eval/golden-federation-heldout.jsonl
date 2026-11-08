@@ -1,0 +1,21 @@
+// Cross-source held-out golden set (never used to choose a constant or the calibration) (federated-search Phase 5): test/fixtures/docs-vault is the primary (source "primary"), test/fixtures/vault the second source ("vault"). Our own questions; `expected` is any-of (source, path); `own` names the source whose index alone can answer ("both" = either).
+{"id": "h01", "q": "Why did my gateway get refused by the broker?", "own": "primary", "expected": [{"source": "primary", "path": "security/certificate-renewal.md"}]}
+{"id": "h02", "q": "How does a vessel clean up spooled data once it is delivered?", "own": "primary", "expected": [{"source": "primary", "path": "operational/offline-sync.md"}]}
+{"id": "h03", "q": "What is the ceiling on the number of workers?", "own": "primary", "expected": [{"source": "primary", "path": "operational/scaling-consumers.md"}]}
+{"id": "h04", "q": "How long does a new release stay on the first few vessels?", "own": "primary", "expected": [{"source": "primary", "path": "operational/deploying-edge-agent.md"}]}
+{"id": "h05", "q": "Which tiers does data pass through as it ages?", "own": "primary", "expected": [{"source": "primary", "path": "architecture/storage-tiers.md"}]}
+{"id": "h06", "q": "What may an admin key do that the others may not?", "own": "primary", "expected": [{"source": "primary", "path": "security/api-key-scopes.md"}]}
+{"id": "h07", "q": "Which theme options can a person choose?", "own": "primary", "expected": [{"source": "primary", "path": "reference/display-settings.md"}]}
+{"id": "h08", "q": "Who gets woken up for a critical alert?", "own": "primary", "expected": [{"source": "primary", "path": "architecture/alerting-engine.md"}]}
+{"id": "h09", "q": "How long do passenger records stay on file?", "own": "primary", "expected": [{"source": "primary", "path": "security/data-retention.md"}]}
+{"id": "h10", "q": "Where do the text logs go on the gateway?", "own": "primary", "expected": [{"source": "primary", "path": "operational/gateway-disk-layout.md"}]}
+{"id": "h11", "q": "What time zone are timestamps in?", "own": "primary", "expected": [{"source": "primary", "path": "reference/units-and-timezones.md"}]}
+{"id": "h12", "q": "How many messages does a worker write at once?", "own": "primary", "expected": [{"source": "primary", "path": "architecture/ingest-pipeline.md"}]}
+{"id": "h13", "q": "what do a publisher and a subscriber do", "own": "vault", "expected": [{"source": "vault", "path": "event-driven.md"}]}
+{"id": "h14", "q": "how does the platform handle registration and profile data", "own": "vault", "expected": [{"source": "vault", "path": "user-service.md"}]}
+{"id": "h15", "q": "what steps push an image to the cluster", "own": "vault", "expected": [{"source": "vault", "path": "deployment-guide.md"}]}
+{"id": "h16", "q": "how is the system laid out at the highest level", "own": "vault", "expected": [{"source": "vault", "path": "project-overview.md"}, {"source": "vault", "path": "microservices.md"}]}
+{"id": "h17", "q": "which service manages orders and payments", "own": "vault", "expected": [{"source": "vault", "path": "microservices.md"}]}
+{"id": "h18", "q": "how are incoming client calls authenticated and limited", "own": "vault", "expected": [{"source": "vault", "path": "api-gateway.md"}]}
+{"id": "h19", "q": "what is the entry point for the client", "own": "vault", "expected": [{"source": "vault", "path": "api-gateway.md"}]}
+{"id": "h20", "q": "how do services get deployed", "own": "both", "expected": [{"source": "primary", "path": "operational/deploying-edge-agent.md"}, {"source": "vault", "path": "deployment-guide.md"}, {"source": "vault", "path": "microservices.md"}]}

@@ -78,6 +78,10 @@ Sessions (4): `session_start`, `session_run`, `session_finish`, `session_status`
 
 A `--read-only` server (the docs folder) exposes 20: search, read, graph, system, lint, `get_frontmatter` and `log_query`. Full reference: [.documentation/reference/mcp-tools-reference.md](.documentation/reference/mcp-tools-reference.md).
 
+## Federated search (v1.19+)
+
+`federation.sources` in `vault.schema.yml` (and hit-em-with-the-docs `related_repos`, on by default when its config exists) lets one `search_hybrid` search sibling docs trees too. See [the federation guide](.documentation/operational/federation-guide.md).
+
 ## Relationship to semantic-pages
 
 - **Substrate** (retrieval, graph, MCP tools): inherited unchanged from semantic-pages.

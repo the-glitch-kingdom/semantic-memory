@@ -2,6 +2,22 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.19.0] - 2026-11-08 — Federated search
+
+Issue #62. Numbers and misses: `.documentation/changelog/v1-19-0-federated-search.md`; usage: `.documentation/operational/federation-guide.md`.
+
+### Added
+
+- **Federation**: `federation.sources` in `vault.schema.yml`, plus hit-em-with-the-docs `related_repos` siblings (on by default when its config exists; `related_repos: false` opts out). `search_hybrid` merges this vault and every source; items carry `source`; `read_note` takes `source`. Sources are read-only and indexed under `<index>/sources/`.
+
+### Measured
+
+Single-source output equals v1.18.0 on the snapshot queries. Federated found@3 on the two-source set: 20/21 and 20/20 against 12 (train) and 13 (held-out) for the best index alone. p95 10.5 / 16.3 / 19.5 ms with 0 / 1 / 3 sources.
+
+### Missed targets
+
+On the small vault source federated @1 is one case below that source alone (7 vs 8, 6 vs 7). Only `search_hybrid` and `read_note` are federated; a source skipped at the first search stays skipped until restart.
+
 ## [1.18.0] - 2026-11-08 — Query routing
 
 Issue #61. Numbers and misses: `.documentation/changelog/v1-18-0-query-routing.md`.

@@ -189,4 +189,15 @@ tools:
 # enabled: false to disable all logging.
 telemetry:
   enabled: true
+
+# Federated search (v1.19). Off until a source is listed: search_hybrid then also searches the docs tree of
+# each source (read-only; the index is built under this vault index dir) and labels results with "source".
+# path is relative to this vault; weight scales that source (default 1). When hit-em-with-the-docs has
+# reconcile.related_repos configured, those sibling repos docs trees join too; related_repos: false opts out.
+# federation:
+#   sources:
+#     - label: platform-docs
+#       path: ../platform/.documentation
+#       weight: 1
+#   related_repos: true
 `;

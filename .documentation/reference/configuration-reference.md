@@ -499,6 +499,17 @@ rerank:
 
 Cross-encoder re-scoring of the top 30 fused `search_hybrid` results. Off by default: about 0.7 s per search on CPU for +1 case in 35, and a ~90 MB model downloaded on first use (not in the offline tarball). If the model cannot load, the fused order is used. See the [retrieval tuning guide](../operational/retrieval-tuning-guide.md).
 
+### `federation` (vault.schema.yml) — 🆕 v1.19.0
+
+```yaml
+federation:
+  sources:
+    - { label: platform-docs, path: ../platform/.documentation, weight: 1 }
+  related_repos: true
+```
+
+`search_hybrid` also searches each source (read-only, indexed under `<index>/sources/`) and merges one list; `path` is relative to the vault, `weight` a positive number, `label` `[\w.-]+` and not `primary`. `related_repos` (default on, no effect without hit-em-with-the-docs' config file) adds the `reconcile.related_repos` siblings; `false` opts out. See the [federation guide](../operational/federation-guide.md).
+
 ### Embedder and reconcile throttle (v1.9)
 
 The default embedder stays `all-MiniLM-L6-v2` (`--model` overrides; a model change forces a reindex). Alternatives were measured and not adopted. The reconcile throttle is `reconcileThrottleMs` (default 2000), a `createServer` option, not a schema field; it bounds how often a search re-stats the tree.
