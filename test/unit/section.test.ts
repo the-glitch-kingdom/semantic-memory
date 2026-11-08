@@ -39,4 +39,11 @@ describe("extractSection", () => {
   it("returns null when the heading is absent", () => {
     expect(extractSection(DOC, "Nonexistent")).toBeNull();
   });
+
+  it("reads #anchor, and still finds a heading whose own text starts with #", () => {
+    const md = "# T\n\n## Knobs\nk\n\n## #1 priority\np\n";
+    expect(extractSection(md, "#knobs")).toBe("## Knobs\nk");
+    expect(extractSection(md, "#1 priority")).toContain("p");
+    expect(extractSection(md, "#nope")).toBeNull();
+  });
 });

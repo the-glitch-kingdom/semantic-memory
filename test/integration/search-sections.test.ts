@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { cp, mkdtemp, readFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -8,6 +8,7 @@ import { createServer } from "../../src/mcp/server.js";
 import { openSearch } from "../../src/cli/search.js";
 import { extractSection } from "../../src/core/section.js";
 import { cleanupTempDir } from "../setup.js";
+import { gitHistory, stampDates } from "../retrieval-eval/git-history.js";
 
 const FIX = join(import.meta.dirname, "..", "fixtures");
 const Q = "How long after cutover can a schema change be undone with the down-migration instead of restoring a snapshot?";
@@ -15,6 +16,10 @@ const Q = "How long after cutover can a schema change be undone with the down-mi
 async function open(fixture: string, sub = "") {
   const root = await mkdtemp(join(tmpdir(), "sp-sec-"));
   await cp(join(FIX, fixture), root, { recursive: true });
+  return openAt(root, sub);
+}
+
+async function openAt(root: string, sub = ".documentation") {
   const dir = join(root, sub);
   const server = await createServer(dir, { watch: false, waitForReady: true });
   const [ct, st] = InMemoryTransport.createLinkedPair();
@@ -84,4 +89,50 @@ describe("granularity doc is the v1.16.0 output", () => {
       expect(dflt.every((x: any) => x.section === undefined && x.anchor === undefined && x.code === undefined)).toBe(true);
     }
   }, 120_000);
+});
+
+// #60 checks 2, 3 and 5: an owner, a marked copy and a pointer doc, with the hit-em-with-the-docs export and without it.
+describe.each([["with .hewtd/graph.json", true], ["with no .hewtd (hash folding only)", false]] as const)("folding %s", (_n, withExport) => {
+  let h: Awaited<ReturnType<typeof open>>;
+  const OWNER = "shared/edge-certificates.md";
+  const COPY = "legacy/cdn-operations-notes.md";
+  const PTR = "legacy/cert-rotation-moved.md";
+  const Q1 = "How far ahead of expiry should the edge TLS certificate be rotated, and how is the rollout staged?";
+  beforeAll(async () => {
+    const root = await mkdtemp(join(tmpdir(), "sp-fold-"));
+    await cp(join(FIX, "section-vault"), root, { recursive: true });
+    if (!withExport) await rm(join(root, ".hewtd"), { recursive: true, force: true });
+    await stampDates(root);
+    await gitHistory(root);
+    h = await openAt(root);
+  }, 240_000);
+  afterAll(async () => { await h.client.close(); await cleanupTempDir(h.root); });
+
+  it("owner and marked copy are one result with also_in (MCP and CLI)", async () => {
+    const cli = await (await openSearch(h.dir)).search(Q1, 8);
+    for (const rs of [await h.call("search_hybrid", { query: Q1, limit: 8 }), cli as any[]]) {
+      const paths = rs.map((r: any) => r.path);
+      // with the export the owner is named; with hash folding only, the higher-ranked of two identical sections owns it
+      const top = withExport ? OWNER : [OWNER, COPY].find((p) => paths.includes(p))!;
+      const other = top === OWNER ? COPY : OWNER;
+      expect(paths).not.toContain(other);
+      const r = rs[paths.indexOf(top)];
+      expect(r.anchor).toBe("rotating-the-edge-certificate");
+      expect(r.also_in.some((a: string) => a.startsWith(`${other}#`))).toBe(true);
+      if (withExport) expect(paths.indexOf(OWNER)).toBe(0);
+    }
+  });
+
+  // A pointer is only recognised from the export's points_to (hewtd records no section for it), so without one it stays a result.
+  it.runIf(withExport)("a pointer never outranks its target", async () => {
+    const rs = await h.call("search_hybrid", { query: "Where is the certificate rotation procedure documented now?", limit: 8 });
+    const paths = rs.map((r: any) => r.path);
+    expect(paths[0]).toBe(OWNER);
+    if (paths.includes(PTR)) expect(paths.indexOf(PTR)).toBeGreaterThan(0);
+  });
+
+  it("granularity doc folds nothing", async () => {
+    const rs = await h.call("search_hybrid", { query: Q1, limit: 8, granularity: "doc" });
+    expect(rs.every((r: any) => r.also_in === undefined)).toBe(true);
+  });
 });

@@ -7,7 +7,11 @@ import { flatSections } from "./sections.js";
  * through to the next heading of the same or higher level.
  */
 export function extractSection(markdown: string, heading: string): string | null {
-  if (heading.startsWith("#") && !/^#{1,6}\s/.test(heading)) return extractByAnchor(markdown, heading.slice(1));
+  // a heading that is itself named "#1 priority" is not found as an anchor: fall through to the name lookup
+  if (heading.startsWith("#") && !/^#{1,6}\s/.test(heading)) {
+    const byAnchor = extractByAnchor(markdown, heading.slice(1));
+    if (byAnchor !== null) return byAnchor;
+  }
   const target = heading.trim().toLowerCase();
   const lines = markdown.split("\n");
   let startIdx = -1;

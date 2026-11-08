@@ -16,8 +16,16 @@ const idx = (dir: string, f: string) => join(dir, ".semantic-sidekick-index", f)
 const readJson = async (dir: string, f: string) => JSON.parse(await readFile(idx(dir, f), "utf-8"));
 
 /** Rewrite the index the current code just built into the on-disk shape an older release left behind. */
-async function downgrade(dir: string, format: "v1.7.2" | "v1.9.0") {
+async function downgrade(dir: string, format: "v1.7.2" | "v1.9.0" | "v1.16.0") {
   const meta = await readJson(dir, "meta.json");
+  if (format === "v1.16.0") {
+    // schema 8 docs have no sections; the chunk-text keys of the vectors are the same format
+    await writeFile(idx(dir, "meta.json"), JSON.stringify({ ...meta, schemaVersion: 8 }));
+    const docs = await readJson(dir, "docs.cache.json") as Record<string, unknown>[];
+    for (const d of docs) { delete d.sections; delete d.chunkSection; }
+    await writeFile(idx(dir, "docs.cache.json"), JSON.stringify(docs));
+    return;
+  }
   if (format === "v1.9.0") {
     // schema 3 hashed only the node_modules glob
     const old = { ...meta, schemaVersion: 3, ignoreGlobs: sha256(JSON.stringify(["**/node_modules/**"])).slice(0, 16) };
@@ -69,7 +77,7 @@ describe("upgrading an index written by an older release", () => {
     await cleanupTempDir(dir);
   });
 
-  for (const format of ["v1.7.2", "v1.9.0"] as const) {
+  for (const format of ["v1.7.2", "v1.9.0", "v1.16.0"] as const) {
     it(`${format}: answers (stale) during the rebuild and re-embeds only the changed chunk`, async () => {
       const before = await readJson(dir, "meta.json");
       await downgrade(dir, format);
@@ -119,6 +127,9 @@ describe("upgrading an index written by an older release", () => {
       const keys = (await readJson(dir, "embeddings.json") as { key: string }[]).map((e) => e.key);
       expect(keys.every((k) => /^[0-9a-f]{64}$/.test(k))).toBe(true);
       expect(JSON.parse((await search()).text).length).toBeGreaterThan(0);
+      // the rebuild re-parsed every doc: sections are back
+      const docs = await readJson(dir, "docs.cache.json") as { chunks: string[]; sections?: unknown[] }[];
+      expect(docs.filter((d) => d.chunks.length).every((d) => d.sections?.length)).toBe(true);
     }, 180_000);
   }
 });
