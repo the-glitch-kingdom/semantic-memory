@@ -2,7 +2,35 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
-## [Unreleased]
+## [1.25.1] - 2026-11-09 — semantic-first skill refresh
+
+Issue #81. Details and misses: `.documentation/changelog/v1-25-1-semantic-first-refresh.md`.
+
+### Changed
+
+- `skills/semantic-first/SKILL.md` is the reporter's shorter draft (about 534 words, down from about 1,968). It names the servers by role, with both name pairs as examples, and covers `missing_terms`, `undocumented`, `passing_terms`, `no_strong_match`, `decay`, `entity` and `related`.
+- `vault-first`, `research-mode` and `outage-silence` name tools bare, on "the vault server", not `mcp__semantic-vault__<tool>`.
+- `hooks/vault-context.js` prints the writable server's `.mcp.json` name in its six messages (falls back to `semantic-vault`). The server instructions name `passing_terms`.
+
+### Fixed
+
+- `skill-eval trigger` counts a run that called the skill and then hit the 2-turn cap as a trigger. It used to discard those runs as errors, which biased trigger rates down and wasted runs on retries. Hitting the cap without a skill call counts as a no-trigger vote.
+
+### Removed
+
+- `skills/semantic-first/references/vault-frontmatter.md`: it documented `tier`, `source` and `owner`, which `synthesize_note` never writes.
+
+### Added
+
+- `test/unit/skill-surfaces.test.ts` and `test/e2e/skill-result-fields.test.ts` tie every tool, parameter, field and string the skills name to the release.
+
+### Measured
+
+Trigger check: 25 prompts, the old skill against the new one, measured in the same run after the fix. On should-trigger prompts, 7/15 for the old skill against 10/15 for the new, with 0/10 false triggers for both. The new description gains 5 repo-prose prompts and loses 2 research prompts ("best CRM…", "compare SQLite FTS5 and BM25…"). On research prompts alone it is 2/5, against 4/5.
+
+### Missed targets
+
+Research prompts trigger less often (above). `commands/*.md` and one CLI help string still hard-code `mcp__semantic-vault__`; they are planned for 1.26.0.
 
 ### Tooling (no package change)
 

@@ -138,7 +138,7 @@ would name a tool that does not exist).
 - `skills/vault-first/SKILL.md` — default mode; triggers on project-scoped prose questions.
 - `skills/research-mode/SKILL.md` — aggressive vault; triggers on "I'm researching", multiple sources, explicit `/mode research`.
 - `skills/outage-silence/SKILL.md` — incident mode; triggers on "down", "broken", "customers", pasted stack traces, or explicit `/mode outage-silence`.
-- `skills/semantic-first/SKILL.md` — inherited from plugin substrate; covers docs lookup + research-notes routing.
+- `skills/semantic-first/SKILL.md` — docs lookup + research-notes routing; names the servers by role and the result fields (`missing_terms`, `passing_terms`, `entity`, …). Tests tie them to the release.
 
 **Contract:** the `description:` YAML field in each SKILL.md is the classifier. Strong signals beat weak; explicit `/mode` is ground truth regardless of cues.
 

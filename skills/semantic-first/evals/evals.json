@@ -6,7 +6,7 @@
       "name": "flow-a-capability-existence-user-delete",
       "flow": "A",
       "prompt": "Is there a user delete in this repo that deletes a user AND their data completely?",
-      "expected_output": "Ambiguous-on-purpose case: a naive read sends this to Grep for a delete symbol, but the answer (whether the capability exists and how it's designed) lives in prose in design docs. The skill should try mcp__semantic-sidekick__search_hybrid first and only fall through to code search if the docs don't answer it. Success = used semantic search first, cited specific note filenames, did not start with grep.",
+      "expected_output": "Ambiguous-on-purpose case: a naive read sends this to Grep for a delete symbol, but the answer (whether the capability exists and how it's designed) lives in prose in design docs. The skill should try search_hybrid first and only fall through to code search if the docs don't answer it. Success = used semantic search first, cited specific note filenames, did not start with grep.",
       "files": []
     },
     {
@@ -22,7 +22,7 @@
       "name": "flow-b-pure-external-research",
       "flow": "B",
       "prompt": "What's the best CRM platform for a small business team of 10?",
-      "expected_output": "Pure external research, no repo context. Skill should: (1) search the vault for prior research on CRM evaluation, (2) do web research via WebSearch/WebFetch, (3) write a new .md file to .claude/.vault/ with full frontmatter (all required fields from references/vault-frontmatter.md), (4) answer from the note with a filename pointer. Success = a file was created at .claude/.vault/<slug>.md, frontmatter has all required fields with sensible values, note body has actual research content (not a stub), chat response cites the note filename.",
+      "expected_output": "Pure external research, no repo context. Skill should: (1) search the vault for prior research on CRM evaluation, (2) do web research via WebSearch/WebFetch, (3) write a new vault note with synthesize_note (it stamps the frontmatter and provenance), (4) answer from the note with a filename pointer. Success = a note was created in .claude/.vault/ through synthesize_note, note body has actual research content (not a stub), chat response cites the note filename.",
       "files": []
     },
     {
@@ -30,7 +30,7 @@
       "name": "flow-b-mixed-composition",
       "flow": "B",
       "prompt": "We use HashiCorp Vault for secrets management in this repo — is there a better alternative we should consider?",
-      "expected_output": "Hardest test: requires composing Flow A (find how the repo currently uses HashiCorp Vault, cite docs) with Flow B (research alternatives via web search, write vault note). The skill should NOT pick one flow and drop the other. Success = (1) semantic-sidekick was searched for current usage and specific notes were cited, (2) web research was performed for alternatives, (3) a .md file was written to .claude/.vault/ with full frontmatter and source: mixed (since it combines docs-lookup and web-research), (4) final answer references both the repo's current setup and the researched alternatives with explicit confidence, (5) the vault note contains a 'what we currently do' section drawn from Flow A findings.",
+      "expected_output": "Hardest test: requires composing Flow A (find how the repo currently uses HashiCorp Vault, cite docs) with Flow B (research alternatives via web search, write vault note). The skill should NOT pick one flow and drop the other. Success = (1) the docs server was searched for current usage and specific notes were cited, (2) web research was performed for alternatives, (3) a note was written to the vault via synthesize_note, (4) final answer references both the repo's current setup and the researched alternatives with explicit confidence, (5) the vault note contains a 'what we currently do' section drawn from Flow A findings.",
       "files": []
     }
   ]
