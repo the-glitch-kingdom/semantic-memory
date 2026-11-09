@@ -203,3 +203,46 @@ Side finding fixed: `save()` in `src/mcp/context.ts` cleared `dirty` after the c
 | export | 70/75 | 10/17/20 | 10/17/21 | .784/.776 | 28/23 |
 
 Export per set hyb@1 (local vs 1.23.0): real-corpus-heldout 14/17, real-hub-heldout 6/6, long-section 14/14, long-section-hard 10/10, absent-terms 15/16, multi-hub 11/12. Failures: export hyb@1 -5, dominance +2 (no export) and +5 (export). mcp = cli, titles complete. Dominance and cov of 1.23.0 come from its mcp arm only.
+
+## Eval results: Phase 9 (independent review)
+
+Same run, 12 sets (6 train + 6 held-out: real-corpus, real-hub, long-section, long-section-hard, absent-terms, multi-hub), 232 questions, 61 multi, hybrid. `scripts/eval-against-release.sh`, `git clone --local` trees, CLI and `--via mcp --settle`, no export and `--export`. p95 is per run, one laptop.
+
+| run | hyb@1 | hyb@3 | multi @1/3/8 (of 61) | cov@1/3/8 | dom | p95 cli/mcp |
+|---|---|---|---|---|---|---|
+| 1.15.0, no export (cli = mcp) | 149 | 191 | 20/38/51 | .52/.81/.94 | 52 | 10/12 ms |
+| 1.22.0 | 152 | 198 | 22/40/47 | .56/.82/.89 | 55 | 14/14 |
+| 1.23.0 | 152 | 198 | 22/40/47 | .56/.82/.89 | 55 | 26/16 |
+| branch as reviewed (pool + dropNonDead) | 152 | 197 | 22/39/46 | .56/.81/.89 | 67 | 15/17 |
+| branch final (pool and dropNonDead reverted) | 152 | 198 | 22/40/47 | .56/.82/.89 | 55 | 14/15 |
+| 1.15.0, export | 149 | 191 | 20/38/51 | .52/.81/.94 | 52 | 10/11 |
+| 1.22.0, export | 157 | 197 | 20/39/47 | .54/.82/.90 | 44 | 13/13 |
+| 1.23.0, export | 157 | 197 | 20/39/47 | .54/.82/.90 | 44 | 13/14 |
+| branch as reviewed, export | 151 | 198 | 22/39/46 | .57/.81/.89 | 57 | 18/21 |
+| branch, pool reverted only, export | 151 | 199 | 22/39/47 | .57/.81/.90 | 49 | 14/15 |
+| branch final, export | gate run: held-out hyb@1 equal to 1.23.0 (75 vs 75), dominance 23 vs 23 | | | | | |
+
+CLI and MCP agree on every count (all 232 questions; the gate's mcp-vs-cli check: 0 of 158 held-out differ in top 3 / related / entity card, with and without export).
+
+### Decisions of this review (two Phase 3/5 changes withdrawn)
+- **Phase 3 distinct-doc pool: reverted** (`src/core/vector.ts`, `test/unit/vector-doc-pool.test.ts`, the re-taken federation snapshot). Isolated on the same sets, with only `vector.ts` swapped: with the pool dominance is 67 (no export) and 57 (export), without it 55 and 49 (= 1.23.0 55, 44); multi @8 46 with, 47 without; hyb@3 197 with, 198 without. The train evidence alone said the same (Phase 3: multi @8 13 -> 13, pooled dominance 13 -> 20), so no held-out number chose this. The pool never moved multi @8, which is where the loss is, and it costs dominance.
+- **Phase 5 `dropNonDead`: reverted** (`src/core/code-graph.ts`, its unit test, `code-graph-real-export.test.ts` back to main). With the export, 1.23.0 is 157 hyb@1 on the 12 sets against 151 with the fix (hyb@3 equal: 197 / 198); the dead-ref multiplier it removes lifts @1 on the absent-terms and real-corpus sets. The fix was chosen on train multi @3 (-4 export vs no export) and its benefit does not show on the pooled sets. The gate with it: export hyb@1 70 vs 75, FAIL. Without it: PASS, every number equal to 1.23.0. The finding itself (export dead refs include runtime paths and bare names the span fallback ignores) stands; whether grounding should ignore them is a separate decision with its own eval, not a #76 fix.
+- Kept: the `src/mcp/context.ts` save/dirty race fix (a real bug: grounding that landed during a save never reached the cache the CLI reads; `graph-eval` passed 5 of 5 runs alone), `cov@k`, `dominance`, the multi-hub fixture and sets, the gate extension.
+
+### Review of `git diff main...HEAD`
+- `metrics.ts`: `cov`/`dominance` correct (negatives count in dominance, `facetCoverage` skips archive, empty facets = 1). Covered by `facet-metrics.test.ts`.
+- `gate-release.sh`: cov and dominance checks skip arms that do not report them (a release before 1.24.0 has no cov/dom in its cli arm); all checks verified against a real run. cov@3 band is one multi question's share of the pooled 29.
+- `context.ts` `save()`: `dirty` cleared before the write, restored on failure (`.catch`) and on a lost lock; `applyCode` marks dirty when grounding changed. No unit test for the race itself; `graph-eval` covers it indirectly (CLI = MCP grounding).
+- Audited ticked boxes: Phase 3's "returns up to k distinct docs" and its unit test no longer exist (withdrawn above); Phase 5's fix likewise. Phase 4/7/8 boxes verified (no source change; five version fields at 1.24.0; no env knobs).
+
+### Every #76 acceptance check (same run, all 12 sets; the reporter's tree and kit are not available, so "d0/d1b" = no export / export here)
+- **Multi @8 >= 12/14, multi @1 >= 5/14, paraphrase @1 not lower.** Not met on the targets as stated: this repo has no 14-question equivalent. Pooled 61 multi: @8 51 (1.15.0) -> 47 (1.22.0, 1.23.0, branch): the 1.22.0 loss of 4 remains, NOT restored. @1 is 22 vs 20 (better than 1.15.0). Multi-hub train @8 13/19 vs 16 on 1.15.0, held-out 12 vs 13. Paraphrase total: see per-set runs, 1.22.0 and later >= 1.15.0 (all-sets hyb@1 152 vs 149).
+- **A+B multi cov@1 >= 0.85 on both trees.** Not measurable (their set); cov@1 here is .56 (1.22.0, 1.23.0, branch) vs .52 (1.15.0), and cov@8 .89 vs .94 (1.15.0): not restored.
+- **H14 and C22 back at #1 (exact term in a hub).** Not reproduced: exact-term-in-hub questions are 4/4 or 3/4 on every version, equal to 1.22.0.
+- **No doc in the top 3 of more than 3 unrelated questions.** MISSED by every version, including 1.15.0: 52 (1.15.0), 55 (1.22.0, 1.23.0, branch) pooled on one real catch-all doc (`troubleshooting.md`); multi-hub alone 4-6.
+- **p95 <= 100 ms.** Met: 10-32 ms in every run above (max 32 ms, one cold CLI run).
+
+Net: the branch makes no search change. It adds the multi-hub fixture and sets, `cov@k` and `dominance`, the gate extension, and the save/dirty fix. Three #76 lines (multi @8, cov@8 vs 1.15.0, dominance <= 3) stay unmet; the loss is not in the doc pool (measured, reverted), per-doc aggregation (Phase 4) or export grounding (Phase 9). Lead for a later plan: a doc-level vector or a facet-splitting query step, or the -0.03 chunk-count prior (halves dominance, costs multi @1).
+
+### Gate
+`npm run gate:release` vs 1.23.0 on the final code: PASS (rc 0, every no-export and export number equal to 1.23.0). On the code as reviewed: FAIL (export hyb@1 -5, dominance +3).

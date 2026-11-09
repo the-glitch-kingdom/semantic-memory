@@ -201,16 +201,6 @@ describe("loadCodeData", () => {
     expect(d.docs.get("b.md")!.source).toBe("code-spans");
     expect(d.symbols.get("nope_sym")!.citedBy).toEqual(["b.md"]); // a.md is covered by the export, whose refs win
   });
-
-  it("export dead refs: only a missing path under a repo folder that git does not ignore stays dead", async () => {
-    const { root, commit } = repo();
-    commit("2026-01-01T00:00:00Z", { "src/a.py": "1", ".documentation/a.md": "x", ".gitignore": "runtime/\n" });
-    mkdirSync(join(root, ".hewtd"), { recursive: true });
-    const dead = ["src/gone.py", "runtime/state.json", "manifest.json", "nowhere/x.py"].map((target) => ({ kind: "file", target, resolved: false }));
-    writeFileSync(join(root, ".hewtd", "graph.json"), JSON.stringify({ version: 1, source_commit: null, docs: { "a.md": doc({ refs: [...dead, { kind: "file", target: "src/a.py", resolved: true }] }) }, symbols: {} }));
-    const d = (await loadCodeData(join(root, ".documentation"), [{ path: "a.md" }]))!;
-    expect(d.docs.get("a.md")!.refs.map((r) => r.target)).toEqual(["src/gone.py", "src/a.py"]); // ignored runtime state, a bare name and an unknown top folder are not dead files
-  });
 });
 
 describe("groundDocs", () => {

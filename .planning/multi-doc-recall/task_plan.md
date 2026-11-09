@@ -35,7 +35,7 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
         - Report both in `eval --json` and in the `eval-against-release.sh` table.
   - [x] Measure the candidate pool: distinct docs among the `limit * 3` nearest chunks, per question, for 1.15.0, 1.21.0 and 1.22.0 on the same tree. Count chunks per doc for each schema.
   - [x] Baseline in notes.md: 1.15.0, 1.21.0, 1.22.0, 1.23.0 and local, same run, CLI and MCP, with and without an export. The stdio test must show the multi @8 loss before any fix; if it does not reproduce, say so plainly and build a harder fixture before Phase 3.
-- [x] Phase 3: The candidate pool counts docs, not chunks
+- [x] Phase 3: The candidate pool counts docs, not chunks (WITHDRAWN in Phase 9: raised dominance, no multi gain)
   - [x] `VectorIndex.search(q, k)` returns up to k distinct docs. Fetch more neighbours (bounded, for example doubling up to a cap) until k docs are found or the index is exhausted. Every caller (`src/mcp/tools/search.ts`, `src/cli/search.ts`, graph seeds) gets the same behaviour. BM25 is already one result per doc; confirm it.
   - [x] Measure on train: multi @1/@3/@8, `cov@k`, paraphrase, exact, long-section-hard and p95. (Pool fix does NOT move multi @8: 13 -> 13, see notes.)
   - [x] Unit test: a doc with many chunks near the query no longer shrinks the number of distinct docs returned.
@@ -53,7 +53,7 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
         (Done: (b), (b2), (b3) and (c) measured; none beats (a); (a) kept, no code change, all knobs reverted.)
   - [x] Dominance: no doc in the top 3 of more than 3 unrelated questions, on train and on the real-corpus sets.
         (Measured, target MISSED: 4 on multi-hub train, 18 on real-corpus, where `troubleshooting.md` is a 38 KB real doc; see Errors.)
-- [x] Phase 5: Export path (d1b-only losses)
+- [x] Phase 5: Export path (d1b-only losses) (dropNonDead WITHDRAWN in Phase 9: -6 hyb@1 with export on 12 sets; the context.ts save fix stays)
   - [x] Check whether graph `related`, entity cards, duplicates or fold push the exact-term doc down when `.hewtd/graph.json` exists. Fix only what the measurement shows, and keep rank parity between MCP and CLI.
         (Measured on one index with `.hewtd/graph.json` toggled: not fold, duplicates, entity cards or `related`; the whole effect is the grounding multiplier from export dead refs (runtime paths and bare names). Fixed in `loadCodeData` (`dropNonDead`), plus a save race in `src/mcp/context.ts` the fix exposed; export now within one case of no export, CLI = MCP.)
 - [x] Phase 6: Release gate (gate runs and FAILS on 1.23.0, see Errors Encountered)
@@ -64,13 +64,13 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
   - [x] Offline tarball deferred to release (built from the merge commit) -- deferred to release, not built here
 - [x] Phase 8: Cleanup
   - [x] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts -- audited main..HEAD: no env knobs, no losing variants, no scratch files in the repo; nothing dead left (MAX_FETCH_FACTOR, dropNonDead, applyCode all used)
-- [ ] Phase 9: Validation (independent review)
-  - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
-  - [ ] Unit: distinct-doc pool, the aggregation variant kept, `cov@k` and `dominance` metrics
-  - [ ] Integration/e2e: stdio `search_hybrid` and the CLI on a multi-hub question (parity); `eval --via mcp` reports the same multi numbers
-  - [ ] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, real-corpus/hub/long-section sets not below 1.22.0
-  - [ ] Every #76 acceptance check against 1.15.0, 1.22.0 and 1.23.0 in the same run, answered honestly in notes.md; p95 measured
-  - [ ] `npm run gate:release` passes
+- [x] Phase 9: Validation (independent review)
+  - [x] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
+  - [x] Unit: `cov@k` and `dominance` metrics (facet-metrics.test.ts); the pool and its test are withdrawn, no aggregation variant kept
+  - [x] Integration/e2e: stdio `search_hybrid` and the CLI on a multi-hub question (parity); `eval --via mcp` reports the same multi numbers
+  - [x] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, real-corpus/hub/long-section sets not below 1.22.0 (equal to 1.22.0 and 1.23.0 on all 12 sets)
+  - [x] Every #76 acceptance check against 1.15.0, 1.22.0 and 1.23.0 in the same run, answered honestly in notes.md (multi @8, cov@8 and dominance targets NOT met); p95 measured (10-32 ms)
+  - [x] `npm run gate:release` passes (after withdrawing the Phase 3 pool and the Phase 5 `dropNonDead`; PASS = 1.23.0 on every number)
 - [ ] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
   - [ ] `.documentation/changelog/v1-24-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0, 1.22.0 and 1.23.0 in the same run, missed targets stated
   - [ ] retrieval-tuning-guide (candidate pool, aggregation), retrieval-eval-guide (`cov@k`, `dominance`, multi-hub sets), release-process (gate sets), help topics in `src/core/help/topics.ts` if they describe ranking
@@ -83,12 +83,14 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 2. Do the d1b-only losses come from the export path? Answered in Phase 5.
 
 ## Decisions Made
+- Phase 9: the Phase 3 distinct-doc pool and the Phase 5 `dropNonDead` are withdrawn (measured worse than 1.23.0 on the pooled sets, no multi gain); the Phase 5 `context.ts` save/dirty fix, the metrics, the fixture and the gate extension stay. 1.24.0 therefore changes no ranking.
 - Phase 4: keep (a) best chunk per doc; no code change. A length prior was measured and not kept (it trades dominance for multi @1/@3 and was not a plan candidate). Phase 6's dominance gate is relative (multi-hub sets, not above the previous release by more than 1), since the absolute 3 is unreachable on the real corpus.
 - One plan for #76. It waits for #74, because both extend the eval and the gate.
 - Phase 2: the fixture sits in `.documentation/multi-hub/` of each eval clone (the script copies it, as for long-section-hard), so the 141-doc real tree adds noise like a real vault. Docs-only runs are not used for these sets.
 - Phase 2: `cov@k` and `dominance` live in `ArmMetrics`, so every eval report carries them; the old releases get them through the mcp arm, which this checkout drives.
 
 ## Errors Encountered
+- Phase 9: the branch as reviewed (pool + dropNonDead) lost to 1.23.0 on the same 12 sets: dominance 67 vs 55 (no export), export hyb@1 151 vs 157, multi @8 46 vs 47, gate RED. Swapping only `vector.ts` back restored dominance 55 / multi @8 47; swapping `dropNonDead` off made the gate PASS. Both reverted; the 'Errors' for Phase 3, 5 and 6 below describe the withdrawn state.
 - Phase 6: `npm run gate:release` against 1.23.0 FAILS (3m17s). (1) With export, hybrid @1 is 70 vs 75 (cli and mcp), -5 against band 1. Per set (cli, export): real-corpus-heldout 14 vs 17, absent-terms-heldout 15 vs 16, multi-hub-heldout 11 vs 12, the rest equal. No export is 71 vs 71. So 1.23.0 GAINS 4 from export on held-out while the Phase 5 fix (train: export 64/83 vs no export 63/84) removes that effect: on held-out the old dead-ref multiplier happened to help. Not tuned on held-out; the Phase 5 rule stays and the gate stays red until the orchestrator decides. (2) Dominance (pooled over the 6 gate sets, mcp arm) 34 vs 32 no export and 28 vs 23 export, above the relative band of 1. (3) multi @3/@8 are within the band (16/20 vs 17/21 no export; 17/20 vs 17/21 export); cov@3 .773 vs .776 and .784 vs .776 pass. mcp = cli on all 158 questions; titled #1 114/114.
 - Phase 5: with the export present, train hyb@3 fell 84 -> 80 and multi @1/@3 12/23 -> 10/20 (exact @1 +1), on the SAME index (only `.hewtd/graph.json` toggled). Stripping `duplicates`/`points_to` (fold) or the symbols changed nothing; emptying the `docs` table, or `decay.code.enabled: false`, restored the no-export numbers exactly. Cause: hewtd marks runtime state (`.claude/.semantic-memory/`, `.semantic-sidekick-index/`) and bare names (`manifest.json`) as dead refs, so reference docs (config, cli, mcp-internals, indices-and-storage) got the x0.857 dead-ref multiplier; the span fallback already treats a missing git-ignored path as runtime state and flags only `dir/file` under a repo folder. Fix: same rule for the export (`dropNonDead`). 1.15.0 has no grounding (export = no export there); this exists since 1.16.0, so it is not a 1.22.0 regression.
 - Phase 5: the fix made `graph-eval` (CLI = MCP grounding) fail 3 in 10 runs. Not slower code: `save()` cleared `dirty` AFTER the commit, so a grounding that landed while the first save ran was never persisted and the CLI (reads the saved cache) never saw it. `save()` now clears `dirty` before the write (and restores it on failure); `applyCode` marks dirty when grounding changed. The test waits for the cache to catch up (the save is debounced).
@@ -99,4 +101,5 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 9** (Phase 6 done but its gate run is RED, see Errors Encountered) (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
+**Currently in Phase 10** (Phase 9 done: Phase 3 pool and Phase 5 dropNonDead withdrawn, see Decisions; notes.md "Eval results: Phase 9")
+(history: (Phase 6 done but its gate run is RED, see Errors Encountered) (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)

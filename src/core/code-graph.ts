@@ -252,20 +252,6 @@ export async function fallbackCode(gitRoot: string, vaultDir: string, docs: { pa
 }
 
 /**
- * The span fallback's rule for a dead file reference, applied to the export: a path under a top-level folder of the repo that is missing and
- * not git-ignored. A bare name (`manifest.json`) or a missing path git ignores (`.semantic-sidekick-index/`) is runtime state or prose; the
- * export marks both dead, which demoted the reference docs that name them (-4 @3 on the train sets, with the export present).
- */
-async function dropNonDead(root: string, exp: CodeData, files: string[]): Promise<void> {
-  const tops = new Set(files.map((f) => f.split("/")[0]));
-  const shaped = (t: string) => t.replace(/\/+$/, "").includes("/") && tops.has(t.split("/")[0]);
-  const dead = new Set<string>();
-  for (const d of exp.docs.values()) for (const r of d.refs) if (r.kind === "file" && r.resolved === false && shaped(r.target)) dead.add(r.target);
-  const ignored = await gitIgnored(root, [...dead]);
-  for (const d of exp.docs.values()) d.refs = d.refs.filter((r) => !(r.kind === "file" && r.resolved === false && (!shaped(r.target) || ignored.has(r.target))));
-}
-
-/**
  * Code data for a vault: the export's docs where it covers them, the span/link fallback for the rest. Null outside a git repo, so the
  * graph stays doc-only. `docs` are the vault's indexed documents (path relative to `vaultDir`).
  */
@@ -276,7 +262,6 @@ export async function loadCodeData(vaultDir: string, docs: { path: string; codeR
   const rest = await fallbackCode(root, vaultDir, exp ? docs.filter((d) => !exp.docs.has(d.path)) : docs);
   if (!exp) return Object.assign(rest, { files: await gitFiles(root) });
   exp.files = await gitFiles(root);
-  await dropNonDead(root, exp, exp.files);
   for (const [p, d] of rest.docs) exp.docs.set(p, d);
   for (const [n, s] of rest.symbols) {
     const e = exp.symbols.get(n);

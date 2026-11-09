@@ -6,8 +6,6 @@ import { existsSync } from "node:fs";
 import type { SearchResult } from "./types.js";
 
 const EF_SEARCH = 100;
-/** most chunks a search fetches, as a multiple of the docs asked for */
-const MAX_FETCH_FACTOR = 16;
 
 export interface ChunkMeta {
   docPath: string;
@@ -94,26 +92,20 @@ export class VectorIndex {
   search(queryEmbedding: Float32Array, k: number = 10): SearchResult[] {
     if (!this.index || this.live === 0) return [];
 
-    // k counts docs, not chunks: a long doc owns many of the nearest chunks, so widen the neighbour fetch until k distinct docs are found (bounded, or the index is exhausted)
-    const cap = Math.min(k * MAX_FETCH_FACTOR, this.live);
-    let numResults = Math.min(k, this.live);
+    const numResults = Math.min(k, this.live);
+    // hnswlib searches at ef=10 unless told otherwise (recall 0.93 on real vectors); set per search so a loaded, grown or rebuilt index all get it
+    this.index.setEf(Math.max(EF_SEARCH, numResults));
+    const result = this.index.searchKnn(Array.from(queryEmbedding), numResults);
+
     // per doc: the best body chunk and the best metadata chunk (neighbours come nearest first)
-    let docs = new Map<string, { body?: { cos: number; m: ChunkMeta }; meta?: { cos: number; m: ChunkMeta } }>();
-    for (;;) {
-      // hnswlib searches at ef=10 unless told otherwise (recall 0.93 on real vectors); set per search so a loaded, grown or rebuilt index all get it
-      this.index.setEf(Math.max(EF_SEARCH, numResults));
-      const result: { neighbors: number[]; distances: number[] } = this.index.searchKnn(Array.from(queryEmbedding), numResults);
-      docs = new Map();
-      for (let i = 0; i < result.neighbors.length; i++) {
-        const m = this.chunkMeta[result.neighbors[i]];
-        if (!m) continue;
-        const slot = docs.get(m.docPath) ?? {};
-        const kind = m.kind === "meta" ? "meta" : "body";
-        slot[kind] ??= { cos: 1 - result.distances[i], m };
-        docs.set(m.docPath, slot);
-      }
-      if (docs.size >= k || numResults >= cap) break;
-      numResults = Math.min(numResults * 2, cap);
+    const docs = new Map<string, { body?: { cos: number; m: ChunkMeta }; meta?: { cos: number; m: ChunkMeta } }>();
+    for (let i = 0; i < result.neighbors.length; i++) {
+      const m = this.chunkMeta[result.neighbors[i]];
+      if (!m) continue;
+      const slot = docs.get(m.docPath) ?? {};
+      const kind = m.kind === "meta" ? "meta" : "body";
+      slot[kind] ??= { cos: 1 - result.distances[i], m };
+      docs.set(m.docPath, slot);
     }
 
     const results: SearchResult[] = [];
@@ -144,7 +136,7 @@ export class VectorIndex {
     }
     results.sort((a, b) => b.score - a.score);
 
-    return results.slice(0, k);
+    return results;
   }
 
   /** The doc's body chunk nearest the query vector, read from the stored embeddings (no re-embedding, no search). */
