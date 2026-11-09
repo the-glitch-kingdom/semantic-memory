@@ -1,0 +1,87 @@
+# Task Plan: multi-doc-recall
+
+## Goal
+Ship semantic-memory#76 as v1.24.0, after #74's v1.23.0. Multi-doc questions on a tree with long hub docs get back to 1.15.0 depth (the reporter's targets: built-in eval multi @8 >= 12/14 and multi @1 >= 5/14 on d0, paraphrase @1 stays >= 14/22; A+B multi `cov@1` >= 0.85 on both trees). Exact-term hub questions (H14, C22) are back at #1. No single doc is in the top 3 of more than 3 unrelated questions. p95 <= 100 ms. 1.22.0's paraphrase and metadata gains are kept.
+
+One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The reporter's tree decides after publish; every missed target is stated in the PR and on #76.
+
+## Prerequisites
+- #74 (v1.23.0) merged and published. Rebase this branch on main first; #74 extends the eval and the gate this plan also extends.
+
+## Rules for every phase
+- **Verify before ticking.** Confirm in code, or with a test, that a box is actually done before ticking it.
+- **Eval discipline.**
+  - Choose rules and constants on TRAIN only. Write held-out before any tuning and report it as measured.
+  - Compare against published 1.15.0, 1.22.0 and the previous release (1.23.0), measured **in the same run** on `git clone --local` trees, never against floors. Measure both CLI and `eval --via mcp --settle`, with and without an export.
+  - The reporter's question IDs and wording are not used for tuning.
+- **Keep 1.22.0's gains.** Report paraphrase @1, exact @1 and long-section-hard next to every multi number. A change that wins multi by losing them is not kept.
+
+## Phases
+- [x] Phase 1: Verify and plan
+  - [x] Verify #76 against main @ 066c730 (notes.md). Mechanism found in code; the regression did not reproduce on this repo's sets.
+  - [x] Post the verification comment on #76
+  - [x] Cut `feat/multi-doc-recall`, commit this plan
+- [ ] Phase 2: Reproduce first (before any change)
+  - [ ] Hub fixture shaped like the reporter's tree: `test/fixtures/multi-hub/`.
+        - Long "operator notes" hub docs (8-15 KB, many H2 sections) that each hold 3-4 facets of a question in different sections.
+        - Narrower docs that each hold one of those facets.
+        - Short broad docs (one chunk, vocabulary or picklist style) that match many questions loosely.
+        - An exact env-var or script name that appears only inside a long hub doc.
+  - [ ] Question sets `multi-hub.jsonl` (train) and `multi-hub-heldout.jsonl`. Each has at least 12 multi questions with 3-4 facets and `expected` docs, plus exact-term-in-hub questions and paraphrase controls. Write and facet-check them before measuring.
+  - [ ] Eval metrics:
+        - `cov@k`: mean fraction of a multi question's facets (and expected docs) found in the top k.
+        - `dominance`: the most top-3 slots any one doc takes across unrelated questions.
+        - Report both in `eval --json` and in the `eval-against-release.sh` table.
+  - [ ] Measure the candidate pool: distinct docs among the `limit * 3` nearest chunks, per question, for 1.15.0, 1.21.0 and 1.22.0 on the same tree. Count chunks per doc for each schema.
+  - [ ] Baseline in notes.md: 1.15.0, 1.21.0, 1.22.0, 1.23.0 and local, same run, CLI and MCP, with and without an export. The stdio test must show the multi @8 loss before any fix; if it does not reproduce, say so plainly and build a harder fixture before Phase 3.
+- [ ] Phase 3: The candidate pool counts docs, not chunks
+  - [ ] `VectorIndex.search(q, k)` returns up to k distinct docs. Fetch more neighbours (bounded, for example doubling up to a cap) until k docs are found or the index is exhausted. Every caller (`src/mcp/tools/search.ts`, `src/cli/search.ts`, graph seeds) gets the same behaviour. BM25 is already one result per doc; confirm it.
+  - [ ] Measure on train: multi @1/@3/@8, `cov@k`, paraphrase, exact, long-section-hard and p95.
+  - [ ] Unit test: a doc with many chunks near the query no longer shrinks the number of distinct docs returned.
+- [ ] Phase 4: Per-doc score aggregation and short broad docs
+  - [ ] Decompose on train only (#73's open lead: without doc metadata, hybrid @1 was 51 against 46):
+        - best chunk against the summary chunk (`5b7d7a9`);
+        - priority boost, decay, path class and fold;
+        - a length or chunk-count prior.
+  - [ ] Candidates measured on train:
+        - (a) best chunk (current);
+        - (b) best chunk plus a small bonus for a second strong chunk (multi-facet docs);
+        - (c) a short-doc dampener for docs that are a single chunk.
+        Keep one variant and remove the rest. If none beats (a) on train, keep (a) and say so.
+  - [ ] Dominance: no doc in the top 3 of more than 3 unrelated questions, on train and on the real-corpus sets.
+- [ ] Phase 5: Export path (d1b-only losses)
+  - [ ] Check whether graph `related`, entity cards, duplicates or fold push the exact-term doc down when `.hewtd/graph.json` exists. Fix only what the measurement shows, and keep rank parity between MCP and CLI.
+- [ ] Phase 6: Release gate
+  - [ ] Add `multi-hub-heldout` to `npm run gate:release`. The gate fails when multi @3 or @8, or `cov@3`, drops by more than 1 question against the previous release, or when `dominance` exceeds 3.
+  - [ ] Run it against the previous release; record the result and runtime.
+- [ ] Phase 7: Release prep
+  - [ ] Bump all five version fields to 1.24.0 and update the lockfile
+  - [ ] Offline tarball deferred to release (built from the merge commit)
+- [ ] Phase 8: Cleanup
+  - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
+- [ ] Phase 9: Validation (independent review)
+  - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
+  - [ ] Unit: distinct-doc pool, the aggregation variant kept, `cov@k` and `dominance` metrics
+  - [ ] Integration/e2e: stdio `search_hybrid` and the CLI on a multi-hub question (parity); `eval --via mcp` reports the same multi numbers
+  - [ ] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, real-corpus/hub/long-section sets not below 1.22.0
+  - [ ] Every #76 acceptance check against 1.15.0, 1.22.0 and 1.23.0 in the same run, answered honestly in notes.md; p95 measured
+  - [ ] `npm run gate:release` passes
+- [ ] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
+  - [ ] `.documentation/changelog/v1-24-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0, 1.22.0 and 1.23.0 in the same run, missed targets stated
+  - [ ] retrieval-tuning-guide (candidate pool, aggregation), retrieval-eval-guide (`cov@k`, `dominance`, multi-hub sets), release-process (gate sets), help topics in `src/core/help/topics.ts` if they describe ranking
+  - [ ] KB gotcha fact if the chunk-pool mechanism holds: "smaller chunks shrink the doc pool when k counts chunks"
+  - [ ] README version row; AGENTS.md regenerated
+  - [ ] Final `npm run eval`; floors move only with a measured reason
+
+## Key Questions
+1. Is the pool shrink (k counts chunks) the main cause of the multi @8 loss, or is it aggregation and short-doc broad matches? Answered by the Phase 2 pool measurement, then Phases 3 and 4.
+2. Do the d1b-only losses come from the export path? Answered in Phase 5.
+
+## Decisions Made
+- One plan for #76. It waits for #74, because both extend the eval and the gate.
+
+## Errors Encountered
+- (none yet)
+
+## Status
+**Currently in Phase 2** (waiting for #74 to merge, then rebase)
