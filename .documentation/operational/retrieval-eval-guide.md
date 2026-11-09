@@ -55,6 +55,10 @@ One JSON object per line: `{id, tier, q, facets}`. `facets` are regexes the answ
 
 `test/retrieval-eval/absent-terms.jsonl` (train) and `absent-terms-heldout.jsonl` hold negatives that name a product or tool absent from the docs (three per file named only in passing) plus answerable controls. Tune on train only. Read "negatives flagged" with the false-flag count beside it. `gate:release` includes the held-out set. See [v1.23.0](../changelog/v1-23-0-abstention-product-names.md).
 
+## Multi-hub sets and facet metrics (v1.24)
+
+`test/retrieval-eval/multi-hub.jsonl` (train) and `multi-hub-heldout.jsonl` run on `test/fixtures/multi-hub/`: long hub docs, narrow one-facet docs and one-chunk broad docs. Each has `expected` docs and facets. `eval` and `eval --json` report `cov@k` (mean share of a multi question's facets found in the top k) and `dominance` (top-3 slots one doc takes on questions it does not answer). Read dominance against the previous release, not against 3: a real catch-all doc fills slots on every version. `gate:release` includes the held-out set. See [v1.24.0](../changelog/v1-24-0-multi-doc-recall.md).
+
 ## Generate questions
 
 ```bash

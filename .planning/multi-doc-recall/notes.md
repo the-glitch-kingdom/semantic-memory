@@ -246,3 +246,6 @@ Net: the branch makes no search change. It adds the multi-hub fixture and sets, 
 
 ### Gate
 `npm run gate:release` vs 1.23.0 on the final code: PASS (rc 0, every no-export and export number equal to 1.23.0). On the code as reviewed: FAIL (export hyb@1 -5, dominance +3).
+
+## Eval results: Phase 10
+Docs only. Final gates: lint, build clean; `npm run eval` 148 passed, 4 expected fail (unchanged after docs); `npm test` 1198 passed, 1 known freshness-scale warm-start flake that passes alone. No floor moved. Changelog numbers are the Phase 9 same-run table.

@@ -71,12 +71,12 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
   - [x] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, real-corpus/hub/long-section sets not below 1.22.0 (equal to 1.22.0 and 1.23.0 on all 12 sets)
   - [x] Every #76 acceptance check against 1.15.0, 1.22.0 and 1.23.0 in the same run, answered honestly in notes.md (multi @8, cov@8 and dominance targets NOT met); p95 measured (10-32 ms)
   - [x] `npm run gate:release` passes (after withdrawing the Phase 3 pool and the Phase 5 `dropNonDead`; PASS = 1.23.0 on every number)
-- [ ] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
-  - [ ] `.documentation/changelog/v1-24-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0, 1.22.0 and 1.23.0 in the same run, missed targets stated
-  - [ ] retrieval-tuning-guide (candidate pool, aggregation), retrieval-eval-guide (`cov@k`, `dominance`, multi-hub sets), release-process (gate sets), help topics in `src/core/help/topics.ts` if they describe ranking
-  - [ ] KB gotcha fact if the chunk-pool mechanism holds: "smaller chunks shrink the doc pool when k counts chunks"
-  - [ ] README version row; AGENTS.md regenerated
-  - [ ] Final `npm run eval`; floors move only with a measured reason
+- [x] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
+  - [x] `.documentation/changelog/v1-24-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0, 1.22.0 and 1.23.0 in the same run, missed targets stated
+  - [x] retrieval-tuning-guide (candidate pool, aggregation), retrieval-eval-guide (`cov@k`, `dominance`, multi-hub sets), release-process (gate sets), help topics in `src/core/help/topics.ts` if they describe ranking (none describe pool or aggregation; unchanged; the pool is withdrawn, so the tuning guide records it under lost trials)
+  - [x] KB gotcha fact if the chunk-pool mechanism holds: "smaller chunks shrink the doc pool when k counts chunks" (mechanism did not hold: measured not the cause, no fact written)
+  - [x] README version row; AGENTS.md regenerated
+  - [x] Final `npm run eval`; floors move only with a measured reason
 
 ## Key Questions
 1. Is the pool shrink (k counts chunks) the main cause of the multi @8 loss, or is it aggregation and short-doc broad matches? Answered by the Phase 2 pool measurement, then Phases 3 and 4.
@@ -101,5 +101,5 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 10** (Phase 9 done: Phase 3 pool and Phase 5 dropNonDead withdrawn, see Decisions; notes.md "Eval results: Phase 9")
+**COMPLETE** (Phase 10 done; freshness-scale warm-start flake passed alone) (Phase 9 done: Phase 3 pool and Phase 5 dropNonDead withdrawn, see Decisions; notes.md "Eval results: Phase 9")
 (history: (Phase 6 done but its gate run is RED, see Errors Encountered) (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)

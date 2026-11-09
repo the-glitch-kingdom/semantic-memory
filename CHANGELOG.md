@@ -2,6 +2,27 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.24.0] - 2026-11-09 — Multi-doc recall measurement
+
+Issue #76. Numbers and misses: `.documentation/changelog/v1-24-0-multi-doc-recall.md`.
+
+### Added
+
+- `cov@k` and `dominance` in `eval`, `eval --json` and `eval-against-release.sh`; a multi-hub fixture and train and held-out sets.
+- `gate:release` checks the multi-hub held-out set: multi @3 and @8, `cov@3` and dominance against the previous release.
+
+### Fixed
+
+- Grounding that landed while the index was saving never reached the cache the CLI reads (`src/mcp/context.ts`).
+
+### Measured
+
+Same run, 12 sets, 61 multi questions, against 1.15.0 / 1.22.0 / 1.23.0: multi @8 47 against 51 / 47 / 47, `cov@8` .89 against .94 / .89 / .89, dominance 55 against 52 / 55 / 55, multi @1 22 against 20 / 22 / 22. Ranking is unchanged from 1.23.0. A distinct-doc pool and an export dead-ref filter were built and withdrawn (no multi gain, worse dominance and export hyb@1).
+
+### Missed targets
+
+Multi @8 is not back to 1.15.0, `cov@8` is below 1.15.0, and no doc stays under 3 top-3 slots on any version (one real catch-all doc). The reporter's 12/14 and `cov@1` targets could not be measured without their tree.
+
 ## [1.23.0] - 2026-11-09 — Abstention for product and tool names
 
 Issue #74. Numbers and misses: `.documentation/changelog/v1-23-0-abstention-product-names.md`.
