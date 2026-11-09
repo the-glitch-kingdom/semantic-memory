@@ -32,7 +32,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 34 | Release notes per version and phase |
+| [Changelog](#changelog) | 35 | Release notes per version and phase |
 | [Operational](#operational) | 19 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 7 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -236,6 +236,7 @@ purpose: Navigation hub for all documentation
 | [v1.2 — state consolidation under .claude/.semantic-memory/](changelog/v1-2-state-consolidation.md) | reference | active | 2026-05-09 | What v1.2.0 changed — three transient state files moved from .claude/.sidekick-* to .claude/.semantic-memory/. Read-with-fallback through v1.x. |
 | [v1.20.0 - user help](changelog/v1-20-0-user-help.md) | reference | active | 2026-11-08 | What v1.20.0 changed (the help command, tool and slash command, and search --paths), what was verified, and what is still open. |
 | [v1.21.0 - hub doc ranking](changelog/v1-21-0-hub-doc-ranking.md) | reference | active | 2026-11-08 | What v1.21.0 changed for issue |
+| [v1.22.0 - MCP metadata gap and long sections](changelog/v1-22-0-mcp-metadata-gap-long-sections.md) | reference | active | 2026-11-09 | What v1.22.0 changed for issue |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
 | [v1.3 — confidence decay (age-aware retrieval ranking)](changelog/v1-3-confidence-decay.md) | reference | active | 2026-07-10 | What v1.3.0 added — smooth, type-aware confidence decay that down-weights stale notes in search ranking, verify_note to reset the clock, evergreen opt-out, and decay CLI introspection. |
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](changelog/v1-4-0-resident-bridge.md) | reference | active | 2026-07-10 | What v1.4.0 added — a golden eval harness, archive path-class down-weighting, injection hygiene for the vault-context block, a learned human-to-artifact lexicon with propose-and-confirm capture, verbatim symptom capture, two-tier query expansion, and a token-frugal tool surface. Tool count 41→42 (manage_lexicon). |

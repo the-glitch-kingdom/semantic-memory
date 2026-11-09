@@ -93,7 +93,7 @@ export const TOPICS: HelpTopic[] = [
   {
     id: "eval", title: "Measure search on my docs", group: "Measure and improve", aliases: ["measure", "floors", "baseline", "retrieval-eval"],
     summary: "Score retrieval on a question set, hold a baseline, and fail on regressions.",
-    steps: ["Build the index (eval refuses to run without one).", "Generate questions from your docs (this calls the host agent, claude, and costs a few cents).", "Run the eval.", "Save a baseline, then use --check to gate changes; it exits 1 without a baseline."],
+    steps: ["Build the index (eval refuses to run without one).", "Generate questions from your docs (this calls the host agent, claude, and costs a few cents).", "Run the eval.", "Save a baseline, then use --check to gate changes; it exits 1 without a baseline.", "To measure what an agent gets from the stdio server at once, add --via mcp (--settle scores the settled state)."],
     commands: [`semantic-memory serve --reindex ${N}`, `semantic-memory eval generate ${N}`, `semantic-memory eval ${N}`, `semantic-memory eval ${N} --baseline`, `semantic-memory eval ${N} --check`],
     verify: "eval prints answered @1/@3/@8 per arm and --check exits 0.",
     doc: ".documentation/operational/retrieval-eval-guide.md",

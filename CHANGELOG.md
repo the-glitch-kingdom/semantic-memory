@@ -2,6 +2,31 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.22.0] - 2026-11-09 — MCP metadata gap and long sections
+
+Issue #73. Numbers and misses: `.documentation/changelog/v1-22-0-mcp-metadata-gap-long-sections.md`.
+
+### Fixed
+
+- **Doc metadata is installed with the vector index**, so the first answer after a start or reconcile has titles, `load_priority`, decay, filters and doc-only `related`. Grounding, code edges and the entity card follow once the code graph loads (answers carry `_meta.stale` meanwhile).
+- **Chunks are 1000 characters with a sentence of overlap** (was 2000). Index schema 11, one-time re-embed.
+
+### Changed
+
+- `gitLastChanged` is one `git log --since=365.days`; files untouched for over a year are undated. `get_stats` reports `codeGraph: { source, loadMs }`.
+
+### Added
+
+- **`eval --via mcp`** (`--server`, `--cwd`, `--settle`, `--wait-for-ready`); `gate:release` now checks the stdio path (no export, export, slow git) and cli/mcp parity. Long-section fixtures and sets.
+
+### Measured
+
+Hybrid @1, all eight sets, same run: 97 against 95 (1.15.0) and 90 (1.21.0); with an export 99 against 95 and 94. First answers with `git log` slowed: titled 129/129 against 0/129 on 1.21.0.
+
+### Missed targets
+
+Hard long-section sets are not back at 1.15.0 (10/12 against 11/12 train, 12/12 held-out). The reporter's d0 loss did not reproduce here; their tree decides after publish.
+
 ## [1.21.0] - 2026-11-08 — Hub doc ranking
 
 Issue #71. Numbers and misses: `.documentation/changelog/v1-21-0-hub-doc-ranking.md`.

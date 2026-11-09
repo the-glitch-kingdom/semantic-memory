@@ -15,7 +15,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 34
+- **Total Documents:** 35
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -46,6 +46,7 @@ purpose: Complete listing of changelog documentation
 | [v1.2 — state consolidation under .claude/.semantic-memory/](v1-2-state-consolidation.md) | active | 2026-05-09 | 671 | What v1.2.0 changed — three transient state files moved from .claude/.sidekick-* to .claude/.semantic-memory/. Read-with-fallback through v1.x. |
 | [v1.20.0 - user help](v1-20-0-user-help.md) | active | 2026-11-08 | 200 | What v1.20.0 changed (the help command, tool and slash command, and search --paths), what was verified, and what is still open. |
 | [v1.21.0 - hub doc ranking](v1-21-0-hub-doc-ranking.md) | active | 2026-11-08 | 467 | What v1.21.0 changed for issue |
+| [v1.22.0 - MCP metadata gap and long sections](v1-22-0-mcp-metadata-gap-long-sections.md) | active | 2026-11-09 | 461 | What v1.22.0 changed for issue |
 | [v1.3.1 — selection-logging telemetry](v1-3-1-telemetry.md) | active | 2026-07-10 | 653 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
 | [v1.3 — confidence decay (age-aware retrieval ranking)](v1-3-confidence-decay.md) | active | 2026-07-10 | 753 | What v1.3.0 added — smooth, type-aware confidence decay that down-weights stale notes in search ranking, verify_note to reset the clock, evergreen opt-out, and decay CLI introspection. |
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](v1-4-0-resident-bridge.md) | active | 2026-07-10 | 961 | What v1.4.0 added — a golden eval harness, archive path-class down-weighting, injection hygiene for the vault-context block, a learned human-to-artifact lexicon with propose-and-confirm capture, verbatim symptom capture, two-tier query expansion, and a token-frugal tool surface. Tool count 41→42 (manage_lexicon). |

@@ -94,13 +94,13 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
   - [x] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, section eval green, MCP/CLI parity tests
   - [x] Every #73 acceptance check, against 1.15.0 and 1.21.0 in the same run, via MCP and CLI, with and without export; answered honestly in notes.md (met: 1 and 3; partly met: 2, hard sets not back at 1.15.0; not reproduced: reporter's d0 loss)
   - [x] `npm run gate:release` passes against 1.21.0
-- [ ] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
-  - [ ] `.documentation/changelog/v1-22-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0 and 1.21.0 in the same run, missed targets stated
-  - [ ] `architecture/code-graph.md` (load order, fallback bound, load time in stats), `architecture/indices-and-storage.md` or the indexing doc (chunk windows, schema version)
-  - [ ] `retrieval-eval-guide.md` (`--via mcp`, long-section set), `retrieval-tuning-guide.md` (chunk windows), `deployment/release-process.md` (what the gate now checks)
-  - [ ] Help topics in `src/core/help/topics.ts` that describe chunking, eval or the gate; README version row; AGENTS.md regenerated
-  - [ ] KB fact (gotcha): an MCP server can serve a new vector index before doc metadata is installed; the CLI eval cannot see it. Include an `## Instead` section and a verify command
-  - [ ] Final `npm run eval`; floors move only with a measured reason
+- [x] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
+  - [x] `.documentation/changelog/v1-22-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0 and 1.21.0 in the same run, missed targets stated
+  - [x] `architecture/code-graph.md` (load order, fallback bound, load time in stats), `architecture/indices-and-storage.md` or the indexing doc (chunk windows, schema version)
+  - [x] `retrieval-eval-guide.md` (`--via mcp`, long-section set), `retrieval-tuning-guide.md` (chunk windows), `deployment/release-process.md` (what the gate now checks)
+  - [x] Help topics in `src/core/help/topics.ts` that describe chunking, eval or the gate; README version row; AGENTS.md regenerated
+  - [x] KB fact (gotcha): an MCP server can serve a new vector index before doc metadata is installed; the CLI eval cannot see it. Include an `## Instead` section and a verify command
+  - [x] Final `npm run eval`; floors move only with a measured reason
 
 ## Key Questions
 1. Is the reporter's persistent loss entirely the load gap, or is there a second miss? Phase 2 runs the MCP eval at once and again after ready, and compares the two.
@@ -126,7 +126,7 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 10**
+**COMPLETE** (all phases done; Phase 10 docs written, AGENTS.md regenerated from branch code: only a timestamp changed, so left as is)
 
 ---
 
