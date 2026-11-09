@@ -92,3 +92,9 @@ Tests: 8 of the 9 Phase 2 `it.fails` are plain `it` (verified passing). The no-t
 
 ## Eval results: Phase 4
 No ranking change. Sibling skills now use bare tool names plus "on the vault server". `hooks/vault-context.js`: new `vaultTool(projectRoot, tool)` (writable semantic-* entry name, default semantic-vault) used in all six messages; test added in `test/phase5/stop-hook-session.test.ts`. Server instructions gain one clause naming `passing_terms`. The prefix case in skill-surfaces.test.ts is a plain `it`; no `it.fails` left there. Full lint/build/test/eval green (1144 + 148 tests).
+
+## Eval results: Phase 5 (trigger check, NOT MEASURED)
+- Prompt set: `trigger-prompts.jsonl`, 25 prompts (15 should-trigger incl. the 4 from evals.json, 10 should-not), all train. Written before the run.
+- Driver: throwaway script in /tmp calling `runTrigger` directly (the CLI labels prompts by provenance session, which this skill has none of). Old skill from `git show main:skills/semantic-first/SKILL.md`; new from the branch. Sibling skills in the scratch dir are the branch's for both arms. Cache in /tmp, run sequentially.
+- Runs: old 92, new 92 = 184 claude runs (budget was ~120; 25 prompts x up to 3 votes plus retries of errored runs). Runtime: old 140 s, new 156 s. Cost: not reported by the tool.
+- Result: unusable. Prompts with a vote: old 7/25, new 6/25; the rest are `error_max_turns` (see Errors Encountered). The only recorded trigger was old/CRM (1 of 1). Pass rule not evaluated; no description change made.

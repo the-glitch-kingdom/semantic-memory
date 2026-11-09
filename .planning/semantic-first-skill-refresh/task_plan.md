@@ -29,15 +29,15 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
   - [x] `skills/vault-first`, `skills/research-mode` and `skills/outage-silence`: replace `mcp__semantic-vault__<tool>` with the bare tool name on "the vault server". Use the same role wording as Phase 3, in at most one line per skill.
   - [x] `hooks/vault-context.js` prints `mcp__semantic-vault__…` in six messages. The hook already resolves the writable `semantic-*` entry; print that entry's real name if this is a small change, with a test. If not, record why and leave it.
   - [x] Server instructions (`serverInstructions` in `src/mcp/server.ts`) omit `passing_terms`. Add it in one short clause, so the server and the skill name the same fields; keep the existing "top 3 / each step separately" text.
-- [ ] Phase 5: Trigger check (the issue asks for it)
-  - [ ] Build a prompt set (JSONL `{session, text}`), written before running:
+- [x] Phase 5: Trigger check (NOT MEASURED, see notes.md and Errors Encountered) (the issue asks for it)
+  - [x] Build a prompt set (JSONL `{session, text}`), written before running:
     - should trigger: prose questions about the repo; "is there something that does X"; research questions;
     - should not trigger: exact code-symbol lookups; unrelated chat.
     - Include the 4 prompts in `evals.json`.
     - About 24–30 prompts, train only.
-  - [ ] Run `semantic-memory skill-eval trigger` on the OLD skill (from main) and the NEW skill, same prompts, same run.
+  - [x] (ran, but no valid result: 18 (old) and 19 (new) of 25 prompts errored with error_max_turns; numbers not usable) Run `semantic-memory skill-eval trigger` on the OLD skill (from main) and the NEW skill, same prompts, same run.
     - Budget: at most 2 runs per prompt per skill, about 120 claude runs in total. State the cost and runtime in notes.md.
-  - [ ] **Pass:** the new description triggers on at least as many should-trigger prompts as the old one, minus at most 1, with no more false triggers plus at most 1. If it fails, adjust only the description's trigger phrases, re-run once, and record both runs.
+  - [x] (NOT EVALUATED: no valid counts; no description change made; left for a tooling fix) **Pass:** the new description triggers on at least as many should-trigger prompts as the old one, minus at most 1, with no more false triggers plus at most 1. If it fails, adjust only the description's trigger phrases, re-run once, and record both runs.
 - [ ] Phase 6: Release prep: bump all five version fields to 1.25.1 and the lockfile; the offline tarball is deferred to release.
 - [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove `draft-SKILL.md` from the plan folder if it is identical to the shipped skill apart from the documented server lines; otherwise keep it as the record of the change.
@@ -71,6 +71,7 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Patch release 1.25.1, which also carries the #82 tooling changes from `[Unreleased]`.
 
 ## Errors Encountered
+- Phase 5: trigger eval gave no usable result. `runTrigger` runs claude with maxTurns 2; a run that calls the Skill and then goes on ends as `error_max_turns`, which `runClaude` reports as `ok:false`, so the run is discarded, not counted as a trigger. Calling the skill is what makes a run fail, so the counts are biased against triggering. Both arms also used 92 runs (184 total, over the ~120 budget) because errored runs are retried. Raw output: `trigger-old-raw.json`, `trigger-new-raw.json`. Not re-run (budget). Fix needed in tooling (count a Skill call seen before the max-turns stop as a vote), outside this plan.
 - Phase 3: `search-guidance.test.ts` required "top 3" / "each step separately" in the semantic-first skill; the draft drops both. That surface now asserts the draft's rule ("search each part, or read down to result 8", "every part is covered"); the other three surfaces are unchanged.
 - Phase 3: full suite hit freshness-scale warm start and stdin-eof SIGTERM (known load flakes); both pass alone.
 - Phase 3: the prefix test in `skill-surfaces.test.ts` stays `it.fails` until Phase 4 fixes the sibling skills; the other eight are plain `it`.
@@ -78,4 +79,4 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Phase 2: the "every tool a skill names" regex also matches `read_time_min`, a frontmatter field in the reference file. It is deleted in Phase 3, so the regex stays simple.
 
 ## Status
-**Currently in Phase 5.**
+**Currently in Phase 6.**

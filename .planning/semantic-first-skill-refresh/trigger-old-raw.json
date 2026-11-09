@@ -1,0 +1,199 @@
+{
+ "ms": 140088,
+ "runs": 92,
+ "results": [
+  {
+   "t": "Is there a user delete in this repo that deletes a",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "What kind of git method is being used, and how man",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "What's the best CRM platform for a small business ",
+   "want": true,
+   "got": true,
+   "tr": 1,
+   "n": 1
+  },
+  {
+   "t": "We use HashiCorp Vault for secrets management in t",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "How does the offline tarball get built and install",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "What is our convention for naming release branches",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Where does the guide for rotating the embedding mo",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Why is the index stored in a hidden folder next to",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Is there something in this repo that detects stale",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 2
+  },
+  {
+   "t": "What does this project call a note that was promot",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "How do the hooks decide when to inject vault conte",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Look into whether there is a better vector index t",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Compare SQLite FTS5 and BM25 libraries in JS for a",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "I'm researching how other projects handle agent me",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "What's the process for publishing a new version of",
+   "want": true,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Where is the function parseFrontmatter defined?",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 1
+  },
+  {
+   "t": "Find every call site of runClaude in src.",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Rename the variable tmpDir to scratchDir in src/co",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Run the unit tests for the indexer and show me the",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "What does line 40 of src/mcp/server.ts do?",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Add a null check to the readNote helper.",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 0,
+   "err": "error_max_turns"
+  },
+  {
+   "t": "Thanks, that looks good.",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 2
+  },
+  {
+   "t": "Write a haiku about autumn.",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 2
+  },
+  {
+   "t": "What is 17 times 23?",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 2
+  },
+  {
+   "t": "Show me the git diff of the last commit.",
+   "want": false,
+   "got": false,
+   "tr": 0,
+   "n": 2
+  }
+ ]
+}
