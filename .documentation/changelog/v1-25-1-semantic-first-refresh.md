@@ -48,6 +48,9 @@ Issue #81. Earlier step: [v1.25.0](v1-25-0-abstention-variants.md). No ranking o
 `test/unit/skill-surfaces.test.ts`: no tool prefixes, `top_k` or `create_note`; every tool a skill names is in `CURRENT_TOOL_INVENTORY`; the seven result fields, the "Indexing in progress" string and the multi-part wording are present. `test/e2e/skill-result-fields.test.ts` reads a real `search_hybrid` response from a built server: all seven fields appear and the schema has `limit`, not `top_k`. `search-guidance.test.ts` now asserts the draft's rule (search each part, or read down to result 8).
 
 ## Missed targets
-- **Trigger check not measured.** `runTrigger` runs claude with `maxTurns` 2; a run that calls the Skill and goes on ends as `error_max_turns` and is discarded, so counts are biased against triggering. The fix is in the tooling: count a Skill call seen before the stop as a vote.
+- **Trigger check: measured after a tooling fix.** `runTrigger` used to discard a run that called the skill and then hit the 2-turn cap. That is fixed in this release (`src/core/skill-eval/trigger.ts`).
+  - Same run, 25 prompts: should-trigger 7/15 for the old skill against 10/15 for the new, with 0/10 false triggers for both.
+  - The new description gains 5 repo-prose prompts and loses 2 research prompts. On research prompts alone it is 2/5, against 4/5.
+  - Raw results are in the archived plan, `trigger-*-raw-r2.json`.
 - `commands/vault.md`, `commands/mode.md`, `commands/contract.md` and one CLI help string still say `mcp__semantic-vault__`.
 - `vaultTool()` prints the `.mcp.json` key; a plugin-launched server may be exposed under another `mcp__` name. Only the Stop hook's `session_finish` message has a test.

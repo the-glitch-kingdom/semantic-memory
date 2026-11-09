@@ -119,3 +119,24 @@ Fix made in this phase: evals.json em dash restored (cosmetic diff noise).
 
 ## Eval results: Phase 9
 Docs only (no code). Changed: CHANGELOG.md (1.25.1 entry, #82 tooling kept), .documentation/changelog/v1-25-1-semantic-first-refresh.md (hewtd integrate -a), injection-points.md semantic-first line, AGENTS.md regenerated (only last_generated changed). Other listed docs mention nothing now wrong; README skill row is accurate. `hewtd maintain --quick`: 10 errors, 109 warnings, identical before my changes. `npm run eval`: 148 pass, 4 expected fail.
+
+## Eval results: Phase 5, re-run after the trigger-eval fix (cb91d2d)
+
+**Setup:** same 25 prompts (`trigger-prompts.jsonl`), fresh cache, old skill (main) then new skill (branch), sequential, train only. Raw results: `trigger-old-raw-r2.json` and `trigger-new-raw-r2.json`.
+
+**Cost:** 50 runs per arm, 100 in total, about 80 s per arm. Every prompt got a vote, and every vote was 2/2 unanimous. The first attempt (Phase 5) had already used 184 runs, so the phase used 284 runs against the ~120 budget. That's an overrun, caused by the discarded-vote bug.
+
+| | Old | New |
+|---|---|---|
+| Should-trigger prompts that triggered | 7/15 | 10/15 |
+| False triggers | 0/10 | 0/10 |
+
+**Pass rule** (new ≥ old − 1 on should-trigger, false triggers ≤ old + 1): **PASS**. The description is unchanged (the reporter's own text).
+
+**What changed:**
+- Repo-prose prompts: the new description gains 5 (offline tarball build, hidden index folder, stale-doc detection, hook injection, publishing process).
+- Research prompts: it loses 2 ("best CRM platform…", "Compare SQLite FTS5 and BM25…").
+- By category, research prompts trigger 4/5 on the old skill and 2/5 on the new. Flagged to the reporter: the description could add research phrasing ("compare X and Y", "what's the best X for Y") if they want those back.
+- Neither skill triggers on 3 should-trigger prompts: user delete, git method/environments, and "I'm researching how other projects…".
+
+**Caveat:** the sibling skills in the scratch dir were the branch versions for both arms.

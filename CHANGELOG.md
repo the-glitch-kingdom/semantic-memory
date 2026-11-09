@@ -12,6 +12,10 @@ Issue #81. Details and misses: `.documentation/changelog/v1-25-1-semantic-first-
 - `vault-first`, `research-mode` and `outage-silence` name tools bare, on "the vault server", not `mcp__semantic-vault__<tool>`.
 - `hooks/vault-context.js` prints the writable server's `.mcp.json` name in its six messages (falls back to `semantic-vault`). The server instructions name `passing_terms`.
 
+### Fixed
+
+- `skill-eval trigger` counts a run that called the skill and then hit the 2-turn cap as a trigger. It used to discard those runs as errors, which biased trigger rates down and wasted runs on retries. Hitting the cap without a skill call counts as a no-trigger vote.
+
 ### Removed
 
 - `skills/semantic-first/references/vault-frontmatter.md`: it documented `tier`, `source` and `owner`, which `synthesize_note` never writes.
@@ -20,9 +24,13 @@ Issue #81. Details and misses: `.documentation/changelog/v1-25-1-semantic-first-
 
 - `test/unit/skill-surfaces.test.ts` and `test/e2e/skill-result-fields.test.ts` tie every tool, parameter, field and string the skills name to the release.
 
+### Measured
+
+Trigger check: 25 prompts, the old skill against the new one, measured in the same run after the fix. On should-trigger prompts, 7/15 for the old skill against 10/15 for the new, with 0/10 false triggers for both. The new description gains 5 repo-prose prompts and loses 2 research prompts ("best CRM…", "compare SQLite FTS5 and BM25…"). On research prompts alone it is 2/5, against 4/5.
+
 ### Missed targets
 
-The trigger check ("the shorter description still triggers on the same questions") was not measured: the trigger eval discards runs that call the Skill (`error_max_turns`). `commands/*.md` and one CLI help string still hard-code `mcp__semantic-vault__`.
+Research prompts trigger less often (above). `commands/*.md` and one CLI help string still hard-code `mcp__semantic-vault__`; they are planned for 1.26.0.
 
 ### Tooling (no package change)
 

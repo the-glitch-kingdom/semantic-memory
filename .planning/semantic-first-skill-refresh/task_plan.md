@@ -29,7 +29,7 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
   - [x] `skills/vault-first`, `skills/research-mode` and `skills/outage-silence`: replace `mcp__semantic-vault__<tool>` with the bare tool name on "the vault server". Use the same role wording as Phase 3, in at most one line per skill.
   - [x] `hooks/vault-context.js` prints `mcp__semantic-vault__…` in six messages. The hook already resolves the writable `semantic-*` entry; print that entry's real name if this is a small change, with a test. If not, record why and leave it.
   - [x] Server instructions (`serverInstructions` in `src/mcp/server.ts`) omit `passing_terms`. Add it in one short clause, so the server and the skill name the same fields; keep the existing "top 3 / each step separately" text.
-- [x] Phase 5: Trigger check (NOT MEASURED, see notes.md and Errors Encountered) (the issue asks for it)
+- [x] Phase 5: Trigger check (measured after the trigger-eval fix (cb91d2d): PASS, old 7/15 vs new 10/15 should-trigger, 0/10 false triggers each; see notes.md (was: NOT MEASURED), see notes.md and Errors Encountered) (the issue asks for it)
   - [x] Build a prompt set (JSONL `{session, text}`), written before running:
     - should trigger: prose questions about the repo; "is there something that does X"; research questions;
     - should not trigger: exact code-symbol lookups; unrelated chat.
