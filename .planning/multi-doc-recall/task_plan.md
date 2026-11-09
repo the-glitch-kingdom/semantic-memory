@@ -35,10 +35,10 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
         - Report both in `eval --json` and in the `eval-against-release.sh` table.
   - [x] Measure the candidate pool: distinct docs among the `limit * 3` nearest chunks, per question, for 1.15.0, 1.21.0 and 1.22.0 on the same tree. Count chunks per doc for each schema.
   - [x] Baseline in notes.md: 1.15.0, 1.21.0, 1.22.0, 1.23.0 and local, same run, CLI and MCP, with and without an export. The stdio test must show the multi @8 loss before any fix; if it does not reproduce, say so plainly and build a harder fixture before Phase 3.
-- [ ] Phase 3: The candidate pool counts docs, not chunks
-  - [ ] `VectorIndex.search(q, k)` returns up to k distinct docs. Fetch more neighbours (bounded, for example doubling up to a cap) until k docs are found or the index is exhausted. Every caller (`src/mcp/tools/search.ts`, `src/cli/search.ts`, graph seeds) gets the same behaviour. BM25 is already one result per doc; confirm it.
-  - [ ] Measure on train: multi @1/@3/@8, `cov@k`, paraphrase, exact, long-section-hard and p95.
-  - [ ] Unit test: a doc with many chunks near the query no longer shrinks the number of distinct docs returned.
+- [x] Phase 3: The candidate pool counts docs, not chunks
+  - [x] `VectorIndex.search(q, k)` returns up to k distinct docs. Fetch more neighbours (bounded, for example doubling up to a cap) until k docs are found or the index is exhausted. Every caller (`src/mcp/tools/search.ts`, `src/cli/search.ts`, graph seeds) gets the same behaviour. BM25 is already one result per doc; confirm it.
+  - [x] Measure on train: multi @1/@3/@8, `cov@k`, paraphrase, exact, long-section-hard and p95. (Pool fix does NOT move multi @8: 13 -> 13, see notes.)
+  - [x] Unit test: a doc with many chunks near the query no longer shrinks the number of distinct docs returned.
 - [ ] Phase 4: Per-doc score aggregation and short broad docs
   - [ ] Decompose on train only (#73's open lead: without doc metadata, hybrid @1 was 51 against 46):
         - best chunk against the summary chunk (`5b7d7a9`);
@@ -84,9 +84,10 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - Phase 2: `cov@k` and `dominance` live in `ArmMetrics`, so every eval report carries them; the old releases get them through the mcp arm, which this checkout drives.
 
 ## Errors Encountered
+- Phase 3: `VectorIndex.search` now fetches up to 16x k chunks (doubling) until k distinct docs, but multi-hub train multi @8 stays 13/19 (one question gained, one lost) and cov@8 .85 -> .86. The pool shrink is therefore not the main cause here; the aggregation/ranking (Phase 4) is. Kept because it is principled, costs no p95 and holds every 1.22.0 gain. Real-tree dominance rose (all train sets, mcp arm: 13 -> 20 top-3 slots for one doc), to be addressed in Phase 4.
 - Phase 2: the first fixture (14 multi per set) reproduced the @8 loss by only 1-2 cases (train 13 -> 11, held-out 12 -> 11), inside the noise band. Hardened before any search change: 5 more hub-heavy multi questions per set (cross-hub, 4 facets). Result: train 16 -> 13 (-3 of 19), held-out 13 -> 12 (-1), all 8 sets 51 -> 47 of 61. The held-out loss alone is still within one case, so Phase 6's gate leans on the all-sets multi @8 and `cov@8` as well as the held-out set.
 - Phase 2: the first `dominance` counted every top-3 slot and so charged a hub for the questions it answers; redefined as slots on questions the doc does not answer (matches none of the question's facets).
 - Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 3** (Phase 2 done: the multi @8 loss reproduces, see notes.md "Eval results: Phase 2")
+**Currently in Phase 4** (Phase 3 done: distinct-doc pool, no multi @8 gain, see notes.md "Eval results: Phase 3")

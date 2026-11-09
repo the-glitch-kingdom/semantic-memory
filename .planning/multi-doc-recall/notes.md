@@ -94,3 +94,28 @@ With export: train 3/11/16 (1.15.0, 1.21.0) then 3/11/13 (1.22.0, 1.23.0, local)
 - Baseline: 1.15.0, 1.21.0, 1.22.0, 1.23.0 and local, same run, CLI and MCP, with and without export: done. The stdio (MCP) arm shows the same @8 loss as the CLI arm in every row.
 - The multi @8 loss reproduces on train (-3) and in aggregate (-4 of 61), and only marginally (-1) on held-out. @1, exact-term and dominance claims of the report do not reproduce on this fixture.
 - Raw logs and per-question JSON: scratchpad only (`r76p2-*.log`, `p2n/`, `p2e/`, `split/`).
+
+## Eval results: Phase 3 (candidate pool counts docs)
+
+Change: `VectorIndex.search(q, k)` (`src/core/vector.ts`) returns up to k distinct docs: it doubles the HNSW neighbour fetch (cap 16 x k chunks or the live count) until k docs are found. Callers (`src/mcp/tools/search.ts` x3, `src/cli/search.ts`, graph seeds) are unchanged and all get it. BM25 already returns one result per doc (Phase 1). Unit test `test/unit/vector-doc-pool.test.ts`.
+
+Same run, TRAIN sets only (real-corpus, real-hub, long-section, long-section-hard, multi-hub), `git clone --local`, no export, hybrid, CLI per set:
+
+| set | 1.22.0 | local (phase 3) |
+|---|---|---|
+| multi-hub: multi @1/3/8 (n=19) | 3/11/13 | 3/11/13 |
+| multi-hub: cov@1/3/8 | - (mcp arm .44/.80/.85) | .44/.79/.86 |
+| multi-hub: exact @1 / paraphrase @1 | 3/4, 6/6 | 3/4, 6/6 |
+| multi-hub: dominance | - | 4 |
+| real-corpus: all@1, exact, para, multi 1/3/8 (of 9) | 20/27, 7/10, 6/8, 7/8/9 | same |
+| real-hub: all@1, para, multi (of 4) | 6/12, 1/4, 2/4/4 | same |
+| long-section: all@1 | 15/15 | 15/15 |
+| long-section-hard: all@1, exact, para | 10/12, 3/4, 7/8 | same |
+| pooled 5 sets: hyb@1 / hyb@3 / multi 1/3/8 (of 32) | 63 / 84 / 12/23/26 | 63 / 84 / 12/23/26 |
+| pooled: neg flagged, #1+related | 15/22, 70 | 18/22, 70 |
+| pooled dominance (mcp arm) | 13 | 20 |
+| p95 ms (per set, noisy) | 27-352 | 33-327 |
+
+multi-hub per question: mh-t26 missed -> rank 8, mh-t28 rank 8 -> missed; the rest identical. **The distinct-doc pool does not restore multi @8 on train (13 vs the 1.15.0 16).** The Phase 2 pool measurement showed expected docs missing from the 24-chunk pool on 10 of 38 questions, yet widening the pool to >= 24 docs does not bring them into the top 8: they are now candidates but lose to hubs and broad docs in fusion. Phase 4 (aggregation) is where the loss is. Held-out was not run. Dominance rose on the pooled sets (13 -> 20), for Phase 4 to look at. No 1.22.0 gain was lost.
+
+Test run: lint, build, `npm run eval` (148 passed, 4 expected fail) green. `npm test`: freshness-scale warm start and hook-failure Jev-hang are the known load flakes (both pass alone). `single-source-snapshot` failed for real: with the wider pool a small vault returns more docs per query (the snapshot's lower-ranked scores/order for 5 of 10 queries changed; top results unchanged for the answerable ones), so its fixture `test/fixtures/federation/single-source-snapshot.json` was re-taken from this build (as for the 1.21.0 summary chunk).
