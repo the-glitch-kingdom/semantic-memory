@@ -162,3 +162,34 @@ The 4 lost train questions (mh-t05, t11, t26, t27) are vague, many-topic questio
 | 5 train sets pooled | `troubleshooting.md` | 20 |
 
 The plan's "<= 3 on train and real-corpus" is missed: 4 on multi-hub, 18 on real-corpus. The real-corpus number is a real long doc that matches many operational questions; every release has it (31 on 1.15.0, 38 on 1.21.0, 34 on 1.22.0, all 8 sets). An absolute 3 cannot be gated on this tree, so Phase 6 should gate dominance on the multi-hub sets against the previous release (not above it by more than 1), not on an absolute 3 over the real corpus.
+
+
+## Eval results: Phase 5 (export path)
+
+Method: TRAIN sets only (real-corpus, real-hub, long-section, long-section-hard, multi-hub), `git clone --local`, hybrid, CLI per set, then `eval --via mcp`. Held-out not run.
+
+Two separate indexes (HNSW random) differ by noise, so the cause was isolated on ONE index (export tree) with `.hewtd/graph.json` toggled:
+
+| arm (same index) | all@1/@3/@8 | multi 1/3/8 (of 32) | exact @1 |
+|---|---|---|---|
+| export present | 63 / 80 / 89 | 10/20/27 | 23 |
+| graph.json moved away | 63 / 84 / 88 | 12/23/26 | 21 |
+| export, duplicates + points_to stripped (no fold) | = export present | | |
+| export, symbols emptied | = export present | | |
+| export, docs table emptied | = no export | | |
+| export, `decay.code.enabled: false` / `dead_penalty` 1 / 0.99 | 64 / 84 / 88 | 12/23/26 | 22 |
+
+Not fold, entity cards or `related`: only the grounding multiplier from export dead refs. With the export, 33 docs carry x0.857 (3+ dead refs) against 12 docs at x0.95 from the fallback, including the reference docs the questions answer from; the dead refs are runtime paths (`.claude/.semantic-memory/`, `.semantic-sidekick-index/`) and bare names (`manifest.json`, `docs.cache.json`), which the span fallback never flags. 1.15.0 has no grounding (export identical to no export); it dates from 1.16.0.
+
+Fix (`src/core/code-graph.ts` `dropNonDead`, called from `loadCodeData`, so MCP and CLI share it): an export dead file ref counts only when it has a `/` under a top folder git tracks and is not git-ignored. Measured variants: ignored-only 62/80 (worse), shaped-only 64/82 multi 12/21/26, both 64/83 multi 12/22/26.
+
+After the fix, script run, local build, train sets pooled:
+
+| arm | hyb@1 / hyb@3 | multi 1/3/8 | cov@1/3/8 | dom | neg flagged | p95 |
+|---|---|---|---|---|---|---|
+| no export, CLI = MCP | 63 / 84 | 12/23/26 | .59/.84/.92 | 20 | 18/22 | 19-22 ms |
+| export, CLI = MCP | 64 / 83 | 12/22/26 | .60/.83/.92 | 19 | 18/22 | 18-20 ms |
+
+Export is within one case of no export on every count (was -4 @3, -2/-3 multi). CLI and MCP agree on every count. Missed: the export still differs by one case at @3 and multi @3 (real dead refs remain flagged; that is intended).
+
+Side finding fixed: `save()` in `src/mcp/context.ts` cleared `dirty` after the commit, so a change landing during the write (grounding from the code graph) was never saved and the CLI, which reads the cache, missed it. Now cleared before the write. `graph-eval` waits for the debounced save (it was racing it).

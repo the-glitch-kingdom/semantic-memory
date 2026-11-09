@@ -271,14 +271,16 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
    * `git log` never leaves a new vector index without doc metadata. Responses are marked stale until it lands.
    */
   let codePending = 0;
-  function applyCode(docs: IndexedDocument[], then?: () => void): Promise<void> {
+  function applyCode(docs: IndexedDocument[]): Promise<void> {
     codePending++;
+    const before = JSON.stringify(docs.map((d) => d.grounding));
     return loadCode(docs)
       .then((code) => {
         if (documents !== docs) return; // a later swap installed newer docs and runs its own load (an older load finishing last must not overwrite its code)
         codeData = code;
         graph.buildFromDocuments(docs, code);
-        then?.();
+        // the CLI reads grounding from the saved cache: a grounding that lands after the swap's own save would otherwise never reach it
+        if (before !== JSON.stringify(docs.map((d) => d.grounding))) { dirty = true; scheduleSave(); }
       })
       .finally(() => { codePending--; });
   }
@@ -371,11 +373,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     if (!plan.changed && !rebuild) {
       // the tree is unchanged but the code may not be: a new export or a commit moves the stamp
       if (codeStamp() !== lastCodeStamp) {
-        const before = JSON.stringify(documents.map((d) => d.grounding));
-        const docs = documents;
-        void applyCode(docs, () => {
-          if (before !== JSON.stringify(docs.map((d) => d.grounding))) { dirty = true; scheduleSave(); } // the CLI reads grounding from the saved cache
-        });
+        void applyCode(documents);
       }
       if (stale || indexState === "stale") {
         stale = false;
@@ -521,6 +519,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       vectorsDirty = false;
     }
 
+    dirty = false; // before the write: a change that lands while it runs (grounding, a sync) must stay dirty for the next save
     const docs = documents;
     const meta = await commitIndex(
       indexPath,
@@ -542,12 +541,12 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
           writeFile(join(stage, "manifest.json"), JSON.stringify(manifest)),
         ]);
       }
-    );
+    ).catch((e) => { dirty = true; throw e; });
     if (meta) {
       generation = meta.generation;
       lastMetaMtime = await metaMtime(indexPath);
-      dirty = false;
     } else {
+      dirty = true;
       // another process holds the lock or committed first: retry later (the next sync adopts their commit and re-diffs)
       scheduleSave(5_000);
     }

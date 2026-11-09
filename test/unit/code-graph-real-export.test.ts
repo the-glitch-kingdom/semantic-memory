@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, posix } from "node:path";
+import { dirname, join } from "node:path";
 import { groundDocs, loadCodeData } from "../../src/core/code-graph.js";
 import { DEFAULT_DECAY_CONFIG, decayForDoc } from "../../src/core/decay.js";
 import { GraphBuilder } from "../../src/core/graph.js";
@@ -31,9 +31,7 @@ describe("the real hewtd export, end to end", () => {
 
       groundDocs(docs, code);
       for (const d of docs) {
-        const refs = real.docs[d.path].refs;
-        const dead = [...new Set(refs.filter((r: any) => r.kind === "file" && r.resolved === false).map((r: any) => posix.normalize(r.target)).filter((t: string) => t !== "./"))];
-        expect(d.grounding?.dead_refs ?? [], d.path).toEqual(dead); // only file refs; null and symbol refs are never dead
+        expect(d.grounding?.dead_refs ?? [], d.path).toEqual([]); // the repo is empty: no top folder exists, so every export "dead" ref is prose (see dropNonDead)
         const { multiplier } = decayForDoc(d, DEFAULT_DECAY_CONFIG);
         expect(multiplier).toBeGreaterThanOrEqual(0.8 * 0.85 * 0.9); // damped: floor 0.8, archive-candidate x0.85, age decay aside
       }

@@ -53,8 +53,9 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
         (Done: (b), (b2), (b3) and (c) measured; none beats (a); (a) kept, no code change, all knobs reverted.)
   - [x] Dominance: no doc in the top 3 of more than 3 unrelated questions, on train and on the real-corpus sets.
         (Measured, target MISSED: 4 on multi-hub train, 18 on real-corpus, where `troubleshooting.md` is a 38 KB real doc; see Errors.)
-- [ ] Phase 5: Export path (d1b-only losses)
-  - [ ] Check whether graph `related`, entity cards, duplicates or fold push the exact-term doc down when `.hewtd/graph.json` exists. Fix only what the measurement shows, and keep rank parity between MCP and CLI.
+- [x] Phase 5: Export path (d1b-only losses)
+  - [x] Check whether graph `related`, entity cards, duplicates or fold push the exact-term doc down when `.hewtd/graph.json` exists. Fix only what the measurement shows, and keep rank parity between MCP and CLI.
+        (Measured on one index with `.hewtd/graph.json` toggled: not fold, duplicates, entity cards or `related`; the whole effect is the grounding multiplier from export dead refs (runtime paths and bare names). Fixed in `loadCodeData` (`dropNonDead`), plus a save race in `src/mcp/context.ts` the fix exposed; export now within one case of no export, CLI = MCP.)
 - [ ] Phase 6: Release gate
   - [ ] Add `multi-hub-heldout` to `npm run gate:release`. The gate fails when multi @3 or @8, or `cov@3`, drops by more than 1 question against the previous release, or when `dominance` exceeds 3.
   - [ ] Run it against the previous release; record the result and runtime.
@@ -88,6 +89,8 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - Phase 2: `cov@k` and `dominance` live in `ArmMetrics`, so every eval report carries them; the old releases get them through the mcp arm, which this checkout drives.
 
 ## Errors Encountered
+- Phase 5: with the export present, train hyb@3 fell 84 -> 80 and multi @1/@3 12/23 -> 10/20 (exact @1 +1), on the SAME index (only `.hewtd/graph.json` toggled). Stripping `duplicates`/`points_to` (fold) or the symbols changed nothing; emptying the `docs` table, or `decay.code.enabled: false`, restored the no-export numbers exactly. Cause: hewtd marks runtime state (`.claude/.semantic-memory/`, `.semantic-sidekick-index/`) and bare names (`manifest.json`) as dead refs, so reference docs (config, cli, mcp-internals, indices-and-storage) got the x0.857 dead-ref multiplier; the span fallback already treats a missing git-ignored path as runtime state and flags only `dir/file` under a repo folder. Fix: same rule for the export (`dropNonDead`). 1.15.0 has no grounding (export = no export there); this exists since 1.16.0, so it is not a 1.22.0 regression.
+- Phase 5: the fix made `graph-eval` (CLI = MCP grounding) fail 3 in 10 runs. Not slower code: `save()` cleared `dirty` AFTER the commit, so a grounding that landed while the first save ran was never persisted and the CLI (reads the saved cache) never saw it. `save()` now clears `dirty` before the write (and restores it on failure); `applyCode` marks dirty when grounding changed. The test waits for the cache to catch up (the save is debounced).
 - Phase 4: no aggregation variant beats best-chunk: (b) second-strong-chunk bonus (three forms) and (c) single-chunk dampener leave multi @8 at 26/32 (multi-hub 13/19); (b) raises dominance, (c) is a no-op. The multi @8 loss is not in aggregation or in short broad docs on this tree. Dominance <= 3 missed (multi-hub 4, real-corpus 18, a real 38 KB doc every release has); Phase 6 gates it relative to the previous release instead.
 - Phase 3: `VectorIndex.search` now fetches up to 16x k chunks (doubling) until k distinct docs, but multi-hub train multi @8 stays 13/19 (one question gained, one lost) and cov@8 .85 -> .86. The pool shrink is therefore not the main cause here; the aggregation/ranking (Phase 4) is. Kept because it is principled, costs no p95 and holds every 1.22.0 gain. Real-tree dominance rose (all train sets, mcp arm: 13 -> 20 top-3 slots for one doc), to be addressed in Phase 4.
 - Phase 2: the first fixture (14 multi per set) reproduced the @8 loss by only 1-2 cases (train 13 -> 11, held-out 12 -> 11), inside the noise band. Hardened before any search change: 5 more hub-heavy multi questions per set (cross-hub, 4 facets). Result: train 16 -> 13 (-3 of 19), held-out 13 -> 12 (-1), all 8 sets 51 -> 47 of 61. The held-out loss alone is still within one case, so Phase 6's gate leans on the all-sets multi @8 and `cov@8` as well as the held-out set.
@@ -95,4 +98,4 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 5** (Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
+**Currently in Phase 6** (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
