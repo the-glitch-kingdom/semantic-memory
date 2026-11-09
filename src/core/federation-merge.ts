@@ -33,15 +33,23 @@ function keys(run: SourceRun): number[] {
 export function mergeSources(runs: SourceRun[], limit: number): any[] {
   const lanes = runs.map((r) => ({ label: r.label, items: r.items, keys: keys(r), at: 0 }));
   const allWeak = runs.filter((r) => r.items.length).every((r) => r.items[0].no_strong_match);
+  // a name is missing (or passing) only if every source with results lacks it: one source that has it answers for it
+  const common = (k: "missing_terms" | "passing_terms") => {
+    const sets = runs.filter((r) => r.items.length).map((r) => r.items[0][k] as string[] | undefined ?? []);
+    const t = sets[0]?.filter((x) => sets.every((s) => s.includes(x))) ?? [];
+    return t.length ? t : undefined;
+  };
+  const missing = common("missing_terms");
+  const passing = common("passing_terms");
   const out: any[] = [];
   while (out.length < limit) {
     const lane = lanes.filter((l) => l.at < l.items.length).sort((a, b) => b.keys[b.at] - a.keys[a.at])[0];
     if (!lane) break;
-    const { no_strong_match, missing_terms, undocumented, related, query_type, ...rest } = lane.items[lane.at++];
+    const { no_strong_match, missing_terms: _m, passing_terms: _p, undocumented, related, query_type, ...rest } = lane.items[lane.at++];
     out.push({
       ...rest,
       ...(out.length === 0 && { ...(query_type && { query_type }), ...(related && { related }) }),
-      ...(allWeak && { ...(no_strong_match && { no_strong_match }), ...(missing_terms && { missing_terms }), ...(undocumented && { undocumented }) }),
+      ...(allWeak && { ...(no_strong_match && { no_strong_match }), ...(missing && { missing_terms: missing }), ...(passing && { passing_terms: passing }), ...(undocumented && { undocumented }) }),
       source: lane.label,
     });
   }
