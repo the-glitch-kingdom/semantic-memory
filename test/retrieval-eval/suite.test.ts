@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "../../src/mcp/server.js";
-import { checkBaseline, findStale, loadSets, normalizeCase, type Baseline, type EvalReport } from "../../src/core/retrieval-eval/suite.js";
+import { checkBaseline, findStale, formatSuite, loadSets, normalizeCase, type Baseline, type EvalReport } from "../../src/core/retrieval-eval/suite.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = join(HERE, "..", "fixtures", "docs-vault");
@@ -39,6 +39,14 @@ describe("normalizeCase (#71)", () => {
     const f = join(await mkdtemp(join(tmpdir(), "sp-norm-")), "s.jsonl");
     await writeFile(f, JSON.stringify({ id: "n1", q: "q", negative: true }) + "\n");
     expect(loadSets("/x", [f])[0].tier).toBe("negative");
+  });
+});
+
+describe("formatSuite settings (#71)", () => {
+  it("prints whether decay.code ran", () => {
+    const r = (decayCode: boolean) => formatSuite({ cases: 1, setHash: "s", corpus: { docs: 1, hash: "c" }, stale: [], settings: { granularity: "section", decay: true, decayCode }, arms: {} });
+    expect(r(false)).toContain("settings: granularity=section decay=on decay.code=off");
+    expect(r(true)).toContain("decay.code=on");
   });
 });
 

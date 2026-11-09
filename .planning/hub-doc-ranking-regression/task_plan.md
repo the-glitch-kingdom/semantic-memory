@@ -108,15 +108,15 @@ tree after publish.
   - [x] Bump all five version fields, lockfile. Offline tarball deferred to release (built from the merge commit).
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Remove the losing scoring variants and trial knobs; dead-code check over the branch diff. (Nothing left: SM_DOC_VARIANT and variants were removed before the Phase 5 commit; grep over src, scripts, test and docs finds no trial knob, debug logging or commented-out code. Scripts that console.log are intentional output.)
-- [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
-  - [ ] Independent review of `git diff main...HEAD`:
+- [x] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
+  - [x] Independent review of `git diff main...HEAD`:
         - constants tuned on held-out;
         - a second identifier detector;
         - anchors broken;
         - MCP/CLI drift;
         - `content[0]` changes;
         - writes into the repo by the gate script.
-  - [ ] #71 checks, each against 1.15.0 measured in the same run:
+  - [x] #71 checks, each against 1.15.0 measured in the same run:
         - real-corpus held-out hybrid @1 and multi @1 at or above 1.15 within the band;
         - the hub set too;
         - anchors still point at the matching section (section eval);
@@ -126,10 +126,11 @@ tree after publish.
         - `TaskResponse`-style identifiers are classified `identifier` when the graph knows them;
         - `negative: true` rows are scored as negatives;
         - negatives flagged at the 1.15 level with no new false flags.
-  - [ ] The reporter's tree is private: state in the PR that their set C / A+B numbers are re-run by them after
+  - [x] The reporter's tree is private: state in the PR that their set C / A+B numbers are re-run by them after
         publish.
-  - [ ] Full suite: lint, build, `npm test` (known flakes re-run alone), `npm run eval`, and the release gate itself.
+  - [x] Full suite: lint, build, `npm test` (known flakes re-run alone), `npm run eval`, and the release gate itself.
         Answer each #71 item in notes.md.
+        Done: notes.md "Eval results: Phase 9". Not met: real-corpus train multi @1 and negatives flagged vs 1.15.0; the reporter's tree re-runs after publish.
 - [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
   - [ ] New changelog doc `.documentation/changelog/v1-21-0-hub-doc-ranking.md` (`npx hewtd integrate -a`) and a
         `CHANGELOG.md` entry with measured numbers against 1.15.0 and 1.20.0 from the same run, and every missed target
@@ -168,6 +169,7 @@ tree after publish.
   each passed their floors).
 
 ## Errors Encountered
+- Phase 9: negatives flagged 13/16 (real-corpus held-out) and 13/17 (gate sets) vs 15/16 and 15/17 for 1.15.0, and real-corpus train multi @1 4/9 vs 7/9; not addressed by this plan. eval-probe.mjs skipped unparsable answers silently (fixed: retries, prints `skipped`). Known flakes freshness-scale and hook-failure Jev hang failed in the full run and pass alone.
 - Phase 5: train without an export is still below both releases (24 vs 25 for 1.15.0, 26 for 1.20.0; multi 7 vs 9 and 8); the doc chunk cut the Phase 4 gap
   but did not close it. Held-out is above both (22 vs 18 and 19). Not used to choose anything.
 - Phase 5: docs-eval "with mode flow" compared #1 + path (11/12) with plain @3 on the fixture train multi tier; plain @3 rose 10 to 12 with the doc chunk, so
@@ -184,7 +186,7 @@ tree after publish.
   task was not in the scratchpad; `scripts/lib/eval-probe.mjs` was written new.
 
 ## Status
-**Currently in Phase 9** - validate
+**Currently in Phase 10** - documentation
 
 ---
 

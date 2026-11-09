@@ -16,17 +16,20 @@ const questions = sets.flatMap((f) => readFileSync(f, "utf8").split("\n").filter
 
 const client = new Client({ name: "eval-probe", version: "1.0.0" });
 await client.connect(new StdioClientTransport({ command: "node", args: [join(root, "dist/cli/index.js"), "--notes", ".documentation", "--read-only"], cwd, stderr: "ignore" }));
-const search = async (query) => {
-  const res = await client.callTool({ name: "search_hybrid", arguments: { query, limit: 8 } });
-  try { const p = JSON.parse(res.content[0].text); return Array.isArray(p) ? p : null; } catch { return null; }
+const search = async (query, tries = 1) => {
+  for (let i = 0; i < tries; i++) {
+    const res = await client.callTool({ name: "search_hybrid", arguments: { query, limit: 8 } });
+    try { const p = JSON.parse(res.content[0].text); if (Array.isArray(p)) return p; } catch { /* retry */ }
+  }
+  return null;
 };
 while (!(await search("warm up"))) await new Promise((r) => setTimeout(r, 250));
 
 const fields = { section: 0, anchor: 0, code: 0, decay: 0, grounding: 0 };
-let related = 0, n = 0;
+let related = 0, n = 0, skipped = 0;
 for (const q of questions) {
-  const top = (await search(q))?.[0];
-  if (!top) continue;
+  const top = (await search(q, 3))?.[0]; // retried, and counted when it still fails: a short count must not pass for a field gap
+  if (!top) { skipped++; continue; }
   n++;
   related += top.related?.length ?? 0;
   for (const f of Object.keys(fields)) if (top[f]) fields[f]++;
@@ -35,4 +38,4 @@ const cards = {};
 for (const id of IDENTIFIERS) cards[id] = !!(await search(id))?.[0]?.entity;
 await client.close();
 const version = createRequire(import.meta.url)(join(root, "package.json")).version;
-console.log(JSON.stringify({ version, questions: n, relatedPerTop: +(related / n).toFixed(2), top1WithField: fields, entityCard: cards }, null, 2));
+console.log(JSON.stringify({ version, questions: n, skipped, relatedPerTop: +(related / n).toFixed(2), top1WithField: fields, entityCard: cards }, null, 2));

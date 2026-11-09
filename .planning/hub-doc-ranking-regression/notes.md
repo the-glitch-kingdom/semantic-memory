@@ -225,3 +225,67 @@ Phase 10 docs: INDEX_SCHEMA_VERSION 10, the doc summary chunk (retrieval-tuning-
 | local | 22/37 | 7/10 | 15/37 | 13/17 |
 
 PASS (band 1). The two sets run as one eval, so the gate is one combined number, not one per set. The default previous version is the newest published below package.json's version (1.19.0 until the Phase 7 bump; same ranking numbers as 1.20.0). Cold index 60 s vs 76 s.
+
+## Eval results: Phase 9 (review and #71 checks), 2026-11-08
+Same run per set, `scripts/eval-against-release.sh --set <file> 1.15.0 1.20.0 local`, clones, no export, one run per cell (noise about 1 case).
+Nothing here was used to choose a constant; Phase 9 changed no ranking code.
+
+| set | run | hyb@1 | hyb@3 | multi@1 | #1+rel | rel/#1 | neg flagged |
+|---|---|---|---|---|---|---|---|
+| real-corpus held-out (27) | 1.15.0 | 14 | 21 | 4/6 | 18 | 0.74 | 15/16 |
+| | 1.20.0 | 15 | 25 | 4/6 | 20 | 1.15 | 13/16 |
+| | local | 16 | 23 | 4/6 | 21 | 1.15 | 13/16 |
+| hub held-out (10) | 1.15.0 | 4 | 9 | 1/4 | 6 | 1.8 | 0/1 |
+| | 1.20.0 | 4 | 8 | 2/4 | 7 | 1.9 | 0/1 |
+| | local | 6 | 9 | 3/4 | 8 | 1.3 | 0/1 |
+| real-corpus train (27) | 1.15.0 | 19 | 23 | 7/9 | 22 | 0.78 | 17/20 |
+| | 1.20.0 | 20 | 25 | 6/9 | 22 | 1.33 | 17/20 |
+| | local | 18 | 27 | 4/9 | 23 | 1.26 | 17/20 |
+| hub train (12) | 1.15.0 | 6 | 9 | 2/4 | 7 | 1.75 | 2/2 |
+| | 1.20.0 | 5 | 10 | 2/4 | 8 | 1.83 | 2/2 |
+| | local | 6 | 10 | 3/4 | 10 | 1.58 | 2/2 |
+
+Release gate, `npm run gate:release` (default previous = 1.20.0 now that package.json is 1.21.0; both held-out sets in one eval):
+1.20.0 19/37, multi 6/10, neg 13/17; local 22/37, multi 7/10, neg 13/17. PASS. `git status` after: clean (no write into the repo).
+Combined held-out against 1.15.0 (sum of the two rows above): 1.15.0 18/37, multi 5/10, neg 15/17; local 22/37, multi 7/10, neg 13/17.
+Combined train: 1.15.0 25/39, multi 9/13, neg 19/22; 1.20.0 25, 8/13 (Phase 5 table: 26); local 24/39, multi 7/13, neg 19/22.
+
+### Answers to the #71 checks
+1. Real-corpus held-out hybrid @1 and multi @1 at or above 1.15 within the band: MET (16 vs 14; 4/6 vs 4/6).
+2. Hub set too: held-out MET (6 vs 4; 3/4 vs 1/4). Hub train MET (6 vs 6; 3/4 vs 2/4). NOT MET on the real-corpus TRAIN set: hybrid @1 18 vs 19 (inside the band) but
+   multi @1 4/9 vs 7/9 in this run (Phase 5 measured 7/13 vs 9/13 over train as a whole). That is the Phase 4 cost of dropping per-file drift, only partly recovered
+   by the doc chunk. Train and held-out disagree on direction; the reporter's tree decides.
+3. Anchors point at the matching section: MET. Section eval green in `npm run eval` (135 passed, 5 expected fail); `section`/`anchor` on every #1 of every set
+   (one probe run showed 8 of 10 on the hub held-out; re-run three times gave 10 of 10 each time, so it was the probe skipping answers it could not parse; the probe now retries
+   and prints `skipped`).
+4. `related` on #1 averages >= 1 without the export: MET on every set (1.15 to 1.58 local; 1.15.0 itself is 0.74 and 0.78 on the real-corpus sets).
+5. `search_hybrid` over the stdio server returns the CLI's entity card: MET, 4/4 identifier queries on local (1.15.0: 0/4, the feature came later);
+   test/e2e/stdio-readonly.test.ts covers the PascalCase case. The reporter's missing card was not reproduced on a ready index; the upgrade window is only marked (note).
+6. `decay.code` can be switched off and `eval` prints it: MET. `decay: {code: false}` gives `settings: ... decay.code=off` (checked on a clone; unit test added in suite.test.ts).
+7. `TaskResponse`-style identifiers classified `identifier` when the graph knows them: MET (stdio e2e: `query_type` identifier + entity card; a prose `SessionEnd` stays prose).
+8. `negative: true` rows scored as negatives: MET (suite.test.ts, normalizeCase in loadSets).
+9. Negatives flagged at the 1.15 level with no new false flags: NOT MET. Real-corpus held-out 13/16 vs 15/16 for 1.15.0 (same as 1.20.0); gate sets 13/17 vs 15/17. Train and hub equal.
+   Nothing in 1.21.0 addresses it; it dates from 1.16/1.17. "No new false flags" holds (answered@1 flagged is not worse than 1.20.0).
+
+### Review of `git diff main...HEAD` (adversarial)
+- Constants tuned on held-out: no. Phase 4/5 tuning tables are train only; held-out appears only as the final measurement. Gate band (1 question) is a noise allowance, not a tuned value.
+  The one test relaxation (docs-eval `at[3] - 1`) and the graph-eval floors 9 to 7 follow measured train/fixture results and are recorded.
+- A second identifier detector: no. PASCAL lives in `identifiers()` (the single detector) and is gated by `knownToCode`. `classifyQuery`, `entityCard`, `missingTerms`, MCP and CLI all pass it.
+- Anchors: `section`/`anchor` come from the best body chunk; the `field: "doc"` chunk never sets `matched` (vector.ts). Verified by the section eval and the probe.
+- MCP/CLI drift: both call `knownToCode`; the CLI loads the code graph for any 2+-capital PascalCase word (one git call, perf only). Parity tests pass.
+- `content[0]`: unchanged JSON array; the stale note is a trailing block.
+- Gate script writes: none. Temp dirs under TMPDIR, `--dir` for eval output, `git status` clean after a full gate run.
+- Bug fixed: `scripts/lib/eval-probe.mjs` silently skipped answers it could not parse and under-counted fields (one run showed section 8 of 10). It now retries up to 3 times and prints `skipped`.
+- Risks recorded, not fixed (out of scope or by plan):
+  - Schemas installed by 1.16 to 1.20 (`install_schema`, from the old template) hold `drift_penalty: 0.97` explicitly, so the new default does not reach them; those users need `drift_penalty: 1` or `code: false`. Phase 10 docs must say so.
+  - The path-shape rule drops bare refs with no `/` and no extension (`Makefile`, `Dockerfile`), so they never count as dead or drifted. By the plan's rule.
+  - `gate-release.sh` parses the table by column position, and the default previous-version lookup needs network.
+
+### Full suite
+lint 0, build 0, `npm test` 1166 passed, 2 failed (freshness-scale warm start, hook-failure Jev hang: both pass alone, 16 tests), `npm run eval` 135 passed, 5 expected fail.
+After adding one test (suite.test.ts) and the probe fix: lint green, suite.test.ts passes.
+
+### Not met, stated plainly
+- Real-corpus train multi @1 below 1.15.0 (4/9 vs 7/9 this run; 7/13 vs 9/13 over train as a whole) and train hybrid @1 without an export 24 vs 25.
+- Negatives flagged 13/16 and 13/17 on held-out vs 15/16 and 15/17 for 1.15.0.
+- The reporter's #1 loss does not reproduce on this repo; their set C / A+B numbers are re-run by them after publish.
