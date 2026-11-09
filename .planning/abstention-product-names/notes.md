@@ -133,3 +133,13 @@ Checks: lint, build, `npm test` (freshness-scale warm start and hook-failure Jev
 
 ## Eval results: Phase 5 (same answer on every path)
 No ranking or detector change, so the Phase 4 numbers stand (train 26/29, held-out 27/27 end to end; 0 false flags on controls). New checks: stdio server vs CLI `search` on an absent vendor name (same `no_strong_match`, `missing_terms`, paths); federation merge unit test (a name present in one source is dropped from `missing_terms`/`passing_terms`). Limit: the merge cannot tell a source weak for another reason from one that has the term; it treats a weak source without that term in its list as having it. `npm run eval` 138 passed, 4 expected fail.
+
+## Eval results: Phase 6 (release gate)
+`scripts/gate-release.sh` now adds `absent-terms-heldout` to its held-out sets and fails when flagged negatives drop, or flagged answerable questions (false flags) rise, by more than the band (1) against the previous release, on cli and mcp, with and without export. The counts are pooled over the five sets (negatives: the absent-terms negatives plus any other set's negatives; false flags: every answerable question flagged, controls included). `.documentation/deployment/release-process.md` describes it.
+Run: `npm run gate:release -- 1.22.0` (package.json is still 1.22.0, so the default previous version would be 1.21.0; Phase 7 bumps it). Runtime 2m59s wall. Result: PASS.
+| arm | negatives flagged (1.22.0 -> local) | false flags (1.22.0 -> local) | hybrid @1 | multi @1 |
+|---|---|---|---|---|
+| no export cli / mcp | 20/44 -> 42/44 | 2 -> 3 | 61 -> 61 | 7 -> 7 |
+| export cli / mcp | 20/44 -> 42/44 | 2 -> 3 | 64 -> 64 | 7 -> 7 |
+mcp vs cli: 0 of 129 questions differ. Titled #1 85/85, first answer ~0.9 s. Note: false flags rise by 1 (the Phase 3 held-out `dotfiles`), exactly at the band; a second new false flag would fail the gate. Controls and other answerable questions: no other new flag.
+The clone index does not make the absent-terms terms known: held-out negatives stay flagged 42/44 with the sets committed in test/, so the code graph does not index them (the Phase 2/3 open item is closed).

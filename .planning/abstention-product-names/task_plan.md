@@ -47,9 +47,9 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - [x] Phase 5: Same answer on every path
   - [x] MCP `search_hybrid`, `search_semantic`/`search_text` (where they report weak matches), the CLI `search` and `eval` all call the same function. Add a parity test with an absent vendor name over stdio and the CLI.
   - [x] Federated search: a term absent from the primary but present in a ready source is not missing (check against the merged result).
-- [ ] Phase 6: Release gate
-  - [ ] Add the absent-terms held-out set to `npm run gate:release`. The gate fails when negatives flagged drops, or false flags rise, by more than 1 against the previous release.
-  - [ ] Run it against the previous release and record the result.
+- [x] Phase 6: Release gate
+  - [x] Add the absent-terms held-out set to `npm run gate:release`. The gate fails when negatives flagged drops, or false flags rise, by more than 1 against the previous release.
+  - [x] Run it against the previous release and record the result.
 - [ ] Phase 7: Release prep
   - [ ] Bump all five version fields to 1.23.0 and update the lockfile
   - [ ] Offline tarball deferred to release (built from the merge commit)
@@ -87,7 +87,7 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - Phase 2: hook-failure Jev-hang and stdin-eof SIGTERM failed under full-suite load, passed alone (16/16).
 
 ## Status
-**Currently in Phase 6** (Phase 5 done: parity over stdio and CLI, federated merge intersects terms)
+**Currently in Phase 7** (Phase 6 done: gate:release covers the absent-terms held-out set)
 
 ---
 
