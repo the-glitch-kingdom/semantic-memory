@@ -45,6 +45,15 @@ Arms: `search_hybrid`, `search_semantic`, `search_text` and a `grep` baseline. `
 
 `eval --via mcp [--cwd <repo>] [--server <cli>] [--settle] [--wait-for-ready]` runs the same sets through the stdio server as the plugin launches it, querying as soon as it answers, so the first-answer state is scored. The report gains an `mcp` block (first answer time, `related` per #1, entity cards) and `probes` (top 3, related, entity per question). `--settle` retries answers marked `_meta.stale`. Long-section sets (`test/retrieval-eval/long-section*.jsonl`, fixtures in `test/fixtures/long-section*/`) are used by `scripts/eval-against-release.sh` and the gate, not by `npm run eval`.
 
+**`eval-against-release.sh --cache`** (v1.25.1) keeps a published version's unpacked package, indexed clone and results in `$EVAL_CACHE` (default `~/.cache/semantic-memory-eval`), for measurements taken while choosing what to try.
+- **Key:** version, `--export`, `--docs-only` and `--slow-git`; the committed tree (`HEAD^{tree}`, or the `.documentation` contents with `--docs-only`); the copied fixtures; and the set files.
+- **What's reused:** the cli arm. The mcp arm is driven by this checkout's `dist/`, so it is also keyed on a hash of `dist/` and re-runs on the cached index when that changes.
+- **`local`:** never cached.
+- **Why counts are safe to reuse:** two fresh builds of the same release gave identical per-question results (0 of 144 differ, every arm, with and without the export).
+- **What isn't same-run:** a cached row reads `(cached)`, and its p95, cold-index and first-answer times come from the run that filled it.
+- The release gate and a plan's final comparison never use `--cache`.
+- Without `--cache`, nothing is reused, even from a `GATE_TMP` you point at again.
+
 ## Question sets
 
 The eval dir is `<project>/.claude/.semantic-memory/eval/` (override with `--dir`). It is gitignored, so floors there are personal; point `--dir` at a committed folder to share them.

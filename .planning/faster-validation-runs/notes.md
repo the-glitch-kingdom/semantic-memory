@@ -104,3 +104,19 @@ The gate's own comparison code, run on synthetic results:
 | 0 | PASS |
 | 1 | PASS, question printed |
 | 2 | FAIL, both printed |
+
+## Eval results: Phase 9 (2026-11-09, one job at a time)
+
+| | Before (Phase 2) | After |
+|---|---|---|
+| `npm test` | 390 s, 2 load flakes | 244 s (first run: hook-failure failed all 3 retries) and 294 s (final run: all green, 1125 passed) |
+| `npm run eval` | 118 s | 138 s and 192 s. The same 16 files run, so this is run-to-run noise, not a change |
+| Full validation (lint, build, test, eval) | 508 s, plus a re-run of each flake | 382 s and 486 s, with no re-runs needed in the final run |
+| `gate:release` | 3m24s (#78) | 223 s, PASS; `EVAL_CACHE` dir never created, so the gate did not use the cache |
+| `--cache` after a new commit | | Miss, as expected: new key `ca43a434…`, no "(cached)" label |
+
+**hook-failure:**
+- It failed all 3 retries in the first run: the hung run took 3772, 4358 and 3896 ms against a fixed 3000 ms. Node start-up under full load exceeds the bound itself, and an immediate retry runs under the same load.
+- **Fix:** the bound is relative to an error run made just before it, plus 3 s. In a throwaway check, a hook that waits out the hang still fails: 19989 ms against a 3702 ms bound.
+
+CI step times are recorded on the PR once the run finishes.

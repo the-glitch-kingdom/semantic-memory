@@ -20,9 +20,20 @@ load_priority: 6
 186 tests across 24 files, covering all five layers + Phase 4.5 auto-logging.
 
 ```bash
-npm test               # full vitest run
+npm test               # every test file except test/retrieval-eval/
+npm run eval           # test/retrieval-eval/ only (retrieval floors)
 npm run lint           # tsc --noEmit typecheck
 ```
+
+`npm test` and `npm run eval` split the files between them, so each file runs once (v1.25.1; before, `npm test` also ran the 16 eval files and CI ran them twice). Run both for a full validation. To run one eval file, name it: `npx vitest run test/retrieval-eval/<file>.test.ts`.
+
+Four tests retry twice by themselves (`{ retry: 2 }`), because they time real processes and failed only under the full parallel suite or a loaded CI runner:
+- the freshness-scale warm start;
+- the hook-failure Jev hang;
+- the stdin-eof SIGTERM exit;
+- the skill-queue SessionEnd job.
+
+A real failure still fails all three attempts. Don't add a retry to any other test; a new load flake goes into the plan or an issue first.
 
 ## Test layout
 

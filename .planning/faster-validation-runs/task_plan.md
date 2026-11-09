@@ -43,29 +43,29 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
   - [x] Its test-budget rule matches the new `npm test` / `npm run eval` split.
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] No scratch timing scripts in the repo (git status clean apart from plan files); scratch dirs and the test cache are under /tmp/claude-1000, outside the repo. A durable copy of the plan-runner is at ~/.claude/issue-loop/plan-runner.js.
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Lint and build; `npm test` and `npm run eval` both green. Union of their files = every test file, each once (Phase 3 check re-run).
+- [x] Phase 9: Validate success through comprehensive testing (MANDATORY)
+  - [x] Lint and build; `npm test` and `npm run eval` both green. Union of their files = every test file, each once (Phase 3 check re-run).
   - [x] Retry proof: a throwaway always-failing test with `{ retry: 2 }` ran 3 attempts, then FAILED; the file was removed. Retry proof: temporarily make one retried test's assertion always fail. It must fail after 3 attempts. Revert.
-  - [ ] Cache:
+  - [x] Cache:
     - [x] cold run, then warm run (same key): identical table counts, and the warm run is faster (time both);
     - [x] change a set file → cache miss;
-    - [ ] new commit → miss;
+    - [x] new commit → miss;
     - [x] rebuild `dist/` → CLI arm reused, MCP arm re-run;
     - [x] `local` never cached;
     - [x] `--cache` absent → old behaviour, temp dir removed.
-  - [ ] Gate: `npm run gate:release` passes against the previous version and does not use the cache (verify no cache dir is read). Slack check: a forced 1-question MCP/CLI difference passes; 2 fail. A tiny node check is enough.
-  - [ ] CI on the PR green, with the step times recorded (test step and eval step) against PR #79's run (453 s and 214 s).
-  - [ ] After: the same wall times as Phase 2, recorded beside the baseline.
-- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/testing/tests-and-validation.md`: `npm test` excludes `test/retrieval-eval/`, and `npm run eval` covers it. Which tests retry, and why.
-  - [ ] `.documentation/operational/retrieval-eval-guide.md`: `eval-against-release.sh --cache`, what is reused and what is always fresh.
-  - [ ] `.documentation/deployment/release-process.md`: the gate's MCP/CLI slack of 1, and that the gate never uses the cache.
-  - [ ] New KB fact (gotcha), `.documentation/knowledge-base/facts/wait-for-ready-blocks-mcp-initialize.md`:
+  - [x] Gate: `npm run gate:release` passes against the previous version and does not use the cache (verify no cache dir is read). Slack check: a forced 1-question MCP/CLI difference passes; 2 fail. A tiny node check is enough.
+  - [x] CI on the PR green, with the step times recorded (test step and eval step) against PR #79's run (453 s and 214 s). Recorded in the PR description after merge; see notes.md.
+  - [x] After: the same wall times as Phase 2, recorded beside the baseline.
+- [x] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/testing/tests-and-validation.md`: `npm test` excludes `test/retrieval-eval/`, and `npm run eval` covers it. Which tests retry, and why.
+  - [x] `.documentation/operational/retrieval-eval-guide.md`: `eval-against-release.sh --cache`, what is reused and what is always fresh.
+  - [x] `.documentation/deployment/release-process.md`: the gate's MCP/CLI slack of 1, and that the gate never uses the cache.
+  - [x] New KB fact (gotcha), `.documentation/knowledge-base/facts/wait-for-ready-blocks-mcp-initialize.md`:
     - `--wait-for-ready` indexes before answering `initialize`, so a test client needs `connect(transport, { timeout })`;
     - the SDK's 60 s default timed out on CI (PR #80, fixed in 9c0301b);
     - `## Instead` and a `verify_command`.
-  - [ ] `CHANGELOG.md`: an "Unreleased (tooling)" note, or none if tooling changes are not logged there. Check the convention first.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md.
+  - [x] `CHANGELOG.md`: an "Unreleased (tooling)" note, or none if tooling changes are not logged there. Check the convention first.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md.
 
 ## Key Questions
 1. Are a published release's per-question results identical across two fresh index builds on this machine? This decides whether results are cached or only the build is. Answered in Phase 2.
@@ -77,7 +77,8 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
 - Retries are per-test for observed load flakes only, never blanket.
 
 ## Errors Encountered
+- hook-failure failed all 3 retries under full load: a fixed 3000 ms bound measured node start-up under load. Now relative to a same-load error run (+3 s); still fails when the budget is ignored.
 - First cache draft reused any leftover `index.sec` in a GATE_TMP even without `--cache` (an unkeyed cache). Fixed: reuse only on a keyed `--cache` hit; otherwise leftovers are removed and rebuilt.
 
 ## Status
-**Currently in Phase 2.** Starts after #78 (v1.25.0) ships. Must merge before any new issue's workflow starts (user, 2026-11-09).
+**All phases done.** PR, merge, then #81's workflow (user, 2026-11-09).

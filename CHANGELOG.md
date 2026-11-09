@@ -2,6 +2,16 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [Unreleased]
+
+### Tooling (no package change)
+
+- `npm test` excludes `test/retrieval-eval/`, which `npm run eval` runs, so each test file runs once. CI ran the eval files twice, about 3.5 of 12 minutes.
+- Four load-timing tests retry twice by themselves.
+- The hook-failure budget check compares against an error run under the same load, instead of a fixed 3 s.
+- `scripts/eval-against-release.sh --cache` reuses a published version's package, index and results, keyed on version, flags, tree, fixtures and sets. The gate never uses it.
+- `gate:release` allows one question of mcp/cli difference (HNSW noise) and prints the differing questions.
+
 ## [1.25.0] - 2026-11-09 — Abstention counts searchable docs and spelling variants
 
 Issue #78. Numbers and misses: `.documentation/changelog/v1-25-0-abstention-variants.md`.
