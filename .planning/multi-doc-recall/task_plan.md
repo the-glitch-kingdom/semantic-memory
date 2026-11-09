@@ -59,9 +59,9 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - [x] Phase 6: Release gate (gate runs and FAILS on 1.23.0, see Errors Encountered)
   - [x] Add `multi-hub-heldout` to `npm run gate:release`. The gate fails when multi @3 or @8, or `cov@3`, drops by more than 1 question against the previous release, or when `dominance` exceeds 3. (dominance is relative: more than 1 slot above the previous release, per the Phase 4 decision; cov@3 band is one multi question's share)
   - [x] Run it against the previous release; record the result and runtime. (1.23.0: FAIL, 3m17s)
-- [ ] Phase 7: Release prep
-  - [ ] Bump all five version fields to 1.24.0 and update the lockfile
-  - [ ] Offline tarball deferred to release (built from the merge commit)
+- [x] Phase 7: Release prep
+  - [x] Bump all five version fields to 1.24.0 and update the lockfile
+  - [x] Offline tarball deferred to release (built from the merge commit) -- deferred to release, not built here
 - [ ] Phase 8: Cleanup
   - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
 - [ ] Phase 9: Validation (independent review)
@@ -99,4 +99,4 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 7** (Phase 6 done but its gate run is RED, see Errors Encountered) (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
+**Currently in Phase 8** (Phase 6 done but its gate run is RED, see Errors Encountered) (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
