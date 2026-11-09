@@ -22,3 +22,34 @@ Examples on main:
 
 ## Reporter's nit
 - `hooks/reconcile.js:21-23` header comment still says the docs entry "stays semantic-sidekick", while the code uses `DOCS_KEY = "semantic-memory-docs"`.
+
+## Eval results: Phase 2 (baseline on UNFIXED main code, 9d50399 + tests only)
+Script: `.planning/limit-stable-ranking/measure-limits.test.ts` (run: `OUT=<file> npx vitest run --config .planning/limit-stable-ranking/vitest.measure.config.ts`; reuses `startEval`, the in-process mcp arm, `runFacetEval`, `facetRank`). Corpus: copy of `.documentation` with backdated git history (as `real-corpus-eval.test.ts`). Raw numbers: `baseline-main.json`. Sets: real-corpus (train), real-corpus-heldout, real-hub, real-hub-heldout; identifier negatives excluded as the real-corpus eval does. The long-section sets are not measured (they need their fixture dirs; the Phase 4 comparison can add them through `eval-against-release.sh`). Held-out is reported, never tuned on.
+
+"#1 answers" = the top result alone satisfies the case's facets (`facetRank(...) === 1`), answerable cases only (negatives excluded), `search_hybrid`.
+
+| split | n | #1@limit 1 | 3 | 5 | 8 | 10 | 20 | questions whose #1 differs across limits 3,5,8,10 |
+|---|---|---|---|---|---|---|---|---|
+| real-train | 27 | 21 | 21 | 21 | 21 | 21 | 21 | 1 (p01) |
+| real-heldout | 27 | 17 | 18 | 18 | 18 | 18 | 18 | 0 |
+| hub-train | 12 | 5 | 6 | 6 | 6 | 6 | 6 | 0 |
+| hub-heldout | 10 | 5 | 7 | 6 | 6 | 6 | 6 | 1 (hub-h09) |
+
+So #1 accuracy is not constant across limits on 3 of 4 splits (limit 1 differs from 3 on real-heldout and hub; hub-heldout goes 5, 7, 6, 6, 6, 6). Phase 4 target: identical counts at every limit.
+
+The eval's own metrics at limit 8 (`runFacetEval`, `search_hybrid`), the floors Phase 4 must meet:
+
+| split | all @1/@3/@8 | negatives flagged | p50 / p95 @8 |
+|---|---|---|---|
+| real-train (27) | 21 / 27 / 27 | 11/12 | 16 / 38 ms |
+| real-heldout (27) | 18 / 25 / 26 | 6/8 | 19 / 33 ms |
+| hub-train (12) | 6 / 10 / 11 | 1/1 | 17 / 32 ms |
+| hub-heldout (10) | 6 / 9 / 10 | 1/1 | 16 / 33 ms |
+
+Latency is in-process and warm (one pass over each set); Phase 4 re-measures p95 on the branch in the same way and fresh (never cached). One run on a loaded machine, so treat 10% as noise-level at ~35 ms: re-run both sides back to back if it is borderline.
+
+## Prefix-property tests (Phase 2)
+`test/retrieval-eval/limit-stable.test.ts` (runs under `npm run eval`): this repo's `.documentation`, 7 queries (one is the identifier `fuseScores`), limits 1, 3, 5, 8, 10 against `search(q, 20).slice(0, k)` (paths equal, scores within 1e-6), for MCP `search_hybrid`, MCP `search_semantic` and CLI `openSearch(...).search`. Fails on main: 17 of 21 cases (marked `it.fails`):
+- `search_hybrid` 6/7 and `cli` 6/7: all but "how do I publish a release to npm".
+- `search_semantic` 5/7: all but "publish a release" and "offline tarball".
+Phase 3 must empty the `BROKEN` table in that file so every case is a plain `it`.

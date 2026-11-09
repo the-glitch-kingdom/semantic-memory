@@ -12,13 +12,13 @@ Release as 1.27.0: ranking changes for every caller.
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Reproduce first, as failing tests (expected-fail until fixed), and a baseline
-  - [ ] A prefix-property test over a fixture corpus big enough that `limit * 3` pools differ (the retrieval-eval fixture corpus, or a generated one of 40+ docs whose vector and BM25 lists disagree). Use a few queries (at least 5, including one that names an identifier). For limits 1, 3, 5, 8 and 10: the paths and scores of `search(q, k)` equal `search(q, 20).slice(0, k)`. Cover:
-    - [ ] MCP `search_hybrid` (in-process server, as the e2e tests do);
-    - [ ] CLI `search` (`createSearch(...).search(q, k)` in `src/cli/search.ts`, or the built CLI);
-    - [ ] MCP `search_semantic`.
-  - [ ] Mark the failing cases `it.fails`, and record which fail on main.
-  - [ ] Baseline on main, before any fix, kept in notes.md. For the built-in eval sets (`npm run eval` corpus, the mcp arm), record:
+- [x] Phase 2: Reproduce first, as failing tests (expected-fail until fixed), and a baseline
+  - [x] A prefix-property test over a fixture corpus big enough that `limit * 3` pools differ (the retrieval-eval fixture corpus, or a generated one of 40+ docs whose vector and BM25 lists disagree). Use a few queries (at least 5, including one that names an identifier). For limits 1, 3, 5, 8 and 10: the paths and scores of `search(q, k)` equal `search(q, 20).slice(0, k)`. Cover:
+    - [x] MCP `search_hybrid` (in-process server, as the e2e tests do);
+    - [x] CLI `search` (`createSearch(...).search(q, k)` in `src/cli/search.ts`, or the built CLI);
+    - [x] MCP `search_semantic`.
+  - [x] Mark the failing cases `it.fails`, and record which fail on main.
+  - [x] Baseline on main, before any fix, kept in notes.md. For the built-in eval sets (`npm run eval` corpus, the mcp arm), record:
     - the eval's own metrics;
     - #1 accuracy at limits 1, 3, 5, 8, 10 and 20;
     - how many questions change #1 across limits 3–10;
@@ -72,4 +72,4 @@ Release as 1.27.0: ranking changes for every caller.
 ## Errors Encountered
 
 ## Status
-**Phase 1 done.** Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.
+**Phase 2 done (tests + baseline); next: Phase 3.** Phase 1 done. Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.
