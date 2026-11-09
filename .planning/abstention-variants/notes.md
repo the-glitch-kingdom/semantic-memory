@@ -104,3 +104,6 @@ The reporter's trees and question sets (A+B, set C, `all.json`, `set-c-validatio
 3. Set C stays >= 9/10 with 0/25 false flags: not measurable here. Proxy: negatives are unchanged from 1.24.0 on every set; false flags can only fall.
 4. The held-out absent-terms set of #74 does not drop: 30/30 and 0/27 against 30/30 and 4/27 for 1.24.0, and gate:release passes against 1.24.0 (second run).
 Does not meet the target: none measured. Not verified: all four items on the reporter's own data.
+
+## Eval results: Phase 10 (docs)
+After the docs, `npm run eval`: 148 passed, 4 expected fail (same as Phase 9). No floor moved. New text went into a new changelog page and a new section at the end of retrieval-tuning-guide.md plus one line in its list. `hewtd maintain --quick` health 84.1/100 (10 errors, 108 warnings; none name the new pages).

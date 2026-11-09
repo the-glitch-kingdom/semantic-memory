@@ -67,12 +67,12 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
   - [x] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, no new false flags on the real-corpus, hub and golden sets
   - [x] Every #78 acceptance check against 1.23.0 and 1.24.0 in the same run (1.15.0 dropped, see Phase 2), answered honestly in notes.md; the reporter's own sets were not available, proxies stated
   - [x] `npm run gate:release` passes (2nd run; the 1st failed on a 1-of-166 mcp/cli top-3 difference, HNSW noise)
-- [ ] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
-  - [ ] `.documentation/changelog/v1-25-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0, 1.23.0 and 1.24.0 in the same run, false flags beside every negatives number, missed targets stated
-  - [ ] Docs for `missing_terms` / `passing_terms` presence rules (search reference, retrieval-tuning-guide, the `weak-matches` help topic)
-  - [ ] KB gotcha fact: generated hubs without `generated: true` made absent names look present; `hewtd index` adds the flag
-  - [ ] README version row; AGENTS.md regenerated
-  - [ ] Final `npm run eval`; floors move only with a measured reason
+- [x] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
+  - [x] `.documentation/changelog/v1-25-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0, 1.23.0 and 1.24.0 in the same run, false flags beside every negatives number, missed targets stated
+  - [x] Docs for `missing_terms` / `passing_terms` presence rules (search reference, retrieval-tuning-guide, the `weak-matches` help topic)
+  - [x] KB gotcha fact: generated hubs without `generated: true` made absent names look present; `hewtd index` adds the flag
+  - [x] README version row; AGENTS.md regenerated
+  - [x] Final `npm run eval`; floors move only with a measured reason
 
 ## Key Questions
 1. Do the reporter's d0 INDEX/REGISTRY files lack `generated: true`? Asked on #78. The fix does not depend on the answer.
@@ -89,4 +89,4 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
 - Phase 2: the interrupted run left its work in stash@{0} (kept, not popped); it was sound and reused as is. Absent-terms baseline arms: 1.22.0 instead of 1.15.0 (see Phase 2).
 
 ## Status
-**Currently in Phase 10** (Phase 9 done: review fixed the over-broad joined forms and a load timeout in the parity test; numbers in notes.md)
+**All phases done** (Phase 10 docs written; plan COMPLETE)

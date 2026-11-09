@@ -2,6 +2,23 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.25.0] - 2026-11-09 — Abstention counts searchable docs and spelling variants
+
+Issue #78. Numbers and misses: `.documentation/changelog/v1-25-0-abstention-variants.md`.
+
+### Fixed
+
+- `missing_terms` and `passing_terms` count presence only in docs a search can return, so a name only an INDEX.md or REGISTRY.md hub mentions is flagged.
+- A name spelled `auto-fill`, `auto_fill`, `AutoFill` or `Smart Retry` in the docs is present for `autofill` / `retrybudget`-style queries; a name equal to a file name ignoring case, `-` and `_` is `undocumented`, not missing.
+
+### Measured
+
+Same run, 232 questions, against 1.23.0 / 1.24.0: false flags on answerable absent-terms controls 0 against 5 / 5 (train) and 0 against 4 / 4 (held-out). Negatives flagged are unchanged (25 and 30). Real-corpus sets unchanged (1 false flag each). Top-5 ranking identical to 1.24.0.
+
+### Missed targets
+
+The reporter's trees and sets are not in the repo, so the #78 acceptance checks were not run on their data. Lowercase prose pairs (`auto fill`) are still not variants. `gate:release` failed once on a 1-of-166 HNSW top-3 difference and passed on re-run.
+
 ## [1.24.0] - 2026-11-09 — Multi-doc recall measurement
 
 Issue #76. Numbers and misses: `.documentation/changelog/v1-24-0-multi-doc-recall.md`.
