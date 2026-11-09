@@ -124,3 +124,36 @@ eval copies `.documentation` only, so it does not exercise it. Phase 4 measures 
 `npm test`: 1165 passed; freshness-scale warm start and hook-failure Jev-hang failed under load and passed alone.
 Reproduction status: stdio card, `related` and fields do not reproduce on a ready index (test/e2e/stdio-readonly.test.ts passes
 on the 1.20.0 behaviour for the non-PascalCase parts); the PascalCase case and the upgrade-window note are the new regressions.
+
+## Eval results: Phase 4 (grounding off the hot path), 2026-11-08
+Same-run, `scripts/eval-against-release.sh`, one `git clone --local` per cell, `local` = this branch. Sets: train = real-corpus + real-hub
+(39 answerable, 22 negatives); held-out = real-corpus-heldout + real-hub-heldout (37 answerable, 17 negatives). Noise about 1 case.
+
+Tuning, train only, local build with a `vault.schema.yml` written into the clone (hybrid @1 of 39; multi @1 of 13):
+
+| variant | no export | export |
+|---|---|---|
+| A: drift 0.97 per file, dead 0.95 (1.20.0 behaviour) | 26 (x3 runs), multi 8 | 27, multi 9 |
+| B: drift off, dead 0.95 (new default) | 23 (x3), multi 7 | 26, multi 9 |
+| C: drift off, dead 0.975 | 23 | 25 |
+| D: grounding off | 23 | 23 |
+| share-scaled drift 0.9 / 0.8 / 0.7 (dropped) | 23 / 23 / 23 | 26 / 24 / 24 |
+
+Reading: dead refs move nothing on train (B = D without export), so dead_penalty stays 0.95. Per-file drift helps on train by 3 (no export)
+and 1 (export); share-scaled drift does not help, so it was dropped and `drift_penalty` < 1 is kept as the plain opt-in (0.97 = 1.20).
+The default is dead-only because the field report says drift costs hub docs the #1; this repo cannot show that effect.
+
+Final, 1.15.0 / 1.20.0 / local (hyb@1, hyb@3, multi@1, negatives flagged):
+
+| split | export | 1.15.0 | 1.20.0 | local |
+|---|---|---|---|---|
+| held-out (37) | no | 18, 30, 5/10, 15/17 | 19, 33, 6/10, 13/17 | **22**, 32, 7/10, 13/17 |
+| held-out | yes | 18, 30, 5/10, 15/17 | 19, 31, 7/10, 13/17 | **22**, 31, 7/10, 13/17 |
+| train (39) | no | 25, 32, 9/13, 19/22 | 26, 35, 8/13, 19/22 | **23**, 35, 7/13, 19/22 |
+| train | yes | 25, 32, 9/13, 19/22 | 27, 35, 9/13, 19/22 | **26**, 34, 9/13, 19/22 |
+
+Held-out is at or above both releases (+3 over each, multi @1 7/10 against 5/10 and 6/10). Train without an export is 2 below 1.15.0 and 3 below
+1.20.0 (multi 7 vs 9 and 8): a missed target on that cell, in line with the tuning table (it is the cost of dropping per-file drift here).
+Negatives flagged: 13/17 held-out (1.15.0: 15/17), unchanged from 1.20.0; Phase 4 does not touch that.
+Gates: lint, build, `npm test` (1166 passed; hook-failure Jev-hang and one more load flake failed in the full run, hook-failure and freshness-scale
+pass alone), `npm run eval` 135 passed, 5 expected fail. Floors: only codeGraph answer@1 9 -> 7 (see Errors Encountered).

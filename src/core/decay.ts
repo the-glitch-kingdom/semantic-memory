@@ -36,7 +36,7 @@ export interface DecayConfig {
   per_type: Partial<Record<string, number | null>>;
   floor: number;
   hotness_boost: { enabled: boolean; cap: number };
-  /** Grounding (code-graph): a damped factor per file changed since the doc was written or verified, and per dead file reference. */
+  /** Grounding (code-graph): a damped factor per dead file reference; drift is shown, not ranked, unless `drift_penalty` < 1 (a factor per file changed since the doc was written or verified; 0.97 restores 1.20). */
   code: { enabled: boolean; drift_penalty: number; dead_penalty: number; floor: number; archive_candidate: number };
 }
 
@@ -88,13 +88,13 @@ export const DEFAULT_DECAY_CONFIG: DecayConfig = {
   },
   floor: 0.1,
   hotness_boost: { enabled: false, cap: 2.0 },
-  code: { enabled: true, drift_penalty: 0.97, dead_penalty: 0.95, floor: 0.8, archive_candidate: 0.85 },
+  code: { enabled: true, drift_penalty: 1, dead_penalty: 0.95, floor: 0.8, archive_candidate: 0.85 },
 };
 
 const GROUNDING_CAP = 3;
 const SHOWN_VERDICTS = new Set(["check", "stale", "archive-candidate", "secret"]);
 
-/** Rank factor of a doc's grounding: drift and dead refs count up to 3 each, floored; an `archive-candidate` verdict adds one more factor (other verdicts' causes already count). */
+/** Rank factor of a doc's grounding: dead refs, and drift when `drift_penalty` < 1, count up to 3 each, floored; an `archive-candidate` verdict adds one more factor (other verdicts' causes already count). */
 export function groundingMultiplier(g: Grounding | undefined, c: DecayConfig["code"]): number {
   if (!g || !c.enabled) return 1;
   const m = Math.max(c.floor, Math.pow(c.drift_penalty, Math.min(g.code_drift.length, GROUNDING_CAP)) * Math.pow(c.dead_penalty, Math.min(g.dead_refs.length, GROUNDING_CAP)));
@@ -239,7 +239,7 @@ export function loadDecayConfig(vaultPath: string): DecayConfig {
   try {
     const schemaPath = join(vaultPath, "vault.schema.yml");
     if (!existsSync(schemaPath)) return DEFAULT_DECAY_CONFIG;
-    const parsed = parseYaml(readFileSync(schemaPath, "utf-8")) as { decay?: Partial<DecayConfig> } | null;
+    const parsed = parseYaml(readFileSync(schemaPath, "utf-8")) as { decay?: Partial<Omit<DecayConfig, "code">> & { code?: Partial<DecayConfig["code"]> | false } } | null;
     const d = parsed?.decay;
     if (!d || typeof d !== "object") return DEFAULT_DECAY_CONFIG;
     return {
@@ -251,7 +251,8 @@ export function loadDecayConfig(vaultPath: string): DecayConfig {
       per_type: { ...DEFAULT_DECAY_CONFIG.per_type, ...(d.per_type ?? {}) },
       floor: typeof d.floor === "number" ? d.floor : DEFAULT_DECAY_CONFIG.floor,
       hotness_boost: { ...DEFAULT_DECAY_CONFIG.hotness_boost, ...(d.hotness_boost ?? {}) },
-      code: { ...DEFAULT_DECAY_CONFIG.code, ...(d.code ?? {}) },
+      // `code: false` is shorthand for `code: { enabled: false }`
+      code: { ...DEFAULT_DECAY_CONFIG.code, ...(d.code === false ? { enabled: false } : (d.code ?? {})) },
     };
   } catch {
     return DEFAULT_DECAY_CONFIG;

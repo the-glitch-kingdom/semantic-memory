@@ -71,14 +71,20 @@ tree after publish.
         Done: card/`related`/fields do not reproduce on a ready index (test/e2e/stdio-readonly.test.ts added anyway).
         The upgrade window is marked: the stale note now names the fields that may be missing
         (test/integration/freshness.test.ts).
-- [ ] Phase 4: Grounding off the hot path
-  - [ ] Default: **dead refs only.** Drift no longer multiplies the score (`decay.code.drift_penalty` defaults to 1);
+- [x] Phase 4: Grounding off the hot path
+  - [x] Default: **dead refs only.** Drift no longer multiplies the score (`decay.code.drift_penalty` defaults to 1);
         drift stays in the `grounding` block as information.
-  - [ ] Dead-ref penalty: keep it damped (0.95 each, at most 3, floor 0.8). Tune on train only, between keeping it
+        Done: `drift_penalty` 1 in DEFAULT_DECAY_CONFIG and the schema default; unit tests.
+  - [x] Dead-ref penalty: keep it damped (0.95 each, at most 3, floor 0.8). Tune on train only, between keeping it
         and halving its effect.
-  - [ ] Opt-in drift, if kept: scaled by the **share** of cited files that drifted, not the count, and capped.
-  - [ ] `decay.code: false` accepted as shorthand for `decay.code.enabled: false`.
-  - [ ] Measure the hub set and real-corpus on a clone against 1.15.0 and 1.20.0 in the same run.
+        Done: kept at 0.95. Train 23/39 for 0.95 and 0.975 with drift off: no difference (grounding off scores the same), so the simplest value stays.
+  - [x] Opt-in drift, if kept: scaled by the **share** of cited files that drifted, not the count, and capped.
+        Done differently: share-scaled drift (drift_penalty 0.9/0.8/0.7 as the factor at 100% drifted) did not recover anything on train, so it was dropped.
+        `drift_penalty` < 1 stays an opt-in with the 1.20 meaning (per file, at most 3); 0.97 restores 1.20.
+  - [x] `decay.code: false` accepted as shorthand for `decay.code.enabled: false`.
+        Done in loadDecayConfig; unit test.
+  - [x] Measure the hub set and real-corpus on a clone against 1.15.0 and 1.20.0 in the same run.
+        Done: notes.md "Eval results: Phase 4".
 - [ ] Phase 5: Doc score from more than one section
   - [ ] A doc-level summary chunk per doc (title + `purpose` + heading list + first paragraph), embedded and indexed
         with the doc; its hits map to the doc's best section for `section`/`anchor`.
@@ -151,10 +157,17 @@ tree after publish.
   (`identifiers(q, () => true)`), one git call. Acronyms without a lowercase letter (`SAML`) stay prose even when known.
 - Phase 3: `import.meta.env` has an "extension" (`.env`), so the path-shape test also drops member chains starting with
   `import.meta`, `process`, `window`, `globalThis`, `document`.
+- Phase 4: dead refs only by default (`drift_penalty` 1); dead_penalty stays 0.95; opt-in drift keeps the per-file meaning (no share scaling:
+  it did not help on train). Cost: the fixture's drift twins are no longer separated.
 - The gate compares against the previous **published** package, so it catches what floors did not (1.16 and 1.17
   each passed their floors).
 
 ## Errors Encountered
+- Phase 4: on train, per-file drift (0.97) beats dead-only by 3 cases of 39 without an export (26 vs 23, three runs each, stable) and by 1
+  with it (27 vs 26); this is the opposite of the reporter's tree. The default follows the plan and the field report (drift is
+  information); the reporter's tree decides after publish. Held-out and train disagree on the direction of the change against 1.20.0 (see notes.md).
+- Phase 4: the code-graph fixture eval (graph-eval) floors for answer@1 went from 9 to 7 (measured 7/9, three runs) and its twin test now
+  covers dead pairs only: with drift not ranked, the 2 drift twins per split are a coin flip. Dead pairs stay 3/3, clean share unchanged.
 - Phase 2: the reporter's #1 loss does not reproduce on this repo (real-corpus or hub set, with or without export); the
   hub set is small (22) and this repo's docs carry little drift, so the release gate is a regression guard and the
   reporter's tree decides after publish. The stdio card/related/fields bugs do not reproduce on a ready index; they
@@ -162,7 +175,7 @@ tree after publish.
   task was not in the scratchpad; `scripts/lib/eval-probe.mjs` was written new.
 
 ## Status
-**Currently in Phase 4** - grounding off the hot path
+**Currently in Phase 5** - doc score from more than one section
 
 ---
 

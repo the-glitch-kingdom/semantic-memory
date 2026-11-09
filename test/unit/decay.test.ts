@@ -146,6 +146,10 @@ describe("computeDecay missing_last_verified", () => {
     expect(loadDecayConfig(d)).toMatchObject({ missing_last_verified: "mtime", missing_penalty: 0.5 });
     writeFileSync(join(d, "vault.schema.yml"), "decay:\n  missing_last_verified: sometimes\n  missing_penalty: 7\n");
     expect(loadDecayConfig(d)).toMatchObject({ missing_last_verified: "git", missing_penalty: 0.85 });
+    writeFileSync(join(d, "vault.schema.yml"), "decay:\n  code: false\n");
+    expect(loadDecayConfig(d).code).toEqual({ ...DEFAULT_DECAY_CONFIG.code, enabled: false });
+    writeFileSync(join(d, "vault.schema.yml"), "decay:\n  code:\n    drift_penalty: 0.97\n");
+    expect(loadDecayConfig(d).code).toEqual({ ...DEFAULT_DECAY_CONFIG.code, drift_penalty: 0.97 });
   });
 });
 
@@ -156,10 +160,16 @@ describe("groundingMultiplier and groundingBlock", () => {
     expect(groundingMultiplier(undefined, c)).toBe(1);
     expect(groundingMultiplier(g(2, 1), { ...c, enabled: false })).toBe(1);
   });
-  it("multiplies per drifted file and dead ref, each capped at 3, floored", () => {
-    expect(groundingMultiplier(g(1, 0), c)).toBeCloseTo(0.97);
-    expect(groundingMultiplier(g(10, 0), c)).toBeCloseTo(0.97 ** 3);
-    expect(groundingMultiplier(g(2, 2), c)).toBeCloseTo(0.97 ** 2 * 0.95 ** 2);
+  it("ranks by dead refs only by default: drift is information", () => {
+    expect(groundingMultiplier(g(10, 0), c)).toBe(1);
+    expect(groundingMultiplier(g(10, 1), c)).toBeCloseTo(0.95);
+  });
+  it("multiplies per dead ref, and per drifted file when drift_penalty < 1, each capped at 3, floored", () => {
+    const d = { ...c, drift_penalty: 0.97 };
+    expect(groundingMultiplier(g(1, 0), d)).toBeCloseTo(0.97);
+    expect(groundingMultiplier(g(10, 0), d)).toBeCloseTo(0.97 ** 3);
+    expect(groundingMultiplier(g(2, 2), d)).toBeCloseTo(0.97 ** 2 * 0.95 ** 2);
+    expect(groundingMultiplier(g(0, 10), c)).toBeCloseTo(0.95 ** 3);
     expect(groundingMultiplier(g(3, 3), { ...c, drift_penalty: 0.5 })).toBe(0.8);
   });
   it("archive-candidate adds a factor after the floor; other verdicts add nothing", () => {
