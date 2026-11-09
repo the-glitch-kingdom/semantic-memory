@@ -2,6 +2,19 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.26.0] - 2026-11-09 — default server names
+
+Issue #81 follow-up. Details: `.documentation/changelog/v1-26-0-default-server-names.md`.
+
+### Changed
+
+- New installs get `semantic-memory` (vault) and `semantic-memory-docs` (docs) in `.mcp.json`, not `semantic-vault` and `semantic-sidekick`. `hooks/reconcile.js` adds nothing for a folder some entry already serves, whatever its name.
+- `hooks/vault-context.js` falls back to `semantic-memory`; slash commands list their tools under both names; the smoke test asserts the new key.
+
+### Upgrade
+
+Existing projects need no action: their entries are kept as they are and the old names stay recognized. To rename by hand, change the key in `.mcp.json`, then replace `mcp__semantic-vault__` with `mcp__semantic-memory__` (and `mcp__semantic-sidekick__` with `mcp__semantic-memory-docs__`) in permission allowlists and CLAUDE.md references, and restart the session.
+
 ## [1.25.1] - 2026-11-09 — semantic-first skill refresh
 
 Issue #81. Details and misses: `.documentation/changelog/v1-25-1-semantic-first-refresh.md`.

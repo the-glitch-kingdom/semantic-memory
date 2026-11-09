@@ -50,14 +50,14 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
   - [x] Healthcheck (`semantic-memory healthcheck --fast`) is clean in both the old-named and new-named scratch projects. (Only drift: "no index built yet" in each, no naming drift.)
   - [x] Lint, build, `npm test`, `npm run eval`.
   - [x] Independent review of `git diff main...HEAD`.
-- [ ] Phase 8: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/quickstart/installation-guide.md`: what the hook writes (new names), and that existing entries are kept as they are.
-  - [ ] `.documentation/reference/configuration-reference.md`: the `.mcp.json` example and the names.
-  - [ ] `.documentation/architecture/injection-points.md`: the "standard setup" wording.
-  - [ ] `.documentation/operational/drift-detection.md`: if it names the default keys.
-  - [ ] `README.md`: install section, if it shows `.mcp.json`.
-  - [ ] An upgrade note in `CHANGELOG.md` 1.26.0 and in `.documentation/changelog/v1-26-0-default-server-names.md`: nothing to do for existing projects, and how to rename by hand if wanted (rename the key, then update allowlists and CLAUDE.md references from `mcp__semantic-vault__` to `mcp__semantic-memory__`).
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+- [x] Phase 8: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/quickstart/installation-guide.md`: what the hook writes (new names), and that existing entries are kept as they are.
+  - [x] `.documentation/reference/configuration-reference.md`: the `.mcp.json` example and the names.
+  - [x] `.documentation/architecture/injection-points.md`: the "standard setup" wording.
+  - [x] `.documentation/operational/drift-detection.md`: if it names the default keys.
+  - [x] `README.md`: install section, if it shows `.mcp.json`.
+  - [x] An upgrade note in `CHANGELOG.md` 1.26.0 and in `.documentation/changelog/v1-26-0-default-server-names.md`: nothing to do for existing projects, and how to rename by hand if wanted (rename the key, then update allowlists and CLAUDE.md references from `mcp__semantic-vault__` to `mcp__semantic-memory__`).
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Should an existing install be offered an automatic rename? No: renaming changes every tool name the session sees, breaking permission allowlists and CLAUDE.md references. The docs give the manual steps instead.
@@ -72,4 +72,4 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 - Phase 2: tests run hooks/session-start.js as a subprocess (HOME and CLAUDE_PROJECT_DIR set to temp dirs), not reconcile() directly.
 
 ## Status
-**Currently in Phase 8.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
+**COMPLETE.** All phases done; ready for PR (1.26.0).

@@ -51,3 +51,6 @@ Independent review of `git diff main...HEAD`: no bugs found, no code changed. Sc
 - healthcheck --fast in old and new projects: only "no index built yet".
 - smoke-install.sh: first run failed at npm install of the tarball (transient), passed on rerun (v1.26.0).
 - Full validation: lint, build, npm test 1146 passed/1 skipped, npm run eval 148 passed/4 expected fail.
+
+## Eval results: Phase 8
+Docs only (installation-guide, configuration-reference, injection-points, drift-detection, README, CHANGELOG, new changelog/v1-26-0-default-server-names.md; AGENTS.md regenerated, timestamp only). `npm run eval`: 148 passed, 4 expected fail (same as Phase 7). Lint and build pass. `npm test` skipped: no src or test change. Pre-existing broken anchors from `hewtd link-check` (e.g. installation-guide.md:67 injection-points anchor) are not from this phase.

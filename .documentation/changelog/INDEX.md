@@ -15,7 +15,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 39
+- **Total Documents:** 40
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -51,6 +51,7 @@ purpose: Complete listing of changelog documentation
 | [v1.24.0 - multi-doc recall measurement](v1-24-0-multi-doc-recall.md) | active | 2026-11-09 | 507 | What v1.24.0 changed (issue 76), the same-run numbers against 1.15.0, 1.22.0 and 1.23.0, the changes tried and withdrawn, and the targets missed. |
 | [v1.25.0 - abstention counts searchable docs and spelling variants](v1-25-0-abstention-variants.md) | active | 2026-11-09 | 370 | What v1.25.0 changed (issue 78), the same-run flag numbers against 1.23.0 and 1.24.0, and the targets that could not be measured. |
 | [v1.25.1 - semantic-first skill refresh](v1-25-1-semantic-first-refresh.md) | active | 2026-11-09 | 255 | What v1.25.1 changed (issue 81), what the tests now pin, and the trigger check that could not be measured. |
+| [v1.26.0 - default server names](v1-26-0-default-server-names.md) | active | 2026-11-09 | 229 | What v1.26.0 changed about the server names written to .mcp.json, why existing projects need no action, and how to rename an old pair by hand. |
 | [v1.3.1 — selection-logging telemetry](v1-3-1-telemetry.md) | active | 2026-07-10 | 653 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
 | [v1.3 — confidence decay (age-aware retrieval ranking)](v1-3-confidence-decay.md) | active | 2026-07-10 | 753 | What v1.3.0 added — smooth, type-aware confidence decay that down-weights stale notes in search ranking, verify_note to reset the clock, evergreen opt-out, and decay CLI introspection. |
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](v1-4-0-resident-bridge.md) | active | 2026-07-10 | 961 | What v1.4.0 added — a golden eval harness, archive path-class down-weighting, injection hygiene for the vault-context block, a learned human-to-artifact lexicon with propose-and-confirm capture, verbatim symptom capture, two-tier query expansion, and a token-frugal tool surface. Tool count 41→42 (manage_lexicon). |
