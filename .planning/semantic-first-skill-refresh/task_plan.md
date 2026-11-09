@@ -1,76 +1,77 @@
-# Task Plan: semantic-first skill refresh (#81)
+# Task Plan: semantic-first skill refresh (#81, revised after the issue update)
 
 ## Goal
-An agent following `skills/semantic-first/` calls only tools and parameters that exist, finds the servers whatever the `.mcp.json` entries are named, and acts correctly on each field a 1.25.0 search result carries. A test keeps the skill, the sibling skills and the server instructions from drifting apart again. Release as 1.25.1; text and tests only, no ranking change.
+Replace `skills/semantic-first/SKILL.md` with the reporter's draft (saved verbatim as `draft-SKILL.md` in this folder). Delete `references/vault-frontmatter.md`. Fix the hard-coded vault tool names in the three sibling skills. A test keeps every tool and field the skills name tied to the release.
+
+Release as 1.25.1: text, tests and a deleted file only. No ranking or index change.
 
 ## Phases
-- [x] Phase 1: Verify and plan (notes.md, "Phase 1: verification")
+- [x] Phase 1: Verify and plan (notes.md: "Phase 1: verification" and "Phase 1b: the revised issue")
 - [ ] Phase 2: Reproduce first, as failing tests (expected-fail until fixed)
-  - [ ] Extend `test/unit/search-guidance.test.ts`, or add a sibling file. No `skills/**` file names a hard-coded server tool prefix as the only way to call a tool:
-    - `mcp__semantic-sidekick__`;
-    - a bare `mcp__semantic-vault__` without the role wording from Phase 3.
-  - [ ] No `top_k` anywhere in `skills/`, and no `create_note` as the default write.
-  - [ ] Every tool name the skills mention exists in `CURRENT_TOOL_INVENTORY`, and every parameter they name exists in that tool's schema.
-  - [ ] The semantic-first skill and the server instructions both cover:
-    - `missing_terms`, `passing_terms`, `undocumented` and `no_strong_match`;
-    - the "Indexing in progress" answer;
-    - multi-part coverage (#76).
+  - [ ] A new `test/unit/skill-surfaces.test.ts`, or an extension of `test/unit/search-guidance.test.ts`. Over `skills/**/*.md` and `skills/**/*.json`:
+    - [ ] no `mcp__semantic-sidekick__` or `mcp__semantic-vault__` tool prefixes;
+    - [ ] no `top_k`;
+    - [ ] no `create_note` as the default write (it may appear only as a fallback, or not at all);
+    - [ ] every MCP tool name a skill mentions (`search_*`, `read_note`, `forwardlinks`, `backlinks`, `synthesize_note`, `ingest_source`, …) exists in `CURRENT_TOOL_INVENTORY`;
+    - [ ] every parameter named (`limit`) exists in that tool's schema;
+    - [ ] every result field the semantic-first skill names (`missing_terms`, `undocumented`, `passing_terms`, `no_strong_match`, `decay`, `entity`, `related`) is emitted by `src/mcp/tools/search.ts`. Check it on a real `search_hybrid` response from a built server on a small fixture, not by grepping the source;
+    - [ ] the indexing string the skill quotes matches `src/mcp/context.ts` ("Indexing in progress").
+  - [ ] Keep the existing `search-guidance.test.ts` assertions ("top 3", "each step separately") passing for the surfaces they cover. If the draft's wording drops "top 3" for semantic-first, change that one surface's assertion to the draft's multi-part rule ("read down to result 8" / "every part is covered") and record why.
   - [ ] Record which assertions fail on main.
-- [ ] Phase 3: Rewrite `skills/semantic-first/SKILL.md` (keep it short)
-  - [ ] **Servers by role, not by name.**
-    - The docs server is a `semantic-*` entry with `--read-only`; the vault is a writable `semantic-*` entry. Tools are `mcp__<entry>__<tool>`, so use whichever entries the session lists.
-    - Defaults written by `hooks/reconcile.js` are `semantic-vault` and `semantic-sidekick` (read-only `.documentation`, added when hit-em-with-the-docs is enabled). Other installs use other names, such as `semantic-memory` and `semantic-memory-docs`.
-    - Any read-only notes dir can be configured by hand (#81 item 5).
-  - [ ] Use `limit`, not `top_k`.
-  - [ ] Writes default to `synthesize_note` (provenance stamped); `ingest_source` for an external source plus findings; `create_note` and `update_note` are fallbacks.
-  - [ ] "Indexing in progress… Try again shortly." means wait and retry. It never means "no docs", even when `get_stats` already answered.
-  - [ ] One "Reading the results" section for items 6–10, a line each, pointing at the server instructions for detail:
-    - `missing_terms`: say it's absent; don't answer from the nearest hit.
-    - `undocumented`: go to the code with Grep.
-    - `passing_terms`: verify the hit answers.
-    - `no_strong_match`: verify before citing, and say so.
-    - Multi-part questions: read the top 3, but for a multi-part question scan the top 8 or search each part, and check every part is covered.
-    - Grep confirms literal identifiers.
-    - Docs aren't the source of truth: check a load-bearing claim against the code; `decay` means past its verification window.
-    - `related` and the `entity` card.
-  - [ ] The frontmatter `description` keeps its trigger phrases; only names and the "degrades when hit-em-with-the-docs is not installed" claim change.
-  - [ ] `skills/semantic-first/evals/evals.json` and `references/vault-frontmatter.md`: fix the stale names, 1 and 3 hits.
-- [ ] Phase 4: Server instructions match the skill
-  - [ ] `serverInstructions` in `src/mcp/server.ts` adds `passing_terms`, the indexing answer and multi-part coverage, in one or two short clauses. It is read every session, so keep it tight.
-  - [ ] The `search_hybrid` description in `src/mcp/tools/search.ts`: check it says the same, and fix only what contradicts it.
-  - [ ] The existing "top 3 / each step separately" assertions still hold.
-- [ ] Phase 5: Sibling skills and hook messages with the same hard-coded vault name
-  - [ ] `skills/vault-first`, `skills/research-mode` and `skills/outage-silence` name `mcp__semantic-vault__*`. Apply the same role wording: the vault server is whatever writable `semantic-*` entry the session lists, `semantic-vault` by default.
-  - [ ] `hooks/vault-context.js` prints `mcp__semantic-vault__…` in five messages. The hook already resolves the writable `semantic-*` entry. Print that entry's real name if this is a small change. If not, record why and leave it.
-- [ ] Phase 6: Trigger check
-  - [ ] If the semantic-first `description` changed beyond names, run the skill trigger eval on train only, within a stated budget, and compare with main. If only names changed, skip and say so.
-- [ ] Phase 7: Release prep: bump all five version fields to 1.25.1 and the lockfile; the offline tarball is deferred to release.
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
+- [ ] Phase 3: Replace the skill with the draft
+  - [ ] `skills/semantic-first/SKILL.md` = `draft-SKILL.md`, with ONE change: the two-server lines.
+    - The draft hard-codes `semantic-memory-docs` / `semantic-memory`, but `hooks/reconcile.js` writes `semantic-sidekick` / `semantic-vault` by default.
+    - Describe the servers by role (read-only docs, writable vault). Give both name pairs as examples ("names come from `.mcp.json`; e.g. `semantic-memory-docs` / `semantic-memory`, or the defaults `semantic-sidekick` / `semantic-vault`"). Keep it to 2–3 lines and keep the draft's other text verbatim.
+  - [ ] Delete `skills/semantic-first/references/vault-frontmatter.md` (and the empty `references/` dir). Nothing else references it except SKILL.md and evals.json.
+  - [ ] `skills/semantic-first/evals/evals.json`: fix the old tool names and the reference-file mention in `expected_output`, to match the new skill.
+  - [ ] Word count: report it (the draft is ~516 words; the current skill is ~1,968 plus a 1,099-word reference file).
+- [ ] Phase 4: Sibling skills and hook messages
+  - [ ] `skills/vault-first`, `skills/research-mode` and `skills/outage-silence`: replace `mcp__semantic-vault__<tool>` with the bare tool name on "the vault server". Use the same role wording as Phase 3, in at most one line per skill.
+  - [ ] `hooks/vault-context.js` prints `mcp__semantic-vault__…` in six messages. The hook already resolves the writable `semantic-*` entry; print that entry's real name if this is a small change, with a test. If not, record why and leave it.
+  - [ ] Server instructions (`serverInstructions` in `src/mcp/server.ts`) omit `passing_terms`. Add it in one short clause, so the server and the skill name the same fields; keep the existing "top 3 / each step separately" text.
+- [ ] Phase 5: Trigger check (the issue asks for it)
+  - [ ] Build a prompt set (JSONL `{session, text}`), written before running:
+    - should trigger: prose questions about the repo; "is there something that does X"; research questions;
+    - should not trigger: exact code-symbol lookups; unrelated chat.
+    - Include the 4 prompts in `evals.json`.
+    - About 24–30 prompts, train only.
+  - [ ] Run `semantic-memory skill-eval trigger` on the OLD skill (from main) and the NEW skill, same prompts, same run.
+    - Budget: at most 2 runs per prompt per skill, about 120 claude runs in total. State the cost and runtime in notes.md.
+  - [ ] **Pass:** the new description triggers on at least as many should-trigger prompts as the old one, minus at most 1, with no more false triggers plus at most 1. If it fails, adjust only the description's trigger phrases, re-run once, and record both runs.
+- [ ] Phase 6: Release prep: bump all five version fields to 1.25.1 and the lockfile; the offline tarball is deferred to release.
+- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [ ] Remove `draft-SKILL.md` from the plan folder if it is identical to the shipped skill apart from the documented server lines; otherwise keep it as the record of the change.
+- [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2's tests pass as plain `it`; no `it.fails` left.
-  - [ ] Grep `skills/` for `semantic-sidekick__`, `top_k` and `create_note` as the default: none.
-  - [ ] Every field in #81 item 6 has a one-line instruction that matches what `src/mcp/tools/search.ts` returns. Check against a real `search_hybrid` response from a built server on a small fixture.
-  - [ ] The indexing string in the skill matches `src/mcp/context.ts` exactly.
-  - [ ] hooks: the existing hook tests pass, plus a test for the printed entry name if Phase 5 changed it.
-  - [ ] Lint, build, `npm test`, `npm run eval` (real-corpus floors unchanged: no doc text in `.documentation` changes before Phase 10).
-  - [ ] Independent review of `git diff main...HEAD` against #81's acceptance list.
-- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/operational/modes-guide.md`, `.documentation/quickstart/installation-guide.md`, `.documentation/quickstart/sidekick-overview.md`, `.documentation/reference/configuration-reference.md`, `.documentation/architecture/injection-points.md`: check what each says about semantic-first and server names; fix only what is now wrong. Keep hub-page edits tight, because the real-corpus eval reads them.
-  - [ ] `README.md` skill row, if it names the old servers.
-  - [ ] `CHANGELOG.md` 1.25.1 entry and a `.documentation/changelog/v1-25-1-semantic-first-refresh.md` page (`npx hewtd integrate -a`).
+  - [ ] Grep `skills/` for `mcp__semantic-sidekick__`, `mcp__semantic-vault__`, `top_k` and `create_note`: none, or `create_note` only as a fallback.
+  - [ ] Every tool and field the skill names exists in the release (the Phase 2 test, on a built server).
+  - [ ] Skill linking still works: `scripts/link-skills.js` or `semantic-memory relink` with the deleted `references/` dir. No dangling symlink or missing-file error, in a scratch project.
+  - [ ] Hook tests pass, plus the new test if Phase 4 changed hook messages.
+  - [ ] Lint, build, `npm test`, `npm run eval`.
+  - [ ] Independent review of `git diff main...HEAD` against #81's acceptance list, item by item.
+- [ ] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [ ] These docs mention semantic-first or the server names; fix only what is now wrong:
+    - `.documentation/operational/modes-guide.md`
+    - `.documentation/quickstart/installation-guide.md`, `.documentation/quickstart/sidekick-overview.md`
+    - `.documentation/reference/configuration-reference.md`, `.documentation/reference/cli-reference.md`
+    - `.documentation/architecture/injection-points.md`, `.documentation/architecture/indices-and-storage.md`
+
+    Keep hub-page edits tight; the real-corpus eval reads them.
+  - [ ] `README.md` skill row, if it describes the old skill.
+  - [ ] `CHANGELOG.md`: turn `[Unreleased]` (the tooling entry from #82) into the 1.25.1 entry, with #81's changes. Add `.documentation/changelog/v1-25-1-semantic-first-refresh.md` (`npx hewtd integrate -a`).
   - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
-1. Should `hooks/reconcile.js` change its default docs entry name from `semantic-sidekick` to something current? Not in this plan: renaming would break existing `.mcp.json` files and every hook that matches on it. Recorded for a later issue.
-2. Does the hook print the real entry name cheaply? Answered in Phase 5.
+1. Should `hooks/reconcile.js` default to `semantic-memory` / `semantic-memory-docs`? Not in this plan: existing `.mcp.json` files and every hook that matches on the old keys would need a migration. Raise it with the reporter as a follow-up.
+2. Does the hook print the real entry name cheaply? Answered in Phase 4.
 
 ## Decisions Made
-- Name servers by role, because there is no single correct name: our reconcile hook writes `semantic-vault` and `semantic-sidekick`, while the reporter's install uses `semantic-memory` and `semantic-memory-docs`.
-- Keep "read the top 3" (the existing test asserts it on 4 surfaces) and add multi-part coverage alongside it.
-- Patch release (1.25.1): skill and instruction text, tests, maybe hook message text. No ranking or index change.
+- Take the reporter's draft verbatim, except for the server-name lines, which name servers by role with both name pairs as examples. Hard-coding the reporter's names would misdirect every default install (our reconcile hook writes `semantic-vault` / `semantic-sidekick`).
+- Delete `references/vault-frontmatter.md`: it documents `tier`, `source` and `owner`, which `synthesize_note` never writes (it writes `title`, `type`, `status`, `last_verified`, `confidence`, `sources`; `src/core/synthesize.ts:67-80`).
+- Patch release 1.25.1, which also carries the #82 tooling changes from `[Unreleased]`.
 
 ## Errors Encountered
 - (none yet)
 
 ## Status
-**Currently in Phase 2.** The workflow waits until the speed-up PR (`chore/faster-validation-runs`) merges (user, 2026-11-09).
+**Currently in Phase 2.**

@@ -39,3 +39,24 @@
 - `.documentation/reference/cli-reference.md`, `.documentation/reference/configuration-reference.md`
 - `README.md`
 - `.documentation/legacy/changelog.md` is historical; leave it.
+
+## Phase 1b: the revised issue (2026-11-09)
+
+The reporter rewrote #81. It now asks to:
+1. replace SKILL.md with a 516-word draft (saved verbatim as `draft-SKILL.md`);
+2. delete `references/vault-frontmatter.md`;
+3. fix the old tool names in `vault-first`, `research-mode` and `outage-silence`.
+
+Acceptance also includes a trigger-eval check of the shorter description.
+
+### Verified on the branch (main at 0e732b1 merged in)
+
+| Claim | Result |
+|---|---|
+| Tools the draft names exist: `search_hybrid`, `search_text`, `read_note`, `forwardlinks`, `backlinks`, `ingest_source`, `synthesize_note` | All registered in `src/mcp`. |
+| Result fields exist: `missing_terms`, `undocumented`, `passing_terms`, `no_strong_match`, `decay`, `entity`, `related` | All in `src/mcp/tools/search.ts`. Phase 2 checks them on a live response. |
+| The reference file is stale | It documents `tier`, `source` and `owner`. `synthesize_note` writes `title`, `type`, `status`, `last_verified`, `confidence`, `sources`, … (`src/core/synthesize.ts:67-80`). Only SKILL.md and evals.json reference it. |
+| "wikilinks resolve only to other vault notes" | Wikilinks resolve within the indexed notes root (`src/core/graph.ts:84-90`, a pathLookup of that root's documents). True for the vault server. |
+| Draft hard-codes `semantic-memory-docs` / `semantic-memory` | **Wrong for default installs.** `hooks/reconcile.js:33-34` writes `semantic-vault` / `semantic-sidekick`. Phase 3 keeps the draft but names servers by role, with both name pairs as examples. |
+
+**Trigger eval tooling:** `semantic-memory skill-eval trigger <skill-md> --prompts <jsonl of {session,text}> [--json]`. It runs real claude sessions, so Phase 5 has an explicit budget.
