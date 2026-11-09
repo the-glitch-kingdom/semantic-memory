@@ -1,0 +1,55 @@
+// Fresh answerability sets for #74 (abstention-product-names Phase 2), train. Own questions, written before any change.
+// Negatives name a vendor or tool that is in neither .documentation, the code nor any path (grep-checked); three per file name one only in passing. Controls name a documented tool or term and carry facets.
+// Never use the reporter's terms. Held-out is never used to choose rules, constants or thresholds.
+{"id":"n01","tier":"negative","qtype":"fact","q":"Where is Prometheus scraping the server metrics endpoint?"}
+{"id":"n02","tier":"negative","qtype":"fact","q":"Which Grafana dashboard shows search latency?"}
+{"id":"n03","tier":"negative","qtype":"fact","q":"How is the Datadog agent configured for the MCP server?"}
+{"id":"n04","tier":"negative","qtype":"fact","q":"How do we gate rollouts with LaunchDarkly flags?"}
+{"id":"n05","tier":"negative","qtype":"fact","q":"Who owns the Mixpanel event schema for search usage?"}
+{"id":"n06","tier":"negative","qtype":"fact","q":"Is the Elasticsearch cluster shared with the vault index?"}
+{"id":"n07","tier":"negative","qtype":"fact","q":"How do we alert on-call through PagerDuty when indexing fails?"}
+{"id":"n08","tier":"negative","qtype":"fact","q":"Do we use LlamaIndex loaders to ingest the notes?"}
+{"id":"n09","tier":"negative","qtype":"fact","q":"How do we configure Langchain retrievers on top of the vault?"}
+{"id":"n10","tier":"negative","qtype":"fact","q":"How does the Istio mesh route search traffic?"}
+{"id":"n11","tier":"negative","qtype":"fact","q":"Which Jenkins job publishes the package?"}
+{"id":"n12","tier":"negative","qtype":"fact","q":"How do I set the CircleCI cache key for the dependency install?"}
+{"id":"n13","tier":"negative","qtype":"fact","q":"How do we deploy the dashboard routes written with tRPC?"}
+{"id":"n14","tier":"negative","qtype":"fact","q":"Where do we configure k8s liveness probes for the server?"}
+{"id":"n15","tier":"negative","qtype":"fact","q":"Does the server use Log4j for its logging?"}
+{"id":"n16","tier":"negative","qtype":"fact","q":"Do we ship a web3 wallet integration?"}
+{"id":"n17","tier":"negative","qtype":"fact","q":"How is cert-manager used to renew the server certificate?"}
+{"id":"n18","tier":"negative","qtype":"fact","q":"Which scikit-learn model ranks the results?"}
+{"id":"n19","tier":"negative","qtype":"fact","q":"How is react-query used for caching in the dashboard?"}
+{"id":"n20","tier":"negative","qtype":"fact","q":"How do we roll back a release in Argo-CD?"}
+{"id":"n21","tier":"negative","qtype":"fact","q":"How does the kubelet restart the server pod?"}
+{"id":"n22","tier":"negative","qtype":"fact","q":"How do we configure the ingress controller for the MCP server?"}
+{"id":"n23","tier":"negative","qtype":"fact","q":"What is the sharding strategy for the vector index?"}
+{"id":"n24","tier":"negative","qtype":"fact","q":"Do we run memcached in front of the search API?"}
+{"id":"n25","tier":"negative","qtype":"fact","q":"How do we tune gunicorn workers for the search service?"}
+{"id":"n26","tier":"negative","qtype":"fact","q":"Which sidekiq queue handles reindexing?"}
+{"id":"n27","tier":"negative","qtype":"fact","q":"Does the Pinecone integration store the vectors?"}
+{"id":"n28","tier":"negative","qtype":"fact","q":"Does the Weaviate sync keep both indexes in step?"}
+{"id":"n29","tier":"negative","qtype":"fact","q":"How is the OpenTelemetry exporter configured for traces?"}
+{"id":"c01","tier":"exact","qtype":"fact","q":"How large is the default MiniLM embedding model on disk?","facets":["90 MB"]}
+{"id":"c02","tier":"exact","qtype":"fact","q":"Which MiniLM cross-encoder can rerank the top fused results, and is it on by default?","facets":["ms-marco-MiniLM-L-6-v2","enabled: false"]}
+{"id":"c03","tier":"exact","qtype":"fact","q":"Which npm package supplies the HNSW index?","facets":["hnswlib-node"]}
+{"id":"c04","tier":"paraphrase","qtype":"fact","q":"Why can the HNSW graph change the eval count by one question between runs?","facets":["HNSW is random per build"]}
+{"id":"c05","tier":"exact","qtype":"fact","q":"How do I run a single vitest case by name for the task-notification hook?","facets":["hook-multi-source"]}
+{"id":"c06","tier":"exact","qtype":"fact","q":"Why must the tsup entries for usage-log and telemetry stay?","facets":["plain-JS hook imports"]}
+{"id":"c07","tier":"exact","qtype":"fact","q":"Where does the in-house BM25 index live, and does it pull in a dependency?","facets":["src/core/bm25\\.ts"]}
+{"id":"c08","tier":"exact","qtype":"fact","q":"How are cosine and BM25 combined into the fused doc score?","facets":["0\\.7 \\* cosine"]}
+{"id":"c09","tier":"exact","qtype":"fact","q":"What does the text-only flag skip about ONNX?","facets":["skip ONNX embedder"]}
+{"id":"c10","tier":"exact","qtype":"fact","q":"What happens when gray-matter is called without options on a parse that threw?","facets":["caches by content"]}
+{"id":"c11","tier":"exact","qtype":"fact","q":"What does hewtd audit report for a string list under the symptoms key?","facets":["hewtd audit"]}
+{"id":"c12","tier":"exact","qtype":"fact","q":"What daily ceiling applies to live hook calls to Jev?","facets":["500000"]}
+{"id":"c13","tier":"exact","qtype":"fact","q":"What does jev mode do when jev-loop, the key or python3 is missing?","facets":["on but unavailable"]}
+{"id":"c14","tier":"exact","qtype":"fact","q":"Where is the TypeSafe key read from, and is it ever stored?","facets":["never printed or stored"]}
+{"id":"c15","tier":"exact","qtype":"fact","q":"How does chokidar 4 treat a glob watcher path?","facets":["literal path"]}
+{"id":"c16","tier":"exact","qtype":"fact","q":"What does Claude Code do with additionalContext from several SessionStart hooks?","facets":["merges `additionalContext`"]}
+{"id":"c17","tier":"exact","qtype":"fact","q":"What does hnswlib ef default to?","facets":["ef defaults to 10"]}
+{"id":"c18","tier":"exact","qtype":"fact","q":"Which command clears the npx cache after publishing to npm?","facets":["rm -rf ~/\\.npm/_npx"]}
+{"id":"c19","tier":"exact","qtype":"fact","q":"Does the babel-fish seeded-from reference ever block scaffolding?","facets":["Fail-open"]}
+{"id":"c20","tier":"exact","qtype":"fact","q":"How does the default serve mode attach to Claude Code over stdio?","facets":["\\.mcp\\.json"]}
+{"id":"c21","tier":"exact","qtype":"fact","q":"What does rank-only RRF at k=60 let a weak second arm do?","facets":["displace"]}
+{"id":"c22","tier":"paraphrase","qtype":"fact","q":"ONNX sessions: why do they leave an orphan process behind at session end?","facets":["event loop alive"]}
+{"id":"c23","tier":"exact","qtype":"fact","q":"Jev answers what kind of questions, and does it generate text?","facets":["yes/no","no text"]}

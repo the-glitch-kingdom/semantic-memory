@@ -1,0 +1,52 @@
+// Fresh answerability sets for #74 (abstention-product-names Phase 2), held-out. Own questions, written before any change.
+// Negatives name a vendor or tool that is in neither .documentation, the code nor any path (grep-checked); three per file name one only in passing. Controls name a documented tool or term and carry facets.
+// Never use the reporter's terms. Held-out is never used to choose rules, constants or thresholds.
+{"id":"hn01","tier":"negative","qtype":"fact","q":"Which Cassandra keyspace holds the note metadata?"}
+{"id":"hn02","tier":"negative","qtype":"fact","q":"How do we trace slow searches in Jaeger?"}
+{"id":"hn03","tier":"negative","qtype":"fact","q":"Where do Rollbar alerts for server crashes go?"}
+{"id":"hn04","tier":"negative","qtype":"fact","q":"How is CockroachDB used for the usage log?"}
+{"id":"hn05","tier":"negative","qtype":"fact","q":"What is the SonarQube quality gate for pull requests?"}
+{"id":"hn06","tier":"negative","qtype":"fact","q":"Do we run Terragrunt for the infrastructure stacks?"}
+{"id":"hn07","tier":"negative","qtype":"fact","q":"How does VictoriaMetrics store the latency metrics?"}
+{"id":"hn08","tier":"negative","qtype":"fact","q":"How is k3s installed on the edge nodes?"}
+{"id":"hn09","tier":"negative","qtype":"fact","q":"Which Neo4j database stores the link graph?"}
+{"id":"hn10","tier":"negative","qtype":"fact","q":"How does oauth2-proxy sit in front of the dashboard?"}
+{"id":"hn11","tier":"negative","qtype":"fact","q":"Which helm-secrets plugin decrypts the chart values?"}
+{"id":"hn12","tier":"negative","qtype":"fact","q":"How do we rotate the server logs with rsyslog?"}
+{"id":"hn13","tier":"negative","qtype":"fact","q":"Which iptables rules protect the server port?"}
+{"id":"hn14","tier":"negative","qtype":"fact","q":"How is journald configured to keep the server logs?"}
+{"id":"hn15","tier":"negative","qtype":"fact","q":"What does autovacuum do to the usage tables?"}
+{"id":"hn16","tier":"negative","qtype":"fact","q":"How does etcd store the cluster state?"}
+{"id":"hn17","tier":"negative","qtype":"fact","q":"Does Dependabot open upgrade pull requests?"}
+{"id":"hn18","tier":"negative","qtype":"fact","q":"How are Buildkite pipelines triggered?"}
+{"id":"hn19","tier":"negative","qtype":"fact","q":"Where is the Kibana dashboard for search logs?"}
+{"id":"hn20","tier":"negative","qtype":"fact","q":"Which Mattermost channel gets the release notices?"}
+{"id":"hn21","tier":"negative","qtype":"fact","q":"How do we configure Zabbix triggers for disk space?"}
+{"id":"hn22","tier":"negative","qtype":"fact","q":"Which Gitea runner builds the offline tarball?"}
+{"id":"hn23","tier":"negative","qtype":"fact","q":"How does Patroni handle failover for the database?"}
+{"id":"hn24","tier":"negative","qtype":"fact","q":"What is the Snyk policy for transitive vulnerabilities?"}
+{"id":"hn25","tier":"negative","qtype":"fact","q":"How does the Sentry project group crashes from the server?"}
+{"id":"hn26","tier":"negative","qtype":"fact","q":"How do the Obsidian plugins sync with the vault?"}
+{"id":"hn27","tier":"negative","qtype":"fact","q":"How is the Postgres connection pool sized?"}
+{"id":"hc01","tier":"exact","qtype":"fact","q":"What does npm install with package-lock-only and ignore-scripts update during a release?","facets":["lockfile root version"]}
+{"id":"hc02","tier":"exact","qtype":"fact","q":"How long can the package tarball 404 after an npm publish succeeds?","facets":["404 for several minutes"]}
+{"id":"hc03","tier":"exact","qtype":"fact","q":"What is the Jev bar for acting on a yes answer?","facets":["0\\.95"]}
+{"id":"hc04","tier":"exact","qtype":"fact","q":"Which call does the Jev bridge hook make on jev-loop's router?","facets":["router\\.ask_all"]}
+{"id":"hc05","tier":"exact","qtype":"fact","q":"Which path does jev-loop refuse before anything is imported or sent?","facets":["~/workspace/kentro"]}
+{"id":"hc06","tier":"exact","qtype":"fact","q":"What is the default embedder, and does a model change force a reindex?","facets":["all-MiniLM-L6-v2","forces a reindex"]}
+{"id":"hc07","tier":"exact","qtype":"fact","q":"Where do the sentence-transformers pooling and query prompt come from?","facets":["1_Pooling/config\\.json"]}
+{"id":"hc08","tier":"exact","qtype":"fact","q":"Which source file holds the HNSW index?","facets":["src/core/vector\\.ts"]}
+{"id":"hc09","tier":"exact","qtype":"fact","q":"What does src/core/embedder.ts wrap?","facets":["ONNX model wrapper"]}
+{"id":"hc10","tier":"exact","qtype":"fact","q":"How do the vitest tier floors in baseline.json work?","facets":["answer@1 and @3 floors"]}
+{"id":"hc11","tier":"exact","qtype":"fact","q":"Which parser reads note frontmatter?","facets":["parsed by .*gray-matter"]}
+{"id":"hc12","tier":"exact","qtype":"fact","q":"How does BM25 get rescaled in federated search?","facets":["rescaled by the source's own"]}
+{"id":"hc13","tier":"exact","qtype":"fact","q":"How many tools does the stdio server expose in read-only mode?","facets":["21 in `--read-only`"]}
+{"id":"hc14","tier":"exact","qtype":"fact","q":"Which release gate must pass before npm publish?","facets":["Release gate"]}
+{"id":"hc15","tier":"exact","qtype":"fact","q":"When does SessionStart inject nothing from a frontmatter section?","facets":["silent \\(no injection\\)"]}
+{"id":"hc16","tier":"exact","qtype":"fact","q":"How many seconds do SessionEnd hooks get in Claude Code before it moves on?","facets":["1\\.5 seconds"]}
+{"id":"hc17","tier":"paraphrase","qtype":"fact","q":"Which ONNX runtime flavor is tried first when loading, and what is the fallback?","facets":["native C\\+\\+ preferred"]}
+{"id":"hc18","tier":"exact","qtype":"fact","q":"Which validator does the hewtd gaps.v1 check use?","facets":["Ajv2020"]}
+{"id":"hc19","tier":"exact","qtype":"fact","q":"Which command output do I feed to hewtd reconcile?","facets":["gaps --json"]}
+{"id":"hc20","tier":"paraphrase","qtype":"fact","q":"A vitest run for the exclusive-create fact: which case do I select?","facets":["no pid yet"]}
+{"id":"hc21","tier":"exact","qtype":"fact","q":"TypeSafe's Jev model: which setting turns its calls on or off for a repo?","facets":["jev-mode"]}
+{"id":"hc22","tier":"exact","qtype":"fact","q":"Does a Claude Code session resume automatically through SessionStart?","facets":["doesn't auto-resume"]}

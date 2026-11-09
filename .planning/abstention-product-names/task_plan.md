@@ -22,12 +22,12 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
   - [x] Verify #74 against main @ 0ec988d (notes.md): cause confirmed in code; reproduced on this repo's docs
   - [x] Post the verification comment on #74
   - [x] Cut `feat/abstention-product-names`, commit this plan
-- [ ] Phase 2: Fresh question sets (before any change)
-  - [ ] Negative sets: `test/retrieval-eval/absent-terms.jsonl` (train) and `absent-terms-heldout.jsonl`, at least 20 negatives each, written and grep-checked against `.documentation` and the code before measuring.
+- [x] Phase 2: Fresh question sets (before any change)
+  - [x] Negative sets: `test/retrieval-eval/absent-terms.jsonl` (train) and `absent-terms-heldout.jsonl`, at least 20 negatives each, written and grep-checked against `.documentation` and the code before measuring.
         - Vendor and tool names absent from the repo, in every shape: one capital, PascalCase, mixed case, digits, hyphenated, lowercase tech words.
         - Some names that appear only in passing: in at most a few docs, and never the subject.
-  - [ ] Answerable controls in the same files, at least 20 each: questions that name a documented tool, product or term in the same shapes (for example `MiniLM`, `hewtd`, `HNSW`, `Jev`, `vitest`, `npm`), plus questions that begin with a capitalized word. These measure false flags.
-  - [ ] Baseline in notes.md: negatives flagged and false flags for 1.15.0, the previous release and local, via CLI and `eval --via mcp`, on clones, with and without an export.
+  - [x] Answerable controls in the same files, at least 20 each: questions that name a documented tool, product or term in the same shapes (for example `MiniLM`, `hewtd`, `HNSW`, `Jev`, `vitest`, `npm`), plus questions that begin with a capitalized word. These measure false flags.
+  - [x] Baseline in notes.md: negatives flagged and false flags for 1.15.0, the previous release and local, via CLI and `eval --via mcp`, on clones, with and without an export.
 - [ ] Phase 3: Absent product and tool names
   - [ ] Candidates, alongside the existing identifier rules (which stay as they are):
         - a word capitalized and not first in its sentence;
@@ -76,10 +76,10 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - One plan for #74. It waits for #73, because both extend the eval and the gate.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: hook-failure Jev-hang and stdin-eof SIGTERM failed under full-suite load, passed alone (16/16).
 
 ## Status
-**Currently in Phase 2** (waiting for #73 to merge, then rebase)
+**Currently in Phase 3** (Phase 2 done: sets written, baseline in notes.md; rebased on v1.22.0)
 
 ---
 
