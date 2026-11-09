@@ -11,14 +11,16 @@ export const tokenize = (s: string): string[] =>
   s.toLowerCase().match(/[\p{L}\p{N}_]+/gu)?.filter((t) => t.length > 1 && !STOP.has(t)) ?? [];
 
 /**
- * Joined spellings of a text's compounds, for presence only: each run of words split by `-`, `_` or a space gives the join of
- * every adjacent pair and of the whole run. shortcut: no stop-word or sentence limit, so `end start` on one line joins too;
- * measured on the absent-terms sets (notes.md "Eval results: Phase 4").
+ * Joined spellings of a text's compounds, for presence only: each run of words split by `-` or `_`, or of Title Case words split by
+ * a space, gives the join of every adjacent pair and of the whole run. Plain lowercase prose is not joined: that made every
+ * adjacent word pair a "name" and multiplied the presence vocabulary by eight (#78 phase 9).
+ * shortcut: no stop-word limit inside a run; upgrade if the eval shows a lost negative.
  */
+const COMPOUND = /[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)+|\p{Lu}[\p{L}\p{N}]*(?: \p{Lu}[\p{L}\p{N}]*)+/gu;
 export function joinedForms(text: string): string[] {
   const out: string[] = [];
-  for (const run of text.toLowerCase().match(/[\p{L}\p{N}]+(?:[-_ ][\p{L}\p{N}]+)+/gu) ?? []) {
-    const parts = run.split(/[-_ ]/);
+  for (const run of text.match(COMPOUND) ?? []) {
+    const parts = run.toLowerCase().split(/[-_ ]/);
     if (parts.length > 2) out.push(parts.join(""));
     for (let i = 0; i + 1 < parts.length; i++) out.push(parts[i] + parts[i + 1]);
   }

@@ -75,3 +75,32 @@ Parity test `test/e2e/abstention-parity.test.ts`, repo corpus clone, all 125 que
 `npm run gate:release -- 1.24.0`: PASS, 3m24s wall (22m CPU). Held-out sets incl. absent-terms-heldout with the Phase 2 variant negatives (hn28-hn30) and controls (hc23-hc27); no new gate code, comment only. Hub-only presence is not a real-corpus case (its hubs carry `generated: true`), so it is covered by test/e2e/abstention-variants.test.ts.
 Plain and export, cli = mcp: hybrid @1 73 vs 73 (export 78 vs 78), multi @1/3/8 10/17/21 equal, cov@3 0.776 equal, dominance 35 vs 35 (export 26 vs 26). Negatives flagged 42 vs 43 (one fewer than 1.24.0, within the band of 1), false flags 7 vs 10 (three fewer). mcp vs cli: 0 of 166 differ. Titled #1 119/119, first answer 1186 ms (slow git 916 ms).
 Open: which negative stopped being flagged was not identified; likely a joined form (Phase 9 to check, with the sentence-break join).
+
+## Eval results: Phase 9 (independent review)
+Method: one stdio `search_hybrid` (limit 5) probe per question, same run, on a fresh `git clone --local` per build and arm (plain, and with `hewtd index`): 1.23.0 (npm pack), 1.24.0 (main built in a worktree) and this branch. Sets: both absent-terms sets and real-corpus, real-hub (train and held-out), 232 questions. "neg" = negatives with non-empty `missing_terms` or `passing_terms`; "false" = controls with either.
+
+| set | 1.23.0 = 1.24.0 neg / false | branch neg / false |
+|---|---|---|
+| absent-terms (32 neg, 28 ctl) | 25 / 5 | 25 / **0** |
+| absent-terms-heldout (30 neg, 27 ctl) | 30 / 4 | 30 / **0** |
+| real-corpus (20 / 27) | 15 / 1 | 15 / 1 |
+| real-corpus-heldout (16 / 27) | 11 / 1 | 11 / 1 |
+| real-hub (2 / 12), real-hub-heldout (1 / 10) | 1 / 0, 1 / 0 | 1 / 0, 1 / 0 |
+Identical with and without the export. Per question, the flags differ from 1.24.0 only on the 9 variant controls (c24-c28, hc23, hc25-hc27) that stopped being false flags; no negative changed. Ranking: top-5 paths identical to 1.24.0 on all 232 questions, plain (0 differ) and export (0 differ, one probe showed 3-4 tail differences that a rebuilt 1.24.0 also shows: HNSW noise). 1.23.0 vs 1.24.0 differ on 4 export questions, the same noise.
+p50/p95, 1.23.0 / 1.24.0 / branch, quiet machine: 6/14, 6/14, 6/13 ms plain; 6/14, 6/13, 6/16 ms export. No change beyond noise.
+
+### Review findings
+- Fixed: `joinedForms` joined every adjacent pair of words in plain prose (`mongo db server` gave `mongodb`, `dbserver`, `serverand`) and the whole run of a line. On this corpus that is 44.7k joined forms against 5.8k tokens (94% from prose spaces; 2.8k from hyphens and underscores). It also let any absent name that happens to be two adjacent words count as present. Now only `-`/`_` runs and Title Case runs (`Smart Retry`) are joined. Measured after: the same 9 controls fixed, no negative moved, the same 232 top-5 lists. Unit test added. The note "joins across sentence breaks" was wrong: `.` is not a separator, `end. Start` never joined (asserted).
+- Fixed: the parity test timed out under full-suite load (MCP request timeout 60 s); requests now allow 300 s. It passes alone.
+- Resolved open items from earlier phases: the held-out "42 vs 43 negatives flagged" of the Phase 6 gate was not a lost negative. Per question, no negative differs between 1.24.0 and the branch in the probe (flags or `no_strong_match`), and the second gate run reads 43 vs 43. The `#1+rel` 43 vs 44 difference does not reproduce either (83 vs 83 in both gate runs); related edges do not read presence.
+- No other bug found in the diff: `removeDoc` keeps both dfs and the joined map consistent, `searchablePaths` is rebuilt whenever `docByPath` is reassigned (the only writer), the CLI and MCP use the same `isSearchableDoc`, federation goes through `shape()` per source.
+- gate:release: first run FAILED on `export: mcp differs from cli on 1 of 166 questions` ("How does the circuitbreaker trip when the embedder fails?", top 3); the second run PASSED (0 of 166, negatives 43 vs 43, false flags 7 vs 10, hybrid @1 73 vs 73, export 78 vs 78). A top-3 difference between two builds of one tree is HNSW noise; the gate has no slack for it. Not caused by this plan (ranking is untouched), but the gate can fail at random at about this rate.
+- Full `npm test`: 1267 passed; 3 failures, all pass alone: parity (timeout, fixed), freshness-scale warm start, hook-failure Jev-hang. `npm run eval`: 148 passed, 4 expected fail.
+
+### #78 acceptance checks, answered honestly
+The reporter's trees and question sets (A+B, set C, `all.json`, `set-c-validation.json`) are not in this repo; they could not be run. The numbers below are our own proxies, and the reporter's tree decides after publish.
+1. A+B negatives >= 6/7 with and without the export, false flags <= 1/34: not measurable here. Proxy: negatives flagged are exactly 1.24.0's on all our sets, with and without the export (no negative lost), and false flags on controls fall 5 to 0 (train) and 4 to 0 (held-out). Cause 1 (the GraphQL hub-only case, d0) is fixed in the fixture on all four arms (hubs with and without `generated: true`, with and without the export), over stdio and the CLI. Whether d0's hubs lack `generated: true` was never answered on #78.
+2. C09 (`autofill` against `auto-fill` / `autoFill`): fixed in the fixture (`autofill`, `auto_fill`, `AutoFill`, `retrybudget`, `SmartRetry` are not missing) and on 9 camelCase, hyphen and underscore controls of the sets. The reporter's C09 text was not run. Not fixed: a lowercase prose pair (`auto fill` in the docs) no longer counts as a variant of `autofill`; the first Phase 4 draft covered that, and it was withdrawn because it multiplied the presence vocabulary by eight. If the reporter's docs write `auto fill` with a space and no capitals, C09 would still be flagged; unknown.
+3. Set C stays >= 9/10 with 0/25 false flags: not measurable here. Proxy: negatives are unchanged from 1.24.0 on every set; false flags can only fall.
+4. The held-out absent-terms set of #74 does not drop: 30/30 and 0/27 against 30/30 and 4/27 for 1.24.0, and gate:release passes against 1.24.0 (second run).
+Does not meet the target: none measured. Not verified: all four items on the reporter's own data.

@@ -40,7 +40,7 @@ async function connect(dir: string): Promise<Client> {
   await c.connect(new StdioClientTransport({ command: "node", args: [CLI_PATH, "--notes", ".documentation", "--read-only", "--no-watch", "--wait-for-ready"], cwd: dir, stderr: "ignore" }));
   return c;
 }
-const ask = async (c: Client, q: string) => JSON.parse(((await c.callTool({ name: "search_hybrid", arguments: { query: q, limit: 5 } })) as any).content[0].text) as any[];
+const ask = async (c: Client, q: string) => JSON.parse(((await c.callTool({ name: "search_hybrid", arguments: { query: q, limit: 5 } }, undefined, { timeout: 300_000 })) as any).content[0].text) as any[];
 
 describe("abstention flags: same answer on every path", () => {
   const clients: Client[] = [];
