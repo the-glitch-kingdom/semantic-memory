@@ -164,11 +164,13 @@ describe("PostToolUseFailure fact lookup (opt-in)", () => {
     // retry: a load-timing flake under the full parallel suite (passes alone); a real failure still fails all 3 attempts
     it("Jev error or hang → nothing, and the hook stays inside its budget", { retry: 2 }, async () => {
       await mode("raise");
-      expect(runJev(failure({ session_id: "j3" })).ctx).toBe("");
-      await mode("sleep");
+      const fast = runJev(failure({ session_id: "j3" }), { SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS: "" });
+      expect(fast.ctx).toBe("");
+      await mode("sleep"); // the fake Jev hangs 30 s
       const r = runJev(failure({ session_id: "j4" }), { SEMANTIC_MEMORY_JEV_HOOK_BUDGET_MS: "" });
       expect(r.ctx).toBe("");
-      expect(r.ms).toBeLessThan(3000); // the default 1.5 s budget + node start-up and the reply
+      // against the error run just before (same start-up, same load), not a fixed bound that load breaks: the default 1.5 s budget + 1.5 s slack
+      expect(r.ms).toBeLessThan(fast.ms + 3000);
     });
 
     it("the daily ceiling: no call, one stderr note", async () => {
