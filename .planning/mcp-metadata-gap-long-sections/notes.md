@@ -89,3 +89,9 @@ Pooled (105 answerable, 39 negatives), no export, cli / mcp: 1.15.0 71 @1, 35/39
 - Not reproduced as a loss here: 1.15.0 to 1.21.0 is flat or up on every set (real-corpus 18 to 18 and 13 to 16 @1, hub 6 to 6 and 4 to 6, with export 20/17).
 - Not explained by long sections on our fixture (above).
 - Left open, needs their tree (919 docs, not in this repo): either corpus scale (many near-duplicates; our sets are 135 docs) or the 1.16+ ranking layers, which the in-gap result above points at (priority/decay/path class cost 5 @1 on this corpus). Phase 3 can run the reporter's tree after the metadata fix; this phase cannot answer it further.
+
+## Eval results: Phase 3 (metadata never lags the index)
+- Ranking is unchanged by construction (only the order of installing state moved): `npm run eval` 137 pass, 5 expected fail, as before. Floors untouched.
+- Stdio slow-git test (30 s `git log` shim, query at once): first answer now has title "Release Guide", status active, load_priority 8, honours `status: active`, and returns no generated or archive doc. It failed on main (Phase 2).
+- Behaviour change to know: the code graph (grounding, entity card, `related`) is applied in the background, so the first answers after a warm start or a reconcile carry `_meta.stale` and the STALE_NOTE until it lands. Previously they waited for it. Phase 2 lead (slow-git @1 51 vs 46) is a ranking question for later: with metadata installed at once, the in-gap arm no longer exists, so it needs a separate decomposition on train.
+- The in-gap `related` is empty until step 2 (graph is doc-only meanwhile, not the old graph): `related` appears on the first answers only after the code graph lands, only if `buildFromDocuments` needs the code; doc-only edges are installed with the docs.

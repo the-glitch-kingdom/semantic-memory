@@ -12,8 +12,6 @@ const CLI_PATH = join(import.meta.dirname, "..", "..", "dist", "cli", "index.js"
  * #73: the plugin starts the server and an agent queries at once. Without `.hewtd/graph.json` the code graph is built from
  * `git log`; a slow `git log` must not leave the first answers without doc metadata (titles, status, filters, generated/excluded docs).
  */
-// `it.fails` until Phase 3 of the mcp-metadata-gap-long-sections plan fixes the load order; it must then become a plain `it`.
-// Measured on main @ bb7d5c9: the first answer's title is the path ("release-guide.md"), and `status: active` returns [].
 describe("E2E: first answer from the stdio server while `git log` is slow", () => {
   let repo = "";
   let shim = "";
@@ -55,14 +53,14 @@ describe("E2E: first answer from the stdio server while `git log` is slow", () =
     for (const d of [repo, shim]) rmSync(d, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
-  it.fails("the first answer carries titles, load_priority and status, and never a generated or excluded doc", async () => {
+  it("the first answer carries titles, load_priority and status, and never a generated or excluded doc", async () => {
     const res = await firstAnswer({});
     const guide = res.find((r) => r.path === "release-guide.md");
     expect(guide).toMatchObject({ title: "Release Guide", status: "active", loadPriority: 8 });
     expect(res.map((r) => r.path).filter((p) => p.startsWith("archive/") || p === "release-generated.md")).toEqual([]);
   }, 150_000);
 
-  it.fails("the first answer honours the status filter", async () => {
+  it("the first answer honours the status filter", async () => {
     const res = await firstAnswer({ status: "active" });
     expect(res.map((r) => r.path)).toEqual(["release-guide.md"]);
   }, 150_000);

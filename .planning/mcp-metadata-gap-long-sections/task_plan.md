@@ -47,14 +47,19 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
         - Versions: 1.15.0, 1.21.0 and local.
         - Sets: real-corpus, hub and long-section.
         - Arms: CLI eval and `eval --via mcp`, each with and without an export, on clones.
-- [ ] Phase 3: Doc metadata never lags the index
-  - [ ] Two steps in `loadFromDisk` and the reconcile path (src/mcp/context.ts):
+- [x] Phase 3: Doc metadata never lags the index
+  - [x] Two steps in `loadFromDisk` and the reconcile path (src/mcp/context.ts):
         - **Step 1, atomic with the vector index:** docs, `docByPath`, text search, BM25 and the doc-only graph are installed together. No query can see a new vector index with old or missing docs.
         - **Step 2, when ready:** the code graph is applied (grounding, code edges, entity cards) and the graph is rebuilt.
-  - [ ] Until step 2 lands, responses carry `_meta.stale`, and the note names grounding and the entity card as pending.
-  - [ ] Audit every other `await` between a state swap and `setDocuments` (save, reconcile, federation sources) for the same gap.
-  - [ ] The Phase 2 stdio test passes. Add a unit test for the reconcile path's swap.
-  - [ ] Removing or adding `.hewtd/graph.json` and restarting changes only grounding: titles, filters and non-grounding ranking stay the same. Add a test.
+        - Done (src/mcp/context.ts): `setDocuments(docs)` runs synchronously with the vector swap, in `loadFromDisk` and `sync`; `applyCode` then loads the code graph in the background and rebuilds the graph (skipped when a later swap replaced the docs). Not awaited, so `tryLoadCachedIndex`, reconcile and tool calls no longer wait on `git log`.
+  - [x] Until step 2 lands, responses carry `_meta.stale`, and the note names grounding and the entity card as pending.
+        - Done: `isStale()` is `stale || codePending > 0`, so the existing `_meta.stale` and STALE_NOTE (already names section, anchor, grounding and the entity card) cover the window. `content[0]` untouched.
+  - [x] Audit every other `await` between a state swap and `setDocuments` (save, reconcile, federation sources) for the same gap.
+        - Done: save only reads `documents` inside `serial`; fullIndex goes through `sync(true)` (same swap); the code-stamp path in `sync` now uses `applyCode` too (old graph stays until the new one lands); federation sources only call `isStale`. No other await sits between a swap and `setDocuments`.
+  - [x] The Phase 2 stdio test passes. Add a unit test for the reconcile path's swap.
+        - Done: the two `it.fails` in test/e2e/stdio-load-gap.test.ts are plain `it` and pass; test/integration/code-load-order.test.ts covers warm load and the reconcile swap with a held `loadCodeData`.
+  - [x] Removing or adding `.hewtd/graph.json` and restarting changes only grounding: titles, filters and non-grounding ranking stay the same. Add a test.
+        - Done: second test in code-load-order.test.ts (code-graph fixture with and without the export: per-doc metadata and vector order equal).
 - [ ] Phase 4: Cheaper code-graph fallback
   - [ ] Measure the fallback on a large local git repo (pick one under ~/workspace with long history; never modify it), timing `gitFiles`, `gitIgnored` and `gitLastChanged` separately. Record in notes.md.
   - [ ] Bound `gitLastChanged`. Options:
@@ -109,10 +114,11 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 
 ## Errors Encountered
 - Phase 2: the long-section fixture does not discriminate (29/29 @1 on 1.15.0, 1.21.0 and local), so claim 2 is not reproduced by rank. Only a weak margin effect (r = -0.32 offset vs margin). Phase 5 must build a harder fixture first (near-duplicate distractors, 1,000+ char bullets, sections over 2,000 chars) before choosing a chunking variant on train.
+- Phase 3: freshness-scale warm start (1487 ms) and hook-failure Jev-hang (4134 ms) failed under full-suite load; both pass alone.
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 3**
+**Currently in Phase 4**
 
 ---
 

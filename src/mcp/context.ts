@@ -261,6 +261,22 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     }
   }
 
+  /**
+   * Step 2 of a state swap: the code graph (grounding, code edges, entity cards) comes after the docs are installed, so a slow
+   * `git log` never leaves a new vector index without doc metadata. Responses are marked stale until it lands.
+   */
+  let codePending = 0;
+  function applyCode(docs: IndexedDocument[], then?: () => void): Promise<void> {
+    codePending++;
+    return loadCode(docs)
+      .then((code) => {
+        if (documents !== docs) return; // a later swap installed newer docs and runs its own load
+        graph.buildFromDocuments(docs, code);
+        then?.();
+      })
+      .finally(() => { codePending--; });
+  }
+
   function setDocuments(docs: IndexedDocument[], code: CodeData | null = null) {
     documents = docs;
     docByPath = new Map(docs.map((d) => [d.path, d]));
@@ -310,7 +326,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       generation = meta.generation ?? 0;
       upgrading = older;
       resetBm25(docs);
-      setDocuments(docs, await loadCode(docs));
+      setDocuments(docs);
+      void applyCode(docs);
       selfTopCache = meta.bm25SelfTop; // undefined (older index): computed on first use
       return true;
     }
@@ -349,8 +366,10 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       // the tree is unchanged but the code may not be: a new export or a commit moves the stamp
       if (codeStamp() !== lastCodeStamp) {
         const before = JSON.stringify(documents.map((d) => d.grounding));
-        graph.buildFromDocuments(documents, await loadCode(documents));
-        if (before !== JSON.stringify(documents.map((d) => d.grounding))) { dirty = true; scheduleSave(); } // the CLI reads grounding from the saved cache
+        const docs = documents;
+        void applyCode(docs, () => {
+          if (before !== JSON.stringify(docs.map((d) => d.grounding))) { dirty = true; scheduleSave(); } // the CLI reads grounding from the saved cache
+        });
       }
       if (stale || indexState === "stale") {
         stale = false;
@@ -456,7 +475,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
     manifest = plan.manifest;
     vectorIndex = next;
-    setDocuments(docs, await loadCode(docs));
+    setDocuments(docs);
+    void applyCode(docs);
     stale = false;
     dirty = true;
     // a forced rebuild is ready only once it is on disk (fullIndex), so "ready" always means a persisted index
@@ -732,7 +752,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       lastReconcileAt = 0;
     },
     reconcileNow: runReconcile,
-    isStale: () => stale,
+    isStale: () => stale || codePending > 0,
     flushIndex,
     isIndexingInFlight: () => indexingPromise !== null,
     textResponse,
