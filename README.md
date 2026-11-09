@@ -15,6 +15,7 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 | Version | What it adds |
 |---|---|
+| **1.24.0** | Multi-doc recall (#76): `cov@k` and `dominance` in `eval`, multi-hub fixture and sets, `gate:release` checks multi @3/@8, `cov@3` and dominance; no ranking change (two attempts withdrawn, targets missed, see the changelog) |
 | **1.23.0** | Abstention for product and tool names (#74): `missing_terms` flags absent names, `passing_terms` for names only mentioned in passing, same answer over stdio, CLI and federation, `gate:release` checks false flags |
 | **1.22.0** | MCP metadata gap and long sections (#73): doc metadata installed with the vector index, 1000-char chunks with overlap (schema 11), `eval --via mcp`, `gate:release` checks the stdio path |
 | **1.21.0** | Hub doc ranking (#71): grounding ranks by dead refs only (`drift_penalty` 1, `decay.code: false`), whole-doc chunk scored with the best section, PascalCase identifiers, `npm run gate:release` against the previous release |

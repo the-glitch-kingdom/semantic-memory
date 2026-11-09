@@ -138,7 +138,12 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
     const byPath = (rs: any[], p: string) => rs.find((r) => r.path === p);
     expect(byPath(mcp, "operational/backup-pruning-a.md").grounding).toBeUndefined();
     expect(byPath(mcp, "operational/backup-pruning-b.md").grounding).toMatchObject({ source: "export", code_drift: ["backend/jobs/prune_backups.py"] });
-    const cli = await (await openSearch(join(env.dir, ".documentation"))).search(q, 8);
+    // the CLI reads grounding from the cache the server saves a moment after the code graph lands: wait for it
+    let cli = await (await openSearch(join(env.dir, ".documentation"))).search(q, 8);
+    for (let i = 0; i < 50 && JSON.stringify(cli.map((r) => r.grounding)) !== JSON.stringify(mcp.map((r: any) => r.grounding)); i++) {
+      await new Promise((r) => setTimeout(r, 100));
+      cli = await (await openSearch(join(env.dir, ".documentation"))).search(q, 8);
+    }
     expect(cli.map((r) => r.path)).toEqual(mcp.map((r: any) => r.path));
     expect(cli.map((r) => r.grounding)).toEqual(mcp.map((r: any) => r.grounding));
   });

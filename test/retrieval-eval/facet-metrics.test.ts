@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { grepPattern, facetRank, runFacetEval, scoreLinks, invertLinks, type FacetCase } from "./eval.js";
+import { grepPattern, facetRank, facetCoverage, runFacetEval, scoreLinks, invertLinks, type FacetCase } from "./eval.js";
 
 const docs: Record<string, string> = {
   "a.md": "the retry limit is 5",
@@ -74,5 +74,25 @@ describe("link scoring", () => {
     expect(invertLinks(truth)).toEqual({ "a.md": [], "b.md": ["a.md"], "c.md": ["a.md"] });
     const m = await scoreLinks(truth, async (p) => (p === "a.md" ? ["b.md", "x.md"] : []));
     expect(m).toEqual({ precision: 0.5, recall: 0.5 });
+  });
+});
+
+describe("cov@k and dominance", () => {
+  it("facetCoverage is the share of facets some live top-k result holds", () => {
+    expect(facetCoverage(["retry", "dlq"], ["a.md"], textOf)).toBe(0.5);
+    expect(facetCoverage(["retry", "dlq"], ["a.md", "b.md"], textOf)).toBe(1);
+    expect(facetCoverage(["retry"], ["archive/a.md"], textOf)).toBe(0);
+  });
+  it("reports multi facet and doc coverage per k, and the doc with the most top-3 slots on cases it does not answer", async () => {
+    const cases: FacetCase[] = [
+      { id: "1", tier: "multi", q: "x", facets: ["retry", "dlq"], expected: ["a.md", "b.md"] },
+      { id: "2", tier: "exact", q: "y", facets: ["retry"] },
+      { id: "3", tier: "negative", q: "z" },
+    ];
+    const m = await runFacetEval(cases, async () => ({ bytes: 1, results: [{ path: "a.md", score: 1 }, { path: "x.md", score: 1 }, { path: "x2.md", score: 1 }, { path: "b.md", score: 1 }] }), textOf);
+    expect(m.cov.facet).toEqual({ 1: 0.5, 3: 0.5, 8: 1 });
+    expect(m.cov.docs).toEqual({ 1: 0.5, 3: 0.5, 8: 1 });
+    // a.md holds a facet of cases 1 and 2, so only case 3 (a negative) counts against it; x.md and x2.md hold nothing and take a slot on all three cases
+    expect(m.dominance).toEqual({ path: "x.md", slots: 3 });
   });
 });
