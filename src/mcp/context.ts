@@ -93,6 +93,8 @@ export interface ServerContext {
   getDocByPath(): Map<string, IndexedDocument>;
   /** code data behind the graph's code nodes (null outside a git repo) */
   getCode(): CodeData | null;
+  /** last code-graph load, undefined before the first one lands */
+  getCodeLoad(): { source: "export" | "fallback" | "none"; loadMs: number } | undefined;
   getVectorIndex(): VectorIndex | null;
   getIndexState(): IndexState;
   getIndexProgress(): { embedded: number; total: number };
@@ -248,14 +250,18 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     const root = repoRoot(notesPath);
     return `${m(join(root, ".hewtd", "graph.json"))}:${m(join(root, ".git", "logs", "HEAD"))}`;
   }
+  let codeLoad: { source: "export" | "fallback" | "none"; loadMs: number } | undefined;
   async function loadCode(docs: IndexedDocument[]): Promise<CodeData | null> {
     lastCodeStamp = codeStamp();
+    const t0 = Date.now();
     try {
       const code = await loadCodeData(notesPath, docs);
       groundDocs(docs, code);
+      codeLoad = { source: !code ? "none" : [...code.docs.values()].some((d) => d.source === "export") ? "export" : "fallback", loadMs: Date.now() - t0 };
       return (codeData = code);
     } catch (e: any) {
       codeData = null;
+      codeLoad = { source: "none", loadMs: Date.now() - t0 };
       process.stderr.write(`Code graph skipped: ${e?.message ?? e}\n`);
       return null;
     }
@@ -741,6 +747,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     getDocuments: () => documents,
     getDocByPath: () => docByPath,
     getCode: () => codeData,
+    getCodeLoad: () => codeLoad,
     getVectorIndex: () => vectorIndex,
     getIndexState: () => indexState,
     getIndexProgress: () => indexProgress,

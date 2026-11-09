@@ -167,13 +167,16 @@ describe("fallbackCode (no export)", () => {
     ]);
   });
 
-  it("gitLastChanged dates files in batches past 500 pathspecs", async () => {
+  it("gitLastChanged dates recent files in one log and leaves files older than the window undated", async () => {
     const { root, commit } = repo();
-    const files = Object.fromEntries(Array.from({ length: 520 }, (_, i) => [`f/${i}.txt`, "x"]));
-    commit("2026-01-01T00:00:00Z", files);
-    const m = await gitLastChanged(root, Object.keys(files));
-    expect(m.size).toBe(520);
-    expect(m.get("f/519.txt")).toBe(Date.parse("2026-01-01T00:00:00Z"));
+    const day = 86_400_000;
+    const iso = (ago: number) => new Date(Date.now() - ago * day).toISOString();
+    commit(iso(900), { "ancient.txt": "x" });
+    commit(iso(800), { "old.txt": "x" });
+    commit(iso(30), { "new.txt": "x", "old.txt": "y" }); // old.txt changed again inside the window
+    const m = await gitLastChanged(root, ["old.txt", "new.txt", "ancient.txt", "missing.txt"]);
+    expect([...m.keys()].sort()).toEqual(["new.txt", "old.txt"]);
+    expect(Math.abs(m.get("new.txt")! - (Date.now() - 30 * day))).toBeLessThan(2 * day);
   });
 
   it("outside a repo there is nothing", async () => {

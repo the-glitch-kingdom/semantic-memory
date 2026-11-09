@@ -155,25 +155,29 @@ export async function gitFiles(root: string): Promise<string[]> {
   }
 }
 
+/** How far back the fallback looks for a file's last change. */
+export const CODE_DATE_WINDOW_DAYS = 365;
+
 /**
- * Last commit time (ms) of each of `files`, from one `git log --name-only` per 500 pathspecs (one for any normal build).
- * shortcut: a shallow clone dates old files at its boundary commit, like git-dates.ts.
+ * Last commit time (ms) of each of `files` changed in the last CODE_DATE_WINDOW_DAYS, from ONE `git log --since --name-only`
+ * with no pathspec: its cost follows recent history, not the number of files asked about (a path-limited log walks the whole history
+ * per batch: 3 s for 3.8k files on a 3.9k-commit repo, 80 ms this way).
+ * shortcut: a file untouched for longer is left undated, so it never counts as drifted; widen the window to date older files.
  */
 export async function gitLastChanged(root: string, files: string[]): Promise<Map<string, number>> {
   const out = new Map<string, number>();
-  for (let i = 0; i < files.length; i += 500) {
-    const batch = files.slice(i, i + 500);
-    let stdout: string;
-    try {
-      ({ stdout } = await run("git", ["-C", root, "-c", "core.quotepath=off", "log", "--name-only", "--no-renames", "--format=%x01%ct", "--", ...batch.map((f) => `:(literal)${f}`)], { maxBuffer: 1 << 28, timeout: 60_000 }));
-    } catch {
-      continue;
-    }
-    let ms = 0;
-    for (const line of stdout.split("\n")) {
-      if (line.startsWith("\x01")) ms = Number(line.slice(1)) * 1000;
-      else if (line && !out.has(line)) out.set(line, ms); // newest commit first: the first sighting is the last change
-    }
+  if (!files.length) return out;
+  const want = new Set(files);
+  let stdout: string;
+  try {
+    ({ stdout } = await run("git", ["-C", root, "-c", "core.quotepath=off", "log", `--since=${CODE_DATE_WINDOW_DAYS}.days`, "--name-only", "--no-renames", "--format=%x01%ct"], { maxBuffer: 1 << 28, timeout: 60_000 }));
+  } catch {
+    return out;
+  }
+  let ms = 0;
+  for (const line of stdout.split("\n")) {
+    if (line.startsWith("\x01")) ms = Number(line.slice(1)) * 1000;
+    else if (want.has(line) && !out.has(line)) out.set(line, ms); // newest commit first: the first sighting is the last change
   }
   return out;
 }

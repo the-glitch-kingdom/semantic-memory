@@ -206,8 +206,10 @@ describe("Regression: MCP tool outputs (golden snapshots)", () => {
       const {
         lastIndexed,
         indexProgress,
+        codeGraph, // load time and source depend on the machine
         ...rest
       } = parsed;
+      expect(codeGraph === undefined || ["export", "fallback", "none"].includes(codeGraph.source)).toBe(true);
       const shape = {
         ...rest,
         hasLastIndexed: typeof lastIndexed === "string" || lastIndexed === null,

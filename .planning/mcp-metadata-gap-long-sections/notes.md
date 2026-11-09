@@ -95,3 +95,22 @@ Pooled (105 answerable, 39 negatives), no export, cli / mcp: 1.15.0 71 @1, 35/39
 - Stdio slow-git test (30 s `git log` shim, query at once): first answer now has title "Release Guide", status active, load_priority 8, honours `status: active`, and returns no generated or archive doc. It failed on main (Phase 2).
 - Behaviour change to know: the code graph (grounding, entity card, `related`) is applied in the background, so the first answers after a warm start or a reconcile carry `_meta.stale` and the STALE_NOTE until it lands. Previously they waited for it. Phase 2 lead (slow-git @1 51 vs 46) is a ranking question for later: with metadata installed at once, the in-gap arm no longer exists, so it needs a separate decomposition on train.
 - The in-gap `related` is empty until step 2 (graph is doc-only meanwhile, not the old graph): `related` appears on the first answers only after the code graph lands, only if `buildFromDocuments` needs the code; doc-only edges are installed with the docs.
+
+## Eval results: Phase 4 (cheaper code-graph fallback)
+
+Measured read-only on `~/workspace/reinvestorhub/RE-InvestorHub` (3,920 commits, 3,795 tracked files, history 2026-01-05 to 2026-11-07), by calling `gitFiles` / `gitLastChanged` from `src/core/code-graph.ts` against it. `gitIgnored` is one `git check-ignore --stdin` over only the dead-candidate refs (not measured on this repo: no vault in it feeds it refs; it is bounded by the number of unresolved refs, 60 s timeout).
+
+| Call | Before (path-limited `git log`, 500 pathspecs per batch) | After (one `git log --since=365.days`, filter in JS) |
+|---|---|---|
+| `gitFiles` (3,795) | 5 ms | 5-17 ms (same code) |
+| `gitLastChanged` 100 files | 16 ms | ~140 ms |
+| `gitLastChanged` 1,000 files | 443-455 ms | ~136 ms |
+| `gitLastChanged` 3,795 files | 3,034-3,134 ms | ~135 ms (3,795 dated) |
+
+The before cost grows with files asked about (each batch walks the history); the after cost follows commits in the window (28,753 name lines in 365 days, 80 ms raw). Small asks are a little slower (one fixed full-window log), large asks are 20x faster. Worst case for the old code on a 20k-file repo would have exceeded the 60 s timeout per batch set; the new one is a single bounded call. This repo is only 10 months old, so every file stayed inside the window; on an older repo untouched files are left undated.
+
+Bound: `CODE_DATE_WINDOW_DAYS = 365`. A file not changed in the window has no date, so it is never reported as drifted (information only since 1.21; matters only to the opt-in `drift_penalty`). Docs' own dates are not bounded.
+
+`get_stats` gains `codeGraph: { source: export|fallback|none, loadMs }` (absent until the first load). Verified: unit test (window, one log), integration assertion in `test/integration/code-load-order.test.ts`, golden snapshot test strips the volatile field.
+
+Gates: lint, build green; npm test: flakes (real-corpus beforeAll timeout under load, freshness-scale, hook-failure) pass alone (real-corpus 16 pass + 1 expected fail, 308 s); `npm run eval` 137 pass, 5 expected fail.

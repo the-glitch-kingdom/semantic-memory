@@ -60,13 +60,14 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
         - Done: the two `it.fails` in test/e2e/stdio-load-gap.test.ts are plain `it` and pass; test/integration/code-load-order.test.ts covers warm load and the reconcile swap with a held `loadCodeData`.
   - [x] Removing or adding `.hewtd/graph.json` and restarting changes only grounding: titles, filters and non-grounding ranking stay the same. Add a test.
         - Done: second test in code-load-order.test.ts (code-graph fixture with and without the export: per-doc metadata and vector order equal).
-- [ ] Phase 4: Cheaper code-graph fallback
-  - [ ] Measure the fallback on a large local git repo (pick one under ~/workspace with long history; never modify it), timing `gitFiles`, `gitIgnored` and `gitLastChanged` separately. Record in notes.md.
-  - [ ] Bound `gitLastChanged`. Options:
+- [x] Phase 4: Cheaper code-graph fallback
+  - [x] Measure the fallback on a large local git repo (pick one under ~/workspace with long history; never modify it), timing `gitFiles`, `gitIgnored` and `gitLastChanged` separately. Record in notes.md.
+  - [x] Bound `gitLastChanged`. Options:
         - one `git log` with `--since` or `-n`, with files older than that treated as unchanged;
         - or the dates `git ls-files`/`git log -1` give per file.
         Drift is information only since 1.21, so precision matters only for the opt-in `drift_penalty`. Document the bound.
-  - [ ] `get_stats` reports code-graph load time and source (export, fallback, none).
+  - [x] `get_stats` reports code-graph load time and source (export, fallback, none).
+        (Chose the `--since` option: one `git log --since=365.days`, no pathspec; old files left undated. `gitIgnored` unchanged, one call, bounded by dead-candidate refs.)
 - [ ] Phase 5: Long sections
   - [ ] Embedding windows sized to the model's window: `max_seq_length` from the model's sentence-transformers config (256 for MiniLM), minus the heading trail, with a sentence of overlap. A section scores by its best window, and `section`/`anchor` stay on the section.
   - [ ] Variants measured on TRAIN only (long-section + hub + real-corpus, on a clone, via MCP):
@@ -118,7 +119,7 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 4**
+**Currently in Phase 5**
 
 ---
 

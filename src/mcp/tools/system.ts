@@ -30,6 +30,7 @@ export function registerSystemTools(server: McpServer, ctx: ServerContext): void
         indexSize: 0,
         lastIndexed: indexState === "ready" ? new Date().toISOString() : null,
         ...(ctx.isStale() && { stale: true }),
+        ...(ctx.getCodeLoad() && { codeGraph: ctx.getCodeLoad() }),
         indexState,
         indexProgress: indexState === "indexing" ? indexProgress : undefined,
       };

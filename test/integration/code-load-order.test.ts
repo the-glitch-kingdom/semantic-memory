@@ -46,6 +46,7 @@ describe("doc metadata is installed with the index, the code graph after", () =>
     gate.release!();
     await warm.reconcileNow();
     await vi.waitFor(() => expect(warm.isStale()).toBe(false));
+    expect(warm.getCodeLoad()).toMatchObject({ source: expect.stringMatching(/^(export|fallback|none)$/), loadMs: expect.any(Number) });
 
     // reconcile swap: a changed file is installed at once, the code graph follows
     gate.hold = true;
