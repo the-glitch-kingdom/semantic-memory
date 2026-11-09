@@ -51,6 +51,10 @@ The eval dir is `<project>/.claude/.semantic-memory/eval/` (override with `--dir
 
 One JSON object per line: `{id, tier, q, facets}`. `facets` are regexes the answer must match; `negative: true` marks a question the vault does not answer (scored as a negative; a row with neither tier nor facets is refused naming its id); optional `expected` (doc paths, enables found@k and MRR), `split` and `negative_kind`. Tiers: exact, paraphrase, symptom, nofield, multi.
 
+## Absent-name sets (v1.23)
+
+`test/retrieval-eval/absent-terms.jsonl` (train) and `absent-terms-heldout.jsonl` hold negatives that name a product or tool absent from the docs (three per file named only in passing) plus answerable controls. Tune on train only. Read "negatives flagged" with the false-flag count beside it. `gate:release` includes the held-out set. See [v1.23.0](../changelog/v1-23-0-abstention-product-names.md).
+
 ## Generate questions
 
 ```bash

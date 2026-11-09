@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { execFileSync } from "node:child_process";
+import { execFileSync, execFile } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { promisify } from "node:util";
 import { dirname, join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -56,5 +57,15 @@ describe("E2E: stdio --read-only server in a git repo", () => {
     expect(top.related?.length ?? 0).toBeGreaterThanOrEqual(1);
     expect(top.section).toBeTruthy();
     expect(top.anchor).toBeTruthy();
+  }, 60_000);
+
+  it("an absent vendor name is flagged the same over stdio and the CLI (#74)", async () => {
+    const q = "How does the queue worker send jobs to Hotjar?";
+    const mcp = await search(q);
+    const { stdout } = await promisify(execFile)("node", [CLI_PATH, "search", q, "--notes", ".documentation", "--limit", "5"], { cwd: repo });
+    const cli = JSON.parse(stdout) as any[];
+    expect(mcp[0]).toMatchObject({ no_strong_match: true, missing_terms: ["Hotjar"] });
+    expect(cli.map((h) => [h.no_strong_match, h.missing_terms])).toEqual(mcp.map((h) => [h.no_strong_match, h.missing_terms]));
+    expect(cli.map((h) => h.path)).toEqual(mcp.map((h) => h.path));
   }, 60_000);
 });

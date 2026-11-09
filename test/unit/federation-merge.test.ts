@@ -36,12 +36,22 @@ describe("mergeSources", () => {
     expect(mixed[1]).not.toHaveProperty("query_type");
 
     const weak = mergeSources(
-      [run("a", [item("a1", 0.5, { no_strong_match: true, missing_terms: ["x"], query_type: "fact" })]), run("b", [item("b1", 0.4, { no_strong_match: true })]), run("c", [])],
+      [run("a", [item("a1", 0.5, { no_strong_match: true, missing_terms: ["x"], query_type: "fact" })]), run("b", [item("b1", 0.4, { no_strong_match: true, missing_terms: ["x"] })]), run("c", [])],
       10,
     );
     expect(weak.every((r) => r.no_strong_match)).toBe(true);
     expect(weak[0].missing_terms).toEqual(["x"]);
     expect(weak[0].query_type).toBe("fact");
+  });
+
+  it("a name one source has is not missing: only terms every answering source lacks survive, passing_terms too (#74)", () => {
+    const weak = (extra: object) => ({ no_strong_match: true, ...extra });
+    const both = mergeSources([run("a", [item("a1", 0.5, weak({ missing_terms: ["Hotjar", "Okta"], passing_terms: ["Sentry"] }))]), run("b", [item("b1", 0.4, weak({ missing_terms: ["Hotjar"], passing_terms: ["Sentry"] }))])], 10);
+    expect(both.map((r) => r.missing_terms)).toEqual([["Hotjar"], ["Hotjar"]]);
+    expect(both.map((r) => r.passing_terms)).toEqual([["Sentry"], ["Sentry"]]);
+    const has = mergeSources([run("a", [item("a1", 0.5, weak({ missing_terms: ["Hotjar"], passing_terms: ["Sentry"] }))]), run("b", [item("b1", 0.4, weak({}))])], 10);
+    expect(has.some((r) => "missing_terms" in r || "passing_terms" in r)).toBe(false);
+    expect(has.every((r) => r.no_strong_match)).toBe(true);
   });
 
   it("stops at the limit", () => {

@@ -91,6 +91,14 @@ export const TOPICS: HelpTopic[] = [
     doc: ".documentation/changelog/v1-18-0-query-routing.md",
   },
   {
+    id: "weak-matches", title: "Weak matches and absent names", group: "Search more", aliases: ["missing_terms", "passing_terms", "no_strong_match", "abstention"],
+    summary: "A result flags no_strong_match when the docs likely do not answer; missing_terms and passing_terms name the absent product or identifier.",
+    steps: ["Read no_strong_match, missing_terms and passing_terms on the results.", "Verify before citing, or rephrase with the docs' own spelling."],
+    commands: ["search_hybrid {query}"],
+    verify: "a query naming a product the docs never mention returns no_strong_match and missing_terms.",
+    doc: ".documentation/changelog/v1-23-0-abstention-product-names.md",
+  },
+  {
     id: "eval", title: "Measure search on my docs", group: "Measure and improve", aliases: ["measure", "floors", "baseline", "retrieval-eval"],
     summary: "Score retrieval on a question set, hold a baseline, and fail on regressions.",
     steps: ["Build the index (eval refuses to run without one).", "Generate questions from your docs (this calls the host agent, claude, and costs a few cents).", "Run the eval.", "Save a baseline, then use --check to gate changes; it exits 1 without a baseline.", "To measure what an agent gets from the stdio server at once, add --via mcp (--settle scores the settled state)."],

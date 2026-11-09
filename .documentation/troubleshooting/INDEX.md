@@ -26,7 +26,7 @@ purpose: Complete listing of troubleshooting documentation
 
 | Document | Status | Updated | Words | Purpose |
 |----------|--------|---------|-------|---------|
-| [Troubleshooting](troubleshooting.md) | active | 2026-10-28 | 5,294 | Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command. |
+| [Troubleshooting](troubleshooting.md) | active | 2026-10-28 | 5,373 | Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command. |
 
 ## Keywords
 
