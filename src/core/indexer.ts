@@ -14,13 +14,16 @@ import { isExcludedPath, loadPathClassConfig, type PathClassConfig } from "./pat
 
 const DOCS_CACHE_FILE = "docs.cache.json";
 
-const CHUNK_TARGET_CHARS = 2000; // ~512 tokens
+// MiniLM's max_seq_length is 256 tokens (~4 chars each, less the heading trail): a longer chunk is mean-pooled over several topics, so a fact
+// inside it is diluted. Measured on train (notes.md, Phase 5): windows of this size plus a sentence of overlap beat 2000-char chunks.
+// shortcut: characters stand in for tokens (code and tables run denser, p95 ~300 tokens) and the size is not read from the model's config; revisit for a model with another window.
+const CHUNK_TARGET_CHARS = 1000;
 const MIN_SECTION_CHARS = 100; // a section shorter than this shares the chunk of the next one (tuned on train: 0-150 keep every answer section, 200+ merge neighbours of the section eval and lose it)
 
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
 /** refs kept per section for the result's `code` field */
 const SECTION_CODE_MAX = 3;
-export const INDEX_SCHEMA_VERSION = 10; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed); 8: codeRefs (re-parse only, chunk text unchanged); 9: chunks split at headings and prefixed with the heading trail (full re-embed), sections, chunkSection; 10: doc summary chunk (re-parse; only the new chunk embeds)
+export const INDEX_SCHEMA_VERSION = 11; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed); 8: codeRefs (re-parse only, chunk text unchanged); 9: chunks split at headings and prefixed with the heading trail (full re-embed), sections, chunkSection; 10: doc summary chunk (re-parse; only the new chunk embeds); 11: chunks of 1000 chars with a sentence of overlap (full re-embed)
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -377,13 +380,16 @@ export class Indexer {
     const sentences = text.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g) || [text];
     const chunks: string[] = [];
     let current = "";
+    let last = "";
 
     for (const sentence of sentences) {
       if (current.length + sentence.length > CHUNK_TARGET_CHARS && current) {
         chunks.push(current.trim());
-        current = "";
+        // a sentence of overlap, so a fact at a boundary sits whole in one chunk; skipped when it would crowd out the next sentence
+        current = last.length + sentence.length <= CHUNK_TARGET_CHARS ? last : "";
       }
       current += sentence;
+      last = sentence;
     }
     if (current.trim()) chunks.push(current.trim());
 

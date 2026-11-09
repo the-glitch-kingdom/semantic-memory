@@ -96,6 +96,26 @@ describe("Indexer", () => {
         expect(chunk.length).toBeLessThan(4000);
       }
     });
+
+    it("cuts windows of about the model's 256 tokens and repeats one sentence across each boundary", () => {
+      const text = Array.from({ length: 40 }, (_, i) => `Fact number ${i} is stated here in one plain sentence.`).join(" ");
+      const chunks = indexer.chunkText(text);
+      expect(chunks.length).toBeGreaterThan(2);
+      for (const c of chunks) expect(c.length).toBeLessThanOrEqual(1000);
+      for (let i = 1; i < chunks.length; i++) {
+        const lastSentence = chunks[i - 1].match(/[^.]+\.$/)![0].trim();
+        expect(chunks[i].startsWith(lastSentence)).toBe(true);
+      }
+      // every sentence survives whole in some chunk
+      for (let i = 0; i < 40; i++) expect(chunks.some((c) => c.includes(`Fact number ${i} is stated here in one plain sentence.`))).toBe(true);
+    });
+
+    it("never emits an overlap-only chunk when the next sentence is long", () => {
+      const long = "x".repeat(700) + ".";
+      const chunks = indexer.chunkText(`${Array.from({ length: 30 }, (_, i) => `Opener ${i} is short.`).join(" ")} ${long} ${long.replace("x", "y")} ${long.replace("x", "z")}`);
+      expect(new Set(chunks).size).toBe(chunks.length);
+      expect(chunks.filter((c) => c.length < 100 && !c.includes("x"))).toHaveLength(0);
+    });
   });
 
   describe("codeRefs", () => {

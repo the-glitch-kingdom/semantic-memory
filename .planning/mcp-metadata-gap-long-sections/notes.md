@@ -114,3 +114,51 @@ Bound: `CODE_DATE_WINDOW_DAYS = 365`. A file not changed in the window has no da
 `get_stats` gains `codeGraph: { source: export|fallback|none, loadMs }` (absent until the first load). Verified: unit test (window, one log), integration assertion in `test/integration/code-load-order.test.ts`, golden snapshot test strips the volatile field.
 
 Gates: lint, build green; npm test: flakes (real-corpus beforeAll timeout under load, freshness-scale, hook-failure) pass alone (real-corpus 16 pass + 1 expected fail, 308 s); `npm run eval` 137 pass, 5 expected fail.
+
+## Eval results: Phase 5 (long sections)
+
+### Harder fixture (built first, as Phase 2 required)
+- `test/fixtures/long-section-hard/` (9 docs) and `test/retrieval-eval/long-section-hard.jsonl` (12 train: Vessel Rock lighthouse, Dunmore tannery, Halloran press) and `long-section-hard-heldout.jsonl` (12: Orrin windmill, Pennick brewery, Teasel lock). Each long doc is one 2.9-3.4 KB section of five bullets (450-800 chars, still under the plan's 1,000+; **deviation**) plus a short same-topic distractor doc about another station/works/press with a different value (and, for the lighthouse and the lock, a generic authority doc). Questions name the entity. Facets checked to occur in exactly one fixture doc and nowhere else in the corpus, before any variant was measured.
+- It discriminates: hybrid @1, no export, same run, 1.15.0 11/12, 1.21.0 8/12 (7/12 via MCP inside the load gap), local main 8/12. So claim 2 is reproduced on this set (1.21's 2000-char chunks lose 4 of 12 to the focused distractors, 11 to 7); @3 is 12/12 everywhere.
+- `scripts/eval-against-release.sh` copies `long-section-hard/` into the clone for a `long-section-hard*` set (and `long-section/` for the first fixture's sets).
+
+### Variants, train only (66 answerable: real-corpus 27, real-hub 12, long-section 15, long-section-hard 12), no export, clone, cli = mcp
+| variant | hybrid @1 | semantic @1 | multi @1 | #1+related | chunks | index size |
+|---|---|---|---|---|---|---|
+| 1.15.0 | 51 | 40 | 9/13 | 55 | | 7.7 MB |
+| 1.21.0 = (a) 2000-char chunks | 46 | 41 | 7/13 | 55 | 1113 | 16.2 MB |
+| (b) 1000-char windows | 51 | 42 | 9/13 | 57 | | 18.2 MB |
+| (c) 1000 + one sentence overlap | 51 | 45 | 9/13 | 59 | 1326 | 18.3 MB |
+| (d) 1000-char windows, stride half a window | 52 | 43 | 8/13 | 57 | | 19.5 MB |
+- Per set, hybrid @1: real-corpus a 36, b 39, c 38, d 39 (1.15.0 37); hub 8 everywhere; long-section 15 everywhere; long-section-hard a 7, b 9, c 10, d 10 (1.15.0 11). @3 equal. A second build of each gave identical numbers (the index is deterministic at this size).
+- Choice: (c). Hybrid @1 is within one case of the best (d 52, b = c 51), and one case is the run-to-run slack, so the tie goes to the best of the rest: (c) has the best semantic @1 (45) and #1+related (59), and it is the design #73 describes (window plus a sentence of overlap); (d) costs 7% more index than (c) for the one extra case. Held-out played no part.
+- The measured window is `CHUNK_TARGET_CHARS = 1000` (~256 tokens at ~4 chars/token), from the model's `max_seq_length`, not tuned: 800 or 1200 were not tried. Characters stand in for tokens: after the change the chunks are p50 139 / p95 304 / max 411 tokens (231 of 1326 over 256, code and tables run dense); before, p95 461, max 689 (244 of 1113 over 256). Not read from the model config (the cached `config_sentence_transformers.json` has no `max_seq_length`; the 256 is a constant with a `shortcut:` comment).
+- Overlap guard: the carried sentence is kept only if it fits with the next one, so no overlap-only chunk and no duplicate. The first prototype (c) lacked it; the final code was re-run on train and gave the same 51/45.
+- The env knob first used for the trial did not reach the stdio server (the MCP SDK's stdio transport passes only a safe subset of the environment): the first mcp arms of b, c and d read as variant (a) and differed from their cli arms by 4-5 questions. Re-run as per-variant package copies; cli = mcp then. Trial knob removed.
+- Doc summary chunk: 17 of 126 summary chunks are over 256 tokens (p95 365, max 923). Cutting the summary to the 1000-char window gave identical results on train (51/66, 45 semantic) so it was **not** changed (the plan: only if it shows a gain).
+
+### Cold index, size, held-out (same tree: clone of this repo + both fixtures, 156 docs, this machine, run alone)
+| | cold index no export | export | index size (train tree, dir) |
+|---|---|---|---|
+| 1.15.0 | 24.5 s | 29.0 s | 7.7 MB |
+| 1.21.0 | 50.1 s | 45.4 s | 16.5 MB |
+| local (1.22 dev) | 57.2 s | 46.8 s | 18.3 MB |
+- 1326 chunks against 1113 for 2000-char chunks (+19%); cold index +14% over 1.21.0 without an export (noise between runs is a few seconds); 2.3x over 1.15.0 (the doc summary and field chunks of 1.21 and section splits of 1.9 account for 1.21's own doubling).
+
+Hybrid @1 per set, answerable only, no export / export (cli = mcp on every run):
+| set | 1.15.0 | 1.21.0 | local |
+|---|---|---|---|
+| real-corpus (train) | 18 / 18 | 18 / 20 | 20 / 20 of 27 |
+| real-hub (train) | 6 / 6 | 6 / 6 | 6 / 6 of 12 |
+| long-section (train) | 15 / 15 | 15 / 15 | 15 / 15 of 15 |
+| long-section-hard (train) | 11 / 11 | 7 / 7 | 10 / 10 of 12 |
+| **train total** | 50 / 50 | 46 / 48 | 51 / 51 of 66 |
+| real-corpus-heldout | 14 / 14 | 16 / 17 | 16 / 18 of 27 |
+| real-hub-heldout | 4 / 4 | 6 / 6 | 6 / 6 of 10 |
+| long-section-heldout | 14 / 14 | 14 / 14 | 14 / 14 of 14 |
+| long-section-hard-heldout | 12 / 12 | 8 / 8 | 10 / 10 of 12 |
+| **held-out total** | 44 / 44 | 44 / 45 | 46 / 48 of 63 |
+- Held-out, as measured: local is above both published versions in total (46/48 vs 44/45 and 44/44). On the hard long-section sets it recovers 2 of the 4 questions 1.21.0 lost against 1.15.0 on held-out (10 of 12 against 8 and 12) and 3 of 4 on train (10 against 7 and 11): **missed target, not fully back to 1.15.0 on long multi-topic sections with focused distractors.** @3 is 12/12 for the hard sets on all three, so the doc is found, just not first.
+- Real-corpus held-out and train are flat or up against 1.21.0; no set fell.
+- The remaining hard-set misses were not examined: held-out is not for tuning, and a train fix would be a ranking change, which this phase does not make.
+- Key Question 2 (does chunk length or offset explain claim 2?): chunk length. On a fixture where focused distractors exist, 2000-char chunks lose rank (11 to 7 of 12 on train, 12 to 8 held-out) and 1000-char windows with overlap win most back; the first fixture (no distractors) showed no rank effect at all.

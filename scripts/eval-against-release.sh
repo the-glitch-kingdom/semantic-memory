@@ -13,7 +13,7 @@
 # Each run is measured twice, on the same index: `eval` (in-process) and `eval --via mcp` (the stdio server as the plugin launches
 # it, queried as soon as it answers). Prints one table, a row per run and arm: hybrid / semantic @1, @3, multi @1, #1+related,
 # related per #1, negatives flagged, p95, then for the mcp arm the first-answer time, entity cards and fields on #1.
-# A set named long-section* also copies test/fixtures/long-section/ into each clone's .documentation first.
+# A set named long-section*.jsonl also copies its fixture dir (test/fixtures/long-section/ or long-section-hard/) into each clone's .documentation first.
 # Set GATE_TMP to reuse a directory (it is not removed).
 set -euo pipefail
 
@@ -50,7 +50,9 @@ for v in "${VERSIONS[@]}"; do
   fi
   [ -f "$pkg/dist/cli/index.js" ] || { echo "$v: no dist/ (run npm run build)" >&2; exit 1; }
   if [ $DOCS_ONLY = 1 ]; then mkdir "$d/tree" && cp -r "$REPO/.documentation" "$d/tree/"; else git clone -q --local "$REPO" "$d/tree"; fi
-  case " ${SETS[*]} " in *long-section*) mkdir -p "$d/tree/.documentation/long-section" && cp "$REPO"/test/fixtures/long-section/*.md "$d/tree/.documentation/long-section/" ;; esac
+  for fx in long-section long-section-hard; do
+    case " ${SETS[*]} " in *"/$fx.jsonl"*|*"/$fx-heldout.jsonl"*) mkdir -p "$d/tree/.documentation/$fx" && cp "$REPO"/test/fixtures/$fx/*.md "$d/tree/.documentation/$fx/" ;; esac
+  done
   # the clone holds the committed tree: the sets under test come from the checkout, not the clone
   if [ $EXPORT = 1 ]; then (cd "$d/tree" && "$REPO/node_modules/.bin/hewtd" index >/dev/null 2>&1); fi
   t0=$(date +%s.%N)

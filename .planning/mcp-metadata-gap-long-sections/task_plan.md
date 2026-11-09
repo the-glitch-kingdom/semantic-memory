@@ -68,16 +68,15 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
         Drift is information only since 1.21, so precision matters only for the opt-in `drift_penalty`. Document the bound.
   - [x] `get_stats` reports code-graph load time and source (export, fallback, none).
         (Chose the `--since` option: one `git log --since=365.days`, no pathspec; old files left undated. `gitIgnored` unchanged, one call, bounded by dead-candidate refs.)
-- [ ] Phase 5: Long sections
-  - [ ] Embedding windows sized to the model's window: `max_seq_length` from the model's sentence-transformers config (256 for MiniLM), minus the heading trail, with a sentence of overlap. A section scores by its best window, and `section`/`anchor` stay on the section.
-  - [ ] Variants measured on TRAIN only (long-section + hub + real-corpus, on a clone, via MCP):
-        - (a) 1.21 chunks;
-        - (b) model-window chunks;
-        - (c) (b) plus overlap;
-        - (d) sentence windows inside a section, best window wins.
-        Keep the best; remove the others.
-  - [ ] Cold index time and index size against 1.15.0 and 1.21.0 on the same tree. Bump `INDEX_SCHEMA_VERSION` if chunk text changes.
-  - [ ] The doc summary chunk (1.21) is cut to the window too, if (b)–(d) show it truncates.
+- [x] Phase 5: Long sections
+  - [x] Embedding windows sized to the model's window: `max_seq_length` from the model's sentence-transformers config (256 for MiniLM), minus the heading trail, with a sentence of overlap. A section scores by its best window, and `section`/`anchor` stay on the section.
+        - Done (src/core/indexer.ts): `CHUNK_TARGET_CHARS = 1000` (~256 tokens) plus a sentence of overlap; each chunk keeps `chunkSection`, so `section`/`anchor` are unchanged and the doc scores by its best chunk. 256 is a constant, not read from the config (the cached config has no `max_seq_length`); characters stand in for tokens (shortcut comment).
+  - [x] Variants measured on TRAIN only (long-section + hub + real-corpus, on a clone, via MCP): (a) 1.21 chunks; (b) model-window chunks; (c) (b) plus overlap; (d) sentence windows inside a section, best window wins. Keep the best; remove the others.
+        - Done: train hybrid @1 a 46, b 51, c 51, d 52 of 66 (1.15.0 51); kept (c), see notes.md. Built a harder fixture first (long-section-hard) because the Phase 2 one saturated. The trial knob and variants (a), (b), (d) are removed.
+  - [x] Cold index time and index size against 1.15.0 and 1.21.0 on the same tree. Bump `INDEX_SCHEMA_VERSION` if chunk text changes.
+        - Done: cold index 24.5 s / 50.1 s / 57.2 s (1.15.0 / 1.21.0 / local), index 7.7 / 16.5 / 18.3 MB; `INDEX_SCHEMA_VERSION` 10 to 11. Held-out reported in notes.md, same run.
+  - [x] The doc summary chunk (1.21) is cut to the window too, if (b)-(d) show it truncates.
+        - Done: 17 of 126 summary chunks exceed 256 tokens, but cutting it to the window changed nothing on train (51/66 both), so it is unchanged.
 - [ ] Phase 6: Release gate sees the MCP path
   - [ ] `npm run gate:release` runs `eval --via mcp` as well as the CLI eval, on the held-out sets (real-corpus, hub, long-section).
   - [ ] Clones run without an export, with an export, and with `git log` slowed for the first-query check.
@@ -108,18 +107,22 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 2. Does chunk length or fact offset explain claim 2? This is measured in Phase 2 before any chunking change.
 
 ## Decisions Made
+- Phase 5: variant (c), 1000-char windows plus a sentence of overlap, chosen on train over (b) and (d) (hybrid @1 within one case; best semantic @1 and #1+related; (d) costs 7% more index). Snapshot scores in test/fixtures/federation/single-source-snapshot.json re-taken for the new chunks (paths, order, fields unchanged).
 - One plan for #73: all three claims meet in the MCP load path and the eval that cannot see it.
 - Phase 2: the `--via mcp` arm shares the in-process eval's client and arm code; only the transport differs. `eval-against-release.sh` drives every version with this checkout's `eval --server <pkg cli>`.
 - Phase 2 lead for Phase 3 and Key Question 1: with `git log` slowed, all four real sets scored @1 51 versus 46 with metadata. Decompose priority/decay/path-class/fold on TRAIN before touching ranking.
 - Fix order: metadata first (Phase 3), because every ranking number the reporter took on d0 was measured inside the gap.
 
 ## Errors Encountered
+- Phase 5: the stdio client passes only a safe subset of the environment, so an env var trial knob never reached the server: the first mcp arms of b, c, d silently ran variant (a). Caught by cli != mcp; re-run as per-variant package copies.
+- Phase 5 missed target: on long-section-hard the fix recovers 3 of the 4 questions 1.21.0 lost on train (10/12 vs 7 and 1.15.0's 11) and 2 of 4 held-out (10/12 vs 8 and 12). Not back at 1.15.0.
+- Phase 5: bullets of the hard fixture are 450-800 chars, not 1,000+. Load flakes of the full suite (stdin-eof, freshness-scale, hook-failure) pass alone.
 - Phase 2: the long-section fixture does not discriminate (29/29 @1 on 1.15.0, 1.21.0 and local), so claim 2 is not reproduced by rank. Only a weak margin effect (r = -0.32 offset vs margin). Phase 5 must build a harder fixture first (near-duplicate distractors, 1,000+ char bullets, sections over 2,000 chars) before choosing a chunking variant on train.
 - Phase 3: freshness-scale warm start (1487 ms) and hook-failure Jev-hang (4134 ms) failed under full-suite load; both pass alone.
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 5**
+**Currently in Phase 6**
 
 ---
 
