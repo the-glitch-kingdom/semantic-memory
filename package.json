@@ -37,7 +37,7 @@
     "gate:release": "bash scripts/gate-release.sh",
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "vitest run",
+    "test": "vitest run --exclude 'test/retrieval-eval/**'",
     "test:watch": "vitest",
     "eval": "vitest run test/retrieval-eval",
     "lint": "tsc --noEmit",

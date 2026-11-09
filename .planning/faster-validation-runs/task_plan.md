@@ -15,10 +15,10 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
     - Record how many questions differ, if any.
     - If more than the real-corpus slack (1 per set) differ, the cache is limited to the npm pack and build and never reuses results. Record that decision.
   - [x] Record numbers in notes.md under "Eval results: Phase 2". (0 of 144 differ on every arm, so results are cacheable.)
-- [ ] Phase 3: Each test runs once
-  - [ ] `package.json` "test" becomes `vitest run --exclude 'test/retrieval-eval/**'`. "eval" is unchanged (`vitest run test/retrieval-eval`).
-  - [ ] Check that `npm test` plus `npm run eval` runs every `test/**/*.test.ts` file exactly once: compare file lists (`vitest list --json` or the run output) against the glob.
-  - [ ] CI (`.github/workflows/ci.yml`) already runs both steps; only the comment changes, if needed.
+- [x] Phase 3: Each test runs once
+  - [x] `package.json` "test" becomes `vitest run --exclude 'test/retrieval-eval/**'`. "eval" is unchanged (`vitest run test/retrieval-eval`).
+  - [x] (`vitest list --filesOnly`: eval 16 + test 140 = 156 files; 0 in both, 0 in neither) Check that `npm test` plus `npm run eval` runs every `test/**/*.test.ts` file exactly once: compare file lists (`vitest list --json` or the run output) against the glob.
+  - [x] CI (`.github/workflows/ci.yml`) already runs both steps; only the comment changes, if needed.
 - [ ] Phase 4: Load flakes retry instead of costing a full re-run
   - [ ] `{ retry: 2 }` on exactly the tests seen failing only under load, and passing alone:
     - freshness-scale "a warm start answers in under a second…" (CI 1085 ms > 1000 ms on PR #80);
@@ -69,7 +69,7 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
 
 ## Key Questions
 1. Are a published release's per-question results identical across two fresh index builds on this machine? This decides whether results are cached or only the build is. Answered in Phase 2.
-2. Does the vitest version here support `--exclude` on `vitest run`? Answered in Phase 3; if not, use a config `exclude` keyed on an env var.
+2. Does the vitest version here support `--exclude` on `vitest run`? Yes (vitest 4.1, `--exclude <glob>`).
 
 ## Decisions Made
 - No npm release: tooling and tests only.
