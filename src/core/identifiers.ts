@@ -29,7 +29,7 @@ export function identifiers(query: string, known?: (term: string) => boolean, na
   for (const w of query.replace(/`[^`]*`/g, " ").split(/[\s=]+/)) {
     const raw = w.replace(EDGE, "");
     const opens = initial;
-    initial = /[.?!:]$/.test(w);
+    initial = /[?!]$/.test(w) || (w.endsWith(".") && !w.slice(0, -1).includes(".")); // not `:` ("which tool: Hotjar") nor `e.g.`
     const t = raw.replace(UNDERSCORES, "");
     if (raw.includes("://")) continue;
     // a path has an extension or 2+ slashes: `TCP/IP`, `client/server`, `pass/fail` are prose

@@ -53,7 +53,7 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
   const page = scored.slice(0, limit);
   const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), knownToCode(ctx.getCode()));
   const { missing, undocumented } = splitUndocumented(absent, ctx.getCode());
-  const passing = passingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), page.slice(0, 3).map((r) => r.path), knownToCode(ctx.getCode()));
+  const passing = passingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), scored.slice(0, 3).map((r) => r.path), knownToCode(ctx.getCode()));
   const weak = isWeak(scored, bm25Min) || absent.length > 0 || passing.length > 0;
   const scoreOf = new Map(scored.map((r) => [r.path, r.score]));
   const card = entityCard(query, ctx.getCode(), ctx.getDocByPath(), (p) => scoreOf.get(p) ?? -Infinity);

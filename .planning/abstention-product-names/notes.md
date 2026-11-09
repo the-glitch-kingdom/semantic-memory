@@ -143,3 +143,25 @@ Run: `npm run gate:release -- 1.22.0` (package.json is still 1.22.0, so the defa
 | export cli / mcp | 20/44 -> 42/44 | 2 -> 3 | 64 -> 64 | 7 -> 7 |
 mcp vs cli: 0 of 129 questions differ. Titled #1 85/85, first answer ~0.9 s. Note: false flags rise by 1 (the Phase 3 held-out `dotfiles`), exactly at the band; a second new false flag would fail the gate. Controls and other answerable questions: no other new flag.
 The clone index does not make the absent-terms terms known: held-out negatives stay flagged 42/44 with the sets committed in test/, so the code graph does not index them (the Phase 2/3 open item is closed).
+
+## Eval results: Phase 9 (independent review, same run, local = branch with the 2 review fixes)
+Review fixes: (1) `identifiers` treated `:` and `e.g.` as sentence ends, so `Which tool: Hotjar or FullStory` dropped `Hotjar` (now only `?`, `!` and a plain trailing `.`); unit test added. (2) MCP `passingTerms` used `page.slice(0,3)` (depends on `limit`); now `scored.slice(0,3)` like the CLI. No constant tuned; sets not used to choose either.
+
+Measured with `scripts/eval-against-release.sh` on clones, 1.15.0, 1.22.0, local in one run per row; cli and mcp identical in every row; "neg" = negatives flagged, "false" = answerable questions flagged.
+| set | arm | 1.15.0 neg / false | 1.22.0 neg / false | local neg / false |
+|---|---|---|---|---|
+| absent train (29 neg, 23 controls) | no export | 13 / 2 | 7 / 0 | 26 / 0 |
+| absent train | export | 13 / 2 | 7 / 0 | 26 / 0 |
+| absent held-out (27 neg, 22 controls) | no export | 15 / 1 | 7 / 0 | 27 / 0 |
+| absent held-out | export | 15 / 1 | 7 / 0 | 27 / 0 |
+| real-corpus + hub (both splits) + golden-docs/code held-out | no export | 51 / 14 | 49 / 13 | 52 / 15 |
+| same | export | 51 / 14 | 49 / 13 | 52 / 15 |
+In the last row "false" includes every answerable question flagged for low confidence, so the base is high; local adds exactly 2 over 1.22.0: real-corpus `wildcard` and real-corpus-heldout `dotfiles` (known; `refetching` is in golden-decay, not in this row).
+Checks: lint, build, `npm test` (1 known flake, freshness-scale warm start, passed alone 2/2), `npm run eval` 138 passed, 4 expected fail, `npm run gate:release` (vs 1.22.0) PASS: negatives 42 vs 20, false flags 3 vs 2 (band 1), hybrid @1 61 vs 61 and 64 vs 64, mcp vs cli 0/129 differ, titled #1 85/85.
+
+### #74 acceptance, answered honestly
+1. Absent capitalized or non-dictionary term returns `no_strong_match` and `missing_terms` over MCP and eval: MET on our sets (negatives 26/29 train, 27/27 held-out vs 7 and 7 for 1.22.0; mcp = cli). The harness records only the flag, not which term; the stdio and CLI parity test checks `missing_terms` on `Hotjar`. Misses: n19 `react-query`, n22 `sharding`, n23 `ingress` (words the docs or the dictionary contain, by design).
+2. Named in a few docs and in none of the top 3: PARTLY MET. `passing_terms` with N = 1 catches 1/3 on train (Pinecone and Weaviate share a top-3 doc) and 3/3 on held-out; the held-out figure overstates it. The reporter's N of 3 was not adopted (train is flat, N = 1 is the smallest).
+3. Reporter's targets (A+B >= 6/7 with <= 1/34 false flags, set C >= 9/10 with 0/25): NOT MEASURED. Their questions and tree are not ours. Our proxies: 0 false flags on 45 controls; +2 false flags on ~270 answerable questions (`wildcard`, `dotfiles`, plus `refetching` in golden-decay). The "0 false flags" in set C is not guaranteed: three plain compound words are false-flagged here, so expect a similar rate (~1%) on their tree.
+4. Gate corpus gains the negative set and passes: MET (gate PASS), but only as a regression gate against the previous release with band 1; the false-flag count is at the band (3 vs 2 plus 1 allowed would be 3), so one more new false flag fails it. The gate's failure path was never exercised with a broken build.
+Known limits that stand: a name that opens a query or sentence is not a candidate (`Hotjar session replay` is not flagged; `Hotjar or FullStory` flags only FullStory); federation treats a source weak for another reason as having the term; a capitalized weekday or month absent from the docs would be flagged.

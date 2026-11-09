@@ -36,6 +36,9 @@ describe("name candidates (names = true)", () => {
   it("leaves sentence openers, acronyms, versions, numbers, common words and their inflections alone", () => {
     for (const q of ["Which plan covers it?", "Archiving is supposedly configured read-only. How does SLA or TLS apply in v2 and 3rd place, 30 times?", "what is it? Airflow runs", "don't touch Claude's index"]) expect(names(q), q).toEqual([]);
   });
+  it("a name after a colon or an abbreviation is not a sentence opener", () => {
+    expect(names("Which tool: Hotjar or Airflow? Or e.g. Pingdom")).toEqual(["Hotjar", "Airflow", "Pingdom"]);
+  });
   it("is off by default, so query typing and entity cards read only the identifier shapes", () => {
     expect(identifiers("Does the server call Hotjar on k8s with keystore?")).toEqual([]);
   });
