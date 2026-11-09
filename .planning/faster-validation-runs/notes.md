@@ -77,3 +77,30 @@ PR #79's run (42637505899), on a 4-vCPU ubuntu-latest runner.
 ### Cache payoff, re-estimated
 - About 45 s per old version per call (32 s of it the cold index), less any MCP arm that has to re-run (about 10 s).
 - #76 made 27 eval-against-release calls (18.7 min). Expected saving: about 10 min per plan.
+
+## Eval results: Phases 5-6 (2026-11-09)
+
+### Cache scenarios
+`EVAL_CACHE` was set to a scratch dir; set `real-hub-heldout`; `1.25.0` and `local`.
+
+| Run | Time | Result |
+|---|---|---|
+| cold | 74 s | |
+| warm, same key | 34 s | 1.25.0 rows read "(cached)", counts identical to cold; the remaining time is `local`, never cached |
+| set file changed (one negative added) | 38 s | miss: new key, no "(cached)" label, 2/2 negatives flagged |
+| `dist/cli/index.js` changed | ~1.5 s | CLI arm reused (eval.json mtime unchanged), MCP arm re-run on the warm index (new eval-mcp.json mtime), `mcp.client` updated |
+| `dist/` restored | ~1.5 s | MCP arm re-run again; hash is content-based, so a rebuild with identical output does not invalidate |
+| without `--cache` | 45 s | temp dir removed, nothing left behind |
+
+- The cache dir holds only `1.25.0-<key>` entries and `pkg-1.25.0`, never `local`.
+- A new commit changes `HEAD^{tree}`, so it is a miss by construction (checked again in Phase 9 after committing).
+- Bug found and fixed while writing it: a GATE_TMP reused without `--cache` would have silently reused leftover results. The rebuild path now removes leftovers unless the run is a keyed `--cache` hit.
+
+### Gate band (Phase 6)
+The gate's own comparison code, run on synthetic results:
+
+| Differing questions | Result |
+|---|---|
+| 0 | PASS |
+| 1 | PASS, question printed |
+| 2 | FAIL, both printed |

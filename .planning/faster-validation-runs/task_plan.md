@@ -27,17 +27,17 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
     - skill-queue SessionEnd timing (seen again in Phase 2's baseline, so added); links-exclude not seen again, so not added.
   - [x] No blanket retry in the vitest config.
   - [x] Each retried test gets a one-line comment: why it retries (load timing), and what still fails it (a deterministic failure fails all 3 attempts).
-- [ ] Phase 5: Opt-in cache for published releases in `scripts/eval-against-release.sh`
-  - [ ] `--cache` (or `EVAL_CACHE=<dir>`, default `~/.cache/semantic-memory-eval`), opt-in only. `local` is never cached.
-  - [ ] Cache key: version, `--export` / `--docs-only` / `--slow-git`, a hash of the corpus, and a sha256 of the set files' contents.
+- [x] Phase 5: Opt-in cache for published releases in `scripts/eval-against-release.sh`
+  - [x] `--cache` (or `EVAL_CACHE=<dir>`, default `~/.cache/semantic-memory-eval`), opt-in only. `local` is never cached.
+  - [x] Cache key: version, `--export` / `--docs-only` / `--slow-git`, a hash of the corpus, and a sha256 of the set files' contents.
     - The corpus hash is `git rev-parse HEAD^{tree}` plus the copied fixture files, or the `.documentation` contents with `--docs-only`.
-  - [ ] Cached: the unpacked package, the indexed clone tree, `index.sec`, and the CLI arm's `eval.json`.
+  - [x] Cached: the unpacked package, the indexed clone tree, `index.sec`, and the CLI arm's `eval.json`.
     - The MCP arm is driven by this checkout's `dist/`. It is reused only when the sha256 of `dist/cli/index.js` matches; otherwise it re-runs on the cached index.
-  - [ ] Cached rows show "(cached)" in the run column, and their p95, cold idx and first answer are marked as not same-run.
-  - [ ] `gate-release.sh` never passes `--cache`, so the gate always measures fresh.
-  - [ ] If Phase 2's determinism check failed, cache only the package unpack and skip result reuse.
-- [ ] Phase 6: Release gate tolerates HNSW noise in its MCP vs CLI check
-  - [ ] `gate-release.sh`: "local mcp and cli differ" fails only above `BAND` (1) questions, and prints the differing questions. Same slack as the real-corpus floors (#78 Phase 9 failed once on 1 of 166).
+  - [x] Cached rows show "(cached)" in the run column, and their p95, cold idx and first answer are marked as not same-run.
+  - [x] `gate-release.sh` never passes `--cache`, so the gate always measures fresh.
+  - [x] N/A: Phase 2 found 0 of 144 differ, so results are reused.
+- [x] Phase 6: Release gate tolerates HNSW noise in its MCP vs CLI check
+  - [x] `gate-release.sh`: "local mcp and cli differ" fails only above `BAND` (1) questions, and prints the differing questions. Same slack as the real-corpus floors (#78 Phase 9 failed once on 1 of 166).
 - [ ] Phase 7: Workflow prompt follow-up (outside the repo)
   - [ ] The plan-runner's REUSE MEASUREMENTS rule points at `eval-against-release.sh --cache` for in-phase measurements, and never for Phase 9 or the gate.
   - [ ] Its test-budget rule matches the new `npm test` / `npm run eval` split.
@@ -47,12 +47,12 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
   - [ ] Lint and build; `npm test` and `npm run eval` both green. Union of their files = every test file, each once (Phase 3 check re-run).
   - [x] Retry proof: a throwaway always-failing test with `{ retry: 2 }` ran 3 attempts, then FAILED; the file was removed. Retry proof: temporarily make one retried test's assertion always fail. It must fail after 3 attempts. Revert.
   - [ ] Cache:
-    - [ ] cold run, then warm run (same key): identical table counts, and the warm run is faster (time both);
-    - [ ] change a set file → cache miss;
+    - [x] cold run, then warm run (same key): identical table counts, and the warm run is faster (time both);
+    - [x] change a set file → cache miss;
     - [ ] new commit → miss;
-    - [ ] rebuild `dist/` → CLI arm reused, MCP arm re-run;
-    - [ ] `local` never cached;
-    - [ ] `--cache` absent → old behaviour, temp dir removed.
+    - [x] rebuild `dist/` → CLI arm reused, MCP arm re-run;
+    - [x] `local` never cached;
+    - [x] `--cache` absent → old behaviour, temp dir removed.
   - [ ] Gate: `npm run gate:release` passes against the previous version and does not use the cache (verify no cache dir is read). Slack check: a forced 1-question MCP/CLI difference passes; 2 fail. A tiny node check is enough.
   - [ ] CI on the PR green, with the step times recorded (test step and eval step) against PR #79's run (453 s and 214 s).
   - [ ] After: the same wall times as Phase 2, recorded beside the baseline.
@@ -77,7 +77,7 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
 - Retries are per-test for observed load flakes only, never blanket.
 
 ## Errors Encountered
-- (none yet)
+- First cache draft reused any leftover `index.sec` in a GATE_TMP even without `--cache` (an unkeyed cache). Fixed: reuse only on a keyed `--cache` hit; otherwise leftovers are removed and rebuilt.
 
 ## Status
 **Currently in Phase 2.** Starts after #78 (v1.25.0) ships. Must merge before any new issue's workflow starts (user, 2026-11-09).
