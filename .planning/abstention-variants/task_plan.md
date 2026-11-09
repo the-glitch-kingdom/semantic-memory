@@ -55,9 +55,9 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
         (Done wider: `test/e2e/abstention-parity.test.ts` runs every question of both absent-terms sets on a tree clone, plain and with the hewtd export: stdio vs the CLI's `openSearch`, and a federated server with an identical source. No divergence found, so no src change. The Phase 2 fixture's stdio-vs-CLI check stays. `eval` is the same pipeline as stdio; its aggregates matched in Phases 3-4.)
 - [x] Phase 6: Release gate
   - [x] Add the variant controls to the gate's held-out absent-terms set. Run `gate:release` against the previous release; record the result and runtime. (Controls were added to the held-out set in Phase 2 and the gate already reads that set; hub-only presence needs a tree whose hubs lack the flag, which the repo corpus is not, so it stays in the e2e fixture. PASS vs 1.24.0 in 3m24s.)
-- [ ] Phase 7: Release prep
-  - [ ] Bump all five version fields to 1.25.0 and update the lockfile
-  - [ ] Offline tarball deferred to release (built from the merge commit)
+- [x] Phase 7: Release prep
+  - [x] Bump all five version fields to 1.25.0 and update the lockfile
+  - [x] Offline tarball deferred to release (built from the merge commit) (deferred to release)
 - [ ] Phase 8: Cleanup
   - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
 - [ ] Phase 9: Validation (independent review)
