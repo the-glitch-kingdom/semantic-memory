@@ -106,8 +106,8 @@ tree after publish.
   - [x] Wire it into `.documentation/deployment/release-process.md` as a required step before `npm publish`.
 - [x] Phase 7: Release prep v1.21.0
   - [x] Bump all five version fields, lockfile. Offline tarball deferred to release (built from the merge commit).
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove the losing scoring variants and trial knobs; dead-code check over the branch diff.
+- [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove the losing scoring variants and trial knobs; dead-code check over the branch diff. (Nothing left: SM_DOC_VARIANT and variants were removed before the Phase 5 commit; grep over src, scripts, test and docs finds no trial knob, debug logging or commented-out code. Scripts that console.log are intentional output.)
 - [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
   - [ ] Independent review of `git diff main...HEAD`:
         - constants tuned on held-out;
@@ -184,7 +184,7 @@ tree after publish.
   task was not in the scratchpad; `scripts/lib/eval-probe.mjs` was written new.
 
 ## Status
-**Currently in Phase 7** - release prep v1.21.0
+**Currently in Phase 9** - validate
 
 ---
 
