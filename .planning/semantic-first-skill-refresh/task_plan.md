@@ -38,7 +38,7 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
   - [x] (ran, but no valid result: 18 (old) and 19 (new) of 25 prompts errored with error_max_turns; numbers not usable) Run `semantic-memory skill-eval trigger` on the OLD skill (from main) and the NEW skill, same prompts, same run.
     - Budget: at most 2 runs per prompt per skill, about 120 claude runs in total. State the cost and runtime in notes.md.
   - [x] (NOT EVALUATED: no valid counts; no description change made; left for a tooling fix) **Pass:** the new description triggers on at least as many should-trigger prompts as the old one, minus at most 1, with no more false triggers plus at most 1. If it fails, adjust only the description's trigger phrases, re-run once, and record both runs.
-- [ ] Phase 6: Release prep: bump all five version fields to 1.25.1 and the lockfile; the offline tarball is deferred to release.
+- [x] Phase 6: Release prep: bump all five version fields to 1.25.1 and the lockfile; the offline tarball is deferred to release. (tarball deferred to release)
 - [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove `draft-SKILL.md` from the plan folder if it is identical to the shipped skill apart from the documented server lines; otherwise keep it as the record of the change.
 - [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
