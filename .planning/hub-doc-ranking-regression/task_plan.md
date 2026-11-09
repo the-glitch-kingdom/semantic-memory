@@ -104,8 +104,8 @@ tree after publish.
         real-corpus held-out set and the hub held-out set (on a clone), failing when hybrid @1 or multi @1 drops by
         more than the band (one question).
   - [x] Wire it into `.documentation/deployment/release-process.md` as a required step before `npm publish`.
-- [ ] Phase 7: Release prep v1.21.0
-  - [ ] Bump all five version fields, lockfile. Offline tarball deferred to release (built from the merge commit).
+- [x] Phase 7: Release prep v1.21.0
+  - [x] Bump all five version fields, lockfile. Offline tarball deferred to release (built from the merge commit).
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [ ] Remove the losing scoring variants and trial knobs; dead-code check over the branch diff.
 - [ ] Phase 9: Validate success through comprehensive testing -- we need to validate success thoroughly through comprehensive testing of our changes (MANDATORY)
