@@ -24,7 +24,7 @@ import {
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "docs-vault");
 const HERE = import.meta.dirname;
 // Gates the field fixture fails today, run as expected failures until retrieval-ready-fields Phase 4 fixes them; see .planning/retrieval-ready-fields/notes.md "Eval results".
-const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { paraphrase: true, negatives: true }, "fixture-heldout": { falseFlags: true, paraphrase: true } };
+const KNOWN: Record<string, { atOne?: boolean; paraphrase?: boolean; falseFlags?: boolean; negatives?: boolean }> = { "fixture-train": { paraphrase: true }, "fixture-heldout": { falseFlags: true, paraphrase: true } };
 
 describe("Facet eval (golden-docs vs docs-vault)", () => {
   let client: Client;

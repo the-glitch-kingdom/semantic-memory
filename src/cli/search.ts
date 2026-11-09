@@ -171,7 +171,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
       );
       const all = withConfidence(opts.granularity === "doc" ? filtered : fold(filtered, docByPath, exported()));
       // the code is read only for a query that names an identifier: it costs a git call
-      const code = identifiers(query, () => true).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
+      const code = identifiers(query, () => true).length || missingTerms(query, bm25, paths, () => true).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
       const absent = missingTerms(query, bm25, paths, knownToCode(code));
       const { missing, undocumented } = splitUndocumented(absent, code);
       const weak = isWeak(all, bm25Min) || absent.length > 0;

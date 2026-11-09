@@ -99,6 +99,15 @@ describe("docs fixture through the MCP client and the CLI search", () => {
     expect((await call("search_hybrid", { query: "how do I rotate API keys", limit: 3 })).some((r: any) => r.missing_terms)).toBe(false);
   }, 60_000);
 
+  it("an absent product name is reported without changing the result order (#74)", async () => {
+    // an all-caps word is not a name candidate, and both spellings embed and tokenize the same, so only the flag differs
+    const named = await call("search_hybrid", { query: "How do I rotate API keys with Hotjar?", limit: 5 });
+    const plain = await call("search_hybrid", { query: "How do I rotate API keys with HOTJAR?", limit: 5 });
+    expect(named.map((r: any) => r.path)).toEqual(plain.map((r: any) => r.path));
+    expect(named[0].missing_terms).toEqual(["Hotjar"]);
+    expect(plain.some((r: any) => r.missing_terms)).toBe(false);
+  }, 60_000);
+
   it("an off-topic question is marked no_strong_match on every result", async () => {
     const res = await call("search_hybrid", { query: "recipe for sourdough bread starter", limit: 3 });
     expect(res.every((r: any) => r.no_strong_match === true)).toBe(true);

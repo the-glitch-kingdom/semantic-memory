@@ -65,3 +65,45 @@ Method: `scripts/eval-against-release.sh --set <both> 1.15.0 1.22.0 local`, with
 - Finding: **1.22.0 flags half of what 1.15.0 did** (14/56 vs 28/56), at 0 instead of 3 false flags. The loss is the old confidence-only cutoff, replaced since by the 1.9+ confidence changes; 1.15.0 is not a safe floor to match, it simply tolerated false flags. Target for Phase 3-4: raise flagged well above 28/56 with 0 false flags.
 - 1.22.0 flags (train): n11 Jenkins, n13 tRPC, n14 k8s, n16 web3, n17 cert-manager, n21 kubelet, n27 Pinecone. Held-out: hn03 Rollbar, hn06 Terragrunt, hn08 k3s, hn10 oauth2-proxy, hn13 iptables, hn21 Zabbix, hn27 Postgres. Whether each came from low confidence or `missing_terms` was not inspected (the harness records only the flag).
 - Checks: lint, build, `npm test` (2 known load flakes, hook-failure Jev-hang and stdin-eof SIGTERM, pass alone: 16/16), `npm run eval` 137 passed, 5 expected fail.
+
+## Eval results: Phase 3 (absent product and tool names)
+
+### Rule (src/core/identifiers.ts, `identifiers(query, known, names)`; `missingTerms` passes `names = true`)
+Candidates, beside the unchanged identifier rules: each hyphen part of a word that is capitalized and not sentence-initial, mixed case (`tRPC`, `FullStory`), has a digit and a letter and does not start with `v?digit` (`k8s`, `i18next`), or is all lowercase and not a common word. Acronyms (`SLA`), versions, numbers, paths and dotted names stay out. A candidate is missing when a token of it has BM25 df 0 and is not in the doc paths (existing check); `known` (code) still splits it into `missing_terms` vs `undocumented` in the callers. `names` is off for query typing and entity cards, so they read the old shapes.
+
+### Common-word choice, measured on TRAIN only (BM25 of `.documentation`, no embedder; `known` off)
+Negatives = absent-terms.jsonl train (29; 3 are named in passing, Phase 4). False = answerable controls of absent-terms.jsonl (23) / answerable questions of the train golden sets (golden-docs, real-corpus, real-hub, golden-code, golden-decay, golden: 129 questions). "+conf" = missing OR flagged by 1.22.0 confidence (n11 n13 n14 n16 n17 n21 n27).
+
+| variant | negatives flagged | +conf | false, controls | false, golden train | note |
+|---|---|---|---|---|---|
+| baseline (1.22.0 rules) | 1/29 | 7/29 | 0/23 | 0 | |
+| (a) WordPiece, 1 piece = common | 26/29 | 27/29 | 0/23 | 12 | too many inflected words split (erasure, batched, payloads) |
+| (a2) common if <= 2 pieces | 21/29 | 24/29 | 0/23 | 3 | |
+| (a3) common if <= 3 pieces | 17/29 | 21/29 | 0/23 | 1 | |
+| (a-s) (a) with the same suffix strip as (b) | 25/29 | 26/29 | 0/23 | 6 | |
+| **(b) word list + suffix strip** | **23/29** | **24/29** | **0/23** | **2** (wildcard, refetching) | kept |
+| (c) shape only, no dictionary | 16/29 | 20/29 | 0/23 | 0 | cannot flag `keystore`, `autoscaler`: lowercase |
+
+Kept (b). (c) is the only one with no false flag, but it cannot see lowercase names, which are half of #74's own examples; (a) needs the tokenizer vocabulary at hand in a sync pure function and, at the strict setting, flags 12 ordinary words (a2/a3 trade negatives for false flags, no better than (b)). (a) variants and (c) removed. The WordPiece vocabulary does not match an English word list here (answer to Key Question 1: no, not at equal false flags).
+
+### Shipped word list (b)
+`src/core/common-words.ts`: 31,676 lowercase words, ~284 KB source, from SCOWL as packaged by Debian `wamerican` (`american-english`: 104,334 lines; proper nouns, possessives, non-ASCII removed to 63,875; then every word that `isCommon`'s suffix strip already reaches from a listed word dropped, which leaves lookups identical). Licence: SCOWL's permissive MIT-style notice (Copyright 2000-2011 Kevin Atkinson), reproduced in THIRD_PARTY_NOTICES.md and in the file header. It is a dictionary, not a frequency list: no frequency source was available offline.
+
+### Final numbers with the shipped code (`missingTerms` on the same BM25, `known` off)
+| split | negatives flagged by `missingTerms` | of which named only in passing | false flags, controls |
+|---|---|---|---|
+| train | 23/29 (absent-term negatives 23/26) | 0/3 | 0/23 |
+| held-out (measured, nothing tuned on it) | 24/27 (24/24 absent-term negatives) | 0/3 | 0/22 |
+
+False flags on the answerable golden sets with the shipped rule: train 2 (real-corpus p03 `wildcard`, golden-decay d05 `refetching`), held-out 1 (real-corpus-heldout h12 `dotfiles`), out of ~270 answerable questions. All three are compounds or prefixed words absent from the docs and the list. (Before the two-level strip, held-out also flagged h03 `supposedly`.) `test/unit/identifiers.test.ts` now lists them (`FALSE_FLAGS`), so a fourth fails the test. It also now skips `tier: negative` golden questions (e.g. `Redis`, `Okta`, `Helm` negatives are correctly flagged now).
+Passing-mention negatives (Pinecone, Weaviate, OpenTelemetry, Sentry, Obsidian, Postgres) are not flagged by Phase 3, as designed; Phase 4 targets them. Unflagged absent-term negatives: n19 react-query (`react`, `query` are in the docs), n22 sharding and n23 ingress (dictionary words, absent from docs: the rule does not flag common words by design).
+Risk noted, not tuned: a capitalized weekday or month mid-sentence (`Monday`) absent from the docs would be flagged.
+
+### End to end, local build, `scripts/eval-against-release.sh --set <file> local` (clone, no export; cli = mcp)
+| split | negatives flagged (1.22.0 -> local) | false flags, controls (1.22.0 -> local) |
+|---|---|---|
+| train | 7/29 -> 24/29 | 0/23 -> 0/23 |
+| held-out | 7/27 -> 25/27 | 0/22 -> 0/22 |
+The harness has no false-flag column; false flags are the confidence flags of 1.22.0 (0, the order and confidences are unchanged) plus `missingTerms` on the controls (0, measured above). The end-to-end count is one above the BM25-only count in each split (24 vs 23, 25 vs 24): the code graph or confidence adds one. Rank order is unchanged (search-parity test).
+Checks: lint, build, `npm test` (freshness-scale warm start and hook-failure Jev-hang failed under load, pass alone 16/16), `npm run eval` 138 passed, 4 expected fail (the fixture-train negatives gate now passes and is a real gate).
+Reporter targets so far (their tree decides): negatives well above 1.22.0's 14/56; passing-mention negatives (6 of 56) are Phase 4.

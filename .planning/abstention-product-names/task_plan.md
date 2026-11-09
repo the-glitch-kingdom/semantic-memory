@@ -28,19 +28,19 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
         - Some names that appear only in passing: in at most a few docs, and never the subject.
   - [x] Answerable controls in the same files, at least 20 each: questions that name a documented tool, product or term in the same shapes (for example `MiniLM`, `hewtd`, `HNSW`, `Jev`, `vitest`, `npm`), plus questions that begin with a capitalized word. These measure false flags.
   - [x] Baseline in notes.md: negatives flagged and false flags for 1.15.0, the previous release and local, via CLI and `eval --via mcp`, on clones, with and without an export.
-- [ ] Phase 3: Absent product and tool names
-  - [ ] Candidates, alongside the existing identifier rules (which stay as they are):
+- [x] Phase 3: Absent product and tool names
+  - [x] Candidates, alongside the existing identifier rules (which stay as they are):
         - a word capitalized and not first in its sentence;
         - mixed case (`pgBackRest`, `imgix`?);
         - containing a digit (`i18next`);
         - or not a common word.
         Any candidate absent from the docs (BM25 df 0 and not in paths) and from the code (`knownToCode`) is missing.
-  - [ ] "Common word": measure on train and keep one:
+  - [x] "Common word": measure on train and keep one (kept (b); numbers in notes.md "Eval results: Phase 3"; (a) and (c) removed, never committed):
         - (a) the embedder's WordPiece vocabulary, where a word that is one vocabulary piece counts as common (no new data shipped);
         - (b) an embedded list of the most frequent English words (state the size and the source licence);
         - (c) capitalization and shape only, with no dictionary.
-  - [ ] Rank and filter neutral: only `no_strong_match`/`missing_terms` change; the result order is identical.
-  - [ ] Unit tests for each candidate shape. Include sentence-initial words, acronyms and quoted terms.
+  - [x] Rank and filter neutral: only `no_strong_match`/`missing_terms` change; the result order is identical (test/integration/search-parity.test.ts: Hotjar vs HOTJAR, same paths; `missingTerms` runs after ranking in MCP and CLI).
+  - [x] Unit tests for each candidate shape. Include sentence-initial words, acronyms and quoted terms.
 - [ ] Phase 4: Named only in passing
   - [ ] Rule 2: a candidate in at most N docs and in none of the top 3 results. Tune N on train. Report it in a separate field or note (for example `passing_terms`), so its false flags are visible, and decide on train whether it also sets `no_strong_match`.
   - [ ] Measure its false flags on the answerable controls and on the real-corpus and hub answerable sets.
@@ -73,13 +73,15 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 2. Does rule 2 cost false flags on this repo's answerable sets? Answered in Phase 4.
 
 ## Decisions Made
+- Phase 3: kept (b), a shipped word list with a suffix strip (src/core/common-words.ts, 31,676 words, ~284 KB, SCOWL/Debian wamerican, MIT-style notice in THIRD_PARTY_NOTICES.md). Not a frequency list: none was available offline. `identifiers(query, known, names)` gets `names` (off by default: query typing, entity cards and `knownToCode` loading read the old shapes); `missingTerms` passes `true`. The CLI loads the code graph also when a name candidate is missing from the docs.
 - One plan for #74. It waits for #73, because both extend the eval and the gate.
 
 ## Errors Encountered
+- Phase 3: first full run failed 4 tests. (1) `docs-eval` "fixture train: every negative is flagged" started passing under `it.fails`: now a real gate (`negatives: true` removed). (2) real held-out false-flag gate failed at 4 flagged: two new missing-term false flags (h03 `supposedly`, h12 `dotfiles`). `supposedly` was a bug in my list reduction (dropped `supposed`, but one strip level could not reach `suppose`): `isCommon` now strips two levels, no constant tuned. `dotfiles` stays (compound word), 1 held-out false flag; the gate passes again at its existing slack, no floor changed. (3) freshness-scale warm start and hook-failure Jev-hang failed under load, passed alone (16/16).
 - Phase 2: hook-failure Jev-hang and stdin-eof SIGTERM failed under full-suite load, passed alone (16/16).
 
 ## Status
-**Currently in Phase 3** (Phase 2 done: sets written, baseline in notes.md; rebased on v1.22.0)
+**Currently in Phase 4** (Phase 3 done: names rule shipped, numbers in notes.md)
 
 ---
 
