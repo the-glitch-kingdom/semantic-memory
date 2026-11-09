@@ -1,6 +1,6 @@
 ---
 description: Generate or refresh AGENTS.md at the project root — the versionable agent contract. Preserves Local Notes across regenerations.
-allowed-tools: mcp__semantic-vault__regenerate_contract, mcp__semantic-vault__inspect_contract
+allowed-tools: mcp__semantic-memory__regenerate_contract, mcp__semantic-memory__inspect_contract, mcp__semantic-vault__regenerate_contract, mcp__semantic-vault__inspect_contract
 ---
 
 When the user runs `/contract`, dispatch by argument:

@@ -77,8 +77,9 @@ reconcile(process.cwd());
 node -e "
 const d = require('$WORK/.mcp.json');
 const k = Object.keys((d && d.mcpServers) || {});
-if (!k.includes('semantic-vault')) { console.error('no semantic-vault entry; got: ' + k.join(',')); process.exit(1); }
-" || fail "reconcile did not populate .mcp.json with a semantic-vault entry"
-echo "  ok: reconcile populated .mcp.json (semantic-vault)"
+if (!k.includes('semantic-memory')) { console.error('no semantic-memory entry; got: ' + k.join(',')); process.exit(1); }
+if (k.some((n) => n === 'semantic-vault' || n === 'semantic-sidekick')) { console.error('legacy-named duplicate; got: ' + k.join(',')); process.exit(1); }
+" || fail "reconcile did not populate .mcp.json with a semantic-memory entry (and no legacy-named one)"
+echo "  ok: reconcile populated .mcp.json (semantic-memory)"
 
 echo "SMOKE PASS (v$EXPECTED_VERSION)"

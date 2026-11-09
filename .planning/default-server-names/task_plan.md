@@ -27,18 +27,18 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
   - [x] Before adding an entry, check every existing entry: if one's `--notes` arg resolves (relative to the project root) to the same folder, add nothing. This prevents duplicates, whatever the existing entry is called.
   - [x] Removal (hewtd off): remove the docs entry under any recognized key, only when `isOurEntry` matches.
   - [x] Update the header comment (the old "DOCS_KEY stays semantic-sidekick" rationale), keeping the reasoning: existing entries are never renamed, because renaming changes tool names and breaks allowlists and CLAUDE.md references.
-- [ ] Phase 4: Every other place that assumes a name
-  - [ ] `scripts/smoke-install.sh:80` asserts a `semantic-vault` key. Assert `semantic-memory` for a fresh install, and that no legacy-named duplicate exists.
-  - [ ] `hooks/vault-context.js`: comments at :44 and :50 describe the standard setup as `semantic-vault` / `semantic-sidekick`; update them. Messages: per Phase 2.
-  - [ ] Skills: after #81 the semantic-first skill names servers by role with both name pairs. Make the new names "the default" and the old pair "older installs". The same goes for the sibling skills' role lines.
-  - [ ] Server instructions and `src/`: grep for any literal server name (none expected; the healthcheck already matches `/^semantic-/`).
-  - [ ] `hooks/hooks.json` description and the plugin description: wording only, if they name servers.
-  - [ ] Slash commands and one CLI help string still hard-code `mcp__semantic-vault__` (found by #81's review):
+- [x] Phase 4: Every other place that assumes a name
+  - [x] `scripts/smoke-install.sh:80` asserts a `semantic-vault` key. Assert `semantic-memory` for a fresh install, and that no legacy-named duplicate exists.
+  - [x] `hooks/vault-context.js`: comments at :44 and :50 describe the standard setup as `semantic-vault` / `semantic-sidekick`; update them. Messages: per Phase 2.
+  - [x] Skills: after #81 the semantic-first skill names servers by role with both name pairs. Make the new names "the default" and the old pair "older installs". The same goes for the sibling skills' role lines.
+  - [x] Server instructions and `src/`: grep for any literal server name (none expected; the healthcheck already matches `/^semantic-/`).
+  - [x] `hooks/hooks.json` description and the plugin description: wording only, if they name servers.
+  - [x] Slash commands and one CLI help string still hard-code `mcp__semantic-vault__` (found by #81's review):
     - `commands/vault.md`, `commands/contract.md`: their `allowed-tools` frontmatter needs exact names. List the tools under BOTH default names (`semantic-memory` and `semantic-vault`). That pre-approves them on old and new default installs; a custom name falls back to the normal permission prompt. The body names tools bare, on "the vault server" (role wording, as in the skills).
     - `commands/mode.md:25` wording.
     - `src/cli/index.ts:542` help string.
     - A test (extend `test/unit/skill-surfaces.test.ts`, or a sibling) asserting that no `commands/**` or `skills/**` body text hard-codes a single server prefix, and that `allowed-tools` lists both default names wherever it lists one.
-  - [ ] `vaultTool()` (`hooks/vault-context.js:93`) falls back to `semantic-vault` when no writable entry is found. Make the fallback `semantic-memory`, the new default.
+  - [x] `vaultTool()` (`hooks/vault-context.js:93`) falls back to `semantic-vault` when no writable entry is found. Make the fallback `semantic-memory`, the new default.
 - [ ] Phase 5: Release prep: bump all five version fields to 1.26.0 and the lockfile; the offline tarball is deferred to release. Check whether `scripts/install-offline.sh` writes `.mcp.json` entries; if it does, apply the same defaults.
 - [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
@@ -72,4 +72,4 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 - Phase 2: tests run hooks/session-start.js as a subprocess (HOME and CLAUDE_PROJECT_DIR set to temp dirs), not reconcile() directly.
 
 ## Status
-**Currently in Phase 4.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
+**Currently in Phase 5.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).

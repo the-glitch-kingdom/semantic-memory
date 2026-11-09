@@ -33,3 +33,6 @@ Test-only phase, no ranking change. test/unit/reconcile.test.ts: 6 pass, 5 expec
 ## Eval results: Phase 3
 Full suite: only the known freshness-scale warm-start load flake failed (2 tests, > 1s under load); both pass alone (22s). Eval 148 passed, 4 expected fail.
 No ranking change (hook + tests only). reconcile.test.ts: 12/12 pass as plain `it` (11 from Phase 2 + npx `--notes=` absolute-path case).
+
+## Eval results: Phase 4
+Wording, comments, smoke assertion, command allowed-tools and one vaultTool fallback change only; no ranking numbers. hooks/hooks.json description left as is (it names the product, not a server). The other skills already speak of "the vault server"; only semantic-first's name pair needed swapping. Example prompts in vault-first that mention semantic-vault/semantic-sidekick are user quotes, kept.

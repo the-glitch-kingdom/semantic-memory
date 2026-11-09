@@ -74,3 +74,29 @@ describe("skills name the tools and fields the release has (#81)", () => {
     expect(files.map((f) => f.name)).not.toContain("skills/semantic-first/references/vault-frontmatter.md");
   });
 });
+
+// default-server-names Phase 4: commands name tools by role; allowed-tools covers both default names
+describe("slash commands do not hard-code one server name", () => {
+  const cmdDir = join(root, "commands");
+  const cmds = readdirSync(cmdDir).filter((f) => f.endsWith(".md")).map((f) => readFileSync(join(cmdDir, f), "utf-8"));
+  const split = (t: string) => {
+    const m = t.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)!;
+    return { front: m[1], body: m[2] };
+  };
+
+  it("no command body names an mcp__semantic-*__ tool", () => {
+    expect(cmds.filter((t) => /mcp__semantic-[a-z-]+__/.test(split(t).body))).toEqual([]);
+  });
+
+  it("allowed-tools lists each tool under both semantic-memory and semantic-vault", () => {
+    const listed = cmds.flatMap((t) => (split(t).front.match(/^allowed-tools:.*$/m)?.[0].match(/mcp__semantic-[a-z]+__[a-z_]+/g)) ?? []);
+    expect(listed.length).toBeGreaterThan(0);
+    for (const tool of listed.filter((l) => l.startsWith("mcp__semantic-memory__"))) {
+      expect(listed).toContain(tool.replace("semantic-memory", "semantic-vault"));
+    }
+    for (const tool of listed.filter((l) => l.startsWith("mcp__semantic-vault__"))) {
+      expect(listed).toContain(tool.replace("semantic-vault", "semantic-memory"));
+    }
+    expect(listed.filter((l) => !/^mcp__semantic-(memory|vault)__/.test(l))).toEqual([]);
+  });
+});

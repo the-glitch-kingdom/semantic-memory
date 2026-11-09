@@ -5,7 +5,7 @@ description: Search the project's indexed docs and vault before grepping, resear
 
 # semantic-first
 
-Two servers, same tools, probed separately (either can be missing). Names come from `.mcp.json`: e.g. `semantic-memory-docs` / `semantic-memory`, or the defaults `semantic-sidekick` / `semantic-vault`.
+Two servers, same tools, probed separately (either can be missing). Names come from `.mcp.json`: the defaults are `semantic-memory-docs` / `semantic-memory`; older installs use `semantic-sidekick` / `semantic-vault`.
 
 - The docs server: the project docs (usually `.documentation/`). Read-only. Edit docs as files, never through MCP.
 - The vault server: the vault (`.claude/.vault/`), research notes that persist across sessions. Read and write.
