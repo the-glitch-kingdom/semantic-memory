@@ -302,12 +302,14 @@ export function groundDocs(docs: { path: string; frontmatter?: Record<string, un
 }
 
 /** Tracked files an identifier names: a repo path (exact or by suffix), or a file name with or without its extension. */
-function locateFiles(term: string, files: string[] = []): string[] {
+function locateFiles(term: string, files: string[] = [], loose = false): string[] {
   const t = term.replace(/^\.\//, "");
   if (t.includes("/")) return files.filter((f) => f === t || f.endsWith("/" + t));
+  const flat = (s: string) => s.toLowerCase().replace(/[-_]/g, "");
   return files.filter((f) => {
     const b = posix.basename(f);
-    return b === t || b.replace(/\.[^.]*$/, "") === t;
+    const base = b.replace(/\.[^.]*$/, "");
+    return b === t || base === t || (loose && flat(base) === flat(t));
   });
 }
 
@@ -361,7 +363,7 @@ export function entityCard(
 export function splitUndocumented(missing: string[], code: CodeData | null): { missing: string[]; undocumented: { entity: string; path: string }[] } {
   const undocumented: { entity: string; path: string }[] = [];
   const still = missing.filter((term) => {
-    const path = locateFiles(term, code?.files)[0];
+    const path = locateFiles(term, code?.files, true)[0]; // a spelling variant of a file name is still that file
     if (!path) return true;
     undocumented.push({ entity: term, path });
     return false;

@@ -93,10 +93,10 @@ export const TOPICS: HelpTopic[] = [
   {
     id: "weak-matches", title: "Weak matches and absent names", group: "Search more", aliases: ["missing_terms", "passing_terms", "no_strong_match", "abstention"],
     summary: "A result flags no_strong_match when the docs likely do not answer; missing_terms and passing_terms name the absent product or identifier.",
-    steps: ["Read no_strong_match, missing_terms and passing_terms on the results.", "Verify before citing, or rephrase with the docs' own spelling."],
+    steps: ["Read no_strong_match, missing_terms and passing_terms on the results.", "Verify before citing, or rephrase with the docs' own spelling. Hyphen, underscore and Title Case spellings count as present; hub pages a search never returns do not."],
     commands: ["search_hybrid {query}"],
     verify: "a query naming a product the docs never mention returns no_strong_match and missing_terms.",
-    doc: ".documentation/changelog/v1-23-0-abstention-product-names.md",
+    doc: ".documentation/changelog/v1-25-0-abstention-variants.md",
   },
   {
     id: "eval", title: "Measure search on my docs", group: "Measure and improve", aliases: ["measure", "floors", "baseline", "retrieval-eval"],

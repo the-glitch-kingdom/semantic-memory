@@ -10,6 +10,23 @@ const STOP = new Set(
 export const tokenize = (s: string): string[] =>
   s.toLowerCase().match(/[\p{L}\p{N}_]+/gu)?.filter((t) => t.length > 1 && !STOP.has(t)) ?? [];
 
+/**
+ * Joined spellings of a text's compounds, for presence only: each run of words split by `-` or `_`, or of Title Case words split by
+ * a space, gives the join of every adjacent pair and of the whole run. Plain lowercase prose is not joined: that made every
+ * adjacent word pair a "name" and multiplied the presence vocabulary by eight (#78 phase 9).
+ * shortcut: no stop-word limit inside a run; upgrade if the eval shows a lost negative.
+ */
+const COMPOUND = /[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)+|\p{Lu}[\p{L}\p{N}]*(?: \p{Lu}[\p{L}\p{N}]*)+/gu;
+export function joinedForms(text: string): string[] {
+  const out: string[] = [];
+  for (const run of text.match(COMPOUND) ?? []) {
+    const parts = run.toLowerCase().split(/[-_ ]/);
+    if (parts.length > 2) out.push(parts.join(""));
+    for (let i = 0; i + 1 < parts.length; i++) out.push(parts[i] + parts[i + 1]);
+  }
+  return out;
+}
+
 interface Chunk {
   docPath: string;
   text: string;
@@ -31,6 +48,12 @@ export class Bm25Index {
   /** every distinct token of a doc (chunks + field text + path words): the term set `cover` reads, kept current by add/removeDoc */
   private docTerms = new Map<string, Set<string>>();
   private df = new Map<string, number>();
+  /** df over searchable docs only: what `has` reads, so a doc a search can never return does not make a name present */
+  private presenceDf = new Map<string, number>();
+  private unsearchable = new Set<string>();
+  /** presence-only spelling variants over searchable docs (`auto-fill`, `retry_budget`, `Smart Retry` -> `autofill`, `retrybudget`, `smartretry`); never scored */
+  private joinedDf = new Map<string, number>();
+  private joinedByDoc = new Map<string, Set<string>>();
   private chunkCount = 0;
   private totalLen = 0;
 
@@ -38,6 +61,10 @@ export class Bm25Index {
     this.byDoc.clear();
     this.docTerms.clear();
     this.df.clear();
+    this.presenceDf.clear();
+    this.unsearchable.clear();
+    this.joinedDf.clear();
+    this.joinedByDoc.clear();
     this.chunkCount = 0;
     this.totalLen = 0;
   }
@@ -45,44 +72,70 @@ export class Bm25Index {
   removeDoc(docPath: string): void {
     const chunks = this.byDoc.get(docPath);
     if (!chunks) return;
+    const searchable = !this.unsearchable.delete(docPath);
+    const dec = (m: Map<string, number>, t: string) => {
+      const n = (m.get(t) ?? 1) - 1;
+      if (n <= 0) m.delete(t);
+      else m.set(t, n);
+    };
     for (const c of chunks) {
       for (const t of c.tf.keys()) {
-        const n = (this.df.get(t) ?? 1) - 1;
-        if (n <= 0) this.df.delete(t);
-        else this.df.set(t, n);
+        dec(this.df, t);
+        if (searchable) dec(this.presenceDf, t);
       }
       this.chunkCount--;
       this.totalLen -= c.len;
     }
     this.byDoc.delete(docPath);
     this.docTerms.delete(docPath);
+    for (const j of this.joinedByDoc.get(docPath) ?? []) {
+      const n = (this.joinedDf.get(j) ?? 1) - 1;
+      if (n <= 0) this.joinedDf.delete(j);
+      else this.joinedDf.set(j, n);
+    }
+    this.joinedByDoc.delete(docPath);
   }
 
   /** `fields` (title, purpose, path words) is indexed with every chunk but is not part of the chunk text returned. */
-  addDoc(docPath: string, texts: string[], fields = ""): void {
+  addDoc(docPath: string, texts: string[], fields = "", searchable = true): void {
     this.removeDoc(docPath);
+    if (!searchable) this.unsearchable.add(docPath);
     const chunks = texts.map((text): Chunk => {
       const tokens = tokenize(`${fields} ${text}`);
       const tf = new Map<string, number>();
       for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
-      for (const t of tf.keys()) this.df.set(t, (this.df.get(t) ?? 0) + 1);
+      for (const t of tf.keys()) {
+        this.df.set(t, (this.df.get(t) ?? 0) + 1);
+        if (searchable) this.presenceDf.set(t, (this.presenceDf.get(t) ?? 0) + 1);
+      }
       this.chunkCount++;
       this.totalLen += tokens.length;
       return { docPath, text, tf, len: tokens.length };
     });
     this.byDoc.set(docPath, chunks);
     this.docTerms.set(docPath, new Set(chunks.flatMap((c) => [...c.tf.keys()])));
+    if (searchable) {
+      const joined = new Set<string>();
+      for (const text of texts) for (const j of joinedForms(text)) joined.add(j);
+      for (const j of joined) this.joinedDf.set(j, (this.joinedDf.get(j) ?? 0) + 1);
+      this.joinedByDoc.set(docPath, joined);
+    }
   }
 
-  /** True when some indexed chunk holds this token (tokenized, lowercase). */
+  /** True when a searchable doc writes this name with a hyphen, underscore or space (or only its case differs): `term` is lowercase, `_` and `-` removed. */
+  hasJoined(term: string): boolean {
+    return this.joinedDf.has(term);
+  }
+
+  /** True when some searchable doc's chunk holds this token (tokenized, lowercase). Scoring still reads every indexed chunk. */
   has(term: string): boolean {
-    return this.df.has(term);
+    return this.presenceDf.has(term);
   }
 
-  /** Number of docs holding this token (tokenized, lowercase). */
+  /** Number of searchable docs holding this token (tokenized, lowercase). */
   docFreq(term: string): number {
     let n = 0;
-    for (const t of this.docTerms.values()) if (t.has(term)) n++;
+    for (const [p, t] of this.docTerms) if (t.has(term) && !this.unsearchable.has(p)) n++;
     return n;
   }
 

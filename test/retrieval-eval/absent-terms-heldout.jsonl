@@ -50,3 +50,12 @@
 {"id":"hc20","tier":"paraphrase","qtype":"fact","q":"A vitest run for the exclusive-create fact: which case do I select?","facets":["no pid yet"]}
 {"id":"hc21","tier":"exact","qtype":"fact","q":"TypeSafe's Jev model: which setting turns its calls on or off for a repo?","facets":["jev-mode"]}
 {"id":"hc22","tier":"exact","qtype":"fact","q":"Does a Claude Code session resume automatically through SessionStart?","facets":["doesn't auto-resume"]}
+// #78 (abstention-variants Phase 2), held-out. Written before any change, never used to choose rules or thresholds. hn28-hn30: absent under every spelling (grep-checked). hc23-hc27: documented under another spelling (rank-only, wait-for-ready, claude-run, re-embed, passing_terms).
+{"id":"hn28","tier":"negative","qtype":"fact","q":"How does the circuitbreaker trip when the embedder fails?"}
+{"id":"hn29","tier":"negative","qtype":"fact","q":"When does the cacheWarmer run after a reindex?"}
+{"id":"hn30","tier":"negative","qtype":"fact","q":"Which job runs the snapshot_diff step?"}
+{"id":"hc23","tier":"exact","qtype":"fact","q":"How does the rankonly RRF compare to the score fusion?","facets":["0\\.7 \\* cosine"]}
+{"id":"hc24","tier":"exact","qtype":"fact","q":"What does the waitforready flag do when the server starts?","facets":["block until index fully built"]}
+{"id":"hc25","tier":"exact","qtype":"fact","q":"What do the clauderun slot files cap?","facets":["SEMANTIC_MEMORY_SKILL_LOOP_CONCURRENCY"]}
+{"id":"hc26","tier":"exact","qtype":"fact","q":"Which files does the server reembed after it was down while docs were edited?","facets":["bytes changed"]}
+{"id":"hc27","tier":"exact","qtype":"fact","q":"How does passingTerms decide a name is only mentioned in passing?","facets":["at most 1 doc"]}

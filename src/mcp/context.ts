@@ -17,7 +17,7 @@ import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { decayForDoc, groundingBlock, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
 import { gitBlobId, gitBodyDates, gitCommitDates } from "../core/git-dates.js";
-import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
+import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, isSearchableDoc, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
 import { commitIndex, filesMatchMeta, ignoreGlobsHash, metaMtime, parserInputs, parserMatches, readMeta } from "../core/index-store.js";
@@ -91,6 +91,8 @@ export interface ServerContext {
 
   getDocuments(): IndexedDocument[];
   getDocByPath(): Map<string, IndexedDocument>;
+  /** lowercased paths of the searchable docs, joined: the path half of the presence test */
+  searchablePaths(): string;
   /** code data behind the graph's code nodes (null outside a git repo) */
   getCode(): CodeData | null;
   /** last code-graph load, undefined before the first one lands */
@@ -180,6 +182,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   let documents: IndexedDocument[] = [];
   let docByPath = new Map<string, IndexedDocument>();
   let codeData: CodeData | null = null;
+  let searchablePathsFor: Map<string, IndexedDocument> | null = null; // the docByPath the cached string was built from
+  let searchablePathsStr = "";
   let vectorIndex: VectorIndex | null = null;
   let indexState: IndexState = "empty";
   let indexProgress = { embedded: 0, total: 0 };
@@ -299,7 +303,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   function resetBm25(docs: IndexedDocument[]) {
     selfTopCache = undefined;
     bm25.clear();
-    for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
+    for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d), isSearchableDoc(d, getPathClassConfig()));
   }
 
   /** Adopt what another process (or an earlier run) committed. False leaves the current state alone. */
@@ -462,7 +466,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     }
     for (const doc of parsed) {
       byPath.set(doc.path, doc);
-      bm25.addDoc(doc.path, doc.chunks, bm25Fields(doc));
+      bm25.addDoc(doc.path, doc.chunks, bm25Fields(doc), isSearchableDoc(doc, getPathClassConfig()));
       const chunks = docChunks(doc);
       vec.addChunks(chunks.map((c) => cache.get(vectorKey(c.text))!), chunks);
     }
@@ -745,6 +749,13 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     sessions,
     getDocuments: () => documents,
     getDocByPath: () => docByPath,
+    searchablePaths: () => {
+      if (searchablePathsFor !== docByPath) {
+        searchablePathsFor = docByPath;
+        searchablePathsStr = [...docByPath.values()].filter((d) => isSearchableDoc(d, getPathClassConfig())).map((d) => d.path).join("\n").toLowerCase();
+      }
+      return searchablePathsStr;
+    },
     getCode: () => codeData,
     getCodeLoad: () => codeLoad,
     getVectorIndex: () => vectorIndex,
