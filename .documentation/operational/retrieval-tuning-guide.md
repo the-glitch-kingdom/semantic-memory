@@ -171,6 +171,10 @@ The gate is `test/retrieval-eval/baseline.json`: @1 floors per arm, archive hits
 
 **Splits and gates (v1.9.1).** Four splits: fixture train (`golden-docs.jsonl`), fixture held-out (`golden-docs-heldout.jsonl`), real train (`real-corpus.jsonl`) and real held-out (`real-corpus-heldout.jsonl`, against `.documentation/`). Tune weights and thresholds on train only; held-out is written before a ranking change and reported as measured. Gates on every split: hybrid @1 >= semantic @1 - 1, paraphrase-tier hybrid @1 >= semantic's, all negatives flagged, answerable false flags <= 10%, plus HNSW recall@k >= 0.97 vs exact cosine. Gates v1.9.1 still misses run as `it.fails` (expected failures) and flip red when fixed; see the [v1.9.1 changelog](../changelog/v1-9-1-ranking-regression.md).
 
+## Chunk windows (v1.22)
+
+Chunks are 1000 characters with a sentence of overlap (was 2000, schema 11); a doc still scores by its best chunk and `section`/`anchor` stay on the section. Chosen on train over plain windows and half-window strides; 800 and 1200 were not tried. Details and the missed hard-set target: [v1.22.0 changelog](../changelog/v1-22-0-mcp-metadata-gap-long-sections.md).
+
 ## Grounding and the doc chunk (v1.21)
 
 Grounding ranks by dead refs only (`drift_penalty` 1); `drift_penalty: 0.97` or the `decay.code: false` switch are the knobs. Every doc also gets a `meta` chunk (`field: "doc"`: title, purpose, headings, first paragraph) scored with `meta_weight`; a doc scores as the max of its best section and that chunk, while `section` and `anchor` still come from the body (index schema 10, only the new chunks embed). The in-repo real-corpus eval copies only `.documentation`, so grounding never runs there: measure on a clone with `scripts/eval-against-release.sh` and gate with `npm run gate:release`. See the [v1.21.0 changelog](../changelog/v1-21-0-hub-doc-ranking.md).

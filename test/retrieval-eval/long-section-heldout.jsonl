@@ -1,0 +1,15 @@
+// Long-section set (mcp-metadata-gap-long-sections Phase 2, #73): one fact per question, each inside a long multi-topic section of test/fixtures/long-section/ (copied into a clone's .documentation by eval-against-release.sh). Facts sit early, middle and late in the section; the control docs are short. Written, and facet-checked against the fixture, before the first measurement. Held-out: the same kind of question on other docs, never used to choose a constant, rule or threshold. Report as measured.
+{"id": "ls-h01", "tier": "paraphrase", "qtype": "fact", "q": "How long before the first sailing do the Marrow ferry's ballast pumps start?", "facets": ["25 minutes before"]}
+{"id": "ls-h02", "tier": "exact", "qtype": "fact", "q": "How many passengers make the Marrow-class ferry full?", "facets": ["148 passengers"]}
+{"id": "ls-h03", "tier": "paraphrase", "qtype": "fact", "q": "What speed does the Marrow ferry's master slow to inside the breakwater?", "facets": ["four knots"]}
+{"id": "ls-h04", "tier": "paraphrase", "qtype": "fact", "q": "When do the Marrow ferry's fuel dip sheets go to the harbour office?", "facets": ["last Friday of the month"]}
+{"id": "ls-h05", "tier": "exact", "qtype": "fact", "q": "What salt strength is the brine for washing the Brindle cellar's rinds?", "facets": ["6 percent salt"]}
+{"id": "ls-h06", "tier": "paraphrase", "qtype": "fact", "q": "What humidity is held in the Brindle cellar's first ripening room?", "facets": ["92 percent"]}
+{"id": "ls-h07", "tier": "paraphrase", "qtype": "fact", "q": "When are the Brindle cellar's stone vats scrubbed?", "facets": ["first Tuesday of the month"]}
+{"id": "ls-h08", "tier": "paraphrase", "qtype": "fact", "q": "How many days must a Brindle wheel have ripened before it is sold?", "facets": ["63 days"]}
+{"id": "ls-h09", "tier": "exact", "qtype": "fact", "q": "At what time does Thursday practice start in the Carrow ringing chamber?", "facets": ["19:30"]}
+{"id": "ls-h10", "tier": "paraphrase", "qtype": "fact", "q": "How heavy is the Carrow tower's tenor bell?", "facets": ["740 kilograms"]}
+{"id": "ls-h11", "tier": "paraphrase", "qtype": "fact", "q": "After roughly how long is the Carrow tenor's leather baldric replaced?", "facets": ["six years"]}
+{"id": "ls-h12", "tier": "paraphrase", "qtype": "fact", "q": "When are the Carrow bell bearings oiled?", "facets": ["first week of October"]}
+{"id": "ls-h13", "tier": "exact", "qtype": "fact", "q": "How often is the Quillon lamp's clockwork wound through the night?", "facets": ["every four hours"]}
+{"id": "ls-h14", "tier": "paraphrase", "qtype": "fact", "q": "At what time is the Quillon lantern glass polished after a storm?", "facets": ["06:15"]}

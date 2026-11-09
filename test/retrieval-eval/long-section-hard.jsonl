@@ -1,0 +1,13 @@
+// Hard long-section set (mcp-metadata-gap-long-sections Phase 5, #73): one fact per question in a 3 KB multi-topic section of test/fixtures/long-section-hard/, each with a short same-topic distractor doc about another station/works/press that holds a different value. Questions name the entity. Written and facet-checked before any variant was measured. Train: tune on it. Held-out: `long-section-hard-heldout.jsonl`, never tuned on.
+{"id": "lh-t01", "tier": "exact", "qtype": "fact", "q": "How often does the Vessel Rock fog signal sound once visibility falls below two miles?", "facets": ["every 45 seconds once"]}
+{"id": "lh-t02", "tier": "paraphrase", "qtype": "fact", "q": "In what size of swell can the Vessel Rock relief boat still land at the south steps?", "facets": ["below one metre"]}
+{"id": "lh-t03", "tier": "paraphrase", "qtype": "fact", "q": "How many litres of paraffin does the Vessel Rock station keep in its drums?", "facets": ["600 litres"]}
+{"id": "lh-t04", "tier": "paraphrase", "qtype": "fact", "q": "On which day of the month is the Vessel Rock keepers' relief?", "facets": ["second Thursday"]}
+{"id": "lh-t05", "tier": "exact", "qtype": "fact", "q": "How much does a hide have to weigh green at the Dunmore tannery to go to the heavy ox pits rather than the calf pits?", "facets": ["18 kilograms"]}
+{"id": "lh-t06", "tier": "paraphrase", "qtype": "fact", "q": "For how many days are Dunmore hides handled in the lime pits?", "facets": ["exactly ten days"]}
+{"id": "lh-t07", "tier": "exact", "qtype": "fact", "q": "What Barkometer gravity is the Dunmore finishing liquor held at?", "facets": ["14 degrees on the Barkometer"]}
+{"id": "lh-t08", "tier": "paraphrase", "qtype": "fact", "q": "How many days do hides hang in the Dunmore drying loft in winter?", "facets": ["fourteen in winter"]}
+{"id": "lh-t09", "tier": "exact", "qtype": "fact", "q": "How many grams of ink does the Halloran press take each morning?", "facets": ["30 grams"]}
+{"id": "lh-t10", "tier": "paraphrase", "qtype": "fact", "q": "What impression dial setting does the Halloran press use for damp paper?", "facets": ["pressure of 12"]}
+{"id": "lh-t11", "tier": "paraphrase", "qtype": "fact", "q": "When is the Halloran platen cleaned each week?", "facets": ["every Friday at 3 o'clock"]}
+{"id": "lh-t12", "tier": "paraphrase", "qtype": "fact", "q": "What paper shortage at Halloran must be investigated before new paper is ordered?", "facets": ["more than one ream"]}

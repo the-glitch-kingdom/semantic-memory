@@ -18,6 +18,11 @@ export function registerEvalCommand(program: Command): void {
     .option("--baseline", "Write the measured counts to <eval dir>/baseline.json as the floor")
     .option("--check", "Exit 1 when a count drops below the baseline by more than --band questions")
     .option("--band <n>", "Noise band for --check, in questions", "1")
+    .option("--via <path>", "Measure through the stdio server, as the plugin launches it, instead of in-process: `mcp` (queries start as soon as the server answers)")
+    .option("--cwd <path>", "With --via mcp: the server's working directory (the repo; --notes is resolved from it)")
+    .option("--server <cli>", "With --via mcp: the CLI entry the server is launched from (default: this one), to measure another build or release with this driver")
+    .option("--settle", "With --via mcp: retry answers marked stale, so the run scores the settled state (default: score the first answers as an agent gets them)")
+    .option("--wait-for-ready", "With --via mcp: start the server with --wait-for-ready (the plugin does not)")
     .option("--json", "Print the report as JSON")
     .action(async (opts) => {
       try {
@@ -25,7 +30,9 @@ export function registerEvalCommand(program: Command): void {
         if (!opts.notes) throw new Error("required option --notes <path> not specified");
         // --baseline would overwrite the floor before --check read it, so the check could never fail
         if (opts.baseline && opts.check) throw new Error("--baseline and --check are separate runs");
-        const report = await runSuite(opts.notes, loadSets(opts.notes, opts.set, opts.dir));
+        if (opts.via && opts.via !== "mcp") throw new Error("--via takes `mcp`");
+        const via = opts.via && { cli: opts.server ?? process.argv[1], cwd: opts.cwd ?? process.cwd(), waitForReady: !!opts.waitForReady, settle: !!opts.settle };
+        const report = await runSuite(opts.notes, loadSets(opts.notes, opts.set, opts.dir), via);
         console.log(opts.json ? JSON.stringify(report, null, 2) : formatSuite(report));
         const file = baselinePath(opts.notes, opts.dir);
         if (opts.baseline) {

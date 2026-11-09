@@ -3,4 +3,6 @@
 > Key names and non-sensitive values only. Secrets are redacted.
 
 
-_No .env files found._
+| Key | Value | Source |
+|-----|-------|--------|
+| `NPM_TOKEN` | `[SECRET]` | .env |

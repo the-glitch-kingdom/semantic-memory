@@ -41,6 +41,10 @@ semantic-memory eval --notes <dir> --json          # machine-readable
 
 Arms: `search_hybrid`, `search_semantic`, `search_text` and a `grep` baseline. `eval` prints the settings (granularity, decay, `decay.code`) and, per arm, `related` per #1. Per arm and tier it prints answer @1/@3/@8, found@k, MRR, p50/p95 latency, and negatives flagged per kind. A question whose document no longer exists is skipped and reported as stale.
 
+## MCP path (v1.22)
+
+`eval --via mcp [--cwd <repo>] [--server <cli>] [--settle] [--wait-for-ready]` runs the same sets through the stdio server as the plugin launches it, querying as soon as it answers, so the first-answer state is scored. The report gains an `mcp` block (first answer time, `related` per #1, entity cards) and `probes` (top 3, related, entity per question). `--settle` retries answers marked `_meta.stale`. Long-section sets (`test/retrieval-eval/long-section*.jsonl`, fixtures in `test/fixtures/long-section*/`) are used by `scripts/eval-against-release.sh` and the gate, not by `npm run eval`.
+
 ## Question sets
 
 The eval dir is `<project>/.claude/.semantic-memory/eval/` (override with `--dir`). It is gitignored, so floors there are personal; point `--dir` at a committed folder to share them.

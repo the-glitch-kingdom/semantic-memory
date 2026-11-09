@@ -1,0 +1,13 @@
+// Hard long-section held-out set (mcp-metadata-gap-long-sections Phase 5, #73): same shape as long-section-hard.jsonl, fixture test/fixtures/long-section-hard/ (orrin windmill, pennick brewery, teasel lock). Written and facet-checked before any variant was measured; never used to choose a variant or constant.
+{"id": "lh-h01", "tier": "exact", "qtype": "fact", "q": "How many cloths does the Orrin miller set on each stock when the wind is below 20 knots?", "facets": ["four cloths on each stock when the wind is below 20 knots"]}
+{"id": "lh-h02", "tier": "paraphrase", "qtype": "fact", "q": "How often is the Orrin runner stone dressed?", "facets": ["every 11 days of grinding"]}
+{"id": "lh-h03", "tier": "paraphrase", "qtype": "fact", "q": "What share of the grain does the Orrin miller take as toll?", "facets": ["one sixteenth of the grain"]}
+{"id": "lh-h04", "tier": "paraphrase", "qtype": "fact", "q": "Which mesh sifter must Orrin white bread flour pass?", "facets": ["60 mesh sifter"]}
+{"id": "lh-h05", "tier": "exact", "qtype": "fact", "q": "What temperature is the Pennick liquor heated to for mashing?", "facets": ["liquor heated to 68 degrees"]}
+{"id": "lh-h06", "tier": "paraphrase", "qtype": "fact", "q": "How long does the Pennick boil run?", "facets": ["full 75 minutes"]}
+{"id": "lh-h07", "tier": "paraphrase", "qtype": "fact", "q": "What temperature is Pennick wort cooled to before the yeast goes in?", "facets": ["down to 18 degrees"]}
+{"id": "lh-h08", "tier": "paraphrase", "qtype": "fact", "q": "For how long are Pennick casks steamed?", "facets": ["full six minutes"]}
+{"id": "lh-h09", "tier": "exact", "qtype": "fact", "q": "How many metres does the Teasel lock lift a boat?", "facets": ["lifts boats 2.6 metres"]}
+{"id": "lh-h10", "tier": "paraphrase", "qtype": "fact", "q": "What toll does a 60 foot narrowboat pay at Teasel lock?", "facets": ["3 shillings each way"]}
+{"id": "lh-h11", "tier": "paraphrase", "qtype": "fact", "q": "How far short of the Teasel towpath bridge must horse-drawn boats stop?", "facets": ["50 metres short"]}
+{"id": "lh-h12", "tier": "paraphrase", "qtype": "fact", "q": "On which day are the Teasel lock gates greased?", "facets": ["every Monday with the tallow pot"]}

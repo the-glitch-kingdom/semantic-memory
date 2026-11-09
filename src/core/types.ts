@@ -117,6 +117,8 @@ export interface VaultStats {
   indexSize: number;
   lastIndexed: string | null;
   stale?: boolean;
+  /** the code graph's last load: where it came from (hewtd export, span/link fallback, none = not a git repo or failed) and how long it took */
+  codeGraph?: { source: "export" | "fallback" | "none"; loadMs: number };
   /** share of searchable notes carrying each indexed frontmatter field (index_fields.lexical) */
   fieldCoverage?: { docs: number; fields: Record<string, number> };
   indexState: IndexState;

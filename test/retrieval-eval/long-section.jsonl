@@ -1,0 +1,16 @@
+// Long-section set (mcp-metadata-gap-long-sections Phase 2, #73): one fact per question, each inside a long multi-topic section of test/fixtures/long-section/ (copied into a clone's .documentation by eval-against-release.sh). Facts sit early, middle and late in the section; the control docs are short. Written, and facet-checked against the fixture, before the first measurement. Train: tune on it. Held-out: `long-section-heldout.jsonl`, never tuned on.
+{"id": "ls-t01", "tier": "exact", "qtype": "fact", "q": "What pressure should the Ashgrove kiln's pilot gauge show before the burners are opened?", "facets": ["14 millibar"]}
+{"id": "ls-t02", "tier": "paraphrase", "qtype": "fact", "q": "How fast does a bisque load heat up in the Ashgrove kiln before it passes the quartz inversion?", "facets": ["120 degrees an hour"]}
+{"id": "ls-t03", "tier": "paraphrase", "qtype": "fact", "q": "For how many minutes is a glaze firing held at peak in the Ashgrove kiln?", "facets": ["12 minutes at peak"]}
+{"id": "ls-t04", "tier": "exact", "qtype": "fact", "q": "After how many firings are the Ashgrove kiln's shelf posts replaced?", "facets": ["220 firings"]}
+{"id": "ls-t05", "tier": "paraphrase", "qtype": "fact", "q": "How warm must the afternoons stay before the Skerry hives get their first full inspection?", "facets": ["14 degrees"]}
+{"id": "ls-t06", "tier": "paraphrase", "qtype": "fact", "q": "How soon is a queen that is missing at the first Skerry inspection replaced?", "facets": ["48 hours"]}
+{"id": "ls-t07", "tier": "exact", "qtype": "fact", "q": "What syrup strength does the Skerry apiary feed in spring?", "facets": ["2:1 syrup"]}
+{"id": "ls-t08", "tier": "paraphrase", "qtype": "fact", "q": "By when is honey taken off the Skerry colonies at the latest?", "facets": ["end of August"]}
+{"id": "ls-t09", "tier": "paraphrase", "qtype": "fact", "q": "How often may the Vantage telescope's primary mirror be washed?", "facets": ["18 months"]}
+{"id": "ls-t10", "tier": "paraphrase", "qtype": "fact", "q": "By how much are the Vantage mirror cell restraints backed off when the telescope is parked for over a week?", "facets": ["half a turn"]}
+{"id": "ls-t11", "tier": "paraphrase", "qtype": "fact", "q": "In what size of steps is the Vantage secondary mirror adjusted during collimation?", "facets": ["an eighth of a turn"]}
+{"id": "ls-t12", "tier": "exact", "qtype": "fact", "q": "At what humidity does the Vantage dome dehumidifier switch on?", "facets": ["62 percent"]}
+{"id": "ls-t13", "tier": "paraphrase", "qtype": "fact", "q": "In which months is the Vantage focuser rack greased?", "facets": ["March and September"]}
+{"id": "ls-t14", "tier": "exact", "qtype": "fact", "q": "How long are the Tamsin cooperage's oak staves seasoned outdoors before cutting?", "facets": ["30 months"]}
+{"id": "ls-t15", "tier": "paraphrase", "qtype": "fact", "q": "How many minutes are Tamsin barrels toasted at the medium setting?", "facets": ["medium setting for 20 minutes"]}
