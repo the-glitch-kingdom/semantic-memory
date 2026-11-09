@@ -29,3 +29,7 @@ An entry's key is the MCP server name, so it sets the tool prefix: `mcp__semanti
 
 ## Eval results: Phase 2
 Test-only phase, no ranking change. test/unit/reconcile.test.ts: 6 pass, 5 expected-fail on main (fresh defaults; vault served by `my-vault` and by `semantic-memory`; docs served by `my-docs`; removal of `semantic-memory-docs`). Full validation green (148 passed, 4 expected fail in eval run).
+
+## Eval results: Phase 3
+Full suite: only the known freshness-scale warm-start load flake failed (2 tests, > 1s under load); both pass alone (22s). Eval 148 passed, 4 expected fail.
+No ranking change (hook + tests only). reconcile.test.ts: 12/12 pass as plain `it` (11 from Phase 2 + npx `--notes=` absolute-path case).

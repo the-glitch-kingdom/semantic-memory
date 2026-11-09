@@ -7,7 +7,6 @@ import { join, resolve } from "node:path";
 
 // Runs hooks/session-start.js the way Claude Code's SessionStart does, in a temp project with a
 // fake local install. HOME is a temp dir so the user's real settings never enable hewtd here.
-// The default-name cases are it.fails until Phase 3 of default-server-names flips the defaults.
 const HOOK = resolve(__dirname, "../../hooks/session-start.js");
 const BIN = "./node_modules/@theglitchking/semantic-memory/bin/semantic-memory";
 const ours = (notes: string, extra: string[] = []) => ({ type: "stdio", command: "node", args: [BIN, "--notes", notes, ...extra] });
@@ -40,7 +39,7 @@ describe("SessionStart reconcile: .mcp.json entries", () => {
     spawnSync("node", [HOOK], { env: { ...process.env, HOME: home, CLAUDE_PROJECT_DIR: proj }, encoding: "utf8", timeout: 30000 });
   const mcp = async () => JSON.parse(await readFile(join(proj, ".mcp.json"), "utf8")).mcpServers as Record<string, any>;
 
-  it.fails("fresh project with hewtd enabled gets semantic-memory + semantic-memory-docs", async () => {
+  it("fresh project with hewtd enabled gets semantic-memory + semantic-memory-docs", async () => {
     await enableHewtd();
     run();
     const s = await mcp();
@@ -65,13 +64,19 @@ describe("SessionStart reconcile: .mcp.json entries", () => {
     expect(await readFile(join(proj, ".mcp.json"), "utf8")).toBe(before);
   });
 
-  it.fails.each(["my-vault", "semantic-memory"])("an entry named %s already serving the vault gets no second vault entry", async (name) => {
+  it.each(["my-vault", "semantic-memory"])("an entry named %s already serving the vault gets no second vault entry", async (name) => {
     await writeMcp({ [name]: ours(VAULT) });
     run();
     expect(Object.keys(await mcp())).toEqual([name]);
   });
 
-  it.fails("a differently named entry already serving ./.documentation gets no second docs entry", async () => {
+  it("an npx entry serving the vault by an absolute --notes path gets no second vault entry", async () => {
+    await writeMcp({ mine: { type: "stdio", command: "npx", args: ["-y", "@theglitchking/semantic-memory", `--notes=${join(proj, ".claude/.vault")}`] } });
+    run();
+    expect(Object.keys(await mcp())).toEqual(["mine"]);
+  });
+
+  it("a differently named entry already serving ./.documentation gets no second docs entry", async () => {
     await enableHewtd();
     await writeMcp({ "my-vault": ours(VAULT), "my-docs": ours(DOCS, ["--read-only"]) });
     run();
@@ -84,7 +89,7 @@ describe("SessionStart reconcile: .mcp.json entries", () => {
     expect(Object.keys(await mcp())).toEqual(["semantic-vault"]);
   });
 
-  it.fails("hewtd off removes our semantic-memory-docs docs entry", async () => {
+  it("hewtd off removes our semantic-memory-docs docs entry", async () => {
     await writeMcp({ "semantic-memory": ours(VAULT), "semantic-memory-docs": ours(DOCS, ["--read-only"]) });
     run();
     expect(Object.keys(await mcp())).toEqual(["semantic-memory"]);

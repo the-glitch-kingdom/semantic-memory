@@ -22,11 +22,11 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
     - [x] the `.mcp.json.bak` backup and the "could not parse" path are unchanged.
   - [x] (skipped: 1.25.1 vaultTool already prints the real name; only the fallback changes, Phase 4) The hook messages in `hooks/vault-context.js` print the writable entry's real name. Skip this if #81 (1.25.1) already did it; otherwise add a failing test (vault entry `my-vault` → messages say `mcp__my-vault__…`, never `mcp__semantic-vault__…`).
   - [x] Record which fail on main. (5 it.fails: fresh defaults, vault served by my-vault/semantic-memory (2 cases), docs served by my-docs, removal of semantic-memory-docs. Passing on main: legacy entries unchanged, semantic-sidekick removal, hand-written kept, .bak, parse error.)
-- [ ] Phase 3: New defaults, served-folder check
-  - [ ] `hooks/reconcile.js`: `VAULT_KEY = "semantic-memory"` and `DOCS_KEY = "semantic-memory-docs"`. Keep the legacy keys (`semantic-vault`, `semantic-sidekick`) as recognized names for removal and the served check.
-  - [ ] Before adding an entry, check every existing entry: if one's `--notes` arg resolves (relative to the project root) to the same folder, add nothing. This prevents duplicates, whatever the existing entry is called.
-  - [ ] Removal (hewtd off): remove the docs entry under any recognized key, only when `isOurEntry` matches.
-  - [ ] Update the header comment (the old "DOCS_KEY stays semantic-sidekick" rationale), keeping the reasoning: existing entries are never renamed, because renaming changes tool names and breaks allowlists and CLAUDE.md references.
+- [x] Phase 3: New defaults, served-folder check
+  - [x] `hooks/reconcile.js`: `VAULT_KEY = "semantic-memory"` and `DOCS_KEY = "semantic-memory-docs"`. Keep the legacy keys (`semantic-vault`, `semantic-sidekick`) as recognized names for removal and the served check.
+  - [x] Before adding an entry, check every existing entry: if one's `--notes` arg resolves (relative to the project root) to the same folder, add nothing. This prevents duplicates, whatever the existing entry is called.
+  - [x] Removal (hewtd off): remove the docs entry under any recognized key, only when `isOurEntry` matches.
+  - [x] Update the header comment (the old "DOCS_KEY stays semantic-sidekick" rationale), keeping the reasoning: existing entries are never renamed, because renaming changes tool names and breaks allowlists and CLAUDE.md references.
 - [ ] Phase 4: Every other place that assumes a name
   - [ ] `scripts/smoke-install.sh:80` asserts a `semantic-vault` key. Assert `semantic-memory` for a fresh install, and that no legacy-named duplicate exists.
   - [ ] `hooks/vault-context.js`: comments at :44 and :50 describe the standard setup as `semantic-vault` / `semantic-sidekick`; update them. Messages: per Phase 2.
@@ -68,7 +68,8 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 - Starts after #81 ships as 1.25.1, so the skill text it edits is the new one.
 
 ## Errors Encountered
+- Phase 3: the served-folder check also accepts `--notes=<path>` (single arg), and resolves absolute paths, so an npx or node entry written either way counts.
 - Phase 2: tests run hooks/session-start.js as a subprocess (HOME and CLAUDE_PROJECT_DIR set to temp dirs), not reconcile() directly.
 
 ## Status
-**Currently in Phase 3.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
+**Currently in Phase 4.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
