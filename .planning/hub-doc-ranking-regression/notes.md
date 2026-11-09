@@ -289,3 +289,6 @@ After adding one test (suite.test.ts) and the probe fix: lint green, suite.test.
 - Real-corpus train multi @1 below 1.15.0 (4/9 vs 7/9 this run; 7/13 vs 9/13 over train as a whole) and train hybrid @1 without an export 24 vs 25.
 - Negatives flagged 13/16 and 13/17 on held-out vs 15/16 and 15/17 for 1.15.0.
 - The reporter's #1 loss does not reproduce on this repo; their set C / A+B numbers are re-run by them after publish.
+
+## Eval results: Phase 10 (docs)
+`npm run eval` after the docs: 136 passed, 5 expected fail (no floor moved; hub pages got one or two sentences, new material is in v1-21-0-hub-doc-ranking.md and a new KB fact). Changelog numbers are the Phase 9 same-run tables.

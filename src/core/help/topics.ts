@@ -124,7 +124,7 @@ export const TOPICS: HelpTopic[] = [
   },
   {
     id: "code-graph", title: "Code graph and grounding", group: "Measure and improve", aliases: ["grounding", "code", "drift", "entity-card"],
-    summary: "Docs are linked to the code symbols they name, so results can show code refs and drift.",
+    summary: "Docs are linked to the code symbols they name, so results can show code refs, drift and dead refs; only dead refs lower the rank.",
     steps: ["Index a vault that sits in a git repo.", "Search for a symbol name; read the code refs on each result."],
     commands: [`semantic-memory search "<symbol name>" ${N}`],
     verify: "results for a symbol name carry code refs.",

@@ -3,7 +3,7 @@ title: Legacy Documentation Index
 tier: reference
 domains: [legacy]
 status: active
-last_updated: '2026-11-08'
+last_updated: '2026-11-09'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of legacy documentation
@@ -47,4 +47,4 @@ This domain covers: legacy, substrate, semantic-pages
 
 ---
 
-*Last updated: 2026-11-08*
+*Last updated: 2026-11-09*

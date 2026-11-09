@@ -3,7 +3,7 @@ title: Changelog Registry
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-11-08'
+last_updated: '2026-11-09'
 version: '1.0.0'
 generated: true
 purpose: Quick reference for changelog documentation
@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 33 |
+| Documents | 34 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -46,7 +46,7 @@ purpose: Quick reference for changelog documentation
 
 | Status | Count |
 |--------|-------|
-| active | 33 |
+| active | 34 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
@@ -62,4 +62,4 @@ purpose: Quick reference for changelog documentation
 
 ---
 
-*Last updated: 2026-11-08*
+*Last updated: 2026-11-09*

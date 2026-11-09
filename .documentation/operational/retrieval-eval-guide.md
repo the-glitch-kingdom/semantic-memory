@@ -39,13 +39,13 @@ semantic-memory eval --notes <dir> --set a.jsonl   # chosen sets
 semantic-memory eval --notes <dir> --json          # machine-readable
 ```
 
-Arms: `search_hybrid`, `search_semantic`, `search_text` and a `grep` baseline. Per arm and tier it prints answer @1/@3/@8, found@k, MRR, p50/p95 latency, and negatives flagged per kind. A question whose document no longer exists is skipped and reported as stale.
+Arms: `search_hybrid`, `search_semantic`, `search_text` and a `grep` baseline. `eval` prints the settings (granularity, decay, `decay.code`) and, per arm, `related` per #1. Per arm and tier it prints answer @1/@3/@8, found@k, MRR, p50/p95 latency, and negatives flagged per kind. A question whose document no longer exists is skipped and reported as stale.
 
 ## Question sets
 
 The eval dir is `<project>/.claude/.semantic-memory/eval/` (override with `--dir`). It is gitignored, so floors there are personal; point `--dir` at a committed folder to share them.
 
-One JSON object per line: `{id, tier, q, facets}`. `facets` are regexes the answer must match; `negative: true` marks a question the vault does not answer; optional `expected` (doc paths, enables found@k and MRR), `split` and `negative_kind`. Tiers: exact, paraphrase, symptom, nofield, multi.
+One JSON object per line: `{id, tier, q, facets}`. `facets` are regexes the answer must match; `negative: true` marks a question the vault does not answer (scored as a negative; a row with neither tier nor facets is refused naming its id); optional `expected` (doc paths, enables found@k and MRR), `split` and `negative_kind`. Tiers: exact, paraphrase, symptom, nofield, multi.
 
 ## Generate questions
 

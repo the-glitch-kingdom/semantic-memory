@@ -15,6 +15,7 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 
 | Version | What it adds |
 |---|---|
+| **1.21.0** | Hub doc ranking (#71): grounding ranks by dead refs only (`drift_penalty` 1, `decay.code: false`), whole-doc chunk scored with the best section, PascalCase identifiers, `npm run gate:release` against the previous release |
 | **1.18.0** | Query routing: `search_hybrid` labels each query `identifier`, `fact` or `flow` (`query_type`, `mode` override); flow questions get an ordered `reading_path` on result #1 |
 | **1.17.0** | Section results: `section`, `anchor`, `code` on each result, `granularity`, copies and pointers fold into their owner (`also_in`), `read_note` `#anchor`; one-time re-embed on upgrade |
 | **1.16.0** | Code graph: `code:` / `symbol:` nodes from hewtd's `.hewtd/graph.json` or code spans, drifted and dead cited files rank down (`grounding`), `entity` cards and `undocumented` names for identifier queries |

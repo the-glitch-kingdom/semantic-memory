@@ -131,16 +131,16 @@ tree after publish.
   - [x] Full suite: lint, build, `npm test` (known flakes re-run alone), `npm run eval`, and the release gate itself.
         Answer each #71 item in notes.md.
         Done: notes.md "Eval results: Phase 9". Not met: real-corpus train multi @1 and negatives flagged vs 1.15.0; the reporter's tree re-runs after publish.
-- [ ] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
-  - [ ] New changelog doc `.documentation/changelog/v1-21-0-hub-doc-ranking.md` (`npx hewtd integrate -a`) and a
+- [x] Phase 10: Documentation pass -- a full hit-em-with-the-docs pass to create/update/deprecate as many docs as needed to capture all our changes: new procedures, tools, troubleshooting steps, gotchas, KB articles, etc. Never include secrets or passwords (MANDATORY)
+  - [x] New changelog doc `.documentation/changelog/v1-21-0-hub-doc-ranking.md` (`npx hewtd integrate -a`) and a
         `CHANGELOG.md` entry with measured numbers against 1.15.0 and 1.20.0 from the same run, and every missed target
-  - [ ] `.documentation/architecture/code-graph.md` (grounding default: dead refs only), `.documentation/operational/decay-guide.md`,
+  - [x] `.documentation/architecture/code-graph.md` (grounding default: dead refs only), `.documentation/operational/decay-guide.md`,
         `.documentation/operational/retrieval-eval-guide.md` (`negative: true`, printed settings, related per #1),
         `.documentation/deployment/release-process.md` (release gate), `.documentation/operational/retrieval-tuning-guide.md`
-  - [ ] Help topics in `src/core/help/topics.ts` that mention grounding or eval stay true (the drift test passes)
-  - [ ] KB fact (gotcha): the real-corpus eval copies only `.documentation`, so code-dependent ranking is never
+  - [x] Help topics in `src/core/help/topics.ts` that mention grounding or eval stay true (the drift test passes)
+  - [x] KB fact (gotcha): the real-corpus eval copies only `.documentation`, so code-dependent ranking is never
         exercised; measure on a clone
-  - [ ] Keep hub-page edits tight (the real-corpus eval reads the live `.documentation`); re-run `npm run eval` after
+  - [x] Keep hub-page edits tight (the real-corpus eval reads the live `.documentation`); re-run `npm run eval` after
         the docs; `README.md`, `npx hewtd maintain --quick`, regenerate AGENTS.md; tick the last boxes so
         `/plan-status` reads COMPLETE
 
@@ -186,7 +186,7 @@ tree after publish.
   task was not in the scratchpad; `scripts/lib/eval-probe.mjs` was written new.
 
 ## Status
-**Currently in Phase 10** - documentation
+**All phases complete** (Phase 10 documentation done)
 
 ---
 
