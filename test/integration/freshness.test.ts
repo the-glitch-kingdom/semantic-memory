@@ -67,7 +67,8 @@ describe("index freshness without a watcher", () => {
     await ctx.ensureFresh();
 
     expect(parsed).toHaveBeenCalledTimes(1);
-    expect(embedded.texts).toBe(ctx.getDocByPath().get("orphan.md")!.chunks.length);
+    const orphan = ctx.getDocByPath().get("orphan.md")!;
+    expect(embedded.texts).toBe(orphan.chunks.length + (orphan.meta?.length ?? 0)); // body chunks and the doc summary chunk
     expect(ctx.getDocByPath().get("orphan.md")!.content).toContain("zebra");
     expect(await top(ctx, "zebra striped handshakes")).toBe("orphan.md");
   }, 180_000);

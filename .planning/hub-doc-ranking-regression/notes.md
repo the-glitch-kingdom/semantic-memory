@@ -157,3 +157,60 @@ Held-out is at or above both releases (+3 over each, multi @1 7/10 against 5/10 
 Negatives flagged: 13/17 held-out (1.15.0: 15/17), unchanged from 1.20.0; Phase 4 does not touch that.
 Gates: lint, build, `npm test` (1166 passed; hook-failure Jev-hang and one more load flake failed in the full run, hook-failure and freshness-scale
 pass alone), `npm run eval` 135 passed, 5 expected fail. Floors: only codeGraph answer@1 9 -> 7 (see Errors Encountered).
+
+## Eval results: Phase 5 (doc-level scoring), 2026-11-08
+Same tool and sets as Phase 4 (`scripts/eval-against-release.sh`, one `git clone --local` per cell, `--reindex`). Variants were built behind a
+throwaway env switch, measured on TRAIN only (real-corpus + real-hub, 39 answerable, 22 negatives), then the losers and the switch were removed.
+The doc chunk is `title + purpose + first 40 headings + first paragraph (<= 500 chars)`, indexed as a `meta` chunk with `field: "doc"`, so it
+rides the existing machinery (score = max(best body, `meta_weight` 0.8 x best meta); excerpt, `section`, `anchor` from the best body chunk).
+
+Tuning (train, local build; hyb@1 / hyb@3 / multi@1 / negatives flagged):
+
+| variant | no export | export |
+|---|---|---|
+| (a) best section only (today) | 23 / 35 / 7 / 19 (x3 runs, identical) | 26 / 34 / 9 / 19 |
+| (b) max(best section, doc chunk) | **24 / 36-37 / 7 / 19** (x3 runs) | **27 / 35 / 9 / 19** |
+| (c) best + 0.5 x doc chunk | 20 / 30 / 5 / 10 | 22 / 27 / 5 / 10 |
+| (c) best + 1.0 x doc chunk | 21 / 28 / 5 / 10 | 23 / 28 / 6 / 10 |
+| (d) title + purpose prepended to every section chunk | 25 / 32 / 8 / 19, `section` on 38 of 39 | 27 / 32 / 9 / 19, `section` on 38 of 39 |
+
+Reading: (c) is out: a doc chunk that matches every broad question adds the same lift to most docs and costs 9 flagged negatives of 22 (10/22).
+(d) wins one case at @1 but loses 3 at @3, drops one `section`, and re-embeds every chunk; BM25 also sees the prefix. (b) is +1 @1 and +1 to +2
+at @3 in both cells, stable over three runs, costs nothing on negatives and re-embeds nothing but the new chunk. Kept (b). `meta_weight` was not retuned.
+`INDEX_SCHEMA_VERSION` 9 to 10: a re-parse; vectors are keyed by chunk text, so only the new doc chunks embed.
+
+Final, same run, 1.15.0 / 1.20.0 / local (hyb@1, hyb@3, multi@1, negatives flagged):
+
+| split | export | 1.15.0 | 1.20.0 | local |
+|---|---|---|---|---|
+| held-out (37) | no | 18, 30, 5/10, 15/17 | 19, 33, 6/10, 13/17 | **22**, 32, 7/10, 13/17 |
+| held-out | yes | 18, 30, 5/10, 15/17 | 19, 31, 7/10, 13/17 | **23**, 31, 7/10, 13/17 |
+| train (39) | no | 25, 32, 9/13, 19/22 | 26, 35, 8/13, 19/22 | 24, 37, 7/13, 19/22 |
+| train | yes | 25, 32, 9/13, 19/22 | 27, 35, 9/13, 19/22 | 27, 35, 9/13, 19/22 |
+
+Held-out is above both releases (+4 over 1.15.0, +3 to +4 over 1.20.0) and was not used to choose anything. Train without an export is still
+below both (24 vs 25 and 26; multi 7 vs 9 and 8): the Phase 4 miss (dropping per-file drift) is cut from 3 to 2 cases against 1.20.0 and 1 against
+1.15.0, not closed. #1+related: 33/39 train, 29/37 held-out.
+
+Cold index time (`--reindex` of the clone, vectors cold, same run; the machine was otherwise idle but 1.15.0 varied 19 to 33 s run to run):
+
+| run | 1.15.0 | 1.20.0 | local |
+|---|---|---|---|
+| train sets, no export | 32.9 s | 34.0 s | 36.5 s |
+| held-out sets, no export | 19.4 s | 33.3 s | 39.4 s |
+| train sets, export | 20.0 s | 35.7 s | 37.4 s |
+| held-out sets, export | 19.9 s | 36.9 s | 41.8 s |
+
+The doc chunk adds about 7 to 17 percent over 1.20.0 (one extra chunk per doc, 133 docs on top of about 600 chunks); 1.20.0 is already slower than 1.15.0 on the
+quiet runs (more section chunks, not measured separately). A section-eval floor and anchors are unchanged (`section`/`anchor` on every #1 of the
+answerable questions where 1.20.0 has them).
+
+Gates after the change: lint, build, `npm run eval` 135 passed / 5 expected fail, `npm test` 1166 passed (freshness-scale warm start and hook-failure
+Jev-hang failed under load and pass alone). Tests and fixtures changed because the doc chunk is one more embedded chunk per doc:
+- `get_stats` golden: totalChunks/totalEmbeddings 17 to 27 (test/regression snapshot);
+- `single-source-snapshot.json`: three score values re-taken; paths, order and fields are identical (checked query by query);
+- `freshness.test.ts`: an edit re-embeds the doc's body chunks plus its summary chunk;
+- `stale-audit.mjs` counts meta chunks as current chunks (its index-mismatch check compared body chunks with the whole HNSW metadata);
+- docs-eval "mode flow" invariant relaxed by one question (see Errors Encountered).
+The doc chunk never shows as `matched` (that field names an authored metadata field), so result items keep their v1.20 fields.
+Phase 10 docs: INDEX_SCHEMA_VERSION 10, the doc summary chunk (retrieval-tuning-guide, indexing docs), `eval-against-release.sh` prints cold index time.

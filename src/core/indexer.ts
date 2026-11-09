@@ -20,7 +20,7 @@ const MIN_SECTION_CHARS = 100; // a section shorter than this shares the chunk o
 /** Bump when parsing or chunking output changes: caches re-parse (vectors are kept, they are keyed by chunk text). */
 /** refs kept per section for the result's `code` field */
 const SECTION_CODE_MAX = 3;
-export const INDEX_SCHEMA_VERSION = 9; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed); 8: codeRefs (re-parse only, chunk text unchanged); 9: chunks split at headings and prefixed with the heading trail (full re-embed), sections, chunkSection
+export const INDEX_SCHEMA_VERSION = 10; // 2: markdown links (mdLinks); 3: cites, archivedFrom; 4: path_class.exclude docs have no chunks; 5: field text, metadata chunks, generated docs; 6: gitDate (re-parse only, vectors are kept); 7: body-change gitDate, code/table/snake_case kept in chunk text (changed chunks re-embed); 8: codeRefs (re-parse only, chunk text unchanged); 9: chunks split at headings and prefixed with the heading trail (full re-embed), sections, chunkSection; 10: doc summary chunk (re-parse; only the new chunk embeds)
 export const CHUNKER = { targetChars: CHUNK_TARGET_CHARS };
 /** One ignore list for the full index and for reconcile, so they always see the same files. */
 export const IGNORE_GLOBS = ["**/node_modules/**"];
@@ -43,6 +43,16 @@ export function parseFrontmatter(raw: string, file: string): { data: Record<stri
     process.stderr.write(`Invalid frontmatter in ${file}, indexing body only: ${err?.message?.split("\n")[0] ?? err}\n`);
     return { data: {}, content: raw.replace(/^---\r?\n[\s\S]*?\r?\n---[^\S\r\n]*(\r?\n|$)/, "") };
   }
+}
+
+/**
+ * One chunk that speaks for the whole doc (title, purpose, headings, first paragraph), embedded as a metadata chunk so a broad
+ * question can win a hub doc that no single section answers. It scores like `purpose` (max of body and meta_weight x meta); the
+ * excerpt, `section` and `anchor` still come from the doc's best body chunk. Measured in notes.md, Phase 5.
+ */
+function docSummary(title: string, purpose: unknown, headers: string[], plainText: string): string {
+  const first = plainText.split(/\n{2,}/).map((p) => p.trim()).find((p) => p.length >= 40 && !headers.includes(p));
+  return [title, typeof purpose === "string" ? purpose : "", headers.slice(0, 40).join(" | "), first?.slice(0, 500)].filter(Boolean).join("\n");
 }
 
 export class Indexer {
@@ -127,6 +137,7 @@ export class Indexer {
     const generated = frontmatter.generated === true;
     const hidden = generated || isExcludedPath(relativePath, this.pathClass);
     const fields = hidden ? { lexical: "", meta: [] } : buildFields(frontmatter, title, this.fields);
+    if (!hidden) fields.meta.push({ field: "doc", text: docSummary(title, frontmatter.purpose, headers, plainText) });
 
     // Resolve modification time: prefer frontmatter date fields over fs.stat
     // Supports hit-em-with-the-docs (last_updated) and common alternatives
