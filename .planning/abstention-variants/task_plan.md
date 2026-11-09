@@ -44,12 +44,12 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
         (Generated, `exclude`d docs already had no chunks; the leak was `results.exclude` hubs without `generated: true`. A second df, `presenceDf`, counts searchable docs only; scoring still reads `df`. Rank parity measured: notes.md.)
   - [x] Apply the same rule to `paths` (doc paths joined) so a hub's file name never counts as presence.
   - [x] Unit and stdio tests from Phase 2 (a) pass.
-- [ ] Phase 4: Spelling variants count as present
-  - [ ] Normalized form: lowercase, with `-`, `_` and whitespace removed, and camelCase joined.
-        - Docs: index the joined forms of hyphenated and underscored compounds as presence-only terms (not scored).
-        - Code: compare `knownToCode` symbols and file names in normalized form.
-  - [ ] A name present only under a variant is neither in `missing_terms` nor in `passing_terms` (decide on train whether passing_terms uses the joined form's doc count).
-  - [ ] Measure on train: negatives flagged, false flags (controls, real-corpus, hub, golden). Check that the known false flags (`wildcard`, `refetching`, `dotfiles`) are fixed or unchanged, and say which.
+- [x] Phase 4: Spelling variants count as present
+  - [x] Normalized form: lowercase, with `-`, `_` and whitespace removed, and camelCase joined.
+        - Docs: index the joined forms of hyphenated and underscored compounds as presence-only terms (not scored). (`joinedForms`/`hasJoined` in bm25.ts: adjacent-pair and whole-run joins, searchable docs only; camelCase needs nothing, tokens are already lowercase.)
+        - Code: compare `knownToCode` symbols and file names in normalized form. (File names only, in `splitUndocumented`; see Decisions.)
+  - [x] A name present only under a variant is neither in `missing_terms` nor in `passing_terms` (decide on train whether passing_terms uses the joined form's doc count). (Decided: a variant is not a passing term; `passingTerms` is unchanged. Joined doc counts add nothing the train needs.)
+  - [x] Measure on train: negatives flagged, false flags (controls, real-corpus, hub, golden). Check that the known false flags (`wildcard`, `refetching`, `dotfiles`) are fixed or unchanged, and say which. (notes.md "Eval results: Phase 4")
 - [ ] Phase 5: Same answer on every path
   - [ ] MCP `search_hybrid`, the CLI `search`, `eval` and federation agree on the Phase 2 fixture (parity test over stdio and the CLI).
 - [ ] Phase 6: Release gate
@@ -81,8 +81,10 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
 - One plan for #78. It waits for #76, which owns the main checkout and also extends the gate.
 - The reporter's guess that lock files or config count as code presence does not hold: the code-graph fallback never reads file contents, only file names and doc-cited symbols. Phase 2 pins it with a test.
 
+- Phase 4: variant presence is a second, presence-only map (`joinedDf`) beside `presenceDf`, so scoring never sees it. `knownToCode` symbols are not normalized: it only gates PascalCase candidates, and a symbol is in the docs (so already present) only when a doc cites it. Normalized file names rescue a name only as `undocumented`, in `splitUndocumented`, not in `locateFiles`' entity cards.
+
 ## Errors Encountered
 - Phase 2: the interrupted run left its work in stash@{0} (kept, not popped); it was sound and reused as is. Absent-terms baseline arms: 1.22.0 instead of 1.15.0 (see Phase 2).
 
 ## Status
-**Currently in Phase 4** (Phase 3 done: presence counts only searchable docs)
+**Currently in Phase 5** (Phase 4 done: spelling variants count as present)

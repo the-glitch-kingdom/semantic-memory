@@ -102,3 +102,18 @@ describe("presence skips unsearchable docs", () => {
     expect(i.has("graphql")).toBe(false);
   });
 });
+
+describe("spelling variants are present, never scored (#78)", () => {
+  it("joins hyphen, underscore and space compounds for presence only, and drops them with the doc", () => {
+    const i = new Bm25Index();
+    i.addDoc("a.md", ["the auto-fill helper, a retry_budget and Smart Retry; end. Start over"]);
+    for (const t of ["autofill", "retrybudget", "smartretry"]) expect(i.hasJoined(t)).toBe(true);
+    expect(i.hasJoined("endstart")).toBe(false);
+    expect(i.has("autofill")).toBe(false);
+    expect(i.search("autofill")).toEqual([]);
+    i.addDoc("hub/INDEX.md", ["red-wood"], "", false);
+    expect(i.hasJoined("redwood")).toBe(false);
+    i.removeDoc("a.md");
+    expect(i.hasJoined("autofill")).toBe(false);
+  });
+});

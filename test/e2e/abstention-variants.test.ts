@@ -31,7 +31,6 @@ type Name = keyof typeof Q;
 
 /** per arm: the names main wrongly leaves unflagged (missing is expected for `absent`, not for `present`) */
 const ABSENT: Name[] = ["graphql", "zustand", "temporal"];
-const PRESENT: Name[] = ["autofill", "autoUnderscore", "autoPascal", "retrybudget", "smartRetry"];
 
 const arms = [
   { arm: "hubs without generated:true, no export", flagged: false, exported: false },
@@ -40,8 +39,8 @@ const arms = [
   { arm: "hubs with generated:true, with export", flagged: true, exported: true },
 ];
 /** what main gets wrong on this arm, recorded before any change (notes.md "Eval results: Phase 2") */
-// Phase 3 fixed the hub-only product; the spelling variants (Phase 4) are still wrong.
-const MAIN_WRONG = (_a: (typeof arms)[number]): Name[] => PRESENT;
+// Phase 3 fixed the hub-only product and Phase 4 the spelling variants: nothing is expected wrong any more.
+const MAIN_WRONG = (_a: (typeof arms)[number]): Name[] => [];
 
 describe.each(arms)("E2E #78: $arm", (a) => {
   let repo = "";

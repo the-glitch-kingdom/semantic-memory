@@ -50,3 +50,16 @@ Change: `Bm25Index.addDoc(..., searchable)` keeps a second df (`presenceDf`) ove
 - Train absent-terms, repo corpus (hubs there already carry `generated: true`), same run, with and without `--export`: neg flagged 27/32 (harness count, includes low-confidence flags) for both. Stdio `missing_terms` probe on local: 23/32 negatives flagged, 5/28 false flags (c24-c28, the Phase 4 spelling targets): equal to the 1.24.0 baseline, as expected; this change only moves trees whose hubs lack the flag.
 - Fixture (`test/e2e/abstention-variants.test.ts`): the hub-only product is now flagged on all 4 arms over stdio and CLI; 4 `it.fails` became plain `it`: 40 expected fails remain (the Phase 4 variant names). Unit test added in test/unit/bm25.test.ts.
 - Checks: lint, build, `npm run eval` (148 passed, 4 expected fail), `npm test` (1227 passed; hook-failure Jev-hang failed under load, passes alone).
+
+## Eval results: Phase 4 (spelling variants count as present)
+Change: `joinedForms` (bm25.ts) joins each adjacent pair, and the whole run, of words split by `-`, `_` or a space in a searchable doc's chunk text; `Bm25Index.hasJoined` reads them; `missingTerms` accepts a token whose `_`-less form is joined. Case needs nothing (tokens are lowercase). `splitUndocumented` matches a file name ignoring case, `-` and `_`. Never scored, never in `passing_terms`.
+Stdio `missing_terms` probe on the repo corpus (local, search_hybrid limit 5), before to after. Train was used to design; held-out only measured:
+| set | negatives flagged | false flags on controls |
+|---|---|---|
+| train (32 neg, 28 controls) | 23 to 23 | 5 to 0 (c24-c28 fixed) |
+| held-out (30 neg, 27 controls) | 27 to 27 | 4 to 0 (hc23, hc25, hc26, hc27 fixed) |
+- Key question 2 (real absent names that join two doc words): none on train or held-out. The same 9 train and 3 held-out negatives stay unflagged as before; all 6 variant negatives (n30-n32, hn28-hn30) stay flagged. The `shortcut` (joins cross a sentence break) is untested beyond these sets.
+- `wildcard`, `refetching`, `dotfiles`: not terms of the absent-terms sets, so not measured by the probe; real-corpus/hub identifier negatives in `npm run eval` are flagged 8/8 and 8/8 (unchanged).
+- Rank parity: top-5 paths of every train and held-out question identical before and after (cmp). Same-run `scripts/eval-against-release.sh 1.24.0 local`, default sets: hyb@1 77/105, hyb@3 98, multi 16/21/22, cov 0.80/0.96/0.98, dom 35, neg flagged 36/39, identical. On the absent-terms sets: hyb@1 38/55, @3 48, neg flagged 57/62 identical; `#1+rel` is 43 for 1.24.0 and 44 for local (rel/#1 1.11 vs 1.29), stable over two runs. Not touched by this change (related edges do not read presence); not investigated further, a check for Phase 9.
+- Fixture (`test/e2e/abstention-variants.test.ts`): the 40 remaining `it.fails` are plain `it` now; 68 pass on 4 arms over stdio and the CLI. Units: bm25 (joins, hub exclusion, removal), code-graph (`splitUndocumented` variants).
+- Checks: lint, build, `npm run eval` (148 passed, 4 expected fail). `npm test`: 1266 passed; load flakes this run (links-exclude, freshness-scale warm start, hook-failure Jev-hang) pass alone.

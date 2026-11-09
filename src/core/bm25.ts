@@ -10,6 +10,21 @@ const STOP = new Set(
 export const tokenize = (s: string): string[] =>
   s.toLowerCase().match(/[\p{L}\p{N}_]+/gu)?.filter((t) => t.length > 1 && !STOP.has(t)) ?? [];
 
+/**
+ * Joined spellings of a text's compounds, for presence only: each run of words split by `-`, `_` or a space gives the join of
+ * every adjacent pair and of the whole run. shortcut: no stop-word or sentence limit, so `end start` on one line joins too;
+ * measured on the absent-terms sets (notes.md "Eval results: Phase 4").
+ */
+export function joinedForms(text: string): string[] {
+  const out: string[] = [];
+  for (const run of text.toLowerCase().match(/[\p{L}\p{N}]+(?:[-_ ][\p{L}\p{N}]+)+/gu) ?? []) {
+    const parts = run.split(/[-_ ]/);
+    if (parts.length > 2) out.push(parts.join(""));
+    for (let i = 0; i + 1 < parts.length; i++) out.push(parts[i] + parts[i + 1]);
+  }
+  return out;
+}
+
 interface Chunk {
   docPath: string;
   text: string;
@@ -34,6 +49,9 @@ export class Bm25Index {
   /** df over searchable docs only: what `has` reads, so a doc a search can never return does not make a name present */
   private presenceDf = new Map<string, number>();
   private unsearchable = new Set<string>();
+  /** presence-only spelling variants over searchable docs (`auto-fill`, `retry_budget`, `Smart Retry` -> `autofill`, `retrybudget`, `smartretry`); never scored */
+  private joinedDf = new Map<string, number>();
+  private joinedByDoc = new Map<string, Set<string>>();
   private chunkCount = 0;
   private totalLen = 0;
 
@@ -43,6 +61,8 @@ export class Bm25Index {
     this.df.clear();
     this.presenceDf.clear();
     this.unsearchable.clear();
+    this.joinedDf.clear();
+    this.joinedByDoc.clear();
     this.chunkCount = 0;
     this.totalLen = 0;
   }
@@ -66,6 +86,12 @@ export class Bm25Index {
     }
     this.byDoc.delete(docPath);
     this.docTerms.delete(docPath);
+    for (const j of this.joinedByDoc.get(docPath) ?? []) {
+      const n = (this.joinedDf.get(j) ?? 1) - 1;
+      if (n <= 0) this.joinedDf.delete(j);
+      else this.joinedDf.set(j, n);
+    }
+    this.joinedByDoc.delete(docPath);
   }
 
   /** `fields` (title, purpose, path words) is indexed with every chunk but is not part of the chunk text returned. */
@@ -86,6 +112,17 @@ export class Bm25Index {
     });
     this.byDoc.set(docPath, chunks);
     this.docTerms.set(docPath, new Set(chunks.flatMap((c) => [...c.tf.keys()])));
+    if (searchable) {
+      const joined = new Set<string>();
+      for (const text of texts) for (const j of joinedForms(text)) joined.add(j);
+      for (const j of joined) this.joinedDf.set(j, (this.joinedDf.get(j) ?? 0) + 1);
+      this.joinedByDoc.set(docPath, joined);
+    }
+  }
+
+  /** True when a searchable doc writes this name with a hyphen, underscore or space (or only its case differs): `term` is lowercase, `_` and `-` removed. */
+  hasJoined(term: string): boolean {
+    return this.joinedDf.has(term);
   }
 
   /** True when some searchable doc's chunk holds this token (tokenized, lowercase). Scoring still reads every indexed chunk. */
