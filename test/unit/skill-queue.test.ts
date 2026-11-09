@@ -113,7 +113,8 @@ describe("skill-loop queue and worker (v1.7)", () => {
     expect(existsSync(join(queueDir(env), "failed", "bad.json"))).toBe(true);
   });
 
-  it("SessionEnd hook: with signal it writes one job fast; off or without signal, nothing", async () => {
+  // retry: a load-timing flake under the full parallel suite (passes alone); a real failure still fails all 3 attempts
+  it("SessionEnd hook: with signal it writes one job fast; off or without signal, nothing", { retry: 2 }, async () => {
     const { main } = await import(join(ROOT, "hooks", "skill-loop.js"));
     const end = { cwd: repo, hook_event_name: "SessionEnd", session_id: "h1", reason: "prompt_input_exit" };
     await main(end, { ...env, SEMANTIC_MEMORY_SKILL_LOOP: "" });

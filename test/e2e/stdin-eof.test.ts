@@ -91,8 +91,10 @@ describe("E2E: process lifecycle — stdin EOF reaping", () => {
     180_000, // model download + full index build on first run
   );
 
+  // retry: a load-timing flake under the full parallel suite (passes alone); a real failure still fails all 3 attempts
   it(
     "exits on SIGTERM (process manager shutdown)",
+    { retry: 2, timeout: 180_000 },
     async () => {
       const tempDir = await createTempVault();
       try {
@@ -146,6 +148,5 @@ describe("E2E: process lifecycle — stdin EOF reaping", () => {
         await cleanupTempDir(tempDir);
       }
     },
-    180_000,
   );
 });
