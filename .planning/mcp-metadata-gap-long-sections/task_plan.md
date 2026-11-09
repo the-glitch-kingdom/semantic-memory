@@ -82,9 +82,9 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
   - [x] Clones run without an export, with an export, and with `git log` slowed for the first-query check.
   - [x] The gate fails when MCP and CLI differ in top 3, `related` or `entity` on any question, or when the first MCP answer lacks titles.
   - [x] Run it against 1.21.0 and record the result. `release-process.md` stays the place that makes it required.
-- [ ] Phase 7: Release prep
-  - [ ] Bump all five version fields to 1.22.0 and update the lockfile
-  - [ ] Offline tarball deferred to release (built from the merge commit)
+- [x] Phase 7: Release prep
+  - [x] Bump all five version fields to 1.22.0 and update the lockfile
+  - [x] Offline tarball deferred to release (built from the merge commit)
 - [ ] Phase 8: Cleanup
   - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts, debug output
 - [ ] Phase 9: Validation (independent review)
@@ -125,7 +125,7 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 7**
+**Currently in Phase 8**
 
 ---
 
