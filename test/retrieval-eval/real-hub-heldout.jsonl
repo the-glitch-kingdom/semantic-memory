@@ -1,0 +1,12 @@
+// Hub held-out set: the same kind of question as real-hub.jsonl, never used to choose a constant, rule or threshold. Report as measured.
+{"id":"hub-h01","tier":"exact","qtype":"fact","q":"After how long does the server take over an index lock whose owner has died or gone quiet?","facets":["dead or older than 10 minutes"]}
+{"id":"hub-h02","tier":"paraphrase","qtype":"fact","q":"What is the daily review ceiling for the skill loop, and what happens to jobs beyond it?","facets":["Jobs over the cap wait for tomorrow"]}
+{"id":"hub-h03","tier":"exact","qtype":"fact","q":"How many tools remain on a server that cannot write?","facets":["20 tools"]}
+{"id":"hub-h04","tier":"paraphrase","qtype":"fact","q":"Once a search is denied for grepping an indexed folder, what lets the identical retry through?","facets":["identical call retried in the same session"]}
+{"id":"hub-h05","tier":"exact","qtype":"fact","q":"What is the BM25 index behind hybrid search stored in, and what does a load cost per 100 docs?","facets":["held in memory only"]}
+{"id":"hub-h06","tier":"paraphrase","qtype":"fact","q":"Which layer owns the mode file, and who wins when a conversational cue disagrees with /mode?","facets":["Explicit `/mode` is ground truth"]}
+{"id":"hub-h07","tier":"multi","qtype":"flow","q":"How do the held-out splits, the shared gates and the real-corpus benchmark fit together in testing?","facets":["Held-out splits","before/after benchmark"]}
+{"id":"hub-h08","tier":"multi","qtype":"flow","q":"What are the indexed derived files, and what does each one do for search and the prompt hook?","facets":["docs.cache.json","hnsw-meta.json"]}
+{"id":"hub-h09","tier":"multi","qtype":"flow","q":"List the places a hook can put text in front of the agent, from session start through a failed command.","facets":["PostToolUseFailure hook","SessionStart hook"]}
+{"id":"hub-h10","tier":"multi","qtype":"flow","q":"How does the jev bridge keep a missing score from being treated as permission, and which env variables bound it?","facets":["never as permission","SEMANTIC_MEMORY_JEV_DAILY_TOKENS"]}
+{"id":"hub-hn1","tier":"negative","qtype":"fact","negative_kind":"topic","q":"How do I configure autoscaling for the embedding workers on AWS?"}

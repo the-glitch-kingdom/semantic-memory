@@ -2,6 +2,28 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.21.0] - 2026-11-08 — Hub doc ranking
+
+Issue #71. Numbers and misses: `.documentation/changelog/v1-21-0-hub-doc-ranking.md`.
+
+### Changed
+
+- **Grounding ranks by dead refs only** (`drift_penalty` defaults to 1; `< 1` opts drift back in; `decay.code: false` turns it off). Schemas installed by 1.16 to 1.20 keep 0.97 until edited.
+- **Doc-level chunk**: a doc scores as the max of its best section and a whole-doc chunk; anchors unchanged. Index schema 10.
+- **PascalCase identifiers** count when the code graph knows them; grounding inputs are de-noised; `negative: true` eval rows are scored as negatives; `eval` prints `decay.code` and `related` per #1.
+
+### Added
+
+- **`npm run gate:release`** and `scripts/eval-against-release.sh`: compare held-out hybrid and multi @1 with a published release; required before `npm publish`.
+
+### Measured
+
+Held-out hybrid @1 22/37 against 18 (1.15.0) and 19 (1.20.0); multi 7/10 against 5 and 6. Train 24/39 against 25 and 25.
+
+### Missed targets
+
+Train hybrid @1 (24 vs 25) and multi @1 (7/13 vs 9/13) are below 1.15.0; negatives flagged on held-out 13/17 vs 15/17 for 1.15.0 (as 1.20.0). The reporter's loss did not reproduce here; their tree decides after publish.
+
 ## [1.20.0] - 2026-11-08 — User help
 
 Details and misses: `.documentation/changelog/v1-20-0-user-help.md`.

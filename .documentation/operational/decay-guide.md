@@ -104,7 +104,7 @@ In `git` mode the date is the last commit that changed the note's **body** (the 
 
 ## Code drift (v1.16+)
 
-A doc whose cited files changed after it was written or verified, or that cites a file that is gone, is down-weighted a little more (`decay.code`, never below 0.8) and shows `grounding` on its result. `verify_note` clears drift. Off: `decay.code.enabled: false`. Details: [code-graph](../architecture/code-graph.md#grounding).
+A doc whose cited files changed after it was written or verified, or that cites a file that is gone, shows `grounding` on its result; since v1.21 only a gone file (dead ref) down-weights it (`decay.code`, never below 0.8), and drift ranks only with `drift_penalty` < 1 (an older installed schema may still say 0.97). `verify_note` clears drift. Off: `decay.code: false` or `decay.code.enabled: false`. Details: [code-graph](../architecture/code-graph.md#grounding).
 
 ## See also
 

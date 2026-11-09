@@ -3,7 +3,7 @@ title: Reference Documentation Index
 tier: reference
 domains: [reference]
 status: active
-last_updated: '2026-11-08'
+last_updated: '2026-11-09'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of reference documentation
@@ -45,4 +45,4 @@ This domain covers: reference, cli, tools, configuration, frontmatter
 
 ---
 
-*Last updated: 2026-11-08*
+*Last updated: 2026-11-09*

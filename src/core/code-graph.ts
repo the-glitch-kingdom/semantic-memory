@@ -49,6 +49,10 @@ const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 
 const str = (v: unknown): string | undefined => (typeof v === "string" && v ? v : undefined);
 const clean = (p: string) => posix.normalize(p.replace(/^\.\//, ""));
 const LOC = /(?<=\.[A-Za-z0-9]+)(?::[\w$.-]+)+$|#L\d+(?:-L?\d+)?$/; // `context.ts:208`, `a.ts:10-20`, `a.js:handlePrompt`, `a.ts#L5`
+/** A file ref worth checking: no space, `(` or `=`, and a `/` or an extension; member chains like `import.meta.env` are code, not paths. */
+const pathShaped = (t: string) => !/[\s(=]/.test(t) && !/^(?:import\.meta|process|window|globalThis|document)\./.test(t) && (t.includes("/") || /\.[A-Za-z0-9]+$/.test(t));
+/** Drops a bare name when the list holds the same file by its full path, so both count once. */
+const dedupe = (xs: string[]) => [...new Set(xs)].filter((x) => x.includes("/") || !xs.some((y) => y.endsWith("/" + x)));
 const GLOB = /[*?[\]{}<>]/;
 
 /** Which of `paths` git ignores, from one `git check-ignore --stdin` (none when there is nothing to ask or git fails). */
@@ -115,7 +119,7 @@ export function loadExport(gitRoot: string, vaultDir: string, vaultPaths: Set<st
       for (const r of Array.isArray(d.refs) ? d.refs : []) {
         if (!isObj(r) || (r.kind !== "file" && r.kind !== "symbol")) continue; // env, command, table, column, doc refs are not code
         const target = str(r.target);
-        if (!target || (r.kind === "file" && clean(target) === ".")) continue; // the real export has a dead `./` ref: prose, not a file
+        if (!target || (r.kind === "file" && (clean(target) === "." || !pathShaped(target)))) continue; // the real export has a dead `./` ref, and refs like `import.meta.env`: prose, not files
         refs.push({
           kind: r.kind, target: r.kind === "file" ? clean(target) : target, file: str(r.file), repo: str(r.repo),
           resolved: typeof r.resolved === "boolean" ? r.resolved : null, changed: day(r.code_changed),
@@ -277,10 +281,12 @@ export function groundDocs(docs: { path: string; frontmatter?: Record<string, un
       const verified = Date.parse(normalizeVerifiedDate(d.frontmatter?.last_verified) ?? "");
       const dates = [c.bodyChanged ?? Date.parse(d.gitDate ?? ""), c.lastVerified ?? NaN, verified <= Date.now() ? verified : NaN].filter((n) => !isNaN(n));
       const from = dates.length ? Math.max(...dates) : NaN;
-      const drift = isNaN(from) ? [] : c.refs.filter((r) => r.changed !== undefined && r.changed > from).map((r) => r.file ?? r.target);
-      const dead = c.refs.filter((r) => r.kind === "file" && r.resolved === false).map((r) => r.target);
+      const own = (t: string) => t === d.path || t.endsWith("/" + d.path); // a doc never counts itself
+      const refs = c.refs.filter((r) => !own(r.file ?? r.target));
+      const drift = isNaN(from) ? [] : refs.filter((r) => r.changed !== undefined && r.changed > from).map((r) => r.file ?? r.target);
+      const dead = refs.filter((r) => r.kind === "file" && r.resolved === false).map((r) => r.target);
       const verdict = c.verdict && c.verdict !== "unreviewed" ? c.verdict : undefined;
-      if (drift.length || dead.length || verdict) g = { source: c.source, ...(verdict && { verdict }), code_drift: [...new Set(drift)], dead_refs: [...new Set(dead)] };
+      if (drift.length || dead.length || verdict) g = { source: c.source, ...(verdict && { verdict }), code_drift: dedupe(drift), dead_refs: dedupe(dead) };
     }
     if (JSON.stringify(g) !== JSON.stringify(d.grounding)) {
       changed = true;
@@ -301,6 +307,9 @@ function locateFiles(term: string, files: string[] = []): string[] {
   });
 }
 
+/** Whether the code graph knows a name: a symbol some doc cites, or a tracked file's name (with or without its extension). */
+export const knownToCode = (code: CodeData | null) => (term: string): boolean => !!code && (code.symbols.has(term) || locateFiles(term, code.files).length > 0);
+
 const STALE_VERDICTS = new Set(["check", "stale", "archive-candidate"]);
 export interface EntityCard {
   entity: string;
@@ -319,7 +328,7 @@ export function entityCard(
   query: string, code: CodeData | null, docs: Map<string, { title?: string; grounding?: Grounding }>, score: (path: string) => number,
 ): EntityCard | undefined {
   if (!code) return undefined;
-  for (const term of identifiers(query)) {
+  for (const term of identifiers(query, knownToCode(code))) {
     let card: Omit<EntityCard, "cited_by"> | undefined;
     let citers: string[] = [];
     const sym = code.symbols.get(term);
@@ -334,7 +343,7 @@ export function entityCard(
     }
     const stale = (p: string) => {
       const g = docs.get(p)?.grounding;
-      return !!g && (g.code_drift.length > 0 || g.dead_refs.length > 0 || STALE_VERDICTS.has(g.verdict ?? ""));
+      return !!g && (g.dead_refs.length > 0 || STALE_VERDICTS.has(g.verdict ?? ""));
     };
     const cited_by = citers.filter((p) => docs.has(p))
       .sort((a, b) => Number(stale(a)) - Number(stale(b)) || score(b) - score(a) || a.localeCompare(b))

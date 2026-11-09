@@ -1,0 +1,18 @@
+// Hub question set (hub-doc-ranking-regression Phase 2, #71): questions whose answer sits in a long doc that cites many code files
+// (architecture-layers, indices-and-storage, tests-and-validation, mcp-internals, injection-points, configuration-reference), plus
+// broad multi-doc questions. Written before the first measurement. Train: tune on it. Held-out: `real-hub-heldout.jsonl`, never tuned on.
+// Measure on a `git clone --local` of the repo (code and history present), not the copied-.documentation real-corpus path.
+{"id":"hub-t01","tier":"exact","qtype":"fact","q":"What three file attributes are compared with manifest.json before the server decides to re-read a note?","facets":["mtime, size, inode"]}
+{"id":"hub-t02","tier":"paraphrase","qtype":"fact","q":"Which index file gets written last, so that it tells readers whether the others belong together?","facets":["it is the commit marker"]}
+{"id":"hub-t03","tier":"paraphrase","qtype":"fact","q":"Why shouldn't sidekick features be added straight into the storage layer's modules?","facets":["cherry-pickable fix"]}
+{"id":"hub-t04","tier":"exact","qtype":"fact","q":"How often is embeddings.json flushed while a full index is running?","facets":["every 100 chunks"]}
+{"id":"hub-t05","tier":"exact","qtype":"fact","q":"How many claude processes may the skill reviewer have running across the machine?","facets":["at most 5 `claude` processes machine-wide"]}
+{"id":"hub-t06","tier":"paraphrase","qtype":"fact","q":"How long without use before the curator moves a learned skill into the archive?","facets":["Unused 30 days: archived"]}
+{"id":"hub-t07","tier":"paraphrase","qtype":"fact","q":"Where does a docs server that refuses writes keep its selection log?","facets":["ctx.telemetryDir"]}
+{"id":"hub-t08","tier":"exact","qtype":"fact","q":"Which hook variable sets the lowest score at which a fact is shown after a failed command?","facets":["SEMANTIC_MEMORY_FAILURE_MIN_SCORE"]}
+{"id":"hub-t09","tier":"multi","qtype":"flow","q":"Walk me through what happens between starting the server and the first search being answered, including the cache and the lock.","facets":["tryLoadCachedIndex","index.lock"]}
+{"id":"hub-t10","tier":"multi","qtype":"flow","q":"Which tests protect the freshness behaviour, and what does the index do about stale files on upgrade?","facets":["edit while down","re-keyed to"]}
+{"id":"hub-t11","tier":"multi","qtype":"flow","q":"Compare the three storage tiers: where each lives and whether it is safe to delete.","facets":["Per-machine MODEL CACHE","Per-project RUNTIME STATE"]}
+{"id":"hub-t12","tier":"multi","qtype":"flow","q":"How do the hooks, skills and CLAUDE.md rule each get context in front of the agent?","facets":["UserPromptSubmit hook","CLAUDE.md project rule"]}
+{"id":"hub-n01","tier":"negative","qtype":"fact","negative_kind":"topic","q":"How do I rotate the TLS certificates for the hosted dashboard?"}
+{"id":"hub-n02","tier":"negative","qtype":"fact","negative_kind":"identifier","q":"What does the flushShardManifest function do?"}

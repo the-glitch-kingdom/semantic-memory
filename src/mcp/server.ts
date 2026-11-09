@@ -17,7 +17,7 @@ import { useMinimalToolSurface } from "../core/tools-config.js";
 
 export type { ServerOptions } from "./context.js";
 
-const STALE_NOTE = "[stale: an older index is answering while it refreshes; re-run the search to confirm]";
+const STALE_NOTE = "[stale: an older index is answering while it refreshes, so section, anchor, grounding and the entity card may be missing; re-run the search to confirm]";
 
 export async function createServer(notesPath: string, options: ServerOptions = {}) {
   const ctx = await buildContext(notesPath, options);

@@ -99,11 +99,12 @@ decay:
   hotness_boost:
     enabled: false              # extend half-life for heavily-backlinked notes (opt-in)
     cap: 2.0
-  # Grounding (code-graph): a doc whose cited files changed after it was written or verified, or that cites a file
-  # that is gone, is down-weighted a little per file (at most 3 of each), never below floor.
+  # Grounding (code-graph): a doc that cites a file that is gone is down-weighted a little per file (at most 3), never
+  # below floor. Drift (cited files changed since the doc was written) is shown on results, not ranked, until
+  # drift_penalty is below 1 (e.g. 0.97 per file). "code: false" switches grounding off.
   code:
     enabled: true
-    drift_penalty: 0.97
+    drift_penalty: 1
     dead_penalty: 0.95
     floor: 0.8
     archive_candidate: 0.85       # hewtd verdict archive-candidate

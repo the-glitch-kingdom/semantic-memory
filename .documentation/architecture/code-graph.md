@@ -45,13 +45,13 @@ Export doc keys are docs-relative. They are mapped through the export's `docs_ro
 
 ## Grounding
 
-Drift: a cited file changed after max(the doc's body date, `last_verified`), so verifying a doc clears drift. Dead: a cited file ref that no longer exists. Each drifted file multiplies the score by `decay.code.drift_penalty`, each dead one by `dead_penalty`, at most 3 of each and never below `floor`. The hewtd verdict `archive-candidate` multiplies by `archive_candidate`; other verdicts add nothing.
+Drift: a cited file changed after max(the doc's body date, `last_verified`), so verifying a doc clears drift. Dead: a cited file ref that no longer exists. Since v1.21 only dead refs rank: each dead file multiplies the score by `dead_penalty`, at most 3, never below `floor`. Drift is still reported in `grounding.code_drift` but ranks only when `drift_penalty` < 1 (opt-in, per file, at most 3; 0.97 restores v1.20). The hewtd verdict `archive-candidate` multiplies by `archive_candidate`; other verdicts add nothing.
 
 ```yaml
 decay:
   code:
     enabled: true          # false = no grounding penalty and no grounding block
-    drift_penalty: 0.97
+    drift_penalty: 1       # < 1 opts drift back into ranking (v1.20 used 0.97)
     dead_penalty: 0.95
     floor: 0.8
     archive_candidate: 0.85
@@ -65,7 +65,7 @@ When the query names an identifier or a file that exists in code, result #1 carr
 
 ## Known limits
 
-A prose route such as `api/v1/x` counts as dead in the fallback when `api/` is a top folder (damped). The export's `resolved: false` on symbols is noisy and is ignored for dead refs. The penalty is small by design (0.97 per file).
+A prose route such as `api/v1/x` counts as dead in the fallback when `api/` is a top folder (damped). The export's `resolved: false` on symbols is noisy and is ignored for dead refs. The dead penalty is small by design (0.95 per file). Inputs are filtered: export refs that are not path-shaped are dropped (so are `import.meta.env`-style member chains), a bare filename next to its full path counts once, a doc never counts itself, and bare names with no `/` and no extension (`Makefile`) never count as dead or drifted. Schemas installed by v1.16 to v1.20 hold `drift_penalty: 0.97` explicitly: set `drift_penalty: 1` or `code: false` there to get the v1.21 default.
 
 ## See also
 

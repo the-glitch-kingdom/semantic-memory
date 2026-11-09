@@ -45,7 +45,7 @@ const docs = await new Indexer(notes).indexAll();
 
 const model = JSON.parse(readFileSync(join(indexPath, "meta.json"), "utf8")).model;
 const keyOf = (text) => createHash("sha256").update(`${model}\0${text}`).digest("hex");
-const chunks = docs.flatMap((d) => d.chunks.map((text) => ({ key: keyOf(text), path: d.path, text })));
+const chunks = docs.flatMap((d) => [...d.chunks, ...(d.meta ?? []).map((m) => m.text)].map((text) => ({ key: keyOf(text), path: d.path, text })));
 const live = new Set(chunks.map((c) => c.key));
 const missing = chunks.filter((c) => !stored.has(c.key)).length;
 const orphans = [...stored.keys()].filter((k) => !live.has(k)).length;

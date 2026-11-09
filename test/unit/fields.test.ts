@@ -81,10 +81,10 @@ describe("indexing", () => {
       const docs = await new Indexer(dir).indexAll();
       const [a, b, r] = ["a.md", "b.md", "reports/r.md"].map((p) => docs.find((d) => d.path === p)!);
       expect(a.chunks).toEqual([expect.stringContaining("body text")]);
-      expect(a.meta).toEqual([{ field: "purpose", text: "why a" }, { field: "symptoms", text: "it hangs" }]);
-      expect(docChunks(a).map((c) => c.kind)).toEqual([undefined, "meta", "meta"]);
+      expect(a.meta).toEqual([{ field: "purpose", text: "why a" }, { field: "symptoms", text: "it hangs" }, { field: "doc", text: "A\nwhy a\nA" }]);
+      expect(docChunks(a).map((c) => c.kind)).toEqual([undefined, "meta", "meta", "meta"]);
       expect(a.fieldText).toContain("it hangs");
-      expect(b.meta).toBeUndefined();
+      expect(b.meta).toEqual([{ field: "doc", text: "B\nB" }]);
       expect([r.chunks, r.meta, r.fieldText, r.generated]).toEqual([[], undefined, undefined, true]);
       // generated files are not graph nodes: no walk through them, no degree
       const g = new GraphBuilder({ excludeHubs: [] });

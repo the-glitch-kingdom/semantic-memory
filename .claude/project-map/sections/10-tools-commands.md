@@ -3,6 +3,7 @@
 
 | Name | Command | Source |
 |------|---------|--------|
+| `gate:release` | `npm run gate:release` | package.json |
 | `build` | `npm run build` | package.json |
 | `dev` | `npm run dev` | package.json |
 | `test` | `npm run test` | package.json |

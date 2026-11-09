@@ -3,7 +3,7 @@ title: Operational Documentation Index
 tier: reference
 domains: [operational]
 status: active
-last_updated: '2026-11-08'
+last_updated: '2026-11-09'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of operational documentation
@@ -28,7 +28,7 @@ purpose: Complete listing of operational documentation
 |----------|--------|---------|-------|---------|
 | [Capture Workflows](capture-workflows.md) | active | 2026-10-24 | 1,288 | synthesize_note, ingest_source, Stop-hook capture, /mode transitions — golden path |
 | [AGENTS.md contract guide](contract-guide.md) | active | 2026-05-09 | 1,430 | Operational guide to the AGENTS.md contract artifact. When to generate it, what it contains, how managed blocks work, what stays vs. regenerates, and how it interacts with CLAUDE.md. |
-| [Confidence Decay — Operating Guide](decay-guide.md) | active | 2026-07-10 | 1,029 | How to operate confidence decay day to day — read decay state, re-verify notes, tune half-lives, mark evergreen, and disable it. |
+| [Confidence Decay — Operating Guide](decay-guide.md) | active | 2026-07-10 | 1,052 | How to operate confidence decay day to day — read decay state, re-verify notes, tune half-lives, mark evergreen, and disable it. |
 | [Entity Dossiers — Operating Guide](dossiers-guide.md) | active | 2026-07-11 | 1,114 | How to operate v1.5.0 entity dossiers day to day — create them, accrete incidents and current state in place, understand two-hop retrieval, feed the lexicon via aliases, seed from babel-fish, and troubleshoot resolution misses. |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) | active | 2026-10-28 | 1,589 | Operational guide to drift detection. The fast-tier auto-check that fires on every SessionStart, the manual /healthcheck deep audit, what each finding means, and how to fix them. |
 | [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) | active | 2026-10-25 | 775 | How to turn on the opt-in PostToolUseFailure fact lookup, what it injects and when, how to write gotcha facts it can find (symptoms with the literal error), how it coexists with other failure hooks, and how to measure it on your own failures with eval-failures. |
@@ -61,4 +61,4 @@ This domain covers: operational, guide, operate, sessions, dossier
 
 ---
 
-*Last updated: 2026-11-08*
+*Last updated: 2026-11-09*

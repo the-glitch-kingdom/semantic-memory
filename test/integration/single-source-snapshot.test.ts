@@ -38,7 +38,7 @@ describe("search_hybrid with no federation configured", () => {
     await cleanupTempDir(dir);
   });
 
-  // single-source-snapshot.json was taken from the v1.18.0 pipeline, before hybridRanked was extracted
+  // single-source-snapshot.json was taken from the v1.18.0 pipeline, before hybridRanked was extracted; scores (not paths, order or fields) re-taken for the doc summary chunk (1.21.0)
   it("answers exactly as v1.18.0 did: same fields, order, one content block, no source label", async () => {
     const snap = JSON.parse(await readFile(join(FIXTURES, "federation", "single-source-snapshot.json"), "utf-8"));
     expect(snap.length).toBe(SNAP_QUERIES.length);

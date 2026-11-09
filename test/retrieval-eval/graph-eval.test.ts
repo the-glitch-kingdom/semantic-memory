@@ -62,7 +62,7 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
 
   const summary = (rows: Row[]) => {
     const ans = rows.filter((r) => r.tier !== "undocumented");
-    const pairs = rows.filter((r) => r.tier === "drift" || r.tier === "dead");
+    const pairs = rows.filter((r) => r.tier === "dead"); // drift pairs are not ranked by default (decay.code.drift_penalty is 1): the twin only carries the information
     const neg = rows.filter((r) => r.tier === "undocumented");
     return {
       n: ans.length, pairs: pairs.length, neg: neg.length,
@@ -92,8 +92,8 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
         expect(m.clean.share).toBeGreaterThanOrEqual(f.cleanShare - 0.05);
       });
     }
-    // v1.15.0 saw no difference between a doc and its twin (a coin flip); grounding (decay.code) makes the answer win every pair.
-    it(`${s}: search_hybrid ranks the answer above its twin in every drift and dead pair`, () => {
+    // v1.15.0 saw no difference between a doc and its twin (a coin flip); grounding (decay.code) makes the answer win every dead pair.
+    it(`${s}: search_hybrid ranks the answer above its twin in every dead pair`, () => {
       const m = summary(table[s].search_hybrid);
       expect(m.beaten).toBe(m.pairs);
     });
@@ -132,13 +132,12 @@ describe("Code-graph fixture eval (drift, dead references, identifiers, undocume
   });
 
   // #58 check 3 and CLI/MCP parity: the drifted twin says which file changed, the answer carries no block, and the CLI hook path reports the same.
-  it("a drifted doc carries grounding.code_drift and ranks below its twin, the same through the CLI search", async () => {
+  it("a drifted doc carries grounding.code_drift (information, not rank), the same through the CLI search", async () => {
     const q = "How do old snapshots get cleaned off the storage volume?";
     const mcp = (await env.call("search_hybrid", { query: q, limit: 8 })).parsed;
     const byPath = (rs: any[], p: string) => rs.find((r) => r.path === p);
     expect(byPath(mcp, "operational/backup-pruning-a.md").grounding).toBeUndefined();
     expect(byPath(mcp, "operational/backup-pruning-b.md").grounding).toMatchObject({ source: "export", code_drift: ["backend/jobs/prune_backups.py"] });
-    expect(mcp.findIndex((r: any) => r.path.endsWith("-a.md"))).toBeLessThan(mcp.findIndex((r: any) => r.path.endsWith("-b.md")));
     const cli = await (await openSearch(join(env.dir, ".documentation"))).search(q, 8);
     expect(cli.map((r) => r.path)).toEqual(mcp.map((r: any) => r.path));
     expect(cli.map((r) => r.grounding)).toEqual(mcp.map((r: any) => r.grounding));

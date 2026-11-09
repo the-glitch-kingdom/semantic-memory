@@ -11,7 +11,7 @@ export interface ChunkMeta {
   docPath: string;
   chunkIndex: number;
   text: string;
-  /** metadata chunk (purpose, symptom phrase...); absent on body chunks and on indexes from before it existed */
+  /** metadata chunk (purpose, symptom phrase, or the doc summary `field: "doc"`, which never shows as `matched`); absent on body chunks and on indexes from before it existed */
   kind?: "meta";
   field?: string;
 }
@@ -131,7 +131,7 @@ export class VectorIndex {
         cosine: score,
         snippet: text.slice(0, 200),
         matchedChunk: text,
-        ...(win && { matched: { field: meta!.m.field ?? "meta", text: meta!.m.text } }),
+        ...(win && meta!.m.field !== "doc" && { matched: { field: meta!.m.field ?? "meta", text: meta!.m.text } }),
       });
     }
     results.sort((a, b) => b.score - a.score);

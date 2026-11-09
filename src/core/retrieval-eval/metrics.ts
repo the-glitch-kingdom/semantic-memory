@@ -164,6 +164,8 @@ export interface ArmMetrics {
   answeredFlagged: number;
   /** Answerable cases (any rank) whose response carried no_strong_match, out of the answerable total. */
   answerableFlagged: number;
+  /** Mean number of `related` neighbours attached to the #1 result, over the answerable cases. */
+  relatedPerTop: number;
   /** Cases with `expected`: found@k out of `expectedN`, and MRR over them. */
   expectedN: number;
   foundAt: Record<number, number>;
@@ -193,6 +195,8 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
   let negativesFlagged = 0;
   let answeredFlagged = 0;
   let answerableFlagged = 0;
+  let relatedSum = 0;
+  let answerable = 0;
   const latencies: number[] = [];
   let expectedN = 0;
   const foundAt: Record<number, number> = Object.fromEntries(FACET_KS.map((k) => [k, 0]));
@@ -217,6 +221,8 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
     }
     const rank = facetRank(c.facets ?? [], top.map((r) => r.path), textOf);
     if (weak) answerableFlagged++;
+    answerable++;
+    relatedSum += related?.length ?? 0;
     if (weak && rank === 1) answeredFlagged++;
     const expanded = top.length > 0 && facetRank(c.facets ?? [], [top[0].path, ...(related ?? [])], textOf) !== null;
     const pathed = top.length > 0 && facetRank(c.facets ?? [], [top[0].path, ...(readingPath ?? [])], textOf) !== null;
@@ -228,7 +234,7 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
       for (const k of FACET_KS) if (rank !== null && rank <= k) t.at[k]++;
     }
   }
-  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length), negativesFlagged, answeredFlagged, answerableFlagged, expectedN, foundAt, mrr: expectedN ? rrSum / expectedN : 0, latencyMs: { p50: percentile(latencies, 0.5), p95: percentile(latencies, 0.95) } };
+  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length), negativesFlagged, answeredFlagged, answerableFlagged, relatedPerTop: answerable ? relatedSum / answerable : 0, expectedN, foundAt, mrr: expectedN ? rrSum / expectedN : 0, latencyMs: { p50: percentile(latencies, 0.5), p95: percentile(latencies, 0.95) } };
 }
 
 export interface LinkMetrics {
@@ -257,7 +263,7 @@ export function invertLinks(forward: Record<string, string[]>): Record<string, s
 }
 
 export function formatArm(name: string, m: ArmMetrics): string {
-  const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  flagged: negatives ${m.negativesFlagged}/${m.negativeTop.length}, answered@1 ${m.answeredFlagged}, answerable ${m.answerableFlagged}  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
+  const lines = [`  ${name}  archive-hits=${m.archiveHits}  mean-payload=${m.meanBytes}B  flagged: negatives ${m.negativesFlagged}/${m.negativeTop.length}, answered@1 ${m.answeredFlagged}, answerable ${m.answerableFlagged}  related/#1=${m.relatedPerTop.toFixed(2)}  negative-top=[${m.negativeTop.map((s) => (s === null ? "-" : s.toFixed(2))).join(" ")}]`];
   for (const [tier, t] of Object.entries(m.tiers).sort()) {
     lines.push(`    ${tier.padEnd(11)} (${String(t.n).padStart(2)}): ${FACET_KS.map((k) => `@${k}=${t.at[k]}/${t.n}`).join("  ")}  #1+related=${t.expandedAt1}/${t.n}  #1+path=${t.pathAt1}/${t.n}`);
   }

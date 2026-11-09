@@ -36,6 +36,15 @@ describe("runFacetEval", () => {
     expect(m.negativeTop).toEqual([0.3]);
     expect(m.meanBytes).toBe(10);
   });
+  it("averages the related neighbours on #1 over the answerable cases only", async () => {
+    const cases: FacetCase[] = [
+      { id: "1", tier: "exact", q: "x", facets: ["retry"] },
+      { id: "2", tier: "exact", q: "y", facets: ["retry"] },
+      { id: "3", tier: "negative", q: "z" },
+    ];
+    const m = await runFacetEval(cases, async (q) => ({ bytes: 1, results: [{ path: "a.md", score: 1 }], related: q === "x" ? ["b.md", "b.md", "b.md"] : q === "z" ? ["b.md"] : [] }), textOf);
+    expect(m.relatedPerTop).toBe(1.5);
+  });
 });
 
 describe("runFacetEval expected paths and latency", () => {
