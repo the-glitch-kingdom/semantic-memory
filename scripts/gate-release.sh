@@ -6,7 +6,7 @@
 #   - multi @3 or @8, or cov@3 (by one question's share), drops by more than the band against the previous version, or dominance
 #     (top-3 slots one doc takes on questions it does not answer) rises by more than the band, on the arms that report them
 #     (a release before 1.24.0 reports cov and dominance only in its mcp arm);
-#   - flagged negatives drop, or flagged answerable questions (false flags) rise, by more than the band, on cli or mcp;
+#   - flagged negatives drop (absent-terms-heldout holds the spelling-variant negatives hn28-hn30 and controls hc23-hc27, #78), or flagged answerable questions (false flags) rise, by more than the band, on cli or mcp;
 #   - local mcp and cli differ in top 3, `related` or the entity card on any question;
 #   - the first local mcp answers (also with slow git) lack titles on a #1 result.
 #   scripts/gate-release.sh [previous-version]   default: the newest published version below package.json's

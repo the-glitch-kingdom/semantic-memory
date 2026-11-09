@@ -70,3 +70,8 @@ Parity test `test/e2e/abstention-parity.test.ts`, repo corpus clone, all 125 que
 - The export does not change `missing_terms` on any question.
 - Federated server (this tree plus an identical source "twin"): `missing_terms` and `passing_terms` equal the single-tree answer on every question. A first run caught that the federation was not active (schema file in the wrong dir), so the test asserts the source answered.
 - No divergence, no src change. The wait for the source's background build is load-sensitive (failed once at 120 s under full-suite load; now 300 s).
+
+## Eval results: Phase 6 (gate:release vs 1.24.0)
+`npm run gate:release -- 1.24.0`: PASS, 3m24s wall (22m CPU). Held-out sets incl. absent-terms-heldout with the Phase 2 variant negatives (hn28-hn30) and controls (hc23-hc27); no new gate code, comment only. Hub-only presence is not a real-corpus case (its hubs carry `generated: true`), so it is covered by test/e2e/abstention-variants.test.ts.
+Plain and export, cli = mcp: hybrid @1 73 vs 73 (export 78 vs 78), multi @1/3/8 10/17/21 equal, cov@3 0.776 equal, dominance 35 vs 35 (export 26 vs 26). Negatives flagged 42 vs 43 (one fewer than 1.24.0, within the band of 1), false flags 7 vs 10 (three fewer). mcp vs cli: 0 of 166 differ. Titled #1 119/119, first answer 1186 ms (slow git 916 ms).
+Open: which negative stopped being flagged was not identified; likely a joined form (Phase 9 to check, with the sentence-break join).
