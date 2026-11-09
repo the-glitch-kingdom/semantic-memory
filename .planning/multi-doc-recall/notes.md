@@ -193,3 +193,13 @@ After the fix, script run, local build, train sets pooled:
 Export is within one case of no export on every count (was -4 @3, -2/-3 multi). CLI and MCP agree on every count. Missed: the export still differs by one case at @3 and multi @3 (real dead refs remain flagged; that is intended).
 
 Side finding fixed: `save()` in `src/mcp/context.ts` cleared `dirty` after the commit, so a change landing during the write (grounding from the code graph) was never saved and the CLI, which reads the cache, missed it. Now cleared before the write. `graph-eval` waits for the debounced save (it was racing it).
+
+## Eval results: Phase 6
+`npm run gate:release` (local vs 1.23.0, 6 held-out sets incl. multi-hub-heldout, no export + slow git, then export). Runtime 3m17s (~6 min estimated in the script header). Result FAIL.
+
+| arm | hyb@1 local/1.23.0 | multi @1/@3/@8 local | multi 1.23.0 | cov@3 | dominance |
+|---|---|---|---|---|---|
+| no export | 71/71 | 10/16/20 | 10/17/21 | .773/.776 | 34/32 |
+| export | 70/75 | 10/17/20 | 10/17/21 | .784/.776 | 28/23 |
+
+Export per set hyb@1 (local vs 1.23.0): real-corpus-heldout 14/17, real-hub-heldout 6/6, long-section 14/14, long-section-hard 10/10, absent-terms 15/16, multi-hub 11/12. Failures: export hyb@1 -5, dominance +2 (no export) and +5 (export). mcp = cli, titles complete. Dominance and cov of 1.23.0 come from its mcp arm only.
