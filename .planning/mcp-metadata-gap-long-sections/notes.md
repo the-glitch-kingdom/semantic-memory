@@ -162,3 +162,19 @@ Hybrid @1 per set, answerable only, no export / export (cli = mcp on every run):
 - Real-corpus held-out and train are flat or up against 1.21.0; no set fell.
 - The remaining hard-set misses were not examined: held-out is not for tuning, and a train fix would be a ranking change, which this phase does not make.
 - Key Question 2 (does chunk length or offset explain claim 2?): chunk length. On a fixture where focused distractors exist, 2000-char chunks lose rank (11 to 7 of 12 on train, 12 to 8 held-out) and 1000-char windows with overlap win most back; the first fixture (no distractors) showed no rank effect at all.
+
+## Eval results: Phase 6 (gate against 1.21.0, held-out real-corpus + hub + long-section + long-section-hard, 63 answerable, 80 questions)
+Runtime: `npm run gate:release -- 1.21.0` takes about 6 min (4 clone indexes, 8 evals) on this machine, 4.5 min on a quiet run. Result: PASS.
+
+| run | hyb@1 | multi@1 | #1+rel | mcp titled #1 | 1st answer |
+|---|---|---|---|---|---|
+| 1.21.0 cli / mcp (no export) | 44 / 44 | 7 / 7 | 51 / 51 | 63/63 | 0.9 s |
+| 1.21.0 mcp, slow git | 45 | 6 | 45 | **0/63** (rel/#1 0.00, no section, anchor, decay, grounding) | 0.9 s |
+| local cli / mcp (no export) | 46 / 46 | 7 / 7 | 52 / 52 | 63/63 | 1.5 s |
+| local mcp, slow git | 46 | 7 | 52 | 63/63 (grounding 0/63 until the code graph lands) | 1.1 s |
+| 1.21.0 export cli / mcp | 45 / 45 | 7 / 7 | 51 / 51 | 63/63 | 1.5 s |
+| local export cli / mcp | 48 / 48 | 7 / 7 | 53 / 53 | 63/63 | 1.5 s |
+
+- The slow-git arm reproduces #73 on 1.21.0 (titled 0/63) and shows the fix (63/63). A gate with local in that row would have failed 1.21.0.
+- Parity: 0 of 80 questions differ between local cli and local mcp, with and without export, after settling. Before settling, with export, 1-2 questions differed in top 3 (first run: 1, repeats: 1, 2, then another question in 2 more); cause is the in-process arm scoring the post-code-graph state and the stdio arm the first answers. Stale answers carried `_meta.stale` as designed.
+- Held-out mixes four sets, so these are measurements, not tuning signals.

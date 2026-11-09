@@ -77,11 +77,11 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
         - Done: cold index 24.5 s / 50.1 s / 57.2 s (1.15.0 / 1.21.0 / local), index 7.7 / 16.5 / 18.3 MB; `INDEX_SCHEMA_VERSION` 10 to 11. Held-out reported in notes.md, same run.
   - [x] The doc summary chunk (1.21) is cut to the window too, if (b)-(d) show it truncates.
         - Done: 17 of 126 summary chunks exceed 256 tokens, but cutting it to the window changed nothing on train (51/66 both), so it is unchanged.
-- [ ] Phase 6: Release gate sees the MCP path
-  - [ ] `npm run gate:release` runs `eval --via mcp` as well as the CLI eval, on the held-out sets (real-corpus, hub, long-section).
-  - [ ] Clones run without an export, with an export, and with `git log` slowed for the first-query check.
-  - [ ] The gate fails when MCP and CLI differ in top 3, `related` or `entity` on any question, or when the first MCP answer lacks titles.
-  - [ ] Run it against 1.21.0 and record the result. `release-process.md` stays the place that makes it required.
+- [x] Phase 6: Release gate sees the MCP path
+  - [x] `npm run gate:release` runs `eval --via mcp` as well as the CLI eval, on the held-out sets (real-corpus, hub, long-section). Done: all four held-out sets (long-section and long-section-hard too), cli and mcp arms.
+  - [x] Clones run without an export, with an export, and with `git log` slowed for the first-query check.
+  - [x] The gate fails when MCP and CLI differ in top 3, `related` or `entity` on any question, or when the first MCP answer lacks titles.
+  - [x] Run it against 1.21.0 and record the result. `release-process.md` stays the place that makes it required.
 - [ ] Phase 7: Release prep
   - [ ] Bump all five version fields to 1.22.0 and update the lockfile
   - [ ] Offline tarball deferred to release (built from the merge commit)
@@ -107,6 +107,7 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 2. Does chunk length or fact offset explain claim 2? This is measured in Phase 2 before any chunking change.
 
 ## Decisions Made
+- Phase 6: `gate:release` runs two clone sets per version (no export plus a slow-git arm on the same index; export), each measured cli and mcp, on the four held-out sets. The old awk parse is replaced by a node check of the JSON reports. Parity compares `probes` (hybrid top 3, related paths, entity flag per question) of local cli vs local mcp; the titles check applies to local mcp and mcp-slow. The previous version is only compared on hybrid/multi @1 (band 1) since it has the load gap by design.
 - Phase 5: variant (c), 1000-char windows plus a sentence of overlap, chosen on train over (b) and (d) (hybrid @1 within one case; best semantic @1 and #1+related; (d) costs 7% more index). Snapshot scores in test/fixtures/federation/single-source-snapshot.json re-taken for the new chunks (paths, order, fields unchanged).
 - One plan for #73: all three claims meet in the MCP load path and the eval that cannot see it.
 - Phase 2: the `--via mcp` arm shares the in-process eval's client and arm code; only the transport differs. `eval-against-release.sh` drives every version with this checkout's `eval --server <pkg cli>`.
@@ -114,15 +115,17 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - Fix order: metadata first (Phase 3), because every ranking number the reporter took on d0 was measured inside the gap.
 
 ## Errors Encountered
+- Phase 6: the first gate run failed parity with export: the in-process arm scored answers after the code graph landed, the stdio arm scored the first ones (`_meta.stale`), so top 3 differed on 1-2 of 80 questions. The eval now retries stale answers (in-process always; stdio with the new `--settle`, used by the gate's plain mcp arm). The `mcp-slow` arm does not settle: it is the one that checks the first answers.
 - Phase 5: the stdio client passes only a safe subset of the environment, so an env var trial knob never reached the server: the first mcp arms of b, c, d silently ran variant (a). Caught by cli != mcp; re-run as per-variant package copies.
 - Phase 5 missed target: on long-section-hard the fix recovers 3 of the 4 questions 1.21.0 lost on train (10/12 vs 7 and 1.15.0's 11) and 2 of 4 held-out (10/12 vs 8 and 12). Not back at 1.15.0.
 - Phase 5: bullets of the hard fixture are 450-800 chars, not 1,000+. Load flakes of the full suite (stdin-eof, freshness-scale, hook-failure) pass alone.
 - Phase 2: the long-section fixture does not discriminate (29/29 @1 on 1.15.0, 1.21.0 and local), so claim 2 is not reproduced by rank. Only a weak margin effect (r = -0.32 offset vs margin). Phase 5 must build a harder fixture first (near-duplicate distractors, 1,000+ char bullets, sections over 2,000 chars) before choosing a chunking variant on train.
+- Phase 6: full-suite load flakes freshness-scale, hook-failure, links-exclude pass alone.
 - Phase 3: freshness-scale warm start (1487 ms) and hook-failure Jev-hang (4134 ms) failed under full-suite load; both pass alone.
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 6**
+**Currently in Phase 7**
 
 ---
 

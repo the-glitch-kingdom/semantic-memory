@@ -7,7 +7,7 @@ import { readMeta } from "../index-store.js";
 import type { ArmFn } from "./metrics.js";
 
 /** Runs a search tool through an MCP client and shapes the reply into what the facet eval scores. */
-export function armsOf(client: Client, patient?: { onAnswer: () => void }) {
+export function armsOf(client: Client, patient?: { onAnswer: () => void; settle?: boolean }) {
   const call = async (name: string, args: Record<string, unknown>) => {
     // a stdio server answers "Indexing in progress" until its vector index exists: wait for the first real answer, never score the message
     for (const deadline = Date.now() + 300_000; ; await new Promise((r) => setTimeout(r, 250))) {
@@ -15,8 +15,10 @@ export function armsOf(client: Client, patient?: { onAnswer: () => void }) {
       const text = (res.content as any)[0].text as string;
       let parsed: any = null;
       try { parsed = JSON.parse(text); } catch { /* indexing message */ }
-      if (Array.isArray(parsed)) { patient?.onAnswer(); return { parsed, bytes: Buffer.byteLength(text) }; }
-      if (!patient || !text.startsWith("Indexing") || Date.now() > deadline) return { parsed: [], bytes: Buffer.byteLength(text) };
+      // in-process, and stdio with `settle`, the eval scores the settled state (code graph landed); stdio otherwise scores what an agent gets
+      const settling = (!patient || patient.settle) && (res as any)._meta?.stale && Date.now() < deadline - 240_000;
+      if (Array.isArray(parsed) && !settling) { patient?.onAnswer(); return { parsed, bytes: Buffer.byteLength(text) }; }
+      if (!settling && (!patient || !text.startsWith("Indexing") || Date.now() > deadline)) return { parsed: [], bytes: Buffer.byteLength(text) };
     }
   };
   const tool = (name: string, extra: Record<string, unknown> = {}): ArmFn => async (q, limit) => {
@@ -32,6 +34,8 @@ export interface EvalVia {
   cwd: string;
   /** Block the server's startup until it is ready (the plugin does not): off by default, so the first query lands in the load window. */
   waitForReady?: boolean;
+  /** Retry an answer marked `_meta.stale` (code graph still loading), so the run scores the settled state and compares with the in-process arm. */
+  settle?: boolean;
 }
 
 /**
@@ -56,5 +60,5 @@ export async function openEval(notes: string, via?: EvalVia) {
     await server.connect(st);
     await client.connect(ct);
   }
-  return { client, timing, ...armsOf(client, via && { onAnswer: () => { timing.firstAnswerMs ??= Date.now() - t0; } }), close: () => client.close() };
+  return { client, timing, ...armsOf(client, via && { onAnswer: () => { timing.firstAnswerMs ??= Date.now() - t0; }, settle: via.settle }), close: () => client.close() };
 }

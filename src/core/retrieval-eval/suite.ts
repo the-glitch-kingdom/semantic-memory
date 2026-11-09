@@ -64,7 +64,12 @@ const TOP1_FIELDS: Record<string, (t: any) => boolean> = {
   section: (t) => !!t.section, anchor: (t) => !!t.anchor, code: (t) => !!t.code, decay: (t) => !!t.decay, grounding: (t) => !!t.grounding,
 };
 
+/** What search_hybrid returned for one question, compared between the in-process and stdio arms by the release gate. */
+export interface Probe { top3: string[]; related: string[]; entity: boolean }
+
 export interface EvalReport {
+  /** Hybrid answer per question text: the release gate fails when the two arms differ. */
+  probes: Record<string, Probe>;
   /** Present with `--via mcp`. */
   mcp?: McpReport;
   cases: number;
@@ -103,8 +108,10 @@ export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia)
     const negatives = new Set(live.filter((c) => c.tier === "negative").map((c) => c.q));
     const seen = { n: 0, related: 0, fields: Object.fromEntries(Object.keys(TOP1_FIELDS).map((k) => [k, 0])) };
     const hybrid = ev.tool("search_hybrid");
+    const probes: Record<string, Probe> = {};
     const counted: ArmFn = async (q, limit) => {
       const r = await hybrid(q, limit);
+      probes[q] ??= { top3: r.results.slice(0, 3).map((x) => x.path), related: r.related ?? [], entity: !!r.top?.entity };
       if (!negatives.has(q) && r.top) {
         seen.n++; seen.related += r.related?.length ?? 0;
         for (const [k, has] of Object.entries(TOP1_FIELDS)) if (has(r.top)) seen.fields[k]++;
@@ -137,7 +144,7 @@ export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia)
       for (const id of IDENTIFIERS) entityCard[id] = !!(await ev.call("search_hybrid", { query: id, limit: 8 })).parsed[0]?.entity;
       mcp = { waitForReady: !!via.waitForReady, firstAnswerMs: ev.timing.firstAnswerMs ?? null, questions: seen.n, relatedPerTop: seen.n ? +(seen.related / seen.n).toFixed(2) : 0, top1With: seen.fields, entityCard };
     }
-    return { ...(mcp && { mcp }), cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms };
+    return { ...(mcp && { mcp }), probes, cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms };
   } finally {
     await ev.close();
   }
