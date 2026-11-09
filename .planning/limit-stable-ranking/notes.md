@@ -57,3 +57,38 @@ Phase 3 must empty the `BROKEN` table in that file so every case is a plain `it`
 ## Eval results: Phase 3
 `CANDIDATE_POOL = 60`, `candidatePool(limit) = max(60, limit*3)` in `src/core/bm25.ts`, used by hybridRanked, search_semantic and CLI search. `limit-stable.test.ts`: 21/21 pass as plain gates (17 failed on main); BROKEN table removed. Accuracy/latency numbers are Phase 4.
 Side effect: `test/fixtures/federation/single-source-snapshot.json` re-taken (ranking changed by design). Two queries moved: "Undo a faulty software release on the ships" (changelog/v2-0-release.md 0.300 -> 0.385, now above reference/cli-reference.md) and the nonexistent_function query (cli-reference 0.285 -> 0.293); the other 8 are identical. Flakes seen in the first full run, both passed alone: stdin-eof, claude-run concurrency. `npm run eval` 169 passed + 4 expected fail (was 152 + 21).
+
+## Eval results: Phase 4 (branch, pool 60; raw: `branch-phase4.json`)
+Same script and sets as Phase 2. Held-out reported only, not used for any choice.
+
+#1 answers by limit (1/3/5/8/10/20) and changes across limits 3-10:
+
+| split | n | branch | main (Phase 2) | changed 3-10 |
+|---|---|---|---|---|
+| real-train | 27 | 21 at every limit | 21 at every limit | 0 (main: 1) |
+| real-heldout | 27 | 18 at every limit | 17/18/18/18/18/18 | 0 |
+| hub-train | 12 | 6 at every limit | 5/6/6/6/6/6 | 0 |
+| hub-heldout | 10 | 6 at every limit | 5/7/6/6/6/6 | 0 (main: 1) |
+
+So #1 is now identical at every limit on all 4 splits (limit 1 included, which main got wrong on 3 splits).
+
+Eval metrics at limit 8 (all @1/@3/@8; negatives flagged; p50/p95), main -> branch:
+- real-train: 21/27/27 -> 21/27/27; 11/12 -> 11/12; p95 38 -> 21 ms
+- real-heldout: 18/25/26 -> 18/26/27 (better); 6/8 -> 6/8; p95 33 -> 27 ms
+- hub-train: 6/10/11 -> 6/10/11; 1/1 -> 1/1; p95 32 -> 22 ms
+- hub-heldout: 6/9/10 -> 6/9/10; 1/1 -> 1/1; p95 33 -> 17 ms
+Latency: no regression (the baseline run was on a loaded machine; the branch is lower on all four). No search work was added (same two searches, a larger pool).
+
+### Pool 40 / 100 (train sets only, docs-only, `eval-against-release.sh --cache`, cli arm)
+Triggered by gate-release (below). Sets: real-corpus + real-hub (39 answerable). hyb@1 / hyb@3 / multi@1/3/8 / dom:
+- 1.26.0 (main): 28 / 37 / 9/13/13 / 11
+- pool 40: 28 / 36 / 9/12/13 / 14
+- pool 60: 28 / 36 / 9/12/13 / 14
+- pool 100: 28 / 36 / 9/12/13 / 16
+No pool size recovers hyb@3 (-1) / multi@3 (-1) or the dominance; larger is worse. Pool 40 equals 60 on these sets but breaks the prefix property above limit 13, so 60 stays (the plan's smallest-that-matches rule holds only with the property). The cause is the fix itself, not the pool size: with a fixed pool, a doc missing from one list no longer loses that component at limit 8 (the old limit-8 pool was 24), so broad docs like troubleshooting.md reach the top 3 more often.
+
+### gate:release (fresh, no --cache), local vs 1.25.1, held-out sets, band 1: FAIL
+- no-export: hyb@1 74 vs 73, multi@1 10 vs 10, multi@3 16 vs 17, @8 20 vs 21 (within band), cov@3 .773 vs .776, **dominance 38 vs 35 (FAIL, band 1)**, negatives 43 vs 43, false flags 7 vs 7, mcp vs cli 0/166, titled #1 119/119, first answer 1160 ms.
+- export: hyb@1 77 vs 78, multi@3 17 vs 17, @8 20 vs 21, cov@3 .796 vs .776, dominance 27 vs 26 (ok), same negatives/false flags, 0/166.
+- p95 in the gate table (local mcp 35/16 ms vs 22/39 ms): noisy, no pattern.
+Note: once Phase 6 bumps to 1.27.0 the gate compares with 1.26.0 (main's ranking), not 1.25.1; its dominance was not measured held-out here. Decision for the user: accept dominance +3 (troubleshooting.md top-3 slots, a doc this repo's sets answer often; see multi-doc-recall notes) by widening the band for dominance, or add a mitigation (e.g. a length prior, previously noted as a trade).
