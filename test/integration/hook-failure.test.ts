@@ -161,7 +161,8 @@ describe("PostToolUseFailure fact lookup (opt-in)", () => {
       expect(runJev(failure({ session_id: "j2b" })).ctx).toContain('checked="jev"');
     });
 
-    it("Jev error or hang → nothing, and the hook stays inside its budget", async () => {
+    // retry: a load-timing flake under the full parallel suite (passes alone); a real failure still fails all 3 attempts
+    it("Jev error or hang → nothing, and the hook stays inside its budget", { retry: 2 }, async () => {
       await mode("raise");
       expect(runJev(failure({ session_id: "j3" })).ctx).toBe("");
       await mode("sleep");

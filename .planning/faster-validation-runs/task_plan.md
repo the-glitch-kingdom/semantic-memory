@@ -19,14 +19,14 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
   - [x] `package.json` "test" becomes `vitest run --exclude 'test/retrieval-eval/**'`. "eval" is unchanged (`vitest run test/retrieval-eval`).
   - [x] (`vitest list --filesOnly`: eval 16 + test 140 = 156 files; 0 in both, 0 in neither) Check that `npm test` plus `npm run eval` runs every `test/**/*.test.ts` file exactly once: compare file lists (`vitest list --json` or the run output) against the glob.
   - [x] CI (`.github/workflows/ci.yml`) already runs both steps; only the comment changes, if needed.
-- [ ] Phase 4: Load flakes retry instead of costing a full re-run
-  - [ ] `{ retry: 2 }` on exactly the tests seen failing only under load, and passing alone:
+- [x] Phase 4: Load flakes retry instead of costing a full re-run
+  - [x] `{ retry: 2 }` on exactly the tests seen failing only under load, and passing alone:
     - freshness-scale "a warm start answers in under a second…" (CI 1085 ms > 1000 ms on PR #80);
     - hook-failure "Jev error or hang → nothing…";
     - stdin-eof "exits on SIGTERM";
-    - skill-queue SessionEnd timing and links-exclude, only if found in this phase's runs.
-  - [ ] No blanket retry in the vitest config.
-  - [ ] Each retried test gets a one-line comment: why it retries (load timing), and what still fails it (a deterministic failure fails all 3 attempts).
+    - skill-queue SessionEnd timing (seen again in Phase 2's baseline, so added); links-exclude not seen again, so not added.
+  - [x] No blanket retry in the vitest config.
+  - [x] Each retried test gets a one-line comment: why it retries (load timing), and what still fails it (a deterministic failure fails all 3 attempts).
 - [ ] Phase 5: Opt-in cache for published releases in `scripts/eval-against-release.sh`
   - [ ] `--cache` (or `EVAL_CACHE=<dir>`, default `~/.cache/semantic-memory-eval`), opt-in only. `local` is never cached.
   - [ ] Cache key: version, `--export` / `--docs-only` / `--slow-git`, a hash of the corpus, and a sha256 of the set files' contents.
@@ -45,7 +45,7 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
   - [ ] No scratch timing scripts in the repo; the cache dir is outside the repo.
 - [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
   - [ ] Lint and build; `npm test` and `npm run eval` both green. Union of their files = every test file, each once (Phase 3 check re-run).
-  - [ ] Retry proof: temporarily make one retried test's assertion always fail. It must fail after 3 attempts. Revert.
+  - [x] Retry proof: a throwaway always-failing test with `{ retry: 2 }` ran 3 attempts, then FAILED; the file was removed. Retry proof: temporarily make one retried test's assertion always fail. It must fail after 3 attempts. Revert.
   - [ ] Cache:
     - [ ] cold run, then warm run (same key): identical table counts, and the warm run is faster (time both);
     - [ ] change a set file → cache miss;

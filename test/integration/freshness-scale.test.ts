@@ -24,7 +24,8 @@ describe("freshness at ~1k docs", () => {
   }, 600_000);
   afterAll(() => cleanupTempDir(dir));
 
-  it("a warm start answers in under a second and re-parses and re-embeds nothing", async () => {
+  // retry: a load-timing flake under the full parallel suite (passes alone); a real failure still fails all 3 attempts
+  it("a warm start answers in under a second and re-parses and re-embeds nothing", { retry: 2 }, async () => {
     // best of 3: the full suite runs files in parallel and a loaded box would otherwise fail a timing bound on noise
     const times: number[] = [];
     for (let i = 0; i < 3; i++) {
