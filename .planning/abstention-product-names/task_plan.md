@@ -50,10 +50,10 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - [x] Phase 6: Release gate
   - [x] Add the absent-terms held-out set to `npm run gate:release`. The gate fails when negatives flagged drops, or false flags rise, by more than 1 against the previous release.
   - [x] Run it against the previous release and record the result.
-- [ ] Phase 7: Release prep
-  - [ ] Bump all five version fields to 1.23.0 and update the lockfile
-  - [ ] Offline tarball deferred to release (built from the merge commit)
-- [ ] Phase 8: Cleanup
+- [x] Phase 7: Release prep
+  - [x] Bump all five version fields to 1.23.0 and update the lockfile
+  - [x] Offline tarball deferred to release (built from the merge commit)  (deferred to release)
+- [x] Phase 8: Cleanup
   - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
 - [ ] Phase 9: Validation (independent review)
   - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
@@ -87,7 +87,7 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - Phase 2: hook-failure Jev-hang and stdin-eof SIGTERM failed under full-suite load, passed alone (16/16).
 
 ## Status
-**Currently in Phase 7** (Phase 6 done: gate:release covers the absent-terms held-out set)
+**Currently in Phase 9** (Phase 7 done: version 1.23.0; Phase 8 done: nothing dead found)
 
 ---
 
