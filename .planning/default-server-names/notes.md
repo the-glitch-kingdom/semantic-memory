@@ -36,3 +36,6 @@ No ranking change (hook + tests only). reconcile.test.ts: 12/12 pass as plain `i
 
 ## Eval results: Phase 4
 Wording, comments, smoke assertion, command allowed-tools and one vaultTool fallback change only; no ranking numbers. hooks/hooks.json description left as is (it names the product, not a server). The other skills already speak of "the vault server"; only semantic-first's name pair needed swapping. Example prompts in vault-first that mention semantic-vault/semantic-sidekick are user quotes, kept.
+
+## Eval results: Phase 5
+Release prep only: versions bumped to 1.26.0 in package.json, package-lock.json (2 fields), plugin.json, marketplace.json (2 fields), AGENTS.md. install-offline.sh has no .mcp.json writes. No ranking numbers.

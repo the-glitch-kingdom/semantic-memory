@@ -1,6 +1,6 @@
 ---
 generated_by: semantic-memory
-version: 1.25.1
+version: 1.26.0
 last_generated: 2026-11-09T20:35:12.096Z
 ---
 

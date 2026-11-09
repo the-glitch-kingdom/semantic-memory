@@ -39,7 +39,7 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
     - `src/cli/index.ts:542` help string.
     - A test (extend `test/unit/skill-surfaces.test.ts`, or a sibling) asserting that no `commands/**` or `skills/**` body text hard-codes a single server prefix, and that `allowed-tools` lists both default names wherever it lists one.
   - [x] `vaultTool()` (`hooks/vault-context.js:93`) falls back to `semantic-vault` when no writable entry is found. Make the fallback `semantic-memory`, the new default.
-- [ ] Phase 5: Release prep: bump all five version fields to 1.26.0 and the lockfile; the offline tarball is deferred to release. Check whether `scripts/install-offline.sh` writes `.mcp.json` entries; if it does, apply the same defaults.
+- [x] Phase 5: Release prep: bump all five version fields to 1.26.0 and the lockfile; the offline tarball is deferred to release. Check whether `scripts/install-offline.sh` writes `.mcp.json` entries; if it does, apply the same defaults. (done: five fields + lockfile at 1.26.0; tarball deferred to release; install-offline.sh writes no .mcp.json, so no change)
 - [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2 tests pass as plain `it`.
@@ -61,7 +61,7 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 
 ## Key Questions
 1. Should an existing install be offered an automatic rename? No: renaming changes every tool name the session sees, breaking permission allowlists and CLAUDE.md references. The docs give the manual steps instead.
-2. Does `install-offline.sh` write `.mcp.json`? Answered in Phase 5.
+2. Does `install-offline.sh` write `.mcp.json`? No (Phase 5: no mcp references in the script), so no change there.
 
 ## Decisions Made
 - New defaults only; existing entries are never renamed or duplicated (the served-folder check). The old names stay recognized forever.
@@ -72,4 +72,4 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 - Phase 2: tests run hooks/session-start.js as a subprocess (HOME and CLAUDE_PROJECT_DIR set to temp dirs), not reconcile() directly.
 
 ## Status
-**Currently in Phase 5.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
+**Currently in Phase 6.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
