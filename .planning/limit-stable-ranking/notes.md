@@ -53,3 +53,7 @@ Latency is in-process and warm (one pass over each set); Phase 4 re-measures p95
 - `search_hybrid` 6/7 and `cli` 6/7: all but "how do I publish a release to npm".
 - `search_semantic` 5/7: all but "publish a release" and "offline tarball".
 Phase 3 must empty the `BROKEN` table in that file so every case is a plain `it`.
+
+## Eval results: Phase 3
+`CANDIDATE_POOL = 60`, `candidatePool(limit) = max(60, limit*3)` in `src/core/bm25.ts`, used by hybridRanked, search_semantic and CLI search. `limit-stable.test.ts`: 21/21 pass as plain gates (17 failed on main); BROKEN table removed. Accuracy/latency numbers are Phase 4.
+Side effect: `test/fixtures/federation/single-source-snapshot.json` re-taken (ranking changed by design). Two queries moved: "Undo a faulty software release on the ships" (changelog/v2-0-release.md 0.300 -> 0.385, now above reference/cli-reference.md) and the nonexistent_function query (cli-reference 0.285 -> 0.293); the other 8 are identical. Flakes seen in the first full run, both passed alone: stdin-eof, claude-run concurrency. `npm run eval` 169 passed + 4 expected fail (was 152 + 21).

@@ -193,6 +193,14 @@ export class Bm25Index {
   }
 }
 
+/**
+ * Candidates each list (vector, BM25) contributes before fusion. A pool sized by `limit` made scores and order depend on it
+ * (#85): a doc in one list but outside the other lost that share. A fixed floor keeps search(q, k) the first k of search(q, K)
+ * for every k <= K <= 20 (the old pool for limit 20 was 60). Above 20 the pool grows, so the guarantee stops there.
+ */
+export const CANDIDATE_POOL = 60;
+export const candidatePool = (limit: number): number => Math.max(CANDIDATE_POOL, limit * 3);
+
 /** Weight of the vector cosine in the fused score; BM25 (scaled to its best candidate) gets the rest. Tuned on the train splits only. */
 export const COSINE_WEIGHT = 0.7;
 
