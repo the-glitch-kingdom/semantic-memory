@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Fake `claude` for tests (v1.7): never calls a model. Reads the prompt on stdin and answers per
-// FAKE_CLAUDE_RULES (JSON file: [{match, result?, skill?, cycle?, sleepMs?, exit?}], first rule whose `match` is in the
+// FAKE_CLAUDE_RULES (JSON file: [{match, result?, skill?, cycle?, sleepMs?, exit?, maxTurns?}], first rule whose `match` is in the
 // prompt — or "*" — wins); logs every run to FAKE_CLAUDE_LOG as {args, cwd, pid, t0, t1, prompt, env}.
 // --output-format json → one result object; stream-json → init, an optional Skill tool_use, result.
 import fs from "node:fs";
@@ -20,7 +20,8 @@ const finish = () => {
   if (out === "stream-json") {
     const lines = [{ type: "system", subtype: "init", tools: (flag("--tools") || "").split(",").filter(Boolean), mcp_servers: [] }];
     if (skill) lines.push({ type: "assistant", message: { content: [{ type: "tool_use", name: "Skill", input: { skill } }] } });
-    lines.push({ type: "result", subtype: "success", is_error: false, result, num_turns: 1, total_cost_usd: 0.001 });
+    // maxTurns: end as the real CLI does when the turn cap is hit (is_error with subtype error_max_turns)
+    lines.push(rule.maxTurns ? { type: "result", subtype: "error_max_turns", is_error: true, num_turns: 2, total_cost_usd: 0.001 } : { type: "result", subtype: "success", is_error: false, result, num_turns: 1, total_cost_usd: 0.001 });
     process.stdout.write(lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
   } else if (out === "json") {
     process.stdout.write(JSON.stringify({ type: "result", subtype: "success", is_error: false, result, num_turns: 1, total_cost_usd: 0.001 }) + "\n");

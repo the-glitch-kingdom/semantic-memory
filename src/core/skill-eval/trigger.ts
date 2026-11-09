@@ -109,7 +109,10 @@ export async function runTrigger(prompts: EvalPrompt[], o: TriggerOptions): Prom
   const callOnce = async (text: string): Promise<boolean | string> => {
     started++;
     const r = await runClaude({ prompt: text, cwd: scratch, tools: ["Skill", "Read", "Glob", "Grep"], maxTurns: 2, output: "stream-json", env, timeoutMs: o.timeoutMs });
-    return r.ok ? skillsCalled(r.events).includes(skill.name) : (r.error ?? "claude failed");
+    // a run that loads the skill and then hits the turn cap still chose it; one that hits the cap without it did not (#81)
+    if (skillsCalled(r.events).includes(skill.name)) return true;
+    if (r.ok || /max.turns/.test(r.error ?? "")) return false;
+    return r.error ?? "claude failed";
   };
   try {
     const results = await Promise.all(
