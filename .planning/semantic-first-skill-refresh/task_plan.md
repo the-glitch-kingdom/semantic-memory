@@ -18,13 +18,13 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
     - [x] the indexing string the skill quotes matches `src/mcp/context.ts` ("Indexing in progress").
   - [x] Keep the existing `search-guidance.test.ts` assertions ("top 3", "each step separately") passing for the surfaces they cover. If the draft's wording drops "top 3" for semantic-first, change that one surface's assertion to the draft's multi-part rule ("read down to result 8" / "every part is covered") and record why.
   - [x] Record which assertions fail on main.
-- [ ] Phase 3: Replace the skill with the draft
-  - [ ] `skills/semantic-first/SKILL.md` = `draft-SKILL.md`, with ONE change: the two-server lines.
+- [x] Phase 3: Replace the skill with the draft
+  - [x] `skills/semantic-first/SKILL.md` = `draft-SKILL.md`, with ONE change: the two-server lines.
     - The draft hard-codes `semantic-memory-docs` / `semantic-memory`, but `hooks/reconcile.js` writes `semantic-sidekick` / `semantic-vault` by default.
     - Describe the servers by role (read-only docs, writable vault). Give both name pairs as examples ("names come from `.mcp.json`; e.g. `semantic-memory-docs` / `semantic-memory`, or the defaults `semantic-sidekick` / `semantic-vault`"). Keep it to 2–3 lines and keep the draft's other text verbatim.
-  - [ ] Delete `skills/semantic-first/references/vault-frontmatter.md` (and the empty `references/` dir). Nothing else references it except SKILL.md and evals.json.
-  - [ ] `skills/semantic-first/evals/evals.json`: fix the old tool names and the reference-file mention in `expected_output`, to match the new skill.
-  - [ ] Word count: report it (the draft is ~516 words; the current skill is ~1,968 plus a 1,099-word reference file).
+  - [x] Delete `skills/semantic-first/references/vault-frontmatter.md` (and the empty `references/` dir). Nothing else references it except SKILL.md and evals.json.
+  - [x] `skills/semantic-first/evals/evals.json`: fix the old tool names and the reference-file mention in `expected_output`, to match the new skill.
+  - [x] Word count: report it (the draft is ~516 words; the current skill is ~1,968 plus a 1,099-word reference file).
 - [ ] Phase 4: Sibling skills and hook messages
   - [ ] `skills/vault-first`, `skills/research-mode` and `skills/outage-silence`: replace `mcp__semantic-vault__<tool>` with the bare tool name on "the vault server". Use the same role wording as Phase 3, in at most one line per skill.
   - [ ] `hooks/vault-context.js` prints `mcp__semantic-vault__…` in six messages. The hook already resolves the writable `semantic-*` entry; print that entry's real name if this is a small change, with a test. If not, record why and leave it.
@@ -71,8 +71,11 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Patch release 1.25.1, which also carries the #82 tooling changes from `[Unreleased]`.
 
 ## Errors Encountered
+- Phase 3: `search-guidance.test.ts` required "top 3" / "each step separately" in the semantic-first skill; the draft drops both. That surface now asserts the draft's rule ("search each part, or read down to result 8", "every part is covered"); the other three surfaces are unchanged.
+- Phase 3: full suite hit freshness-scale warm start and stdin-eof SIGTERM (known load flakes); both pass alone.
+- Phase 3: the prefix test in `skill-surfaces.test.ts` stays `it.fails` until Phase 4 fixes the sibling skills; the other eight are plain `it`.
 - Phase 2: freshness-scale warm start failed once under the full suite (known load flake) and passed alone.
 - Phase 2: the "every tool a skill names" regex also matches `read_time_min`, a frontmatter field in the reference file. It is deleted in Phase 3, so the regex stays simple.
 
 ## Status
-**Currently in Phase 3.**
+**Currently in Phase 4.**

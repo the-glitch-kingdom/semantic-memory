@@ -79,3 +79,13 @@ Run on 1.25.0 skills (`test/unit/skill-surfaces.test.ts`, `test/e2e/skill-result
 
 9 cases are `it.fails`; they become plain `it` in Phases 3-4 (Phase 8 checks none is left).
 The live fields come from one small git repo (src/TaskResponse.ts, DeadLetterSweeper.ts, 4 docs; `passing_terms` via a name in one non-top doc) on the built server.
+
+## Eval results: Phase 3 (text only, no ranking numbers)
+
+`diff draft-SKILL.md skills/semantic-first/SKILL.md` shows only the two-server lines (draft line 8 gains the `.mcp.json` names sentence with both name pairs; lines 10-11 say "The docs server" / "The vault server" instead of the hard-coded names). Everything else is verbatim.
+
+Word count: SKILL.md 534 words (draft ~516, old skill ~1,968 plus a 1,099-word reference file, now deleted with `git rm`; `references/` is gone).
+
+`evals.json`: `mcp__semantic-sidekick__search_hybrid` -> `search_hybrid`; the vault-frontmatter.md mention and "full frontmatter ... source: mixed" now say a note written through `synthesize_note`.
+
+Tests: 8 of the 9 Phase 2 `it.fails` are plain `it` (verified passing). The no-tool-prefix case stays `it.fails` until Phase 4 (sibling skills).

@@ -35,15 +35,15 @@ describe("skills name the tools and fields the release has (#81)", () => {
     expect(hits).toEqual([]);
   });
 
-  it.fails("no skill uses top_k (the parameter is limit)", () => {
+  it("no skill uses top_k (the parameter is limit)", () => {
     expect(files.filter((f) => /top_k/.test(f.text)).map((f) => f.name)).toEqual([]);
   });
 
-  it.fails("no skill names create_note: synthesize_note and ingest_source are the write path", () => {
+  it("no skill names create_note: synthesize_note and ingest_source are the write path", () => {
     expect(files.filter((f) => /create_note/.test(f.text)).map((f) => f.name)).toEqual([]);
   });
 
-  it.fails("every tool a skill names is in CURRENT_TOOL_INVENTORY", () => {
+  it("every tool a skill names is in CURRENT_TOOL_INVENTORY", () => {
     const known = new Set(CURRENT_TOOL_INVENTORY.map((t) => t.name));
     const unknown = files.flatMap((f) => bareTools(f.text).filter((t) => !known.has(t)).map((t) => `${f.name}: ${t}`));
     expect(unknown).toEqual([]);
@@ -51,26 +51,26 @@ describe("skills name the tools and fields the release has (#81)", () => {
     expect(bareTools(skill)).toEqual(expect.arrayContaining(["search_hybrid", "read_note"]));
   });
 
-  it.fails("semantic-first names the tools of the lookup and research flows", () => {
+  it("semantic-first names the tools of the lookup and research flows", () => {
     expect(bareTools(skill)).toEqual(expect.arrayContaining(["search_hybrid", "search_text", "read_note", "forwardlinks", "backlinks", "synthesize_note", "ingest_source"]));
   });
 
-  it.fails("semantic-first names each result field the server emits", () => {
+  it("semantic-first names each result field the server emits", () => {
     const named = new Set(backticked(skill).map((t) => t.replace(/[:=].*$/, "")));
     expect(RESULT_FIELDS.filter((f) => !named.has(f))).toEqual([]);
   });
 
-  it.fails("semantic-first covers the indexing answer, quoted as src/mcp/context.ts prints it", () => {
+  it("semantic-first covers the indexing answer, quoted as src/mcp/context.ts prints it", () => {
     expect(readFileSync(join(root, "src/mcp/context.ts"), "utf-8")).toContain("Indexing in progress");
     expect(skill).toContain("Indexing in progress");
   });
 
-  it.fails("semantic-first tells the agent to cover every part of a multi-part question", () => {
+  it("semantic-first tells the agent to cover every part of a multi-part question", () => {
     expect(skill).toMatch(/result 8/);
     expect(skill).toMatch(/every part is covered/);
   });
 
-  it.fails("the stale vault-frontmatter reference (tier/source/owner, which synthesize_note never writes) is gone", () => {
+  it("the stale vault-frontmatter reference (tier/source/owner, which synthesize_note never writes) is gone", () => {
     expect(files.map((f) => f.name)).not.toContain("skills/semantic-first/references/vault-frontmatter.md");
   });
 });
