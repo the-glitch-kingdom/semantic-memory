@@ -8,6 +8,8 @@ Today the candidate pool is `limit * 3` for both the vector and BM25 lists. So:
 - the fused and coverage scores change with `limit`;
 - every caller (skill 5–10, hooks 6/8, CLI 8, kit 8) sees a different ranking.
 
+Also (the reporter's second comment on #85): two full builds of byte-identical files must rank identically, so vector search is exact below 100k vectors.
+
 Release as 1.27.0: ranking changes for every caller.
 
 ## Phases
@@ -37,11 +39,30 @@ Release as 1.27.0: ranking changes for every caller.
   - [ ] If any eval metric drops, try pool 40 and 100, on train splits only. Pick the smallest pool that matches or beats the baseline; record every number in notes.md.
   - [ ] Update any eval expectation or threshold that moved, with the reason in notes.md.
   - [ ] `npm run gate:release` passes (fresh, no `--cache`).
-- [ ] Phase 5: The reporter's nit, plus release prep
+- [ ] Phase 5: Reproducible vector search (#85, second comment: two full builds of identical files rank differently)
+  - [ ] Reproduce first, as a failing test. Build the index twice from scratch on two copies of a fixture corpus: separate temp dirs and index dirs, no shared embedding cache. Compare `search_semantic` and `search_hybrid` for a fixture query set (paths and order identical, scores within 1e-6). A second test feeds one build's embeddings perturbed by ~1e-6 (simulated cross-run ONNX float noise). The ranking must be the same unless two docs are within the noise. If the first test does not fail on main, keep it as a regression gate and rely on the perturbed test, which reproduces the mechanism. Record which fail.
+  - [ ] Find the actual source and record it in notes.md. The reporter suspects insertion order, but `listMarkdown` sorts (`src/core/indexer.ts:38`) and the build keeps `plan.parse` order (`src/mcp/context.ts:388`). Check:
+    - the max abs difference between the two builds' embeddings (ONNX batching/threads);
+    - whether a resumed build (`SAVE_INTERVAL`) or an incremental `addChunks` path changes the batch composition or the insertion order;
+    - hnswlib's level RNG seed (`initIndex` defaults).
+  - [ ] Exact search below a size threshold:
+    - `VectorIndex.search` scores every live chunk by cosine (brute force over the stored vectors: `getPoint` or a kept `Float32Array`) when live chunks ≤ `EXACT_MAX_VECTORS` (100_000). Break ties by doc path, then label, so the order is total.
+    - Keep the per-doc best body/meta chunk logic and the result shape as they are.
+    - Above the threshold, HNSW is unchanged (insertion is already sorted).
+    - Keep building and saving `hnsw.bin` this release (load compatibility, and the large-vault path). Dropping it for small vaults is out of scope; note it as a possible follow-up.
+  - [ ] Phase 5 tests pass as plain `it`. The Phase 2/3 prefix tests still pass. `search_semantic` and the hybrid vector arm now return the exact top-k, so the recall of `ef=100` no longer limits them.
+  - [ ] Measure on the same script and sets as Phase 4:
+    - the eval metrics at limit 8 must be ≥ Phase 4's;
+    - p95 `search_hybrid` at limit 8 must stay within +10 ms of Phase 4's on the eval corpus;
+    - one timing on a synthetic 13k × 384 index (the reporter's size): one exact query must take < 20 ms;
+    - build twice and confirm zero differing top-8 results on the real-corpus sets.
+    Record all of it in notes.md.
+  - [ ] Real-corpus slack: `baseline.json` and `gate-release.sh` allow about ±1 case for HNSW randomness. If two fresh builds now give identical results on the real corpus, record that in notes.md. Keep the slack for now (CI CPUs differ), and note that it could be removed as a follow-up.
+- [ ] Phase 6: The reporter's nit, plus release prep
   - [ ] `hooks/reconcile.js` header comment (lines ~21-23): it still says the docs entry "stays semantic-sidekick". Make it describe `DOCS_KEY = "semantic-memory-docs"` and the legacy name.
   - [ ] Bump all five version fields to 1.27.0, plus the lockfile. The offline tarball is deferred to release.
-- [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
+- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2 tests pass, and none are left as `it.fails`.
   - [ ] Edge cases:
     - limit 1, and limit 20 (the boundary);
@@ -49,15 +70,18 @@ Release as 1.27.0: ranking changes for every caller.
     - a corpus smaller than the pool (6 docs);
     - status/tier/domain filters at limit 3 return no fewer results than on main;
     - text-only CLI (`--text-only`) unchanged.
+  - [ ] Build twice from scratch (fixture corpus and this repo's `.documentation`): identical `search_semantic`/`search_hybrid` results.
+  - [ ] Exact-search edge cases: an empty index, one chunk, every chunk of a doc deleted (`removeDoc`), and an index that crosses `EXACT_MAX_VECTORS` (a test-only lower threshold) and switches to HNSW.
   - [ ] MCP vs CLI parity: same #1 for the fixture queries at limits 3 and 8.
   - [ ] Re-run the reporter-style check on this repo's `.documentation`: 10 queries × limits 1, 3, 5, 8, 10, 20, prefix property holds.
   - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
   - [ ] Independent review of `git diff main...HEAD`.
-- [ ] Phase 8: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+- [ ] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/architecture/` search pipeline doc (find it: the one that describes `hybridRanked`, fusion and coverage). Describe the fixed candidate pool and the prefix property.
   - [ ] `.documentation/reference/mcp-tools-reference.md`: `limit` cuts a stable ranking (≤ 20).
   - [ ] `.documentation/testing/retrieval-eval-guide.md`: if Phase 4 adds the per-limit #1 report.
   - [ ] A KB gotcha fact: a candidate pool sized by `limit` makes ranking depend on `limit`. In `## Instead`: a fixed pool, plus the prefix test.
+  - [ ] Phase 5 docs: the architecture/indices doc (exact search below `EXACT_MAX_VECTORS`, HNSW above), and a KB gotcha fact: approximate HNSW plus float noise means rebuilds rank differently. In `## Instead`: exact search for typical vault sizes, and a build-twice test.
   - [ ] `CHANGELOG.md` 1.27.0, and `.documentation/changelog/v1-27-0-limit-stable-ranking.md`, with the before/after numbers from Phase 4.
   - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
@@ -66,6 +90,7 @@ Release as 1.27.0: ranking changes for every caller.
 2. Limits above 20: the pool grows (`limit * 3`), so the prefix property is only guaranteed up to 20. This is documented, not hidden.
 
 ## Decisions Made
+- 2026-11-09: the second #85 comment (build-to-build ranking noise) is folded into this plan as Phase 5, same release. The workflow was stopped after Phase 3 and relaunched from Phase 4.
 - Version 1.27.0, not a patch: every caller's ranking can change.
 - Measure first: the baseline in Phase 2 happens before the fix lands.
 
