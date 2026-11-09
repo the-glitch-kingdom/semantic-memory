@@ -174,6 +174,10 @@ export interface ArmMetrics {
   mrr: number;
   /** Per-call latency in ms across all cases. */
   latencyMs: { p50: number; p95: number };
+  /** Over the multi-tier cases: mean fraction of facets found in the top k (`facet`), and of `expected` docs (`docs`, over the multi cases that name them). */
+  cov: { facet: Record<number, number>; docs: Record<number, number> };
+  /** The most top-3 slots any one doc takes on cases it does not answer (it matches none of the case's facets; negatives included): the broad doc that crowds out the right ones. */
+  dominance: { path: string; slots: number } | null;
 }
 
 /** Rank (1-based) at which the facets are first all covered by live (non-archive) results, or null. */
@@ -184,6 +188,13 @@ export function facetRank(facets: string[], paths: string[], textOf: (p: string)
     if (res.every((re) => live.some((p) => re.test(textOf(p))))) return k;
   }
   return null;
+}
+
+/** Fraction of `facets` covered by the live (non-archive) results among `paths`. */
+export function facetCoverage(facets: string[], paths: string[], textOf: (p: string) => string): number {
+  if (!facets.length) return 1;
+  const live = paths.filter((p) => !ARCHIVE_RE.test(p));
+  return facets.filter((f) => live.some((p) => new RegExp(f, "i").test(textOf(p)))).length / facets.length;
 }
 
 const percentile = (xs: number[], p: number) => (xs.length ? [...xs].sort((a, b) => a - b)[Math.min(xs.length - 1, Math.floor(p * xs.length))] : 0);
@@ -203,6 +214,9 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
   let expectedN = 0;
   const foundAt: Record<number, number> = Object.fromEntries(FACET_KS.map((k) => [k, 0]));
   let rrSum = 0;
+  const facetCov: number[][] = FACET_KS.map(() => []);
+  const docCov: number[][] = FACET_KS.map(() => []);
+  const top3 = new Map<string, number>();
   for (const c of cases) {
     const t0 = performance.now();
     const { results, bytes: b, weak, related, readingPath } = await arm(c.q, maxK);
@@ -210,6 +224,8 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
     const top = results.slice(0, maxK);
     bytes += b;
     archiveHits += top.filter((r) => ARCHIVE_RE.test(r.path)).length;
+    const answers = (p: string) => (c.facets ?? []).some((f) => new RegExp(f, "i").test(textOf(p)));
+    for (const r of top.slice(0, 3)) if (!answers(r.path)) top3.set(r.path, (top3.get(r.path) ?? 0) + 1);
     if (c.tier === "negative") {
       negativeTop.push(top.length ? top[0].score : null);
       if (weak) negativesFlagged++;
@@ -222,6 +238,13 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
       if (at) rrSum += 1 / at;
     }
     const rank = facetRank(c.facets ?? [], top.map((r) => r.path), textOf);
+    if (c.tier === "multi") {
+      FACET_KS.forEach((k, i) => {
+        const paths = top.slice(0, k).map((r) => r.path);
+        facetCov[i].push(facetCoverage(c.facets ?? [], paths, textOf));
+        if (c.expected?.length) docCov[i].push(c.expected.filter((p) => paths.includes(p)).length / c.expected.length);
+      });
+    }
     if (weak) answerableFlagged++;
     answerable++;
     relatedSum += related?.length ?? 0;
@@ -236,7 +259,11 @@ export async function runFacetEval(cases: FacetCase[], arm: ArmFn, textOf: (p: s
       for (const k of FACET_KS) if (rank !== null && rank <= k) t.at[k]++;
     }
   }
-  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length), negativesFlagged, answeredFlagged, answerableFlagged, relatedPerTop: answerable ? relatedSum / answerable : 0, expectedN, foundAt, mrr: expectedN ? rrSum / expectedN : 0, latencyMs: { p50: percentile(latencies, 0.5), p95: percentile(latencies, 0.95) } };
+  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const [domPath, domSlots] = [...top3].sort((a, b) => b[1] - a[1])[0] ?? [];
+  return { tiers, negativeTop, archiveHits, meanBytes: Math.round(bytes / cases.length), negativesFlagged, answeredFlagged, answerableFlagged, relatedPerTop: answerable ? relatedSum / answerable : 0, expectedN, foundAt, mrr: expectedN ? rrSum / expectedN : 0, latencyMs: { p50: percentile(latencies, 0.5), p95: percentile(latencies, 0.95) },
+    cov: { facet: Object.fromEntries(FACET_KS.map((k, i) => [k, mean(facetCov[i])])), docs: Object.fromEntries(FACET_KS.map((k, i) => [k, mean(docCov[i])])) },
+    dominance: domPath ? { path: domPath, slots: domSlots } : null };
 }
 
 export interface LinkMetrics {
@@ -269,6 +296,8 @@ export function formatArm(name: string, m: ArmMetrics): string {
   for (const [tier, t] of Object.entries(m.tiers).sort()) {
     lines.push(`    ${tier.padEnd(11)} (${String(t.n).padStart(2)}): ${FACET_KS.map((k) => `@${k}=${t.at[k]}/${t.n}`).join("  ")}  #1+related=${t.expandedAt1}/${t.n}  #1+path=${t.pathAt1}/${t.n}`);
   }
+  if (m.tiers.multi) lines.push(`    multi cov@k: facets ${FACET_KS.map((k) => `@${k}=${m.cov.facet[k].toFixed(2)}`).join(" ")}  docs ${FACET_KS.map((k) => `@${k}=${m.cov.docs[k].toFixed(2)}`).join(" ")}`);
+  if (m.dominance) lines.push(`    dominance: ${m.dominance.slots} top-3 slots, ${m.dominance.path}`);
   return lines.join("\n");
 }
 

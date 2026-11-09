@@ -21,19 +21,20 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
   - [x] Verify #76 against main @ 066c730 (notes.md). Mechanism found in code; the regression did not reproduce on this repo's sets.
   - [x] Post the verification comment on #76
   - [x] Cut `feat/multi-doc-recall`, commit this plan
-- [ ] Phase 2: Reproduce first (before any change)
-  - [ ] Hub fixture shaped like the reporter's tree: `test/fixtures/multi-hub/`.
+- [x] Phase 2: Reproduce first (before any change)
+  - [x] Hub fixture shaped like the reporter's tree: `test/fixtures/multi-hub/`.
         - Long "operator notes" hub docs (8-15 KB, many H2 sections) that each hold 3-4 facets of a question in different sections.
         - Narrower docs that each hold one of those facets.
         - Short broad docs (one chunk, vocabulary or picklist style) that match many questions loosely.
         - An exact env-var or script name that appears only inside a long hub doc.
-  - [ ] Question sets `multi-hub.jsonl` (train) and `multi-hub-heldout.jsonl`. Each has at least 12 multi questions with 3-4 facets and `expected` docs, plus exact-term-in-hub questions and paraphrase controls. Write and facet-check them before measuring.
-  - [ ] Eval metrics:
+        (Done: 5 hubs of 8.0-8.4 KB, 7.96 KB for storage, i.e. the low end of the band; 10 narrow docs; 5 one-chunk broad docs.)
+  - [x] Question sets `multi-hub.jsonl` (train) and `multi-hub-heldout.jsonl`. Each has at least 12 multi questions with 3-4 facets and `expected` docs, plus exact-term-in-hub questions and paraphrase controls. Write and facet-check them before measuring.
+  - [x] Eval metrics:
         - `cov@k`: mean fraction of a multi question's facets (and expected docs) found in the top k.
         - `dominance`: the most top-3 slots any one doc takes across unrelated questions.
         - Report both in `eval --json` and in the `eval-against-release.sh` table.
-  - [ ] Measure the candidate pool: distinct docs among the `limit * 3` nearest chunks, per question, for 1.15.0, 1.21.0 and 1.22.0 on the same tree. Count chunks per doc for each schema.
-  - [ ] Baseline in notes.md: 1.15.0, 1.21.0, 1.22.0, 1.23.0 and local, same run, CLI and MCP, with and without an export. The stdio test must show the multi @8 loss before any fix; if it does not reproduce, say so plainly and build a harder fixture before Phase 3.
+  - [x] Measure the candidate pool: distinct docs among the `limit * 3` nearest chunks, per question, for 1.15.0, 1.21.0 and 1.22.0 on the same tree. Count chunks per doc for each schema.
+  - [x] Baseline in notes.md: 1.15.0, 1.21.0, 1.22.0, 1.23.0 and local, same run, CLI and MCP, with and without an export. The stdio test must show the multi @8 loss before any fix; if it does not reproduce, say so plainly and build a harder fixture before Phase 3.
 - [ ] Phase 3: The candidate pool counts docs, not chunks
   - [ ] `VectorIndex.search(q, k)` returns up to k distinct docs. Fetch more neighbours (bounded, for example doubling up to a cap) until k docs are found or the index is exhausted. Every caller (`src/mcp/tools/search.ts`, `src/cli/search.ts`, graph seeds) gets the same behaviour. BM25 is already one result per doc; confirm it.
   - [ ] Measure on train: multi @1/@3/@8, `cov@k`, paraphrase, exact, long-section-hard and p95.
@@ -79,9 +80,13 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 
 ## Decisions Made
 - One plan for #76. It waits for #74, because both extend the eval and the gate.
+- Phase 2: the fixture sits in `.documentation/multi-hub/` of each eval clone (the script copies it, as for long-section-hard), so the 141-doc real tree adds noise like a real vault. Docs-only runs are not used for these sets.
+- Phase 2: `cov@k` and `dominance` live in `ArmMetrics`, so every eval report carries them; the old releases get them through the mcp arm, which this checkout drives.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: the first fixture (14 multi per set) reproduced the @8 loss by only 1-2 cases (train 13 -> 11, held-out 12 -> 11), inside the noise band. Hardened before any search change: 5 more hub-heavy multi questions per set (cross-hub, 4 facets). Result: train 16 -> 13 (-3 of 19), held-out 13 -> 12 (-1), all 8 sets 51 -> 47 of 61. The held-out loss alone is still within one case, so Phase 6's gate leans on the all-sets multi @8 and `cov@8` as well as the held-out set.
+- Phase 2: the first `dominance` counted every top-3 slot and so charged a hub for the questions it answers; redefined as slots on questions the doc does not answer (matches none of the question's facets).
+- Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 2** (waiting for #74 to merge, then rebase)
+**Currently in Phase 3** (Phase 2 done: the multi @8 loss reproduces, see notes.md "Eval results: Phase 2")
