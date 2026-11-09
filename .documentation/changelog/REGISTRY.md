@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 35 |
+| Documents | 36 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -37,16 +37,16 @@ purpose: Quick reference for changelog documentation
 ## Recently Updated
 
 - [v1.22.0 - MCP metadata gap and long sections](v1-22-0-mcp-metadata-gap-long-sections.md) - 2026-11-09
+- [v1.23.0 - abstention for product and tool names](v1-23-0-abstention-product-names.md) - 2026-11-09
 - [v1.16.0 - code graph](v1-16-0-code-graph.md) - 2026-11-08
 - [v1.17.0 - section results](v1-17-0-section-results.md) - 2026-11-08
 - [v1.18.0 - query routing](v1-18-0-query-routing.md) - 2026-11-08
-- [v1.19.0 - federated search](v1-19-0-federated-search.md) - 2026-11-08
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 35 |
+| active | 36 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

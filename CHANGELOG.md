@@ -2,6 +2,24 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.23.0] - 2026-11-09 — Abstention for product and tool names
+
+Issue #74. Numbers and misses: `.documentation/changelog/v1-23-0-abstention-product-names.md`.
+
+### Added
+
+- **`missing_terms` flags absent product and tool names** (`Hotjar`, `tRPC`, `k8s`, `kubelet`), not only code-shaped identifiers, over MCP, the CLI and federation. A shipped word list keeps plain English out.
+- **`passing_terms`**: a name in at most one doc and in none of the top 3 results. It also sets `no_strong_match`.
+- `gate:release` checks the held-out absent-terms set (negatives flagged and false flags).
+
+### Measured
+
+Absent-terms negatives flagged, same run: train 26/29 against 13 (1.15.0) and 7 (1.22.0), held-out 27/27 against 15 and 7. False flags on the answerable controls: 0 on 45, against 3 (1.15.0) and 0 (1.22.0). On the other answerable sets 1.23.0 flags 15 against 14 and 13: `wildcard` and `dotfiles`, plus `refetching` in golden-decay.
+
+### Missed targets
+
+The reporter's own sets are not available, so their 6/7 and 9/10 targets are not measured. Passing-mention names: 1 of 3 on train. `react-query`, `sharding` and `ingress` stay unflagged by design.
+
 ## [1.22.0] - 2026-11-09 — MCP metadata gap and long sections
 
 Issue #73. Numbers and misses: `.documentation/changelog/v1-22-0-mcp-metadata-gap-long-sections.md`.

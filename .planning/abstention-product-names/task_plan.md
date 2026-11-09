@@ -62,17 +62,18 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
   - [x] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, every real-corpus/hub answerable set has no new false flags
   - [x] Every #74 acceptance check against 1.15.0 and the previous release in the same run, answered honestly in notes.md
   - [x] `npm run gate:release` passes
-- [ ] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
-  - [ ] `.documentation/changelog/v1-23-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0 and the previous release in the same run, false flags beside every negatives number, missed targets stated
-  - [ ] Docs for `missing_terms`/`no_strong_match` (search reference, retrieval-eval-guide, retrieval-tuning-guide), and help topics in `src/core/help/topics.ts` that describe abstention
-  - [ ] README version row; AGENTS.md regenerated
-  - [ ] Final `npm run eval`; floors move only with a measured reason
+- [x] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
+  - [x] `.documentation/changelog/v1-23-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0 and the previous release in the same run, false flags beside every negatives number, missed targets stated
+  - [x] Docs for `missing_terms`/`no_strong_match` (search reference, retrieval-eval-guide, retrieval-tuning-guide), and help topics in `src/core/help/topics.ts` that describe abstention
+  - [x] README version row; AGENTS.md regenerated
+  - [x] Final `npm run eval`; floors move only with a measured reason
 
 ## Key Questions
 1. Can a dictionary-free signal (the WordPiece vocabulary) match an English word list? Answered on train in Phase 3.
 2. Does rule 2 cost false flags on this repo's answerable sets? Answered in Phase 4.
 
 ## Decisions Made
+- Phase 10: no help topic described abstention, so one new topic `weak-matches` was added in src/core/help/topics.ts. Changelog numbers are the Phase 9 same-run table (1.15.0, 1.22.0, local), no new measurement. AGENTS.md regenerated from branch code; only the timestamp changed.
 - Phase 3: kept (b), a shipped word list with a suffix strip (src/core/common-words.ts, 31,676 words, ~284 KB, SCOWL/Debian wamerican, MIT-style notice in THIRD_PARTY_NOTICES.md). Not a frequency list: none was available offline. `identifiers(query, known, names)` gets `names` (off by default: query typing, entity cards and `knownToCode` loading read the old shapes); `missingTerms` passes `true`. The CLI loads the code graph also when a name candidate is missing from the docs.
 - One plan for #74. It waits for #73, because both extend the eval and the gate.
 
@@ -81,6 +82,7 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - Phase 5: `mergeSources` (src/core/federation-merge.ts) now keeps a `missing_terms`/`passing_terms` name only if every answering source lacks it (a source that has it makes it not missing), and no longer leaks `passing_terms` through `...rest` onto a merged page that is not weak. `search_semantic` and `search_hybrid` share `shape()`, the CLI and `eval` share the same functions; `search_text` reports no weak matches, so it is untouched. Parity test added to test/e2e/stdio-readonly.test.ts (real stdio server vs `dist/cli/index.js search`).
 
 ## Errors Encountered
+- Phase 10: `npm test` failed the golden-set false-flag test because the new docs named `wildcard` and `dotfiles`, which made them present in the live .documentation. Names removed from the docs (they are listed in test/unit/identifiers.test.ts). freshness-scale warm start and hook-failure Jev-hang failed under load, passed alone. No floor changed.
 - Phase 9: `npm test` freshness-scale warm start failed under load, passed alone (2/2). Review bugs fixed: (1) a colon or `e.g.` ended a "sentence", so `Which tool: Hotjar or FullStory` lost `Hotjar`; (2) MCP `passingTerms` took the top 3 from the page (`limit`), the CLI from the whole list, so `limit: 1` could flag differently. (1) has a unit test; (2) has none (limit invariance is not tested).
 - Phase 5: freshness-scale warm start and hook-failure Jev-hang failed under full-suite load, passed alone (16/16). The existing federation-merge test expected a missing term to survive a second weak source that had none; it now gives that source the term, per the new rule.
 - Phase 4: freshness-scale warm start and hook-failure Jev-hang failed under full-suite load, passed alone (16/16). A first build after wiring the CLI had a missing `weak` (caught by lint, fixed before measuring).
@@ -88,7 +90,7 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - Phase 2: hook-failure Jev-hang and stdin-eof SIGTERM failed under full-suite load, passed alone (16/16).
 
 ## Status
-**Currently in Phase 10** (Phase 9 done: review fixed 2 bugs, gate PASS)
+**Complete** (Phase 10 docs done; ready for review and PR)
 
 ---
 
