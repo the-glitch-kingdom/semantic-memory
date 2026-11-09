@@ -89,3 +89,6 @@ Word count: SKILL.md 534 words (draft ~516, old skill ~1,968 plus a 1,099-word r
 `evals.json`: `mcp__semantic-sidekick__search_hybrid` -> `search_hybrid`; the vault-frontmatter.md mention and "full frontmatter ... source: mixed" now say a note written through `synthesize_note`.
 
 Tests: 8 of the 9 Phase 2 `it.fails` are plain `it` (verified passing). The no-tool-prefix case stays `it.fails` until Phase 4 (sibling skills).
+
+## Eval results: Phase 4
+No ranking change. Sibling skills now use bare tool names plus "on the vault server". `hooks/vault-context.js`: new `vaultTool(projectRoot, tool)` (writable semantic-* entry name, default semantic-vault) used in all six messages; test added in `test/phase5/stop-hook-session.test.ts`. Server instructions gain one clause naming `passing_terms`. The prefix case in skill-surfaces.test.ts is a plain `it`; no `it.fails` left there. Full lint/build/test/eval green (1144 + 148 tests).

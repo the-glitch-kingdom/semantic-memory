@@ -20,7 +20,7 @@ Weak single-word hints (e.g., "research" as a noun, "look") are insufficient —
 
 ### 1. Every source becomes a filed note
 
-Whenever the user introduces an external source you end up relying on — a URL they link, a paper they paste, a doc they point at — **file it via `mcp__semantic-vault__ingest_source`** with:
+Whenever the user introduces an external source you end up relying on — a URL they link, a paper they paste, a doc they point at — **file it via `ingest_source`** on the vault server with:
 - `source.source_uri` — the link or path.
 - `source.source_title` — the actual title from the source (don't make one up).
 - `source.source_summary` — your paragraph-length distillation.
@@ -33,7 +33,7 @@ Don't accumulate URLs in the chat and lose them at session end. That's the failu
 ### 2. Proactive vault checks every non-trivial turn
 
 On each substantive user turn, before answering:
-- Call `mcp__semantic-vault__search_hybrid` with the current topic focus.
+- Call `search_hybrid` on the vault server with the current topic focus.
 - If prior research notes exist, read them in full via `read_note` and weave them into your answer — don't re-research ground you've already covered.
 - Cite every note you used (paths at end of response).
 

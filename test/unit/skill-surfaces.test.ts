@@ -24,13 +24,13 @@ const TOOL_LIKE = /^((search|read|list|find|create|update|delete|move|apply|synt
 const backticked = (text: string) => [...text.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]);
 const bareTools = (text: string) => [...new Set(backticked(text.replace(/mcp__[a-z-]+__/g, "")).filter((t) => TOOL_LIKE.test(t)))];
 
-// Phase 2 of the #81 plan: the it.fails cases fail on 1.25.0 and become plain `it` when the skill is replaced (Phases 3-4)
+// Phase 2 of the #81 plan: these cases failed on 1.25.0 and are plain `it` since Phases 3-4.
 describe("skills name the tools and fields the release has (#81)", () => {
   it("scans the four skills and the evals", () => {
     expect(files.map((f) => f.name)).toEqual(expect.arrayContaining(["skills/semantic-first/SKILL.md", "skills/vault-first/SKILL.md", "skills/research-mode/SKILL.md", "skills/outage-silence/SKILL.md", "skills/semantic-first/evals/evals.json"]));
   });
 
-  it.fails("no skill hard-codes a server's tool prefix (names come from .mcp.json)", () => {
+  it("no skill hard-codes a server's tool prefix (names come from .mcp.json)", () => {
     const hits = files.filter((f) => /mcp__semantic-(sidekick|vault)__/.test(f.text)).map((f) => f.name);
     expect(hits).toEqual([]);
   });

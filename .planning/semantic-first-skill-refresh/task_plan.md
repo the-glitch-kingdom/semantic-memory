@@ -25,10 +25,10 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
   - [x] Delete `skills/semantic-first/references/vault-frontmatter.md` (and the empty `references/` dir). Nothing else references it except SKILL.md and evals.json.
   - [x] `skills/semantic-first/evals/evals.json`: fix the old tool names and the reference-file mention in `expected_output`, to match the new skill.
   - [x] Word count: report it (the draft is ~516 words; the current skill is ~1,968 plus a 1,099-word reference file).
-- [ ] Phase 4: Sibling skills and hook messages
-  - [ ] `skills/vault-first`, `skills/research-mode` and `skills/outage-silence`: replace `mcp__semantic-vault__<tool>` with the bare tool name on "the vault server". Use the same role wording as Phase 3, in at most one line per skill.
-  - [ ] `hooks/vault-context.js` prints `mcp__semantic-vault__…` in six messages. The hook already resolves the writable `semantic-*` entry; print that entry's real name if this is a small change, with a test. If not, record why and leave it.
-  - [ ] Server instructions (`serverInstructions` in `src/mcp/server.ts`) omit `passing_terms`. Add it in one short clause, so the server and the skill name the same fields; keep the existing "top 3 / each step separately" text.
+- [x] Phase 4: Sibling skills and hook messages
+  - [x] `skills/vault-first`, `skills/research-mode` and `skills/outage-silence`: replace `mcp__semantic-vault__<tool>` with the bare tool name on "the vault server". Use the same role wording as Phase 3, in at most one line per skill.
+  - [x] `hooks/vault-context.js` prints `mcp__semantic-vault__…` in six messages. The hook already resolves the writable `semantic-*` entry; print that entry's real name if this is a small change, with a test. If not, record why and leave it.
+  - [x] Server instructions (`serverInstructions` in `src/mcp/server.ts`) omit `passing_terms`. Add it in one short clause, so the server and the skill name the same fields; keep the existing "top 3 / each step separately" text.
 - [ ] Phase 5: Trigger check (the issue asks for it)
   - [ ] Build a prompt set (JSONL `{session, text}`), written before running:
     - should trigger: prose questions about the repo; "is there something that does X"; research questions;
@@ -63,7 +63,7 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 
 ## Key Questions
 1. Should `hooks/reconcile.js` default to `semantic-memory` / `semantic-memory-docs`? Not in this plan: existing `.mcp.json` files and every hook that matches on the old keys would need a migration. Raise it with the reporter as a follow-up.
-2. Does the hook print the real entry name cheaply? Answered in Phase 4.
+2. Does the hook print the real entry name cheaply? Yes (Phase 4): `vaultTool()` in `hooks/vault-context.js` reads the writable semantic-* entry from .mcp.json via findNotesSources; falls back to semantic-vault.
 
 ## Decisions Made
 - Take the reporter's draft verbatim, except for the server-name lines, which name servers by role with both name pairs as examples. Hard-coding the reporter's names would misdirect every default install (our reconcile hook writes `semantic-vault` / `semantic-sidekick`).
@@ -78,4 +78,4 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Phase 2: the "every tool a skill names" regex also matches `read_time_min`, a frontmatter field in the reference file. It is deleted in Phase 3, so the regex stays simple.
 
 ## Status
-**Currently in Phase 4.**
+**Currently in Phase 5.**

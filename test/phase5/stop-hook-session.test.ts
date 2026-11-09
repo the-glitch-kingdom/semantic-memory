@@ -176,3 +176,18 @@ describe("Stop hook: capture-pending is per session", () => {
     expect(left).toEqual([]);
   });
 });
+
+describe("Stop hook names the configured vault server", () => {
+  it("prints the real writable entry name, not semantic-vault", async () => {
+    const dir = await seedProject();
+    try {
+      await writeFile(join(dir, ".mcp.json"), JSON.stringify({ mcpServers: { "semantic-memory": { command: "x", args: ["--notes", ".claude/.vault"] } } }));
+      await writeSession(dir, { id: "ses_name" });
+      const ctx = JSON.stringify(runHook(dir, { hook_event_name: "Stop", cwd: dir, session_id: "s1" }).out);
+      expect(ctx).toContain("mcp__semantic-memory__session_finish");
+      expect(ctx).not.toContain("mcp__semantic-vault__");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
