@@ -43,3 +43,10 @@ CLI vs MCP: `search` over the CLI gives the same `missing_terms` as stdio for th
 - 44 of 68 cases are `it.fails` (they fail on main by design); 24 pass. When Phase 3/4 fix the causes, each `it.fails` that starts passing must become a plain `it`.
 
 Checks for Phase 2: lint, build, `npm test` (the Jev-hang case of hook-failure and the skill-queue SessionEnd timing case failed under load, both pass alone), `npm run eval` 148 passed, 4 expected fail (unchanged; the new sets move no floor).
+
+## Eval results: Phase 3 (presence counts only searchable docs)
+Change: `Bm25Index.addDoc(..., searchable)` keeps a second df (`presenceDf`) over searchable docs; `has` and `docFreq` read it, scoring still reads `df`. Searchable = not `generated`, not `path_class.exclude`, not `results.exclude` (`isSearchableDoc`, path-class.ts). The path half of the test (`searchablePaths` in the MCP context, filtered `paths` in the CLI) drops the same docs. Federation goes through the same `shape()` per source, so it follows.
+- Rank parity (same run, default sets, `scripts/eval-against-release.sh 1.24.0 local`, cli and mcp): hyb@1 77/105, hyb@3 98, multi@1/3/8 16/21/22 of 23, cov 0.80/0.96/0.98, dom 35, neg flagged 36/39: identical for 1.24.0 and local.
+- Train absent-terms, repo corpus (hubs there already carry `generated: true`), same run, with and without `--export`: neg flagged 27/32 (harness count, includes low-confidence flags) for both. Stdio `missing_terms` probe on local: 23/32 negatives flagged, 5/28 false flags (c24-c28, the Phase 4 spelling targets): equal to the 1.24.0 baseline, as expected; this change only moves trees whose hubs lack the flag.
+- Fixture (`test/e2e/abstention-variants.test.ts`): the hub-only product is now flagged on all 4 arms over stdio and CLI; 4 `it.fails` became plain `it`: 40 expected fails remain (the Phase 4 variant names). Unit test added in test/unit/bm25.test.ts.
+- Checks: lint, build, `npm run eval` (148 passed, 4 expected fail), `npm test` (1227 passed; hook-failure Jev-hang failed under load, passes alone).

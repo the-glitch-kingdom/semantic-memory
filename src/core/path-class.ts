@@ -53,6 +53,10 @@ export function isExcludedPath(path: string, config: PathClassConfig): boolean {
   return config.enabled && config.exclude.some((g) => minimatch(path, g, MM));
 }
 
+/** A doc a search can return: not `generated`, not `exclude`d, not `results.exclude`d. Presence (`missing_terms`) counts only these. */
+export const isSearchableDoc = (d: { path: string; generated?: boolean }, config: PathClassConfig): boolean =>
+  !d.generated && !isExcludedPath(d.path, config) && !config.resultsExclude.some((g) => minimatch(d.path, g, MM));
+
 /** The globs whose docs are kept out of the index (graph-only nodes): what `isExcludedPath` tests. */
 export const indexExclude = (config: PathClassConfig): string[] => (config.enabled ? config.exclude : []);
 

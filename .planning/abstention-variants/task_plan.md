@@ -39,10 +39,11 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
         Run them over stdio and the CLI.
   - [x] Add variant negatives and controls to `absent-terms.jsonl` and `absent-terms-heldout.jsonl` (hyphenated and camelCase controls that ARE documented under another spelling). Write them before measuring.
   - [x] Baseline in notes.md: 1.22.0, 1.23.0, 1.24.0 and local, same run (1.15.0 dropped: #74 already measured it; 1.24.0 added as the previous release), CLI and MCP, with and without an export.
-- [ ] Phase 3: Presence counts only searchable docs
-  - [ ] `Bm25Index` presence (`has`, `docFreq`, `docHas` as the detector uses them) skips docs that are `generated`, or that match `resultsExclude` or `exclude`. Keep BM25 scoring unchanged, or prove rank-neutral if the hubs' chunk text already is not scored.
-  - [ ] Apply the same rule to `paths` (doc paths joined) so a hub's file name never counts as presence.
-  - [ ] Unit and stdio tests from Phase 2 (a) pass.
+- [x] Phase 3: Presence counts only searchable docs
+  - [x] `Bm25Index` presence (`has`, `docFreq`, `docHas` as the detector uses them) skips docs that are `generated`, or that match `resultsExclude` or `exclude`. Keep BM25 scoring unchanged, or prove rank-neutral if the hubs' chunk text already is not scored.
+        (Generated, `exclude`d docs already had no chunks; the leak was `results.exclude` hubs without `generated: true`. A second df, `presenceDf`, counts searchable docs only; scoring still reads `df`. Rank parity measured: notes.md.)
+  - [x] Apply the same rule to `paths` (doc paths joined) so a hub's file name never counts as presence.
+  - [x] Unit and stdio tests from Phase 2 (a) pass.
 - [ ] Phase 4: Spelling variants count as present
   - [ ] Normalized form: lowercase, with `-`, `_` and whitespace removed, and camelCase joined.
         - Docs: index the joined forms of hyphenated and underscored compounds as presence-only terms (not scored).
@@ -84,4 +85,4 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
 - Phase 2: the interrupted run left its work in stash@{0} (kept, not popped); it was sound and reused as is. Absent-terms baseline arms: 1.22.0 instead of 1.15.0 (see Phase 2).
 
 ## Status
-**Currently in Phase 3** (Phase 2 done: failing tests and baseline in notes.md)
+**Currently in Phase 4** (Phase 3 done: presence counts only searchable docs)

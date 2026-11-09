@@ -86,3 +86,19 @@ describe("bm25SelfTop with non-string titles (#51)", () => {
     expect(bm25SelfTop(i, docs)).toBeGreaterThan(0);
   });
 });
+
+describe("presence skips unsearchable docs", () => {
+  it("has/docFreq ignore them, scoring still sees them, and re-adding or removing keeps the counts honest", () => {
+    const i = new Bm25Index();
+    i.addDoc("api/INDEX.md", ["graphql hub listing"], "", false);
+    i.addDoc("a.md", ["rest endpoints"]);
+    expect(i.has("graphql")).toBe(false);
+    expect(i.docFreq("graphql")).toBe(0);
+    expect(i.has("rest")).toBe(true);
+    expect(i.search("graphql").map((r) => r.path)).toEqual(["api/INDEX.md"]);
+    i.addDoc("api/INDEX.md", ["graphql again"]);
+    expect(i.has("graphql")).toBe(true);
+    i.removeDoc("api/INDEX.md");
+    expect(i.has("graphql")).toBe(false);
+  });
+});

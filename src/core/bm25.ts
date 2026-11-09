@@ -31,6 +31,9 @@ export class Bm25Index {
   /** every distinct token of a doc (chunks + field text + path words): the term set `cover` reads, kept current by add/removeDoc */
   private docTerms = new Map<string, Set<string>>();
   private df = new Map<string, number>();
+  /** df over searchable docs only: what `has` reads, so a doc a search can never return does not make a name present */
+  private presenceDf = new Map<string, number>();
+  private unsearchable = new Set<string>();
   private chunkCount = 0;
   private totalLen = 0;
 
@@ -38,6 +41,8 @@ export class Bm25Index {
     this.byDoc.clear();
     this.docTerms.clear();
     this.df.clear();
+    this.presenceDf.clear();
+    this.unsearchable.clear();
     this.chunkCount = 0;
     this.totalLen = 0;
   }
@@ -45,11 +50,16 @@ export class Bm25Index {
   removeDoc(docPath: string): void {
     const chunks = this.byDoc.get(docPath);
     if (!chunks) return;
+    const searchable = !this.unsearchable.delete(docPath);
+    const dec = (m: Map<string, number>, t: string) => {
+      const n = (m.get(t) ?? 1) - 1;
+      if (n <= 0) m.delete(t);
+      else m.set(t, n);
+    };
     for (const c of chunks) {
       for (const t of c.tf.keys()) {
-        const n = (this.df.get(t) ?? 1) - 1;
-        if (n <= 0) this.df.delete(t);
-        else this.df.set(t, n);
+        dec(this.df, t);
+        if (searchable) dec(this.presenceDf, t);
       }
       this.chunkCount--;
       this.totalLen -= c.len;
@@ -59,13 +69,17 @@ export class Bm25Index {
   }
 
   /** `fields` (title, purpose, path words) is indexed with every chunk but is not part of the chunk text returned. */
-  addDoc(docPath: string, texts: string[], fields = ""): void {
+  addDoc(docPath: string, texts: string[], fields = "", searchable = true): void {
     this.removeDoc(docPath);
+    if (!searchable) this.unsearchable.add(docPath);
     const chunks = texts.map((text): Chunk => {
       const tokens = tokenize(`${fields} ${text}`);
       const tf = new Map<string, number>();
       for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
-      for (const t of tf.keys()) this.df.set(t, (this.df.get(t) ?? 0) + 1);
+      for (const t of tf.keys()) {
+        this.df.set(t, (this.df.get(t) ?? 0) + 1);
+        if (searchable) this.presenceDf.set(t, (this.presenceDf.get(t) ?? 0) + 1);
+      }
       this.chunkCount++;
       this.totalLen += tokens.length;
       return { docPath, text, tf, len: tokens.length };
@@ -74,15 +88,15 @@ export class Bm25Index {
     this.docTerms.set(docPath, new Set(chunks.flatMap((c) => [...c.tf.keys()])));
   }
 
-  /** True when some indexed chunk holds this token (tokenized, lowercase). */
+  /** True when some searchable doc's chunk holds this token (tokenized, lowercase). Scoring still reads every indexed chunk. */
   has(term: string): boolean {
-    return this.df.has(term);
+    return this.presenceDf.has(term);
   }
 
-  /** Number of docs holding this token (tokenized, lowercase). */
+  /** Number of searchable docs holding this token (tokenized, lowercase). */
   docFreq(term: string): number {
     let n = 0;
-    for (const t of this.docTerms.values()) if (t.has(term)) n++;
+    for (const [p, t] of this.docTerms) if (t.has(term) && !this.unsearchable.has(p)) n++;
     return n;
   }
 

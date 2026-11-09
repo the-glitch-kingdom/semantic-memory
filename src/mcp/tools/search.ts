@@ -51,9 +51,9 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
 function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null, granularity: Granularity = "section", queryType?: QueryType, bestChunk?: (path: string) => string | undefined, allowed: (path: string) => boolean = () => true) {
   const scored = withConfidence(granularity === "section" ? fold(ranked, ctx.getDocByPath(), ctx.getCode()) : ranked);
   const page = scored.slice(0, limit);
-  const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), knownToCode(ctx.getCode()));
+  const absent = missingTerms(query, ctx.bm25, ctx.searchablePaths(), knownToCode(ctx.getCode()));
   const { missing, undocumented } = splitUndocumented(absent, ctx.getCode());
-  const passing = passingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), scored.slice(0, 3).map((r) => r.path), knownToCode(ctx.getCode()));
+  const passing = passingTerms(query, ctx.bm25, ctx.searchablePaths(), scored.slice(0, 3).map((r) => r.path), knownToCode(ctx.getCode()));
   const weak = isWeak(scored, bm25Min) || absent.length > 0 || passing.length > 0;
   const scoreOf = new Map(scored.map((r) => [r.path, r.score]));
   const card = entityCard(query, ctx.getCode(), ctx.getDocByPath(), (p) => scoreOf.get(p) ?? -Infinity);
