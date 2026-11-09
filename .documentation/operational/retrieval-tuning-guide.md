@@ -149,6 +149,7 @@ Recorded so nobody repeats them (train splits; held-out read afterwards, same di
 - **Field-term BM25 weight** (field text at 0.5 / 0.25 of a body term): no fixture change, real train -1; reverted. **`BM25_FRACTION` 0.9-1.2, `NO_STRONG_MATCH_BELOW` 0.38-0.40**: no train gain, false flags rose; unchanged. `COSINE_WEIGHT` 0.7-0.9: arms pull opposite ways; kept 0.7.
 - **Graph boost** (v1.11.0; hybrid answer @1, fixture train / held-out, real train / held-out): 1.0 = 38 / 25 / 22 / 14, 1.1 = 38 / 24 / 23 / 14, the old 1.3 = 39 / 22 / 21 / 13. Train chose 1.0 (the real-train +1 for 1.1 is noise), so the boost is removed.
 - **Abstention at 0.45** flags every train negative but falsely flags 22% / 31% / 11% of answerable questions (fixture train / held-out, real train), over the 10% ceiling. A top-1/top-2 gap rule and a stricter BM25 rule added no negative within the ceiling. 0.36 kept.
+- **Multi-doc recall** (v1.24.0): a distinct-doc candidate pool, a second-strong-chunk bonus, a single-chunk dampener and dropping runtime paths from export dead refs all lost or did nothing on multi @8; see [v1.24.0](../changelog/v1-24-0-multi-doc-recall.md).
 - Open: the lexical paraphrase gap (path-token and title matches beating the body answer) and abstention on the held-out sets.
 
 ## Graph edges
