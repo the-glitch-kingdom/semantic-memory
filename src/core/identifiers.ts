@@ -48,12 +48,12 @@ export function identifiers(query: string, known?: (term: string) => boolean, na
 /**
  * Identifiers of the query that the docs do not contain: some token of the term (a path checks only its last segment)
  * has df 0 in the BM25 index and is not in `paths`, since BM25 path words replace `_` with a space and a file named
- * after the identifier would otherwise count as missing. `paths` is the lowercased, joined doc paths.
+ * after the identifier would otherwise count as missing. A token written in the docs under another spelling (`auto-fill`, `retry_budget`) is present too. `paths` is the lowercased, joined doc paths.
  * shortcut: parts are checked, not their adjacency; upgrade to a literal check over doc content if the eval shows misses.
  */
 export function missingTerms(query: string, index: Bm25Index, paths: string, known?: (term: string) => boolean): string[] {
   return identifiers(query, known, true).filter((term) =>
-    tokenize(term.slice(term.lastIndexOf("/") + 1)).some((t) => !index.has(t) && !paths.includes(t)),
+    tokenize(term.slice(term.lastIndexOf("/") + 1)).some((t) => !index.has(t) && !paths.includes(t) && !index.hasJoined(t.replace(/_/g, ""))),
   );
 }
 

@@ -16,7 +16,7 @@ import { fold } from "../core/fold.js";
 import { sectionFields } from "../core/section-fields.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
 import { decayForDoc, groundingBlock, loadDecayConfig, type DecayBlock } from "../core/decay.js";
-import { isExcludedPath, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
+import { isExcludedPath, isSearchableDoc, loadPathClassConfig, pathClassMultiplier, filterPathClass } from "../core/path-class.js";
 import { indexRebuilding, parserInputs, readConsistentMeta, readMeta } from "../core/index-store.js";
 import type { IndexedDocument } from "../core/types.js";
 
@@ -137,14 +137,14 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
   await graph.load(indexPath);
 
   const docByPath = new Map(docs.map((d) => [d.path, d]));
-  const bm25 = new Bm25Index();
-  for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d));
   const pathClass = loadPathClassConfig(notesPath);
+  const bm25 = new Bm25Index();
+  for (const d of docs) bm25.addDoc(d.path, d.chunks, bm25Fields(d), isSearchableDoc(d, pathClass));
   const ranking = loadRanking(notesPath);
   const decayConfig = loadDecayConfig(notesPath);
   const decayOf = (path: string) => (decayConfig.enabled && docByPath.get(path) ? decayForDoc(docByPath.get(path)!, decayConfig) : { multiplier: 1 });
   const selfTop = (await readMeta(indexPath))?.bm25SelfTop ?? bm25SelfTop(bm25, docs);
-  const paths = docs.map((d) => d.path).join("\n").toLowerCase();
+  const paths = docs.filter((d) => isSearchableDoc(d, pathClass)).map((d) => d.path).join("\n").toLowerCase();
   // the export is one file read: folding needs its duplicates and pointers, not the git calls of the full code graph
   let exp: CodeData | null | undefined;
   const exported = () => (exp !== undefined ? exp : (exp = loadExport(repoRoot(notesPath), notesPath, new Set(docs.map((d) => d.path)))));

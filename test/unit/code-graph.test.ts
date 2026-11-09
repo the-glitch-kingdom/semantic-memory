@@ -306,6 +306,8 @@ describe("entityCard and splitUndocumented", () => {
   });
   it("splits missing terms into those that exist in code (undocumented, with the file) and the rest", () => {
     expect(splitUndocumented(["b", "nowhere_fn"], code)).toEqual({ missing: ["nowhere_fn"], undocumented: [{ entity: "b", path: "scripts/b.sh" }] });
+    const spelled: any = { files: ["src/auto-fill.ts", "lock/AutoFill.lock"], symbols: new Map(), docs: new Map() };
+    expect(splitUndocumented(["autofill", "auto_fill"], spelled).undocumented.map((u) => u.entity)).toEqual(["autofill", "auto_fill"]);
     expect(splitUndocumented(["x_y"], null)).toEqual({ missing: ["x_y"], undocumented: [] });
   });
 });
