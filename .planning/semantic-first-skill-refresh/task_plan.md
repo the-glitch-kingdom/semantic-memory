@@ -49,17 +49,17 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
   - [x] Hook tests pass, plus the new test if Phase 4 changed hook messages.
   - [x] Lint, build, `npm test`, `npm run eval`.
   - [x] Independent review of `git diff main...HEAD` against #81's acceptance list, item by item.
-- [ ] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] These docs mention semantic-first or the server names; fix only what is now wrong:
+- [x] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] These docs mention semantic-first or the server names; fix only what is now wrong:
     - `.documentation/operational/modes-guide.md`
     - `.documentation/quickstart/installation-guide.md`, `.documentation/quickstart/sidekick-overview.md`
     - `.documentation/reference/configuration-reference.md`, `.documentation/reference/cli-reference.md`
     - `.documentation/architecture/injection-points.md`, `.documentation/architecture/indices-and-storage.md`
 
     Keep hub-page edits tight; the real-corpus eval reads them.
-  - [ ] `README.md` skill row, if it describes the old skill.
-  - [ ] `CHANGELOG.md`: turn `[Unreleased]` (the tooling entry from #82) into the 1.25.1 entry, with #81's changes. Add `.documentation/changelog/v1-25-1-semantic-first-refresh.md` (`npx hewtd integrate -a`).
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+  - [x] `README.md` skill row, if it describes the old skill.
+  - [x] `CHANGELOG.md`: turn `[Unreleased]` (the tooling entry from #82) into the 1.25.1 entry, with #81's changes. Add `.documentation/changelog/v1-25-1-semantic-first-refresh.md` (`npx hewtd integrate -a`).
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Should `hooks/reconcile.js` default to `semantic-memory` / `semantic-memory-docs`? Not in this plan: existing `.mcp.json` files and every hook that matches on the old keys would need a migration. Raise it with the reporter as a follow-up.
@@ -80,4 +80,4 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Phase 2: the "every tool a skill names" regex also matches `read_time_min`, a frontmatter field in the reference file. It is deleted in Phase 3, so the regex stays simple.
 
 ## Status
-**Currently in Phase 9.**
+**COMPLETE (all phases done).**

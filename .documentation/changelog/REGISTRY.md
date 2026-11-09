@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 38 |
+| Documents | 39 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -40,13 +40,13 @@ purpose: Quick reference for changelog documentation
 - [v1.23.0 - abstention for product and tool names](v1-23-0-abstention-product-names.md) - 2026-11-09
 - [v1.24.0 - multi-doc recall measurement](v1-24-0-multi-doc-recall.md) - 2026-11-09
 - [v1.25.0 - abstention counts searchable docs and spelling variants](v1-25-0-abstention-variants.md) - 2026-11-09
-- [v1.16.0 - code graph](v1-16-0-code-graph.md) - 2026-11-08
+- [v1.25.1 - semantic-first skill refresh](v1-25-1-semantic-first-refresh.md) - 2026-11-09
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 38 |
+| active | 39 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

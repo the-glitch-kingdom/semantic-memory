@@ -116,3 +116,6 @@ Not covered by the acceptance list, left as is:
 - vaultTool() prints the .mcp.json key; a plugin-launched server may be exposed under a different mcp__ name. Unchecked.
 - Only the Stop hook's session_finish message has a test, not the other five.
 Fix made in this phase: evals.json em dash restored (cosmetic diff noise).
+
+## Eval results: Phase 9
+Docs only (no code). Changed: CHANGELOG.md (1.25.1 entry, #82 tooling kept), .documentation/changelog/v1-25-1-semantic-first-refresh.md (hewtd integrate -a), injection-points.md semantic-first line, AGENTS.md regenerated (only last_generated changed). Other listed docs mention nothing now wrong; README skill row is accurate. `hewtd maintain --quick`: 10 errors, 109 warnings, identical before my changes. `npm run eval`: 148 pass, 4 expected fail.

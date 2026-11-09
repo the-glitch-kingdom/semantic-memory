@@ -2,7 +2,27 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
-## [Unreleased]
+## [1.25.1] - 2026-11-09 — semantic-first skill refresh
+
+Issue #81. Details and misses: `.documentation/changelog/v1-25-1-semantic-first-refresh.md`.
+
+### Changed
+
+- `skills/semantic-first/SKILL.md` is the reporter's shorter draft (about 534 words, down from about 1,968). It names the servers by role, with both name pairs as examples, and covers `missing_terms`, `undocumented`, `passing_terms`, `no_strong_match`, `decay`, `entity` and `related`.
+- `vault-first`, `research-mode` and `outage-silence` name tools bare, on "the vault server", not `mcp__semantic-vault__<tool>`.
+- `hooks/vault-context.js` prints the writable server's `.mcp.json` name in its six messages (falls back to `semantic-vault`). The server instructions name `passing_terms`.
+
+### Removed
+
+- `skills/semantic-first/references/vault-frontmatter.md`: it documented `tier`, `source` and `owner`, which `synthesize_note` never writes.
+
+### Added
+
+- `test/unit/skill-surfaces.test.ts` and `test/e2e/skill-result-fields.test.ts` tie every tool, parameter, field and string the skills name to the release.
+
+### Missed targets
+
+The trigger check ("the shorter description still triggers on the same questions") was not measured: the trigger eval discards runs that call the Skill (`error_max_turns`). `commands/*.md` and one CLI help string still hard-code `mcp__semantic-vault__`.
 
 ### Tooling (no package change)
 
