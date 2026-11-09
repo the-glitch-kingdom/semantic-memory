@@ -119,3 +119,46 @@ Same run, TRAIN sets only (real-corpus, real-hub, long-section, long-section-har
 multi-hub per question: mh-t26 missed -> rank 8, mh-t28 rank 8 -> missed; the rest identical. **The distinct-doc pool does not restore multi @8 on train (13 vs the 1.15.0 16).** The Phase 2 pool measurement showed expected docs missing from the 24-chunk pool on 10 of 38 questions, yet widening the pool to >= 24 docs does not bring them into the top 8: they are now candidates but lose to hubs and broad docs in fusion. Phase 4 (aggregation) is where the loss is. Held-out was not run. Dominance rose on the pooled sets (13 -> 20), for Phase 4 to look at. No 1.22.0 gain was lost.
 
 Test run: lint, build, `npm run eval` (148 passed, 4 expected fail) green. `npm test`: freshness-scale warm start and hook-failure Jev-hang are the known load flakes (both pass alone). `single-source-snapshot` failed for real: with the wider pool a small vault returns more docs per query (the snapshot's lower-ranked scores/order for 5 of 10 queries changed; top results unchanged for the answerable ones), so its fixture `test/fixtures/federation/single-source-snapshot.json` was re-taken from this build (as for the 1.21.0 summary chunk).
+
+## Eval results: Phase 4 (aggregation, short broad docs; train only, no code kept)
+
+Method: one fixed index (`git clone --local` of HEAD + the three fixtures, one `--reindex`, so HNSW is identical for every row), `eval` CLI arm, hybrid, 5 TRAIN sets pooled (real-corpus, real-hub, long-section, long-section-hard, multi-hub; 95 answerable, 32 multi). Knobs were temporary env switches in `vector.ts` / `cli/search.ts`, all reverted. Held-out was not run. A run takes 6 s. Base reproduces Phase 3: @1 63/95, @3 84, exact 21/27, paraphrase 30/36, multi 12/23/26, cov .59/.84/.92, dominance 20 (troubleshooting.md), negatives flagged 18/22.
+
+### Decomposition
+| change | @1 | @3 | para | multi 1/3/8 | cov@1/3/8 | dom | neg |
+|---|---|---|---|---|---|---|---|
+| base | 63 | 84 | 30 | 12/23/26 | .59/.84/.92 | 20 | 18 |
+| no summary chunk (`field: "doc"`) | 62 | 83 | 29 | 12/23/26 | same | 20 | 18 |
+| no metadata chunks at all | 62 | 83 | 29 | same | same | 20 | 18 |
+| no priority boost / no decay / no path-class (each, and all three) | 63 | 84 | 30 | same | same | 20 | 18 |
+| chunk-count prior +0.01 x log2(chunks) | 61 | 84 | 29 | 11/23/27 | .55/.85/.93 | 26 | 16 |
+| chunk-count prior -0.01 | 62 | 84 | 30 | 11/23/26 | .58/.84/.92 | 13 | 20 |
+| chunk-count prior +0.03 | 61 | 81 | 29 | 10/22/27 | .52/.83/.93 | 35 | 16 |
+| chunk-count prior -0.03 | 64 | 83 | 32 | 11/22/26 | .60/.83/.92 | 9 | 21 |
+
+- The summary chunk is worth +1 @1 and +1 paraphrase on these sets (small, but the right sign); #73's "without metadata 51 vs 46" lead does not show here: the boosts (priority, decay, path class) change nothing at all on train (no doc carries load_priority, and the eval tree has no decayed or classed docs that compete). Fold was not toggled (it only merges copies).
+- A length prior is a trade, not a fix. A penalty for many-chunk docs (-0.03) halves dominance (20 -> 9) and gains +1 @1 / +2 paraphrase, but costs multi @1 (12 -> 11) and @3, and on real-corpus alone multi@1 9 -> 8 and cov@1 .81 -> .73; a bonus does the opposite. It is not one of the plan's candidates and moves no multi @8, so it is not kept; recorded as a lead.
+
+### Candidates (best chunk per doc is the current (a))
+| variant | @1 | @3 | para | multi 1/3/8 | cov@1/3/8 | dom | neg |
+|---|---|---|---|---|---|---|---|
+| (a) best chunk, current | 63 | 84 | 30 | 12/23/26 | .59/.84/.92 | 20 | 18 |
+| (b) +0.005 / .01 / .02 / .04 when a 2nd chunk is within 0.9 of the best | 62/63/63/62 | 84 | 30/31/31/31 | 11/23/26 (.04: 10) | .55 (.52) | 20-23 | 17/17/16/16 |
+| (b) +0.02, strong = 0.8 / 0.95 | 63/63 | 84 | 31/30 | 11/23/26, 12/23/26 | .55, .58 | 23, 21 | 16, 18 |
+| (b2) +0.02/.05/.1 x (2nd + 3rd chunk cosine) | 64/64/63 | 84/84/83 | 31 | 12/23/26 (.1: 11) | .58/.58/.55 | 20/21/23 | 17/16/16 |
+| (b3) +0.01/.03 x chunks within 0.85 of best (max 3) | 63/62 | 84 | 31 | 11/23/26, 10/23/27 | .56, .52 | 22, 26 | 17, 16 |
+| (c) single-chunk dampener x(1-0.02/.05/.1/.2) | 63 | 84 | 30 | 12/23/26 | .59/.84/.92 | 20/20/21/21 | 18 |
+
+**None beats (a), so (a) stays and no code changes.** (b) never moves multi @8 and raises dominance and lowers negatives flagged (long docs gain); the best (b2, +0.02) is +1 @1 / +1 paraphrase against -1 negative flagged, inside the one-case noise. (c) is a no-op: dampening one-chunk docs changes nothing, so the short broad vocabulary docs are not what crowds the multi questions on this tree.
+
+### Where the multi @8 loss is
+The 4 lost train questions (mh-t05, t11, t26, t27) are vague, many-topic questions on a 141-doc tree with real-corpus noise. For t05 the CLI gives the expected hub at rank 8+, behind `operational/skill-loop.md`, `troubleshooting.md`, `long-section-hard/halloran-press.md`, `architecture-layers.md`; t27 ranks the expected hubs 1, 6, 8, with `drift-detection.md`, `release-process.md`, `indices-and-storage.md` between them. Per-doc score aggregation cannot restore them: the doc is not scored low, the 1000-char hub chunks are each narrow and no single one matches a question that spans 3-4 facets (a 1.15.0 hub was 4-5 big chunks whose embedding covered the whole doc), so unrelated real docs with one loosely matching chunk win. Semantic-only multi @8 is 11 against hybrid 13 on multi-hub: the lexical arm already recovers what it can. A real fix would need something other than a bigger bonus for the best chunks (for example a doc-level vector, or a facet-splitting query step), which is out of this plan's scope and Phase 5 (export path) does not target it.
+
+### Dominance
+| set | doc | slots (top 3, questions it does not answer) |
+|---|---|---|
+| multi-hub train | `architecture/indices-and-storage.md` | 4 (3 with the -0.03 prior) |
+| real-corpus + real-hub train | `troubleshooting/troubleshooting.md` (38 KB real catch-all) | 18 (9 with the -0.03 prior) |
+| 5 train sets pooled | `troubleshooting.md` | 20 |
+
+The plan's "<= 3 on train and real-corpus" is missed: 4 on multi-hub, 18 on real-corpus. The real-corpus number is a real long doc that matches many operational questions; every release has it (31 on 1.15.0, 38 on 1.21.0, 34 on 1.22.0, all 8 sets). An absolute 3 cannot be gated on this tree, so Phase 6 should gate dominance on the multi-hub sets against the previous release (not above it by more than 1), not on an absolute 3 over the real corpus.

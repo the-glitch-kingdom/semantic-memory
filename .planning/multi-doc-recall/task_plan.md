@@ -39,17 +39,20 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
   - [x] `VectorIndex.search(q, k)` returns up to k distinct docs. Fetch more neighbours (bounded, for example doubling up to a cap) until k docs are found or the index is exhausted. Every caller (`src/mcp/tools/search.ts`, `src/cli/search.ts`, graph seeds) gets the same behaviour. BM25 is already one result per doc; confirm it.
   - [x] Measure on train: multi @1/@3/@8, `cov@k`, paraphrase, exact, long-section-hard and p95. (Pool fix does NOT move multi @8: 13 -> 13, see notes.)
   - [x] Unit test: a doc with many chunks near the query no longer shrinks the number of distinct docs returned.
-- [ ] Phase 4: Per-doc score aggregation and short broad docs
-  - [ ] Decompose on train only (#73's open lead: without doc metadata, hybrid @1 was 51 against 46):
+- [x] Phase 4: Per-doc score aggregation and short broad docs
+  - [x] Decompose on train only (#73's open lead: without doc metadata, hybrid @1 was 51 against 46):
         - best chunk against the summary chunk (`5b7d7a9`);
         - priority boost, decay, path class and fold;
         - a length or chunk-count prior.
-  - [ ] Candidates measured on train:
-        - (a) best chunk (current);
+        (Done on train: summary chunk +1 @1; boosts change nothing; length prior trades dominance for multi @1, not kept. See notes.)
+  - [x] Candidates measured on train:
+        - (a) best chunk (current); KEPT, none beat it;
         - (b) best chunk plus a small bonus for a second strong chunk (multi-facet docs);
         - (c) a short-doc dampener for docs that are a single chunk.
         Keep one variant and remove the rest. If none beats (a) on train, keep (a) and say so.
-  - [ ] Dominance: no doc in the top 3 of more than 3 unrelated questions, on train and on the real-corpus sets.
+        (Done: (b), (b2), (b3) and (c) measured; none beats (a); (a) kept, no code change, all knobs reverted.)
+  - [x] Dominance: no doc in the top 3 of more than 3 unrelated questions, on train and on the real-corpus sets.
+        (Measured, target MISSED: 4 on multi-hub train, 18 on real-corpus, where `troubleshooting.md` is a 38 KB real doc; see Errors.)
 - [ ] Phase 5: Export path (d1b-only losses)
   - [ ] Check whether graph `related`, entity cards, duplicates or fold push the exact-term doc down when `.hewtd/graph.json` exists. Fix only what the measurement shows, and keep rank parity between MCP and CLI.
 - [ ] Phase 6: Release gate
@@ -79,15 +82,17 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 2. Do the d1b-only losses come from the export path? Answered in Phase 5.
 
 ## Decisions Made
+- Phase 4: keep (a) best chunk per doc; no code change. A length prior was measured and not kept (it trades dominance for multi @1/@3 and was not a plan candidate). Phase 6's dominance gate is relative (multi-hub sets, not above the previous release by more than 1), since the absolute 3 is unreachable on the real corpus.
 - One plan for #76. It waits for #74, because both extend the eval and the gate.
 - Phase 2: the fixture sits in `.documentation/multi-hub/` of each eval clone (the script copies it, as for long-section-hard), so the 141-doc real tree adds noise like a real vault. Docs-only runs are not used for these sets.
 - Phase 2: `cov@k` and `dominance` live in `ArmMetrics`, so every eval report carries them; the old releases get them through the mcp arm, which this checkout drives.
 
 ## Errors Encountered
+- Phase 4: no aggregation variant beats best-chunk: (b) second-strong-chunk bonus (three forms) and (c) single-chunk dampener leave multi @8 at 26/32 (multi-hub 13/19); (b) raises dominance, (c) is a no-op. The multi @8 loss is not in aggregation or in short broad docs on this tree. Dominance <= 3 missed (multi-hub 4, real-corpus 18, a real 38 KB doc every release has); Phase 6 gates it relative to the previous release instead.
 - Phase 3: `VectorIndex.search` now fetches up to 16x k chunks (doubling) until k distinct docs, but multi-hub train multi @8 stays 13/19 (one question gained, one lost) and cov@8 .85 -> .86. The pool shrink is therefore not the main cause here; the aggregation/ranking (Phase 4) is. Kept because it is principled, costs no p95 and holds every 1.22.0 gain. Real-tree dominance rose (all train sets, mcp arm: 13 -> 20 top-3 slots for one doc), to be addressed in Phase 4.
 - Phase 2: the first fixture (14 multi per set) reproduced the @8 loss by only 1-2 cases (train 13 -> 11, held-out 12 -> 11), inside the noise band. Hardened before any search change: 5 more hub-heavy multi questions per set (cross-hub, 4 facets). Result: train 16 -> 13 (-3 of 19), held-out 13 -> 12 (-1), all 8 sets 51 -> 47 of 61. The held-out loss alone is still within one case, so Phase 6's gate leans on the all-sets multi @8 and `cov@8` as well as the held-out set.
 - Phase 2: the first `dominance` counted every top-3 slot and so charged a hub for the questions it answers; redefined as slots on questions the doc does not answer (matches none of the question's facets).
 - Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 4** (Phase 3 done: distinct-doc pool, no multi @8 gain, see notes.md "Eval results: Phase 3")
+**Currently in Phase 5** (Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
