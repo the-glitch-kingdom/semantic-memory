@@ -41,14 +41,14 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - [x] Phase 6: Release prep: bump all five version fields to 1.25.1 and the lockfile; the offline tarball is deferred to release. (tarball deferred to release)
 - [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Remove `draft-SKILL.md` from the plan folder if it is identical to the shipped skill apart from the documented server lines; otherwise keep it as the record of the change. (done: differed only by the documented server lines; scratch check found no other junk, trigger-*.json kept as the Phase 5 record)
-- [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Phase 2's tests pass as plain `it`; no `it.fails` left.
-  - [ ] Grep `skills/` for `mcp__semantic-sidekick__`, `mcp__semantic-vault__`, `top_k` and `create_note`: none, or `create_note` only as a fallback.
-  - [ ] Every tool and field the skill names exists in the release (the Phase 2 test, on a built server).
-  - [ ] Skill linking still works: `scripts/link-skills.js` or `semantic-memory relink` with the deleted `references/` dir. No dangling symlink or missing-file error, in a scratch project.
-  - [ ] Hook tests pass, plus the new test if Phase 4 changed hook messages.
-  - [ ] Lint, build, `npm test`, `npm run eval`.
-  - [ ] Independent review of `git diff main...HEAD` against #81's acceptance list, item by item.
+- [x] Phase 8: Validate success through comprehensive testing (MANDATORY)
+  - [x] Phase 2's tests pass as plain `it`; no `it.fails` left.
+  - [x] Grep `skills/` for `mcp__semantic-sidekick__`, `mcp__semantic-vault__`, `top_k` and `create_note`: none, or `create_note` only as a fallback.
+  - [x] Every tool and field the skill names exists in the release (the Phase 2 test, on a built server).
+  - [x] Skill linking still works: `scripts/link-skills.js` or `semantic-memory relink` with the deleted `references/` dir. No dangling symlink or missing-file error, in a scratch project.
+  - [x] Hook tests pass, plus the new test if Phase 4 changed hook messages.
+  - [x] Lint, build, `npm test`, `npm run eval`.
+  - [x] Independent review of `git diff main...HEAD` against #81's acceptance list, item by item.
 - [ ] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] These docs mention semantic-first or the server names; fix only what is now wrong:
     - `.documentation/operational/modes-guide.md`
@@ -71,6 +71,7 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Patch release 1.25.1, which also carries the #82 tooling changes from `[Unreleased]`.
 
 ## Errors Encountered
+- Phase 8: freshness-scale warm start failed once in the full suite (1614 ms, load flake) and passed alone. An earlier phase had rewritten an em dash in evals.json as a \u2014 escape; restored to the literal character.
 - Phase 5: trigger eval gave no usable result. `runTrigger` runs claude with maxTurns 2; a run that calls the Skill and then goes on ends as `error_max_turns`, which `runClaude` reports as `ok:false`, so the run is discarded, not counted as a trigger. Calling the skill is what makes a run fail, so the counts are biased against triggering. Both arms also used 92 runs (184 total, over the ~120 budget) because errored runs are retried. Raw output: `trigger-old-raw.json`, `trigger-new-raw.json`. Not re-run (budget). Fix needed in tooling (count a Skill call seen before the max-turns stop as a vote), outside this plan.
 - Phase 3: `search-guidance.test.ts` required "top 3" / "each step separately" in the semantic-first skill; the draft drops both. That surface now asserts the draft's rule ("search each part, or read down to result 8", "every part is covered"); the other three surfaces are unchanged.
 - Phase 3: full suite hit freshness-scale warm start and stdin-eof SIGTERM (known load flakes); both pass alone.
@@ -79,4 +80,4 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Phase 2: the "every tool a skill names" regex also matches `read_time_min`, a frontmatter field in the reference file. It is deleted in Phase 3, so the regex stays simple.
 
 ## Status
-**Currently in Phase 8.**
+**Currently in Phase 9.**

@@ -98,3 +98,21 @@ No ranking change. Sibling skills now use bare tool names plus "on the vault ser
 - Driver: throwaway script in /tmp calling `runTrigger` directly (the CLI labels prompts by provenance session, which this skill has none of). Old skill from `git show main:skills/semantic-first/SKILL.md`; new from the branch. Sibling skills in the scratch dir are the branch's for both arms. Cache in /tmp, run sequentially.
 - Runs: old 92, new 92 = 184 claude runs (budget was ~120; 25 prompts x up to 3 votes plus retries of errored runs). Runtime: old 140 s, new 156 s. Cost: not reported by the tool.
 - Result: unusable. Prompts with a vote: old 7/25, new 6/25; the rest are `error_max_turns` (see Errors Encountered). The only recorded trigger was old/CRM (1 of 1). Pass rule not evaluated; no description change made.
+
+## Eval results: Phase 8 (independent review of git diff main...HEAD)
+
+Checks run: it.fails count in test/unit/skill-surfaces.test.ts = 0; grep of skills/ for mcp__semantic-sidekick__, mcp__semantic-vault__, top_k, create_note = no hits; link step in a scratch project (copied package with no references/ dir, ran scripts/link-skills.js): 4 skills linked, no dangling symlink, every SKILL.md resolves. Full validation: lint, build, npm test (1143 pass, freshness-scale warm start flaked once, passes alone), npm run eval (148 pass, 4 expected fail). No ranking code changed, so no ranking numbers.
+
+#81 acceptance, item by item:
+1. Replace SKILL.md with the draft: MET, with the one documented change (servers by role, both name pairs as examples). Not byte-identical to the draft by design.
+2. Delete references/vault-frontmatter.md: MET (no reference to it remains in the repo apart from the test that asserts its absence).
+3. Fix old tool names in vault-first, research-mode, outage-silence: MET.
+4. No semantic-sidekick/semantic-vault tool names, top_k, or create_note-as-default in skills/: MET (grep empty).
+5. Every tool and field the skill names exists in the release: MET (unit test over CURRENT_TOOL_INVENTORY; e2e test on a live search_hybrid response shows all 7 fields and `limit`, no `top_k`).
+6. Shorter description still triggers on the same questions: NOT MEASURED. The trigger eval discards runs that call the Skill (error_max_turns), so Phase 5 has no usable counts. The description text is identical to the draft's, which is the reporter's own text; there is no evidence either way.
+
+Not covered by the acceptance list, left as is:
+- commands/vault.md, commands/mode.md, commands/contract.md (allowed-tools frontmatter needs exact names) and one CLI help string still say mcp__semantic-vault__. Not under skills/.
+- vaultTool() prints the .mcp.json key; a plugin-launched server may be exposed under a different mcp__ name. Unchecked.
+- Only the Stop hook's session_finish message has a test, not the other five.
+Fix made in this phase: evals.json em dash restored (cosmetic diff noise).

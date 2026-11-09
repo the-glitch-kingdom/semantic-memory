@@ -29,7 +29,7 @@
       "id": 4,
       "name": "flow-b-mixed-composition",
       "flow": "B",
-      "prompt": "We use HashiCorp Vault for secrets management in this repo \u2014 is there a better alternative we should consider?",
+      "prompt": "We use HashiCorp Vault for secrets management in this repo — is there a better alternative we should consider?",
       "expected_output": "Hardest test: requires composing Flow A (find how the repo currently uses HashiCorp Vault, cite docs) with Flow B (research alternatives via web search, write vault note). The skill should NOT pick one flow and drop the other. Success = (1) the docs server was searched for current usage and specific notes were cited, (2) web research was performed for alternatives, (3) a note was written to the vault via synthesize_note, (4) final answer references both the repo's current setup and the researched alternatives with explicit confidence, (5) the vault note contains a 'what we currently do' section drawn from Flow A findings.",
       "files": []
     }
