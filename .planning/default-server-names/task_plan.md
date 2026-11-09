@@ -33,6 +33,12 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
   - [ ] Skills: after #81 the semantic-first skill names servers by role with both name pairs. Make the new names "the default" and the old pair "older installs". The same goes for the sibling skills' role lines.
   - [ ] Server instructions and `src/`: grep for any literal server name (none expected; the healthcheck already matches `/^semantic-/`).
   - [ ] `hooks/hooks.json` description and the plugin description: wording only, if they name servers.
+  - [ ] Slash commands and one CLI help string still hard-code `mcp__semantic-vault__` (found by #81's review):
+    - `commands/vault.md`, `commands/contract.md`: their `allowed-tools` frontmatter needs exact names. List the tools under BOTH default names (`semantic-memory` and `semantic-vault`). That pre-approves them on old and new default installs; a custom name falls back to the normal permission prompt. The body names tools bare, on "the vault server" (role wording, as in the skills).
+    - `commands/mode.md:25` wording.
+    - `src/cli/index.ts:542` help string.
+    - A test (extend `test/unit/skill-surfaces.test.ts`, or a sibling) asserting that no `commands/**` or `skills/**` body text hard-codes a single server prefix, and that `allowed-tools` lists both default names wherever it lists one.
+  - [ ] `vaultTool()` (`hooks/vault-context.js:93`) falls back to `semantic-vault` when no writable entry is found. Make the fallback `semantic-memory`, the new default.
 - [ ] Phase 5: Release prep: bump all five version fields to 1.26.0 and the lockfile; the offline tarball is deferred to release. Check whether `scripts/install-offline.sh` writes `.mcp.json` entries; if it does, apply the same defaults.
 - [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
