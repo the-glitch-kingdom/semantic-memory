@@ -26,19 +26,19 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
   - [x] Verify #78 against main @ 2ab171c (notes.md): both causes reproduced on a fixture
   - [x] Post the verification comment on #78
   - [x] Cut `feat/abstention-variants`, commit this plan
-- [ ] Phase 2: Reproduce first (before any change)
-  - [ ] Fixture `test/fixtures/abstention-variants/`, a git repo built in the test:
+- [x] Phase 2: Reproduce first (before any change)
+  - [x] Fixture `test/fixtures/abstention-variants/`, a git repo built in the test:
         - INDEX.md/REGISTRY.md hubs without `generated: true` that name an absent product;
         - a doc writing `auto-fill`, and code with `autoFill`;
         - `snake_case` and `Title Case` variants;
         - a lock file and a TOML that name an absent product.
-  - [ ] Failing tests on main:
+  - [x] Failing tests on main:
         - (a) the product named only in a hub is flagged, with and without `generated: true` and with and without the export;
         - (b) `autofill`, `auto_fill` and `AutoFill` are not missing when the docs say `auto-fill`;
         - (c) a name found only in a lock file or config is still missing (it already is; pin it).
         Run them over stdio and the CLI.
-  - [ ] Add variant negatives and controls to `absent-terms.jsonl` and `absent-terms-heldout.jsonl` (hyphenated and camelCase controls that ARE documented under another spelling). Write them before measuring.
-  - [ ] Baseline in notes.md: 1.15.0, 1.23.0 and local, same run, CLI and MCP, with and without an export.
+  - [x] Add variant negatives and controls to `absent-terms.jsonl` and `absent-terms-heldout.jsonl` (hyphenated and camelCase controls that ARE documented under another spelling). Write them before measuring.
+  - [x] Baseline in notes.md: 1.22.0, 1.23.0, 1.24.0 and local, same run (1.15.0 dropped: #74 already measured it; 1.24.0 added as the previous release), CLI and MCP, with and without an export.
 - [ ] Phase 3: Presence counts only searchable docs
   - [ ] `Bm25Index` presence (`has`, `docFreq`, `docHas` as the detector uses them) skips docs that are `generated`, or that match `resultsExclude` or `exclude`. Keep BM25 scoring unchanged, or prove rank-neutral if the hubs' chunk text already is not scored.
   - [ ] Apply the same rule to `paths` (doc paths joined) so a hub's file name never counts as presence.
@@ -81,7 +81,7 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
 - The reporter's guess that lock files or config count as code presence does not hold: the code-graph fallback never reads file contents, only file names and doc-cited symbols. Phase 2 pins it with a test.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: the interrupted run left its work in stash@{0} (kept, not popped); it was sound and reused as is. Absent-terms baseline arms: 1.22.0 instead of 1.15.0 (see Phase 2).
 
 ## Status
-**Currently in Phase 2** (waiting for #76 to merge, then rebase)
+**Currently in Phase 3** (Phase 2 done: failing tests and baseline in notes.md)

@@ -53,3 +53,12 @@
 {"id":"c21","tier":"exact","qtype":"fact","q":"What does rank-only RRF at k=60 let a weak second arm do?","facets":["displace"]}
 {"id":"c22","tier":"paraphrase","qtype":"fact","q":"ONNX sessions: why do they leave an orphan process behind at session end?","facets":["event loop alive"]}
 {"id":"c23","tier":"exact","qtype":"fact","q":"Jev answers what kind of questions, and does it generate text?","facets":["yes/no","no text"]}
+// #78 (abstention-variants Phase 2), train. Written before any change. Negatives n30-n32 are absent under every spelling (grep-checked: docs, code, paths) and name a joined, camelCase or snake_case compound, so a spelling-variant rule must keep flagging them. Controls c24-c28 are documented under another spelling (text-only, append-only, smoke-test, no-watch, missing_terms) and must not be flagged.
+{"id":"n30","tier":"negative","qtype":"fact","q":"How does the ratelimiter reject bursts of search calls?"}
+{"id":"n31","tier":"negative","qtype":"fact","q":"What triggers the hotReload of the server config?"}
+{"id":"n32","tier":"negative","qtype":"fact","q":"Where is the webhook_retry queue drained?"}
+{"id":"c24","tier":"exact","qtype":"fact","q":"What does the textonly flag skip about ONNX?","facets":["skip ONNX embedder"]}
+{"id":"c25","tier":"exact","qtype":"fact","q":"Which tool writes the appendonly log at the vault root?","facets":["log_event"]}
+{"id":"c26","tier":"exact","qtype":"fact","q":"Why did healthcheck skip drift detection after the install smoketest passed?","facets":["process\\.exit"]}
+{"id":"c27","tier":"exact","qtype":"fact","q":"What does the nowatch option do about the file watcher?","facets":["--no-watch"]}
+{"id":"c28","tier":"exact","qtype":"fact","q":"How does missingTerms decide that a name is absent from the docs?","facets":["missing_terms"]}

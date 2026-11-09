@@ -21,3 +21,25 @@ Fixtures are in the scratchpad only (`r78/t`, `r78/t2`): a git repo holding `.do
 
 ### Not asked (APNs)
 `APNs` collides with an in-tree plural. Leaving it unflagged is correct; no change.
+
+## Eval results: Phase 2 (reproduce on main + 1.24.0, nothing changed in src/)
+Same run (`scripts/eval-against-release.sh`, one `git clone --local` tree per version, no export and `--export`), then every question of both sets asked through one stdio server per tree (`search_hybrid`, limit 5) and `missing_terms` read from result #1. Sets: `absent-terms.jsonl` (32 negatives n01-n32, 28 controls c01-c28) and `absent-terms-heldout.jsonl` (30 negatives hn01-hn30, 27 controls hc01-hc27). Phase 2 added n30-n32, c24-c28, hn28-hn30, hc23-hc27 before any measuring; held-out was not used to choose anything. Negative terms are not named here (this file would be a doc in a clone); ids only.
+
+"neg" = negatives with a non-empty `missing_terms`; "false" = controls with a non-empty `missing_terms`. Identical with and without the export, and identical for 1.23.0, 1.24.0 and local.
+| set | 1.22.0 neg / false | 1.23.0 = 1.24.0 = local neg / false |
+|---|---|---|
+| train (32 neg, 28 controls) | 2 / 1 | 23 / 5 |
+| held-out (30 neg, 27 controls) | 2 / 1 | 27 / 4 |
+| Phase 2 additions only: variant negatives (6) | 4 / - | 6 / - |
+| Phase 2 additions only: variant controls (10) | - / 2 | - / 9 |
+The 9 false flags on the new controls are the spelling problem: c24 c25 c26 c27 (joined forms of text-only, append-only, smoke-test, no-watch), c28 and hc27 (camelCase of missing_terms / passingTerms), hc23 hc25 hc26 (rank-only, claude-run, re-embed). hc24 (wait-for-ready) is not flagged (not a candidate, a plain word). The 1.22.0 false flags (c28, hc27) are camelCase identifiers it detected. Aggregates from the harness (cli = mcp, `neg flagged` also counts low-confidence flags): 57/62 for 1.23.0, 1.24.0 and local, 18/62 for 1.22.0; hybrid @1 38/55 (no export), 41/55 (export), the same for every version. The 6 new variant negatives are all still flagged, so a variant rule has to keep them.
+CLI vs MCP: `search` over the CLI gives the same `missing_terms` as stdio for the 8 train additions on local (n30-n32, c24-c28). The harness's `cli` and `mcp` arms agree on every aggregate.
+
+### The fixture, over stdio and the CLI (`test/e2e/abstention-variants.test.ts`, 4 arms: hubs with and without `generated: true`, with and without the export)
+- Hubs without the flag: the product named only in `INDEX.md`/`REGISTRY.md` is not flagged (reproduced, both transports, with and without the export). With the flag it is flagged.
+- `autofill`, `auto_fill`, `AutoFill`, `retrybudget` and `SmartRetry` against docs writing `auto-fill`, `retry_budget`, `Smart Retry` are all flagged as missing (reproduced; the code has `autoFill` in `src/form-helpers.ts` and it does not rescue them).
+- A product named only in `package-lock.json` or `service.toml` is flagged (pinned, passes today).
+- Stdio and CLI agree on every query (passes today).
+- 44 of 68 cases are `it.fails` (they fail on main by design); 24 pass. When Phase 3/4 fix the causes, each `it.fails` that starts passing must become a plain `it`.
+
+Checks for Phase 2: lint, build, `npm test` (the Jev-hang case of hook-failure and the skill-queue SessionEnd timing case failed under load, both pass alone), `npm run eval` 148 passed, 4 expected fail (unchanged; the new sets move no floor).
