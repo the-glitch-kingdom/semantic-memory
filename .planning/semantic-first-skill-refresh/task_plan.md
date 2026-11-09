@@ -7,17 +7,17 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md: "Phase 1: verification" and "Phase 1b: the revised issue")
-- [ ] Phase 2: Reproduce first, as failing tests (expected-fail until fixed)
-  - [ ] A new `test/unit/skill-surfaces.test.ts`, or an extension of `test/unit/search-guidance.test.ts`. Over `skills/**/*.md` and `skills/**/*.json`:
-    - [ ] no `mcp__semantic-sidekick__` or `mcp__semantic-vault__` tool prefixes;
-    - [ ] no `top_k`;
-    - [ ] no `create_note` as the default write (it may appear only as a fallback, or not at all);
-    - [ ] every MCP tool name a skill mentions (`search_*`, `read_note`, `forwardlinks`, `backlinks`, `synthesize_note`, `ingest_source`, …) exists in `CURRENT_TOOL_INVENTORY`;
-    - [ ] every parameter named (`limit`) exists in that tool's schema;
-    - [ ] every result field the semantic-first skill names (`missing_terms`, `undocumented`, `passing_terms`, `no_strong_match`, `decay`, `entity`, `related`) is emitted by `src/mcp/tools/search.ts`. Check it on a real `search_hybrid` response from a built server on a small fixture, not by grepping the source;
-    - [ ] the indexing string the skill quotes matches `src/mcp/context.ts` ("Indexing in progress").
-  - [ ] Keep the existing `search-guidance.test.ts` assertions ("top 3", "each step separately") passing for the surfaces they cover. If the draft's wording drops "top 3" for semantic-first, change that one surface's assertion to the draft's multi-part rule ("read down to result 8" / "every part is covered") and record why.
-  - [ ] Record which assertions fail on main.
+- [x] Phase 2: Reproduce first, as failing tests (expected-fail until fixed)
+  - [x] New `test/unit/skill-surfaces.test.ts` (static checks) and `test/e2e/skill-result-fields.test.ts` (live checks). Over `skills/**/*.md` and `skills/**/*.json`:
+    - [x] no `mcp__semantic-sidekick__` or `mcp__semantic-vault__` tool prefixes;
+    - [x] no `top_k`;
+    - [x] no `create_note` as the default write (it may appear only as a fallback, or not at all);
+    - [x] every MCP tool name a skill mentions (`search_*`, `read_note`, `forwardlinks`, `backlinks`, `synthesize_note`, `ingest_source`, …) exists in `CURRENT_TOOL_INVENTORY`;
+    - [x] every parameter named (`limit`) exists in that tool's schema (e2e: search_hybrid's live inputSchema has `limit`, no `top_k`; passes on main, guards the draft);
+    - [x] every result field the semantic-first skill names (`missing_terms`, `undocumented`, `passing_terms`, `no_strong_match`, `decay`, `entity`, `related`) is emitted by `src/mcp/tools/search.ts`. Check it on a real `search_hybrid` response from a built server on a small fixture, not by grepping the source;
+    - [x] the indexing string the skill quotes matches `src/mcp/context.ts` ("Indexing in progress").
+  - [x] Keep the existing `search-guidance.test.ts` assertions ("top 3", "each step separately") passing for the surfaces they cover. If the draft's wording drops "top 3" for semantic-first, change that one surface's assertion to the draft's multi-part rule ("read down to result 8" / "every part is covered") and record why.
+  - [x] Record which assertions fail on main.
 - [ ] Phase 3: Replace the skill with the draft
   - [ ] `skills/semantic-first/SKILL.md` = `draft-SKILL.md`, with ONE change: the two-server lines.
     - The draft hard-codes `semantic-memory-docs` / `semantic-memory`, but `hooks/reconcile.js` writes `semantic-sidekick` / `semantic-vault` by default.
@@ -71,7 +71,8 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Patch release 1.25.1, which also carries the #82 tooling changes from `[Unreleased]`.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: freshness-scale warm start failed once under the full suite (known load flake) and passed alone.
+- Phase 2: the "every tool a skill names" regex also matches `read_time_min`, a frontmatter field in the reference file. It is deleted in Phase 3, so the regex stays simple.
 
 ## Status
-**Currently in Phase 2.**
+**Currently in Phase 3.**

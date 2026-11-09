@@ -60,3 +60,22 @@ Acceptance also includes a trigger-eval check of the shorter description.
 | Draft hard-codes `semantic-memory-docs` / `semantic-memory` | **Wrong for default installs.** `hooks/reconcile.js:33-34` writes `semantic-vault` / `semantic-sidekick`. Phase 3 keeps the draft but names servers by role, with both name pairs as examples. |
 
 **Trigger eval tooling:** `semantic-memory skill-eval trigger <skill-md> --prompts <jsonl of {session,text}> [--json]`. It runs real claude sessions, so Phase 5 has an explicit budget.
+
+## Eval results: Phase 2 (tests only, no ranking numbers)
+
+Run on 1.25.0 skills (`test/unit/skill-surfaces.test.ts`, `test/e2e/skill-result-fields.test.ts`):
+
+| Assertion | On 1.25.0 | With the draft SKILL.md |
+|---|---|---|
+| no `mcp__semantic-sidekick__` / `mcp__semantic-vault__` in skills/ | fails | still fails (siblings, evals.json: Phases 3-4) |
+| no `top_k` | fails (SKILL.md:47) | passes |
+| no `create_note` | fails (SKILL.md:82) | passes |
+| every tool named is in CURRENT_TOOL_INVENTORY | fails (`read_time_min` in the reference file) | fails until the reference file is deleted |
+| semantic-first names the 7 lookup/research tools | fails | passes |
+| semantic-first names the 7 result fields | fails (5 missing) | passes |
+| indexing string / "result 8" / "every part is covered" | fail | pass |
+| reference file gone | fails | fails until deleted (Phase 3) |
+| live `search_hybrid` carries all 7 fields; schema has `limit` | passes (8/8) | n/a |
+
+9 cases are `it.fails`; they become plain `it` in Phases 3-4 (Phase 8 checks none is left).
+The live fields come from one small git repo (src/TaskResponse.ts, DeadLetterSweeper.ts, 4 docs; `passing_terms` via a name in one non-top doc) on the built server.
