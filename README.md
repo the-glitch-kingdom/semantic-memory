@@ -49,7 +49,7 @@ The original semantic-sidekick framing — activation / mode-routing / capture l
 ```
 
 On install:
-- `.mcp.json` is reconciled at every session start: `semantic-vault` points at `.claude/.vault`. When hit-em-with-the-docs is installed and `.documentation/` exists, `semantic-sidekick` serves that folder `--read-only`.
+- `.mcp.json` is reconciled at every session start: `semantic-memory` points at `.claude/.vault`. When hit-em-with-the-docs is installed and `.documentation/` exists, `semantic-memory-docs` serves that folder `--read-only`. Existing entries keep their names (`semantic-vault`, `semantic-sidekick`); nothing to do on upgrade.
 - Skills (`vault-first`, `research-mode`, `outage-silence`, `semantic-first`) and commands (`/mode`, `/vault`, `/healthcheck`, `/contract`, `/status`, `/update`, `/policy`, `/relink`, `/normalize-config`) become available.
 - Hooks register from `hooks/hooks.json`: `SessionStart`, `UserPromptSubmit` and `Stop`, plus `PostToolUseFailure`, which does nothing unless `SEMANTIC_MEMORY_FAILURE_HOOK=1`, and `PreToolUse` (Grep, Bash), which redirects a grep of an indexed docs folder to the MCP search once (`SEMANTIC_MEMORY_DOC_SEARCH_REDIRECT=0` turns it off).
 

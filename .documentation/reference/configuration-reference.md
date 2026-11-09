@@ -26,7 +26,7 @@ MCP server registration. Written by the SessionStart reconcile hook. Expected sh
 ```json
 {
   "mcpServers": {
-    "semantic-vault": {
+    "semantic-memory": {
       "type": "stdio",
       "command": "node",
       "args": ["./node_modules/@theglitchking/semantic-memory/bin/semantic-memory",
@@ -38,7 +38,7 @@ MCP server registration. Written by the SessionStart reconcile hook. Expected sh
 Mid-migration installs may have `@theglitchking/semantic-sidekick/bin/semantic-sidekick` instead — `findLocalBin` prefers the new path with legacy fallback. Gitignored by default. Regenerated on SessionStart by `hooks/reconcile.js`.
 
 **Server names (v1.7.2):** the hooks search every entry whose name starts with `semantic-` and whose `args` include
-`--notes`, so `semantic-memory` + `semantic-memory-docs` works as well as `semantic-vault` + `semantic-sidekick`.
+`--notes`, so `semantic-memory` + `semantic-memory-docs` works as well as `semantic-vault` + `semantic-sidekick`. Since v1.26.0 new installs get `semantic-memory` (vault) + `semantic-memory-docs` (docs); existing entries are never renamed or duplicated, and no entry is added for a folder another entry already serves.
 Before 1.7.2 only `semantic-vault`, `semantic-sidekick` and `semantic-memory` were searched. An entry may also set
 `"alwaysLoad": true` to keep all of that server's tools out of Claude Code's tool search; 1.7.2 already keeps
 `search_hybrid` out of it, so this is rarely needed.

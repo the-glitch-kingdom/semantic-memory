@@ -26,7 +26,7 @@ purpose: Complete listing of quickstart documentation
 
 | Document | Status | Updated | Words | Purpose |
 |----------|--------|---------|-------|---------|
-| [Installation Guide](installation-guide.md) | active | 2026-10-28 | 957 | Three install routes (plugin / npm / dev), what a fresh install gets, updating, post-install housekeeping, uninstall |
+| [Installation Guide](installation-guide.md) | active | 2026-10-28 | 1,001 | Three install routes (plugin / npm / dev), what a fresh install gets, updating, post-install housekeeping, uninstall |
 | [semantic-sidekick — Overview](sidekick-overview.md) | active | 2026-10-24 | 768 | Value proposition, five-layer summary, firing timeline, design principles |
 
 ## Keywords

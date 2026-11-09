@@ -22,7 +22,7 @@ The user invoked `/mode $ARGUMENTS`. This is the explicit ground-truth override 
 4. **If the arg is a valid mode name** (`research`, `vault-first`, `outage-silence`), do the transition:
 
    a. **If transitioning OUT of `research`** → emit the research-exit synthesis prompt:
-      > Exiting research-mode. Before switching: the session accumulated source notes and findings. Draft a `synthesize_note` now (dry-run first via `mcp__semantic-vault__synthesize_note` with `dry_run: true`, then apply if the preview looks right). Confirm with the user that the synthesis is filed before finishing the mode change.
+      > Exiting research-mode. Before switching: the session accumulated source notes and findings. Draft a `synthesize_note` now (dry-run first via `synthesize_note` on the vault server with `dry_run: true`, then apply if the preview looks right). Confirm with the user that the synthesis is filed before finishing the mode change.
 
    b. **If transitioning OUT of `outage-silence`** → emit the outage-exit postmortem prompt:
       > Exiting outage-silence. The incident is (presumably) resolved. Before switching: draft a postmortem as a `synthesize_note` with `type: gotcha` (or `decision` if the fix is architectural) covering timeline, root cause, fix, and preventive actions. Dry-run first, confirm with the user, then apply.

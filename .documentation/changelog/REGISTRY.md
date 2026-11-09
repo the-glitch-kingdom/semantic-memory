@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 39 |
+| Documents | 40 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -46,7 +46,7 @@ purpose: Quick reference for changelog documentation
 
 | Status | Count |
 |--------|-------|
-| active | 39 |
+| active | 40 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

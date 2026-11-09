@@ -41,13 +41,13 @@ function emit(eventName, additionalContext) {
   process.stdout.write(JSON.stringify(out) + "\n");
 }
 
-// A server the hooks can search: any semantic-* entry with --notes (semantic-vault, semantic-sidekick,
-// semantic-memory, semantic-memory-docs, …). The drift checks only need the semantic-* name.
+// A server the hooks can search: any semantic-* entry with --notes (semantic-memory, semantic-memory-docs,
+// or the older semantic-vault, semantic-sidekick, …). The drift checks only need the semantic-* name.
 export const isSemanticServer = (name, entry) =>
   /^semantic-/.test(name) && Array.isArray(entry?.args) && entry.args.includes("--notes");
 
 // Every notes path the hook searches: [{ name, path, readOnly }], in .mcp.json order.
-// The standard setup has two (semantic-vault → .claude/.vault, semantic-sidekick → .documentation --read-only).
+// The standard setup has two (semantic-memory → .claude/.vault, semantic-memory-docs → .documentation --read-only; older installs: semantic-vault, semantic-sidekick).
 // { configuredOnly } leaves out the .claude/.vault default, which has no server behind it.
 export function findNotesSources(projectRoot, { configuredOnly = false } = {}) {
   // 1. Explicit env override (useful for tests) — a single path, replaces the lookup
@@ -89,10 +89,10 @@ function pickVaultPath(sources) {
 }
 
 // Full MCP name of a tool on the writable vault server, using the entry's real name from .mcp.json
-// (semantic-vault, semantic-memory, …); semantic-vault when none is configured.
+// (semantic-memory, semantic-vault, …); semantic-memory, the default, when none is configured.
 export function vaultTool(projectRoot, tool) {
   const w = findNotesSources(projectRoot, { configuredOnly: true }).find((s) => !s.readOnly);
-  return `mcp__${w?.name ?? "semantic-vault"}__${tool}`;
+  return `mcp__${w?.name ?? "semantic-memory"}__${tool}`;
 }
 
 function findCliBin(projectRoot) {

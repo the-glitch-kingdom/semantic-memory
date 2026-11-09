@@ -539,7 +539,7 @@ program
 
 program
   .command("log-event")
-  .description("Append a structured event to the vault's log.md (used by hooks and CI scripts — same shape as mcp__semantic-vault__log_event)")
+  .description("Append a structured event to the vault's log.md (used by hooks and CI scripts — same shape as the vault server's log_event tool)")
   .requiredOption("--notes <path>", "Path to markdown notes directory")
   .requiredOption("--kind <name>", "Event category: ingest, synthesis, error, mode_change, etc.")
   .requiredOption("--summary <text>", "One-line human summary")

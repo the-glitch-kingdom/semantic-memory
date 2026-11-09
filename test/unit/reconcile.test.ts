@@ -1,131 +1,119 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, mkdir, rm, writeFile, utimes, chmod, unlink, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { reconcile, type Manifest } from "../../src/core/reconcile.js";
-import { commitIndex, filesMatchMeta, readMeta, withLock, COMMIT_FILES } from "../../src/core/index-store.js";
+import { join, resolve } from "node:path";
 
-describe("reconcile", () => {
-  let dir: string;
+// Runs hooks/session-start.js the way Claude Code's SessionStart does, in a temp project with a
+// fake local install. HOME is a temp dir so the user's real settings never enable hewtd here.
+const HOOK = resolve(__dirname, "../../hooks/session-start.js");
+const BIN = "./node_modules/@theglitchking/semantic-memory/bin/semantic-memory";
+const ours = (notes: string, extra: string[] = []) => ({ type: "stdio", command: "node", args: [BIN, "--notes", notes, ...extra] });
+const VAULT = "./.claude/.vault";
+const DOCS = "./.documentation";
+
+describe("SessionStart reconcile: .mcp.json entries", () => {
+  let proj: string;
+  let home: string;
+
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "reconcile-"));
-    await writeFile(join(dir, "a.md"), "# A\n");
-    await mkdir(join(dir, "sub"));
-    await writeFile(join(dir, "sub", "b.md"), "# B\n");
+    proj = await mkdtemp(join(tmpdir(), "rc-proj-"));
+    home = await mkdtemp(join(tmpdir(), "rc-home-"));
+    await mkdir(join(proj, "node_modules/@theglitchking/semantic-memory/bin"), { recursive: true });
+    await writeFile(join(proj, "node_modules/@theglitchking/semantic-memory/bin/semantic-memory"), "");
   });
-  afterEach(() => rm(dir, { recursive: true, force: true }));
-
-  it("treats every file as new against an empty manifest", async () => {
-    const plan = await reconcile(dir, {});
-    expect(plan.parse.sort()).toEqual(["a.md", "sub/b.md"]);
-    expect(plan.gone).toEqual([]);
-    expect(plan.changed).toBe(true);
+  afterEach(async () => {
+    await rm(proj, { recursive: true, force: true });
+    await rm(home, { recursive: true, force: true });
   });
 
-  it("skips files whose stat is unchanged without reading them", async () => {
-    const first = await reconcile(dir, {});
-    const second = await reconcile(dir, first.manifest);
-    expect(second.parse).toEqual([]);
-    expect(second.changed).toBe(false);
-    expect(second.manifest["a.md"]).toBe(first.manifest["a.md"]); // same object: never re-hashed
+  async function enableHewtd() {
+    await mkdir(join(proj, ".documentation"), { recursive: true });
+    await mkdir(join(proj, ".claude"), { recursive: true });
+    await writeFile(join(proj, ".claude/settings.json"), JSON.stringify({ enabledPlugins: { "hit-em-with-the-docs@m": true } }));
+  }
+  const writeMcp = (servers: Record<string, unknown>) =>
+    writeFile(join(proj, ".mcp.json"), JSON.stringify({ mcpServers: servers }, null, 2) + "\n");
+  const run = () =>
+    spawnSync("node", [HOOK], { env: { ...process.env, HOME: home, CLAUDE_PROJECT_DIR: proj }, encoding: "utf8", timeout: 30000 });
+  const mcp = async () => JSON.parse(await readFile(join(proj, ".mcp.json"), "utf8")).mcpServers as Record<string, any>;
+
+  it("fresh project with hewtd enabled gets semantic-memory + semantic-memory-docs", async () => {
+    await enableHewtd();
+    run();
+    const s = await mcp();
+    expect(Object.keys(s).sort()).toEqual(["semantic-memory", "semantic-memory-docs"]);
+    expect(s["semantic-memory"]).toEqual(ours(VAULT));
+    expect(s["semantic-memory-docs"]).toEqual(ours(DOCS, ["--read-only"]));
   });
 
-  it("updates only the manifest when the stat changed but the bytes did not", async () => {
-    const first = await reconcile(dir, {});
-    await utimes(join(dir, "a.md"), new Date(), new Date(Date.now() + 5000));
-    const second = await reconcile(dir, first.manifest);
-    expect(second.parse).toEqual([]);
-    expect(second.changed).toBe(true);
-    expect(second.manifest["a.md"].contentHash).toBe(first.manifest["a.md"].contentHash);
-    expect(second.manifest["a.md"].mtimeMs).not.toBe(first.manifest["a.md"].mtimeMs);
+  it("existing semantic-vault entry is left alone and no semantic-memory is added", async () => {
+    await writeMcp({ "semantic-vault": ours(VAULT) });
+    const before = await readFile(join(proj, ".mcp.json"), "utf8");
+    run();
+    expect(await readFile(join(proj, ".mcp.json"), "utf8")).toBe(before);
+    expect(existsSync(join(proj, ".mcp.json.bak"))).toBe(false);
   });
 
-  it("re-parses a file whose bytes changed, even when frontmatter dates did not", async () => {
-    const first = await reconcile(dir, {});
-    await writeFile(join(dir, "a.md"), "---\nlast_updated: 2020-01-01\n---\n# A changed\n");
-    const second = await reconcile(dir, first.manifest);
-    expect(second.parse).toEqual(["a.md"]);
+  it("existing legacy vault + docs entries are left alone, no semantic-memory-docs added", async () => {
+    await enableHewtd();
+    await writeMcp({ "semantic-vault": ours(VAULT), "semantic-sidekick": ours(DOCS, ["--read-only"]) });
+    const before = await readFile(join(proj, ".mcp.json"), "utf8");
+    run();
+    expect(await readFile(join(proj, ".mcp.json"), "utf8")).toBe(before);
   });
 
-  it("reports deleted files as gone and drops them from the manifest", async () => {
-    const first = await reconcile(dir, {});
-    await unlink(join(dir, "sub", "b.md"));
-    const second = await reconcile(dir, first.manifest);
-    expect(second.gone).toEqual(["sub/b.md"]);
-    expect(second.manifest["sub/b.md"]).toBeUndefined();
+  it.each(["my-vault", "semantic-memory"])("an entry named %s already serving the vault gets no second vault entry", async (name) => {
+    await writeMcp({ [name]: ours(VAULT) });
+    run();
+    expect(Object.keys(await mcp())).toEqual([name]);
   });
 
-  it("applies the shared ignore globs and ignores non-markdown", async () => {
-    await mkdir(join(dir, "node_modules", "x"), { recursive: true });
-    await writeFile(join(dir, "node_modules", "x", "readme.md"), "# dep");
-    await writeFile(join(dir, "notes.txt"), "not markdown");
-    const plan = await reconcile(dir, {});
-    expect(plan.parse.sort()).toEqual(["a.md", "sub/b.md"]);
+  it("an npx entry serving the vault by an absolute --notes path gets no second vault entry", async () => {
+    await writeMcp({ mine: { type: "stdio", command: "npx", args: ["-y", "@theglitchking/semantic-memory", `--notes=${join(proj, ".claude/.vault")}`] } });
+    run();
+    expect(Object.keys(await mcp())).toEqual(["mine"]);
   });
 
-  it("keeps the previous entry for an unreadable file instead of failing", async () => {
-    const first = await reconcile(dir, {});
-    await writeFile(join(dir, "a.md"), "# A edited\n");
-    await chmod(join(dir, "a.md"), 0o000);
-    try {
-      const second = await reconcile(dir, first.manifest);
-      if (process.getuid?.() === 0) return; // root reads anything
-      expect(second.parse).not.toContain("a.md");
-      expect(second.manifest["a.md"]).toEqual(first.manifest["a.md"]); // retried next time
-      expect(second.gone).toEqual([]);
-    } finally {
-      await chmod(join(dir, "a.md"), 0o644);
-    }
-  });
-});
-
-describe("index store", () => {
-  let dir: string;
-  const info = { model: "m", dimensions: 2, totalChunks: 1 };
-  const writeAll = (tag: string) => async (stage: string) => {
-    for (const name of COMMIT_FILES) await writeFile(join(stage, name), `${tag}:${name}`);
-  };
-  beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), "store-"));
-  });
-  afterEach(() => rm(dir, { recursive: true, force: true }));
-
-  it("commits every file, meta last, and the result reads back as consistent", async () => {
-    const meta = await commitIndex(dir, 0, info, writeAll("one"));
-    expect(meta?.generation).toBe(1);
-    expect(await filesMatchMeta(dir, (await readMeta(dir))!)).toBe(true);
-    expect(await readFile(join(dir, "graph.json"), "utf-8")).toBe("one:graph.json");
+  it("a differently named entry already serving ./.documentation gets no second docs entry", async () => {
+    await enableHewtd();
+    await writeMcp({ "my-vault": ours(VAULT), "my-docs": ours(DOCS, ["--read-only"]) });
+    run();
+    expect(Object.keys(await mcp()).sort()).toEqual(["my-docs", "my-vault"]);
   });
 
-  it("detects a commit that died after renaming some files (mixed generations)", async () => {
-    await commitIndex(dir, 0, info, writeAll("one"));
-    const meta = (await readMeta(dir))!;
-    await writeFile(join(dir, "docs.cache.json"), "two:docs.cache.json-longer"); // a second commit's file, meta never written
-    expect(await filesMatchMeta(dir, meta)).toBe(false);
+  it("hewtd off removes our semantic-sidekick docs entry", async () => {
+    await writeMcp({ "semantic-vault": ours(VAULT), "semantic-sidekick": ours(DOCS, ["--read-only"]) });
+    run();
+    expect(Object.keys(await mcp())).toEqual(["semantic-vault"]);
   });
 
-  it("refuses to commit over a generation it did not read", async () => {
-    await commitIndex(dir, 0, info, writeAll("one"));
-    expect(await commitIndex(dir, 0, info, writeAll("two"))).toBeNull();
-    expect((await readMeta(dir))?.generation).toBe(1);
-    expect(await commitIndex(dir, 1, info, writeAll("two"))).not.toBeNull();
+  it("hewtd off removes our semantic-memory-docs docs entry", async () => {
+    await writeMcp({ "semantic-memory": ours(VAULT), "semantic-memory-docs": ours(DOCS, ["--read-only"]) });
+    run();
+    expect(Object.keys(await mcp())).toEqual(["semantic-memory"]);
   });
 
-  it("does not commit while a live process holds the lock", async () => {
-    await writeFile(join(dir, "index.lock"), JSON.stringify({ pid: process.pid, at: Date.now() }));
-    expect(await commitIndex(dir, 0, info, writeAll("one"))).toBeNull();
-    expect(await readMeta(dir)).toBeNull();
+  it("hewtd off keeps a hand-written docs entry under either name", async () => {
+    const hand = { type: "stdio", command: "my-server", args: ["--notes", DOCS] };
+    await writeMcp({ "semantic-vault": ours(VAULT), "semantic-sidekick": hand, "semantic-memory-docs": hand });
+    run();
+    expect(Object.keys(await mcp()).sort()).toEqual(["semantic-memory-docs", "semantic-sidekick", "semantic-vault"]);
   });
 
-  it("takes over a lock left by a dead process", async () => {
-    await writeFile(join(dir, "index.lock"), JSON.stringify({ pid: 2 ** 22 + 12345, at: Date.now() }));
-    let ran = false;
-    expect(await withLock(dir, async () => { ran = true; })).toBe(true);
-    expect(ran).toBe(true);
+  it("writes .mcp.json.bak when it changes an existing file", async () => {
+    await writeMcp({ other: { command: "x" } });
+    const before = await readFile(join(proj, ".mcp.json"), "utf8");
+    run();
+    expect(await readFile(join(proj, ".mcp.json.bak"), "utf8")).toBe(before);
+    expect(Object.keys(await mcp())).toContain("other");
   });
 
-  it("takes over an unreadable lock file", async () => {
-    await writeFile(join(dir, "index.lock"), "garbage");
-    expect(await withLock(dir, async () => {})).toBe(true);
+  it("an unparseable .mcp.json is left untouched with a stderr note", async () => {
+    await writeFile(join(proj, ".mcp.json"), "{ not json");
+    const r = run();
+    expect(await readFile(join(proj, ".mcp.json"), "utf8")).toBe("{ not json");
+    expect(r.stderr).toContain("could not parse");
   });
 });

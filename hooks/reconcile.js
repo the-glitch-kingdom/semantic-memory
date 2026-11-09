@@ -2,13 +2,13 @@
 //
 // Responsibilities (all conservative — the user's config always wins):
 //   1. Ensure <project>/.claude/.vault exists.
-//   2. If .mcp.json is missing a "semantic-vault" entry AND the package is
-//      installed locally, add one in the node-against-node_modules form.
+//   2. If no .mcp.json entry serves ./.claude/.vault AND the package is
+//      installed locally, add "semantic-memory" in the node-against-node_modules form.
 //      Existing entries (any shape) are preserved — if you want to rewrite
 //      a stale entry, run `npx --no @theglitchking/semantic-memory
 //      normalize-config`.
 //   3. If hit-em-with-the-docs is enabled AND ./.documentation exists,
-//      conditionally add a read-only "semantic-sidekick" entry pointed at
+//      conditionally add a read-only "semantic-memory-docs" entry pointed at
 //      ./.documentation (same preserve-existing rule). Remove it ONLY if
 //      the existing entry matches a shape we recognize as ours.
 //
@@ -26,12 +26,13 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 const PKG = "@theglitchking/semantic-memory";
 const LEGACY_PKG = "@theglitchking/semantic-sidekick";
-const VAULT_KEY = "semantic-vault";
-const DOCS_KEY = "semantic-sidekick"; // preserved for backwards-compat with existing .mcp.json entries
+const VAULT_KEY = "semantic-memory";
+const DOCS_KEY = "semantic-memory-docs";
+const LEGACY_DOCS_KEY = "semantic-sidekick";
 
 function readJson(path, fallback = null) {
   try {
@@ -131,6 +132,18 @@ function isOurEntry(entry, notesPath) {
   return false;
 }
 
+/** True if any entry's --notes (or --notes=) resolves to `folder`, relative to the project root. */
+function servesFolder(servers, projectRoot, folder) {
+  const target = resolve(projectRoot, folder);
+  return Object.values(servers).some((entry) => {
+    const args = Array.isArray(entry?.args) ? entry.args.map(String) : [];
+    return args.some((a, i) => {
+      const v = a === "--notes" ? args[i + 1] : a.startsWith("--notes=") ? a.slice(8) : null;
+      return v != null && resolve(projectRoot, v) === target;
+    });
+  });
+}
+
 function backup(mcpPath) {
   try {
     if (existsSync(mcpPath)) {
@@ -170,25 +183,25 @@ export function reconcile(projectRoot) {
 
   const bin = binArg(projectRoot);
 
-  // VAULT entry: create if missing AND we have a local install. Never
-  // overwrite an existing entry (even if it looks "wrong" — the user
-  // controls their .mcp.json).
-  if (!data.mcpServers[VAULT_KEY]) {
-    if (bin) {
-      data.mcpServers[VAULT_KEY] = buildEntry(bin, "./.claude/.vault");
-    }
+  // VAULT entry: create if nothing serves the vault folder AND we have a
+  // local install. Never overwrite an existing entry (even if it looks
+  // "wrong" — the user controls their .mcp.json).
+  if (!data.mcpServers[VAULT_KEY] && bin && !servesFolder(data.mcpServers, projectRoot, "./.claude/.vault")) {
+    data.mcpServers[VAULT_KEY] = buildEntry(bin, "./.claude/.vault");
   }
 
   // DOCS entry: same preserve-existing rule. Conditional on hewtd +
   // .documentation. When removing, only remove shapes we recognize as ours.
   if (docsWired) {
-    if (!data.mcpServers[DOCS_KEY]) {
-      if (bin) {
-        data.mcpServers[DOCS_KEY] = buildEntry(bin, "./.documentation", ["--read-only"]);
+    if (!data.mcpServers[DOCS_KEY] && bin && !servesFolder(data.mcpServers, projectRoot, "./.documentation")) {
+      data.mcpServers[DOCS_KEY] = buildEntry(bin, "./.documentation", ["--read-only"]);
+    }
+  } else {
+    for (const key of [DOCS_KEY, LEGACY_DOCS_KEY]) {
+      if (data.mcpServers[key] && isOurEntry(data.mcpServers[key], ".documentation")) {
+        delete data.mcpServers[key];
       }
     }
-  } else if (data.mcpServers[DOCS_KEY] && isOurEntry(data.mcpServers[DOCS_KEY], ".documentation")) {
-    delete data.mcpServers[DOCS_KEY];
   }
 
   const after = JSON.stringify(data);

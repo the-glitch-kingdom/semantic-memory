@@ -38,19 +38,19 @@ What you get:
 ### 2. First session
 
 On the next `claude` start, the SessionStart hook:
-- reconciles `.mcp.json` (`hooks/reconcile.js`): adds a `semantic-vault` entry for `./.claude/.vault/` (created if missing). When hit-em-with-the-docs is installed and `.documentation/` exists, it also adds `semantic-sidekick` for `./.documentation --read-only`. Entries use the stable `node ./node_modules/@theglitchking/semantic-memory/bin/semantic-memory` form. Entries you edited by hand are left alone.
+- reconciles `.mcp.json` (`hooks/reconcile.js`): adds a `semantic-memory` entry for `./.claude/.vault/` (created if missing). When hit-em-with-the-docs is installed and `.documentation/` exists, it also adds `semantic-memory-docs` for `./.documentation --read-only` (v1.26.0; before, `semantic-vault` and `semantic-sidekick`). Entries use the stable `node ./node_modules/@theglitchking/semantic-memory/bin/semantic-memory` form. Existing entries are kept exactly as they are, under any name, and nothing is added for a folder some entry already serves, so existing projects need no action. To rename an old pair by hand, see [v1.26.0](../changelog/v1-26-0-default-server-names.md).
 - resets the mode in `.claude/.semantic-memory/mode` to `vault-first`.
 
 The first server start builds each folder's index (`<folder>/.semantic-sidekick-index/`) in the background. It downloads the ~90 MB embedding model once, into `~/.semantic-sidekick/models/`. Searches made before the index is ready answer "Indexing in progress… Try again shortly."
 
 ### 3. Use a different vault (optional)
 
-Edit the `semantic-vault` entry's `--notes` argument in `.mcp.json`:
+Edit the vault entry's (`semantic-memory`, or `semantic-vault` on older installs) `--notes` argument in `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "semantic-vault": {
+    "semantic-memory": {
       "type": "stdio",
       "command": "node",
       "args": ["./node_modules/@theglitchking/semantic-memory/bin/semantic-memory", "--notes", "/path/to/vault"]
@@ -99,7 +99,7 @@ npx semantic-memory --version              # 1.6.1 or later
 npx semantic-memory healthcheck --fast     # "local install starts cleanly"; drift findings, if any
 ```
 
-In a Claude session: expand a hook line with `ctrl+o` to find `<vault-state-since>` / `<vault-context>`, run `/mode status` (it should report `vault-first`), and ask a project question; Claude should call `mcp__semantic-vault__search_hybrid`.
+In a Claude session: expand a hook line with `ctrl+o` to find `<vault-state-since>` / `<vault-context>`, run `/mode status` (it should report `vault-first`), and ask a project question; Claude should call `mcp__semantic-memory__search_hybrid` (`mcp__semantic-vault__…` on older installs).
 
 ### Updating
 

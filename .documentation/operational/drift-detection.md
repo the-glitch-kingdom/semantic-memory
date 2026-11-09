@@ -26,7 +26,7 @@ The SessionStart hook (`hooks/vault-context.js`) runs these checks in parallel. 
 
 | Check | What it looks at | When it warns |
 |---|---|---|
-| `mcp_json_entry` | `<project>/.mcp.json` | Present but has no entry whose name starts with `semantic-` (v1.7.2; before, only `semantic-vault`/`semantic-sidekick`/`semantic-memory` counted, so a repo with only `semantic-memory-docs` was flagged) |
+| `mcp_json_entry` | `<project>/.mcp.json` | Present but has no entry whose name starts with `semantic-` (v1.7.2; before, only `semantic-vault`/`semantic-sidekick`/`semantic-memory` counted, so a repo with only `semantic-memory-docs` was flagged). Default names since v1.26.0: `semantic-memory`, `semantic-memory-docs` |
 | `hook_registration` | `<project>/.claude/settings.json` + the plugin's `hooks/hooks.json` | Missing one of `SessionStart` / `UserPromptSubmit` / `Stop` (the opt-in `PostToolUseFailure` is not required) |
 | `hook_double_registration` (v1.3.2+) | `settings.json` × plugin `hooks/hooks.json` | Same event registered in BOTH → each hook fires twice (plugin context only) |
 | `agents_contract` | `<project>/AGENTS.md` | File exists but lacks managed-block markers |
