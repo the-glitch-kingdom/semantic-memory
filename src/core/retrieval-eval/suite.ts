@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { listMarkdown } from "../indexer.js";
+import { loadDecayConfig } from "../decay.js";
 import { deriveSessionDir } from "../session.js";
 import { openEval } from "./runner.js";
 import { formatArm, grepPattern, parseGolden, runFacetEval, type ArmFn, type ArmMetrics, type FacetCase } from "./metrics.js";
@@ -45,6 +46,8 @@ export interface EvalReport {
   setHash: string;
   corpus: { docs: number; hash: string };
   stale: { id: string; why: string }[];
+  /** What the run searched with: the ranking settings that move results (the tools ran at their default granularity). */
+  settings: { granularity: "section"; decay: boolean; decayCode: boolean };
   arms: Record<string, ArmReport>;
 }
 
@@ -90,7 +93,8 @@ export async function runSuite(notes: string, cases: FacetCase[]): Promise<EvalR
       arms[name] = { all, clean, negatives, outcomes };
     }
     const setHash = createHash("sha256").update(JSON.stringify(live)).digest("hex");
-    return { cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, arms };
+    const decay = loadDecayConfig(root);
+    return { cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms };
   } finally {
     await ev.close();
   }
@@ -98,6 +102,7 @@ export async function runSuite(notes: string, cases: FacetCase[]): Promise<EvalR
 
 export function formatSuite(r: EvalReport): string {
   const lines = [`${r.cases} questions${r.stale.length ? `, ${r.stale.length} stale (skipped)` : ""}`];
+  lines.push(`settings: granularity=${r.settings.granularity} decay=${r.settings.decay ? "on" : "off"} decay.code=${r.settings.decayCode ? "on" : "off"}`);
   for (const s of r.stale) lines.push(`  stale ${s.id}: ${s.why}`);
   for (const [name, a] of Object.entries(r.arms)) {
     lines.push("", `${name}`, formatArm("all  ", a.all));

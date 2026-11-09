@@ -34,20 +34,23 @@ tree after publish.
         this repo, related per #1, entity card in-process MCP vs CLI
   - [x] Post the verification comment on #71
   - [x] Sync main, cut `feat/hub-doc-ranking-regression`, commit this plan (with the archive move of `user-help`)
-- [ ] Phase 2: Reproduce first (eval before any fix)
-  - [ ] `scripts/eval-against-release.sh <version>...`: for each published version, `npm pack` into a temp dir, link
+- [x] Phase 2: Reproduce first (eval before any fix)
+  - [x] `scripts/eval-against-release.sh <version>...`: for each published version, `npm pack` into a temp dir, link
         node_modules, `git clone --local` this repo, `--reindex`, run `eval --json` on the given sets, and print one
         table (hybrid/semantic @1, @3, multi @1, #1+related, negatives flagged, p95). This is the release gate's
         engine (Phase 6). Never writes into the repo.
-  - [ ] A **hub question set** on this repo (`test/retrieval-eval/real-hub.jsonl`, train / `-heldout`): questions whose
+  - [x] A **hub question set** on this repo (`test/retrieval-eval/real-hub.jsonl`, train / `-heldout`): questions whose
         answer is a long doc citing many code files (operator notes, runbook-style references), plus broad
         multi-doc questions. Written before measuring; facets grep-verified in the doc.
-  - [ ] Eval reports `related` per #1 (mean count) next to `#1+related`, and prints the settings it ran with
+  - [x] Eval reports `related` per #1 (mean count) next to `#1+related`, and prints the settings it ran with
         (`decay.code` on/off, granularity).
-  - [ ] Reproduce the MCP-only bugs through the real launch: the stdio server as the plugin starts it
+        Done: `settings` and `relatedPerTop` in `eval --json`; text report prints both; unit test.
+  - [x] Reproduce the MCP-only bugs through the real launch: the stdio server as the plugin starts it
         (`--notes .documentation --read-only`, cwd = repo), an identifier query (entity card), `related` per #1, and
         the result fields with and without `.hewtd/graph.json`. Record what fails, or that it does not reproduce.
-  - [ ] Baseline table in notes.md: 1.15.0, 1.20.0 and main on real-corpus (copied as today), real-corpus on a clone,
+        Done through `scripts/lib/eval-probe.mjs`: card, `related` and fields do NOT reproduce on a ready index; the upgrade
+        window (old index served before the first reconcile) does. See notes.md.
+  - [x] Baseline table in notes.md: 1.15.0, 1.20.0 and main on real-corpus (copied as today), real-corpus on a clone,
         and the hub set on a clone; with and without an export (`npx hewtd index` in the clone).
 - [ ] Phase 3: Bugs
   - [ ] Eval rows with `negative: true` are scored as negatives (normalized at load); a row with neither a tier
@@ -141,10 +144,14 @@ tree after publish.
   each passed their floors).
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: the reporter's #1 loss does not reproduce on this repo (real-corpus or hub set, with or without export); the
+  hub set is small (22) and this repo's docs carry little drift, so the release gate is a regression guard and the
+  reporter's tree decides after publish. The stdio card/related/fields bugs do not reproduce on a ready index; they
+  do in the upgrade window (old index served before the first reconcile). The in-repo scratch `probe.mjs` named in the
+  task was not in the scratchpad; `scripts/lib/eval-probe.mjs` was written new.
 
 ## Status
-**Currently in Phase 2** - reproduce first
+**Currently in Phase 3** - bugs
 
 ---
 
