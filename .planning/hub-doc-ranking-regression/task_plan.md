@@ -52,22 +52,25 @@ tree after publish.
         window (old index served before the first reconcile) does. See notes.md.
   - [x] Baseline table in notes.md: 1.15.0, 1.20.0 and main on real-corpus (copied as today), real-corpus on a clone,
         and the hub set on a clone; with and without an export (`npx hewtd index` in the clone).
-- [ ] Phase 3: Bugs
-  - [ ] Eval rows with `negative: true` are scored as negatives (normalized at load); a row with neither a tier
+- [x] Phase 3: Bugs
+  - [x] Eval rows with `negative: true` are scored as negatives (normalized at load); a row with neither a tier
         nor facets is refused with a message naming its id. Unit test.
-  - [ ] Identifier detection: a PascalCase token with 2+ capitals counts as an identifier when the code graph knows
+  - [x] Identifier detection: a PascalCase token with 2+ capitals counts as an identifier when the code graph knows
         it (symbol or file name), in `classifyQuery` and the entity card; it is still prose otherwise
         (`SessionEnd`-style words). Through #57's detector, never a second one.
-  - [ ] Grounding inputs:
+  - [x] Grounding inputs:
         - drop export `file` refs that are not path-shaped (no `/` and no file extension, or containing spaces,
           `(` or `=`): `import.meta.env`;
         - de-duplicate `code_drift` and `dead_refs` by resolved file, so a bare filename next to its full path
           counts once;
         - a doc never counts itself.
-  - [ ] `cited_by[].stale` reflects dead refs or a stale verdict, not drift alone (drift is shown, not judged).
-  - [ ] Fix whatever Phase 2 reproduced for the entity card, `related` and missing fields on the stdio
+  - [x] `cited_by[].stale` reflects dead refs or a stale verdict, not drift alone (drift is shown, not judged).
+  - [x] Fix whatever Phase 2 reproduced for the entity card, `related` and missing fields on the stdio
         `--read-only` server, each with a regression test through that entry point. If it did not reproduce, record
         that and add the test anyway.
+        Done: card/`related`/fields do not reproduce on a ready index (test/e2e/stdio-readonly.test.ts added anyway).
+        The upgrade window is marked: the stale note now names the fields that may be missing
+        (test/integration/freshness.test.ts).
 - [ ] Phase 4: Grounding off the hot path
   - [ ] Default: **dead refs only.** Drift no longer multiplies the score (`decay.code.drift_penalty` defaults to 1);
         drift stays in the `grounding` block as information.
@@ -140,6 +143,14 @@ tree after publish.
 ## Decisions Made
 - One plan for #71: the ranking fixes share the same eval and must be measured together against 1.15.
 - Measure on a clone with code, because the in-repo real-corpus eval never exercises grounding.
+- Phase 3: the upgrade window is marked, not held back. Responses already carry `_meta.stale` and a trailing note while an
+  older index answers; the note now says section, anchor, grounding and the entity card may be missing. Holding fields back
+  would change nothing, since the old cache lacks the data they come from.
+- Phase 3: PascalCase goes through `identifiers(query, known)` (#57's detector) with `knownToCode(code)` (a symbol a doc cites,
+  or a tracked file name with or without extension). The CLI loads the code graph for any 2+-capital PascalCase candidate
+  (`identifiers(q, () => true)`), one git call. Acronyms without a lowercase letter (`SAML`) stay prose even when known.
+- Phase 3: `import.meta.env` has an "extension" (`.env`), so the path-shape test also drops member chains starting with
+  `import.meta`, `process`, `window`, `globalThis`, `document`.
 - The gate compares against the previous **published** package, so it catches what floors did not (1.16 and 1.17
   each passed their floors).
 
@@ -151,7 +162,7 @@ tree after publish.
   task was not in the scratchpad; `scripts/lib/eval-probe.mjs` was written new.
 
 ## Status
-**Currently in Phase 3** - bugs
+**Currently in Phase 4** - grounding off the hot path
 
 ---
 

@@ -9,7 +9,7 @@ import { createServer } from "../../src/mcp/server.js";
 import { BM25_FRACTION, bm25SelfTop } from "../../src/core/bm25.js";
 import { filesMatchMeta, readMeta } from "../../src/core/index-store.js";
 import { createTempVault, cleanupTempDir } from "../setup.js";
-import { INDEX_SCHEMA_VERSION } from "../../src/core/indexer.js";
+import { INDEX_SCHEMA_VERSION, Indexer } from "../../src/core/indexer.js";
 
 const NOW = { reconcileThrottleMs: 0 };
 
@@ -159,6 +159,38 @@ describe("index freshness without a watcher", () => {
     expect(spy).not.toHaveBeenCalled();
     await ctx.flushIndex();
     expect((await readMeta(join(dir, ".semantic-sidekick-index")))?.schemaVersion).toBe(INDEX_SCHEMA_VERSION);
+  }, 180_000);
+
+  it("an answer served from the old index in the upgrade window says which fields may be missing (#71)", async () => {
+    const first = await track();
+    await first.ctx.flushIndex();
+    const index = join(dir, ".semantic-sidekick-index");
+    await writeFile(join(index, "meta.json"), JSON.stringify({ ...(await readMeta(index)), schemaVersion: 0 }));
+
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const indexFile = Indexer.prototype.indexFile;
+    vi.spyOn(Indexer.prototype, "indexFile").mockImplementation(async function (this: Indexer, ...a: [any]) { await gate; return indexFile.apply(this, a); });
+    const server = await createServer(dir, { reconcileThrottleMs: 0 });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    await server.connect(st);
+    const client = new Client({ name: "t", version: "1" });
+    await client.connect(ct);
+    try {
+      let res: any;
+      for (let i = 0; i < 100; i++) {
+        res = await client.callTool({ name: "search_hybrid", arguments: { query: "quokka telemetry rollups" } });
+        if (!/^Indexing/.test(res.content[0].text)) break; // the cache is still loading
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      expect(res._meta?.stale).toBe(true);
+      expect(Array.isArray(JSON.parse(res.content[0].text))).toBe(true);
+      expect(res.content.at(-1).text).toMatch(/section, anchor, grounding and the entity card may be missing/);
+    } finally {
+      release();
+      await client.close();
+      await server.close();
+    }
   }, 180_000);
 
   it("a commit that died between renames is detected on the next start and recovered", async () => {

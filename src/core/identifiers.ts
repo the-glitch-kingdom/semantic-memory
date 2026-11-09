@@ -2,14 +2,16 @@ import { tokenize, type Bm25Index } from "./bm25.js";
 
 const DOTTED = /^\p{L}[\p{L}\p{N}_-]+(\.\p{L}[\p{L}\p{N}_-]+)+$/u; // every part starts with a letter and has 2+ chars: `v1.12.0`, `e.g.` are not names
 const CAMEL = /^[a-z]+[A-Z]\w*$/;
+const PASCAL = /^(?=.*[a-z])(?:[A-Z][a-z0-9]*){2,}$/; // 2+ capitals: `TaskResponse`; prose (`SessionEnd`, `SAML`) unless `known`
 const EDGE = /^[^\p{L}\p{N}/_]+|[^\p{L}\p{N}/_]+$/gu; // keeps `_`: the index tokens of `__init__.py` and `_helper` carry theirs
 const UNDERSCORES = /^_+|_+$/g; // `__init__`, `_italic_`: decided without them, so prose emphasis is not a name
 
 /**
  * Identifier-shaped terms of a query, in their original spelling: snake_case, lower camelCase, paths, dotted names and
- * backticked spans without whitespace. Not in v1: bare acronyms (SLA, TLS), PascalCase, kebab-case (too many product names and prose words).
+ * backticked spans without whitespace. Not in v1: bare acronyms (SLA, TLS), kebab-case (too many product names and prose words).
+ * PascalCase (2+ capitals) counts only when `known` says the code has that name; `() => true` lists the candidates.
  */
-export function identifiers(query: string): string[] {
+export function identifiers(query: string, known?: (term: string) => boolean): string[] {
   const out = new Set<string>();
   for (const m of query.matchAll(/`([^`\s]+)`/g)) out.add(m[1].replace(EDGE, ""));
   for (const w of query.replace(/`[^`]*`/g, " ").split(/[\s=]+/)) {
@@ -17,7 +19,7 @@ export function identifiers(query: string): string[] {
     const t = raw.replace(UNDERSCORES, "");
     if (raw.includes("://")) continue;
     // a path has an extension or 2+ slashes: `TCP/IP`, `client/server`, `pass/fail` are prose
-    if (t.includes("_") || (t.includes("/") && (t.includes(".") || t.split("/").length > 2)) || CAMEL.test(t) || DOTTED.test(t)) out.add(raw);
+    if (t.includes("_") || (t.includes("/") && (t.includes(".") || t.split("/").length > 2)) || CAMEL.test(t) || DOTTED.test(t) || (known && PASCAL.test(t) && known(t))) out.add(raw);
   }
   out.delete("");
   return [...out];
@@ -29,8 +31,8 @@ export function identifiers(query: string): string[] {
  * after the identifier would otherwise count as missing. `paths` is the lowercased, joined doc paths.
  * shortcut: parts are checked, not their adjacency; upgrade to a literal check over doc content if the eval shows misses.
  */
-export function missingTerms(query: string, index: Bm25Index, paths: string): string[] {
-  return identifiers(query).filter((term) =>
+export function missingTerms(query: string, index: Bm25Index, paths: string, known?: (term: string) => boolean): string[] {
+  return identifiers(query, known).filter((term) =>
     tokenize(term.slice(term.lastIndexOf("/") + 1)).some((t) => !index.has(t) && !paths.includes(t)),
   );
 }

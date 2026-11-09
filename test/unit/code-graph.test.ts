@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { entityCard, splitUndocumented, groundDocs, loadExport, loadCodeData, fallbackCode, gitLastChanged } from "../../src/core/code-graph.js";
+import { entityCard, knownToCode, splitUndocumented, groundDocs, loadExport, loadCodeData, fallbackCode, gitLastChanged } from "../../src/core/code-graph.js";
 
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "code-graph-vault");
 const mdIn = (dir: string) => new Set((readdirSync(dir, { recursive: true }) as string[]).filter((f) => f.endsWith(".md")).map((f) => f.split("\\").join("/")));
@@ -232,6 +232,23 @@ describe("groundDocs", () => {
     groundDocs([e], code({ bodyChanged: undefined }));
     expect(e.grounding.code_drift).toEqual(["x.py"]);
   });
+  it("filters noisy inputs: a doc never counts itself, a bare name next to its full path counts once (#71)", () => {
+    const refs = [
+      { kind: "file", target: ".documentation/ops/a.md", resolved: false },
+      { kind: "file", target: "x.py", resolved: false },
+      { kind: "file", target: "src/x.py", resolved: false },
+      { kind: "file", target: "src/y.py", file: "src/y.py", resolved: true, changed: Date.parse("2026-02-01") },
+      { kind: "file", target: "y.py", file: "src/y.py", resolved: true, changed: Date.parse("2026-02-01") },
+    ];
+    const d: any = { path: "ops/a.md" };
+    groundDocs([d], { docs: new Map([["ops/a.md", { source: "export", bodyChanged: Date.parse("2026-01-01"), refs }]]), symbols: new Map() } as any);
+    expect(d.grounding.dead_refs).toEqual(["src/x.py"]);
+    expect(d.grounding.code_drift).toEqual(["src/y.py"]);
+  });
+  it("drops export file refs that are not path-shaped (import.meta.env, calls, assignments, spaces)", () => {
+    exportOf({ version: 1, docs: { "a.md": doc({ refs: ["import.meta.env", "foo(bar)", "A=b", "two words", "Makefile", "src/ok.ts", "x.json"].map((target) => ({ kind: "file", target, resolved: false })) }) }, symbols: {} });
+    expect(load()!.docs.get("a.md")!.refs.map((r) => r.target)).toEqual(["src/ok.ts", "x.json"]);
+  });
   it("keeps hewtd's verdict (unreviewed is nothing)", () => {
     const d: any = { path: "a.md" };
     groundDocs([d], code({ verdict: "unreviewed", refs: [] }));
@@ -252,7 +269,8 @@ describe("entityCard and splitUndocumented", () => {
     docs: new Map([["d1.md", { source: "export", refs: [ref("scripts/b.sh")] }]]),
   };
   const docs = new Map<string, any>([
-    ["d1.md", { title: "One", grounding: { source: "export", code_drift: ["jobs/a.py"], dead_refs: [] } }],
+    ["d1.md", { title: "One", grounding: { source: "export", code_drift: [], dead_refs: ["jobs/gone.py"] } }],
+    ["d3.md", { title: "Three", grounding: { source: "export", code_drift: ["jobs/a.py"], dead_refs: [] } }],
     ["d2.md", { title: "Two" }],
   ]);
   it("says 'defined in' only for a definition, lists fresh citers first, and drops docs outside the vault", () => {
@@ -261,6 +279,18 @@ describe("entityCard and splitUndocumented", () => {
       cited_by: [{ path: "d2.md", title: "Two", stale: false }, { path: "d1.md", title: "One", stale: true }],
     });
     expect(entityCard("do_b", code, docs, () => 0)?.location).toBe("found in");
+  });
+  it("drift alone does not make a citing doc stale; dead refs and a stale verdict do (#71)", () => {
+    const withDrift = new Map(docs).set("d2.md", docs.get("d3.md"));
+    expect(entityCard("do_a", code, withDrift, () => 0)?.cited_by.find((c) => c.path === "d2.md")?.stale).toBe(false);
+    const verdict = new Map(docs).set("d2.md", { title: "Two", grounding: { source: "export", code_drift: [], dead_refs: [], verdict: "stale" } });
+    expect(entityCard("do_a", code, verdict, () => 0)?.cited_by.find((c) => c.path === "d2.md")?.stale).toBe(true);
+  });
+  it("a PascalCase name the code has (a file, with or without extension) gets a card; prose and unknown names do not (#71)", () => {
+    const c: any = { ...code, files: [...code.files, "src/TaskResponse.ts"] };
+    expect(entityCard("what is TaskResponse", c, docs, () => 0)).toMatchObject({ entity: "TaskResponse", kind: "file", path: "src/TaskResponse.ts" });
+    expect(entityCard("when does SessionEnd fire", c, docs, () => 0)).toBeUndefined();
+    expect(knownToCode(null)("TaskResponse")).toBe(false);
   });
   it("finds a unique file by name and its citers, never an ambiguous one", () => {
     expect(entityCard("scripts/b.sh", code, docs, () => 0)).toMatchObject({ kind: "file", path: "scripts/b.sh", cited_by: [{ path: "d1.md" }] });

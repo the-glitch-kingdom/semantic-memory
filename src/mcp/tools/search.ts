@@ -4,7 +4,7 @@ import type { ServerContext } from "../context.js";
 import { applyCoverage } from "../../core/rank.js";
 import { fuseScores } from "../../core/bm25.js";
 import { missingTerms } from "../../core/identifiers.js";
-import { entityCard, splitUndocumented } from "../../core/code-graph.js";
+import { entityCard, knownToCode, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { fold } from "../../core/fold.js";
 import { classifyQuery, type QueryType } from "../../core/query-type.js";
@@ -51,7 +51,7 @@ function relatedTo(ctx: ServerContext, path: string, scored: (SearchResult & { c
 function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit: number, full: boolean, bm25Min: number | null, granularity: Granularity = "section", queryType?: QueryType, bestChunk?: (path: string) => string | undefined, allowed: (path: string) => boolean = () => true) {
   const scored = withConfidence(granularity === "section" ? fold(ranked, ctx.getDocByPath(), ctx.getCode()) : ranked);
   const page = scored.slice(0, limit);
-  const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase());
+  const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), knownToCode(ctx.getCode()));
   const { missing, undocumented } = splitUndocumented(absent, ctx.getCode());
   const weak = isWeak(scored, bm25Min) || absent.length > 0;
   const scoreOf = new Map(scored.map((r) => [r.path, r.score]));
@@ -256,7 +256,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       }
 
       const queryEmbed = await ctx.embedder.embedQuery(query);
-      const args: HybridArgs = { query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity, queryType: mode === "auto" ? classifyQuery(query) : mode };
+      const args: HybridArgs = { query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity, queryType: mode === "auto" ? classifyQuery(query, knownToCode(ctx.getCode())) : mode };
       const { ready, notes } = await sources.open();
       if (ready.length === 0) {
         const { items } = (await hybridSearch(ctx, vectorIndex, queryEmbed, args))!;

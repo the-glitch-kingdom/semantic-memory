@@ -13,7 +13,14 @@ export const evalDir = (notes: string, dir?: string) => (dir ? resolve(dir) : jo
 export function loadSets(notes: string, sets: string[] | undefined, dir?: string): FacetCase[] {
   const files = sets?.length ? sets.map((s) => resolve(s)) : existsSync(evalDir(notes, dir)) ? readdirSync(evalDir(notes, dir)).filter((f) => f.endsWith(".jsonl")).sort().map((f) => join(evalDir(notes, dir), f)) : [];
   if (!files.length) throw new Error(`No question sets: pass --set <file.jsonl> or put *.jsonl in ${evalDir(notes, dir)}.`);
-  return files.flatMap((f) => parseGolden(readFileSync(f, "utf-8")) as unknown as FacetCase[]);
+  return files.flatMap((f) => (parseGolden(readFileSync(f, "utf-8")) as unknown as (FacetCase & { negative?: boolean })[]).map(normalizeCase));
+}
+
+/** `negative: true` means tier "negative" (only the tier is scored); a row with neither a tier nor facets cannot be scored, so it is refused. */
+export function normalizeCase({ negative, ...c }: FacetCase & { negative?: boolean }): FacetCase {
+  if (negative) c.tier = "negative";
+  if (!c.tier && !c.facets?.length) throw new Error(`Eval row ${c.id}: needs a tier or facets (or negative: true)`);
+  return c;
 }
 
 /** Cases that cannot be answered by the live docs: a facet no doc matches, a bad regex, or a missing expected doc. */

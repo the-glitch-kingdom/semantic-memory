@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "../../src/mcp/server.js";
-import { checkBaseline, findStale, loadSets, type Baseline, type EvalReport } from "../../src/core/retrieval-eval/suite.js";
+import { checkBaseline, findStale, loadSets, normalizeCase, type Baseline, type EvalReport } from "../../src/core/retrieval-eval/suite.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = join(HERE, "..", "fixtures", "docs-vault");
@@ -25,6 +25,20 @@ describe("findStale", () => {
     const { live, stale } = findStale(cases, docs);
     expect(live.map((c) => c.id)).toEqual(["ok", "neg"]);
     expect(stale.map((s) => s.id)).toEqual(["gone", "bad", "moved"]);
+  });
+});
+
+describe("normalizeCase (#71)", () => {
+  it("scores negative: true rows as negatives and refuses a row with no tier and no facets", () => {
+    expect(normalizeCase({ id: "n", q: "q", negative: true } as any).tier).toBe("negative");
+    expect(normalizeCase({ id: "n", tier: "exact", q: "q", negative: true } as any).tier).toBe("negative");
+    expect(normalizeCase({ id: "a", tier: "exact", q: "q", facets: ["x"] } as any).tier).toBe("exact");
+    expect(() => normalizeCase({ id: "bad-row", q: "q" } as any)).toThrow(/bad-row/);
+  });
+  it("loadSets applies it", async () => {
+    const f = join(await mkdtemp(join(tmpdir(), "sp-norm-")), "s.jsonl");
+    await writeFile(f, JSON.stringify({ id: "n1", q: "q", negative: true }) + "\n");
+    expect(loadSets("/x", [f])[0].tier).toBe("negative");
   });
 });
 

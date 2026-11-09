@@ -116,3 +116,11 @@ Launch as the plugin does it: `node dist/cli/index.js --notes .documentation --r
 `eval --json` now has `settings` (`granularity`, `decay`, `decay.code`) and per-arm `relatedPerTop`; the text report
 prints both. Full gates green: lint, build, `npm test` (1156 passed, 5 expected fail), `npm run eval` (133 passed, 5
 expected fail).
+
+## Eval results: Phase 3 (bug fixes, no ranking change by design)
+`npm run eval`: 135 passed, 5 expected fail (floors unchanged). The only ranking-adjacent change is grounding inputs (non-path
+refs dropped, bare/full duplicates counted once, a doc never counts itself), which can only remove dead/drift entries; the real-corpus
+eval copies `.documentation` only, so it does not exercise it. Phase 4 measures on a clone against 1.15.0 and 1.20.0.
+`npm test`: 1165 passed; freshness-scale warm start and hook-failure Jev-hang failed under load and passed alone.
+Reproduction status: stdio card, `related` and fields do not reproduce on a ready index (test/e2e/stdio-readonly.test.ts passes
+on the 1.20.0 behaviour for the non-PascalCase parts); the PascalCase case and the upgrade-window note are the new regressions.

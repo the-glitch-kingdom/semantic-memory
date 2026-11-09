@@ -11,7 +11,7 @@ const FLOW = /\b(?:end[- ]to[- ]end|walk(?:ing)? (?:me )?through|step[- ]by[- ]s
  * Not rules: "two wh-clauses joined by and" (train: 2 flows caught, 14 two-fact questions mislabelled) and "pipeline" (a fact
  * question about a pipeline wait); "2+ action verbs in a list" never fired on a train flow row.
  */
-export function classifyQuery(query: string): QueryType {
-  if (identifiers(query).length || query.split(/[\s,?]+/).some((w) => ID_EXTRA.test(w.replace(/^[`(]+|[`.:;]+$/g, "")))) return "identifier";
+export function classifyQuery(query: string, known?: (term: string) => boolean): QueryType {
+  if (identifiers(query, known).length || query.split(/[\s,?]+/).some((w) => ID_EXTRA.test(w.replace(/^[`(]+|[`.:;]+$/g, "")))) return "identifier";
   return FLOW.test(query) ? "flow" : "fact";
 }

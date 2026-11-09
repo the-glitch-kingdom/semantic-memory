@@ -11,7 +11,7 @@ import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
 import { identifiers, missingTerms } from "../core/identifiers.js";
-import { entityCard, loadCodeData, loadExport, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
+import { entityCard, knownToCode, loadCodeData, loadExport, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
 import { fold } from "../core/fold.js";
 import { sectionFields } from "../core/section-fields.js";
 import { excerpt, isWeak, withConfidence } from "../core/confidence.js";
@@ -170,9 +170,9 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
         pathClass
       );
       const all = withConfidence(opts.granularity === "doc" ? filtered : fold(filtered, docByPath, exported()));
-      const absent = missingTerms(query, bm25, paths);
       // the code is read only for a query that names an identifier: it costs a git call
-      const code = identifiers(query).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
+      const code = identifiers(query, () => true).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
+      const absent = missingTerms(query, bm25, paths, knownToCode(code));
       const { missing, undocumented } = splitUndocumented(absent, code);
       const weak = isWeak(all, bm25Min) || absent.length > 0;
       const scoreOf = new Map(all.map((r) => [r.path, r.score]));
