@@ -37,7 +37,8 @@ function clone(exported: boolean): string {
 }
 async function connect(dir: string): Promise<Client> {
   const c = new Client({ name: "abstention-parity-test", version: "1.0.0" });
-  await c.connect(new StdioClientTransport({ command: "node", args: [CLI_PATH, "--notes", ".documentation", "--read-only", "--no-watch", "--wait-for-ready"], cwd: dir, stderr: "ignore" }));
+  // --wait-for-ready indexes the whole tree before answering initialize: the SDK's 60 s default timed out on CI
+  await c.connect(new StdioClientTransport({ command: "node", args: [CLI_PATH, "--notes", ".documentation", "--read-only", "--no-watch", "--wait-for-ready"], cwd: dir, stderr: "ignore" }), { timeout: 300_000 });
   return c;
 }
 const ask = async (c: Client, q: string) => JSON.parse(((await c.callTool({ name: "search_hybrid", arguments: { query: q, limit: 5 } }, undefined, { timeout: 300_000 })) as any).content[0].text) as any[];
