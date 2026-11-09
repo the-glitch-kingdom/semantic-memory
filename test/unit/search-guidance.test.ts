@@ -11,7 +11,6 @@ describe("broad-question guidance", () => {
   const surfaces: Record<string, string> = {
     "search_hybrid description": read("src/mcp/tools/search.ts").slice(read("src/mcp/tools/search.ts").indexOf('"search_hybrid"')),
     "server instructions": serverInstructions("/tmp/x"),
-    "semantic-first skill": read("skills/semantic-first/SKILL.md"),
     "vault-first skill": read("skills/vault-first/SKILL.md"),
   };
   for (const [name, text] of Object.entries(surfaces)) {
@@ -20,4 +19,11 @@ describe("broad-question guidance", () => {
       expect(text).toMatch(/each step separately/);
     });
   }
+
+  // the reporter's draft (#81) states the same rule as "search each part, or read down to result 8"
+  it("semantic-first skill says to search each part of a multi-part question or read down to result 8", () => {
+    const text = read("skills/semantic-first/SKILL.md");
+    expect(text).toMatch(/search each part, or read down to result 8/);
+    expect(text).toMatch(/every part is covered/);
+  });
 });

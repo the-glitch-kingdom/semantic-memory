@@ -153,6 +153,18 @@ describe("skill evals (fake claude, fake Jev)", () => {
       expect(c.runs).toBe(2);
     });
 
+    it("a run that hits the turn cap is a vote: triggered if it called the skill first, not triggered otherwise (#81)", async () => {
+      await rules([
+        { match: "loaded", skill: "restart-dev-server", maxTurns: true },
+        { match: "wandered", maxTurns: true },
+      ]);
+      const r = await runTrigger([P("loaded"), P("wandered")], { repoRoot: repo, skillRaw: skillRaw(), env });
+      const by = Object.fromEntries(r.results.map((x) => [x.text, x]));
+      expect(by.loaded).toMatchObject({ runs: 2, triggers: 2, triggered: true });
+      expect(by.wandered).toMatchObject({ runs: 2, triggers: 0, triggered: false });
+      expect(by.wandered.error).toBeUndefined();
+    });
+
     it("failed runs are not votes and are not cached", async () => {
       await writeFile(join(dir, "bad-claude"), "#!/bin/sh\necho nope\n");
       await chmod(join(dir, "bad-claude"), 0o755);

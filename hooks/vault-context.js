@@ -88,6 +88,13 @@ function pickVaultPath(sources) {
   return (sources.find((s) => !s.readOnly) ?? sources[0])?.path ?? null;
 }
 
+// Full MCP name of a tool on the writable vault server, using the entry's real name from .mcp.json
+// (semantic-vault, semantic-memory, …); semantic-vault when none is configured.
+export function vaultTool(projectRoot, tool) {
+  const w = findNotesSources(projectRoot, { configuredOnly: true }).find((s) => !s.readOnly);
+  return `mcp__${w?.name ?? "semantic-vault"}__${tool}`;
+}
+
 function findCliBin(projectRoot) {
   // Prefer local installed bin. Try the rebranded package first; fall back to the
   // legacy semantic-sidekick path for machines mid-migration.
@@ -418,10 +425,10 @@ function readSpeakerProfileBlock(vaultPath, maxLines = 24) {
  * human-reviewable, graduated via synthesize_promote). Appended to the session-close
  * prompt so a formal session boundary always offers to file its memory.
  */
-function formatSessionDigestPrompt(session) {
+function formatSessionDigestPrompt(session, synthesizeNote) {
   return [
     "",
-    `After finishing, page this session's durable state to the vault: call \`mcp__semantic-vault__synthesize_note\` with \`from_session: true\`, \`proposal: true\`, \`proposal_subdir: "sessions"\`, and \`suggested_path: "sessions/${session.id}.md"\` — capturing decisions made, resolutions (symptom→cause→fix), and remaining task state. It files as a reviewable proposal; \`synthesize_promote\` graduates it if worth keeping. This is memory paging, not busywork: next session pages it back in instead of re-deriving.`,
+    `After finishing, page this session's durable state to the vault: call \`${synthesizeNote}\` with \`from_session: true\`, \`proposal: true\`, \`proposal_subdir: "sessions"\`, and \`suggested_path: "sessions/${session.id}.md"\` — capturing decisions made, resolutions (symptom→cause→fix), and remaining task state. It files as a reviewable proposal; \`synthesize_promote\` graduates it if worth keeping. This is memory paging, not busywork: next session pages it back in instead of re-deriving.`,
   ].join("\n");
 }
 
@@ -885,11 +892,11 @@ async function handleStop(projectRoot, sessionId) {
         lines.push(`- \`${v.cmd}\` → exit=${v.exit ?? "(killed)"} in ${v.duration_ms}ms`);
       }
       lines.push("");
-      lines.push(`Before ending: call \`mcp__semantic-vault__session_finish\` with a one-line summary. Verification recorded — finish will succeed without a waiver.`);
+      lines.push(`Before ending: call \`${vaultTool(projectRoot, "session_finish")}\` with a one-line summary. Verification recorded — finish will succeed without a waiver.`);
     } else {
-      lines.push(`Before ending: either run \`mcp__semantic-vault__session_run\` with at least one verification command (tests/lint), or call \`mcp__semantic-vault__session_finish\` with \`verified: false\` and a \`reason\` waiving verification (e.g. doc-only edits). session_finish refuses without one of these paths.`);
+      lines.push(`Before ending: either run \`${vaultTool(projectRoot, "session_run")}\` with at least one verification command (tests/lint), or call \`${vaultTool(projectRoot, "session_finish")}\` with \`verified: false\` and a \`reason\` waiving verification (e.g. doc-only edits). session_finish refuses without one of these paths.`);
     }
-    lines.push(formatSessionDigestPrompt(session));
+    lines.push(formatSessionDigestPrompt(session, vaultTool(projectRoot, "synthesize_note")));
     lines.push(`</vault-session-close>`);
     resetCapturePending(projectRoot, sessionId);
     emitStop(lines.join("\n"), true);
@@ -912,7 +919,7 @@ async function handleStop(projectRoot, sessionId) {
       lines.push(`- "${item.excerpt.replace(/\n/g, " ")}"`);
     }
     lines.push("");
-    lines.push(`Mandatory before Stop: call \`mcp__semantic-vault__synthesize_note\` with dry_run=true to preview a research-synthesis note (derived_from the session's filed sources). Review with the user, then apply. A research session that ends without synthesis is lost work.`);
+    lines.push(`Mandatory before Stop: call \`${vaultTool(projectRoot, "synthesize_note")}\` with dry_run=true to preview a research-synthesis note (derived_from the session's filed sources). Review with the user, then apply. A research session that ends without synthesis is lost work.`);
     lines.push(`</vault-transition-capture>`);
     resetCapturePending(projectRoot, sessionId);
     emitStop(lines.join("\n"), true);
@@ -922,7 +929,7 @@ async function handleStop(projectRoot, sessionId) {
   if (mode === "outage-silence") {
     const lines = [
       `<vault-transition-capture mode="outage-silence">`,
-      `Outage session ending. Before closing: draft a postmortem via \`mcp__semantic-vault__synthesize_note\` with \`type: gotcha\` (or \`decision\` if architectural). Include timeline, root cause, fix, preventive actions. Dry-run first, confirm with the user, then apply.`,
+      `Outage session ending. Before closing: draft a postmortem via \`${vaultTool(projectRoot, "synthesize_note")}\` with \`type: gotcha\` (or \`decision\` if architectural). Include timeline, root cause, fix, preventive actions. Dry-run first, confirm with the user, then apply.`,
       `</vault-transition-capture>`,
     ];
     resetCapturePending(projectRoot, sessionId);
@@ -944,8 +951,8 @@ async function handleStop(projectRoot, sessionId) {
     lines.push(`- cue \`${item.cue}\`: "${item.excerpt.replace(/\n/g, " ")}"`);
   }
   lines.push("");
-  lines.push(`Before ending: for each still-unsynthesized item above, either call \`mcp__semantic-vault__synthesize_note\` to file it with provenance, or explicitly acknowledge that it was already captured / not worth capturing.`);
-  lines.push(`If a cue is a speaker correction (how the user talks — "when I say X I mean Y"), update the speaker profile via \`mcp__semantic-vault__manage_profile\` (action:update_section) instead of synthesize_note.`);
+  lines.push(`Before ending: for each still-unsynthesized item above, either call \`${vaultTool(projectRoot, "synthesize_note")}\` to file it with provenance, or explicitly acknowledge that it was already captured / not worth capturing.`);
+  lines.push(`If a cue is a speaker correction (how the user talks — "when I say X I mean Y"), update the speaker profile via \`${vaultTool(projectRoot, "manage_profile")}\` (action:update_section) instead of synthesize_note.`);
   lines.push(`</vault-capture-prompt>`);
   resetCapturePending(projectRoot, sessionId);
   emitStop(lines.join("\n"), true);

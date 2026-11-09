@@ -20,7 +20,7 @@ This mode has **asymmetric cost-of-error**: false-negative (failing to enter whe
 
 ### 1. No proactive vault activity
 
-- **Do not** call `mcp__semantic-vault__search_hybrid` unless the user explicitly asks ("check the vault for X" / `/vault X`).
+- **Do not** call `search_hybrid` on the vault server unless the user explicitly asks ("check the vault for X" / `/vault X`).
 - **Do not** cite vault paths unless the user asks. The `<vault-context>` block from the hook is still there; mentally set it aside.
 - **Do not** suggest filing anything. "Worth capturing this as a gotcha?" is a peace-time question.
 - **Do not** emit capture-cue prompts mid-session. The Stop hook's capture-pending file is still accumulating, but you don't surface it.
