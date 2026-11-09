@@ -87,13 +87,13 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
   - [x] Offline tarball deferred to release (built from the merge commit)
 - [x] Phase 8: Cleanup
   - [x] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts, debug output  (checked: trial knob and losing variants already gone in Phase 5, eval-probe.mjs removed in Phase 2, no stray debug output, no dead exports; nothing left to remove)
-- [ ] Phase 9: Validation (independent review)
-  - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
-  - [ ] Unit: load order and reconcile swap, fallback bound, chunk windows, eval `--via mcp`, gate parity check
-  - [ ] Integration/e2e: stdio first-query test with slow git; export added or removed then restart; upgrade window (old index) still marked
-  - [ ] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, section eval green, MCP/CLI parity tests
-  - [ ] Every #73 acceptance check, against 1.15.0 and 1.21.0 in the same run, via MCP and CLI, with and without export; answered honestly in notes.md
-  - [ ] `npm run gate:release` passes against 1.21.0
+- [x] Phase 9: Validation (independent review)
+  - [x] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
+  - [x] Unit: load order and reconcile swap, fallback bound, chunk windows, eval `--via mcp`, gate parity check
+  - [x] Integration/e2e: stdio first-query test with slow git; export added or removed then restart; upgrade window (old index) still marked
+  - [x] Regression: lint, build, full `npm test` (known load flakes re-run alone), `npm run eval`, section eval green, MCP/CLI parity tests
+  - [x] Every #73 acceptance check, against 1.15.0 and 1.21.0 in the same run, via MCP and CLI, with and without export; answered honestly in notes.md (met: 1 and 3; partly met: 2, hard sets not back at 1.15.0; not reproduced: reporter's d0 loss)
+  - [x] `npm run gate:release` passes against 1.21.0
 - [ ] Phase 10: Documentation (full hit-em-with-the-docs pass, no secrets)
   - [ ] `.documentation/changelog/v1-22-0-*.md` and the CHANGELOG.md entry: numbers against 1.15.0 and 1.21.0 in the same run, missed targets stated
   - [ ] `architecture/code-graph.md` (load order, fallback bound, load time in stats), `architecture/indices-and-storage.md` or the indexing doc (chunk windows, schema version)
@@ -115,6 +115,7 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - Fix order: metadata first (Phase 3), because every ranking number the reporter took on d0 was measured inside the gap.
 
 ## Errors Encountered
+- Phase 9: review found `codeData` overwritten by an older code load finishing last (fixed, regression test); the Phase 3 export on/off test was flaky on doc order (fixed, sorted). Full suite: only the hook-failure Jev-hang flake, passes alone.
 - Phase 6: the first gate run failed parity with export: the in-process arm scored answers after the code graph landed, the stdio arm scored the first ones (`_meta.stale`), so top 3 differed on 1-2 of 80 questions. The eval now retries stale answers (in-process always; stdio with the new `--settle`, used by the gate's plain mcp arm). The `mcp-slow` arm does not settle: it is the one that checks the first answers.
 - Phase 5: the stdio client passes only a safe subset of the environment, so an env var trial knob never reached the server: the first mcp arms of b, c, d silently ran variant (a). Caught by cli != mcp; re-run as per-variant package copies.
 - Phase 5 missed target: on long-section-hard the fix recovers 3 of the 4 questions 1.21.0 lost on train (10/12 vs 7 and 1.15.0's 11) and 2 of 4 held-out (10/12 vs 8 and 12). Not back at 1.15.0.
@@ -125,7 +126,7 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 9**
+**Currently in Phase 10**
 
 ---
 

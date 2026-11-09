@@ -6,7 +6,7 @@
 #   - local mcp and cli differ in top 3, `related` or the entity card on any question;
 #   - the first local mcp answers (also with slow git) lack titles on a #1 result.
 #   scripts/gate-release.sh [previous-version]   default: the newest published version below package.json's
-# Needs `npm run build` first. Takes ~15 min (4 clone indexes, 8 evals), never writes into the repo.
+# Needs `npm run build` first. Takes ~6 min (4 clone indexes, 8 evals), never writes into the repo.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export BAND=1

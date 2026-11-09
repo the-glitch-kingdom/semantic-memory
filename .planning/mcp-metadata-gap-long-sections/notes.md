@@ -178,3 +178,52 @@ Runtime: `npm run gate:release -- 1.21.0` takes about 6 min (4 clone indexes, 8 
 - The slow-git arm reproduces #73 on 1.21.0 (titled 0/63) and shows the fix (63/63). A gate with local in that row would have failed 1.21.0.
 - Parity: 0 of 80 questions differ between local cli and local mcp, with and without export, after settling. Before settling, with export, 1-2 questions differed in top 3 (first run: 1, repeats: 1, 2, then another question in 2 more); cause is the in-process arm scoring the post-code-graph state and the stdio arm the first answers. Stale answers carried `_meta.stale` as designed.
 - Held-out mixes four sets, so these are measurements, not tuning signals.
+
+## Eval results: Phase 9 (independent review and #73 acceptance)
+
+### Review findings (git diff main...HEAD, read adversarially)
+- **Fixed, real bug (src/mcp/context.ts):** `loadCode` assigned `codeData` itself, so with two code loads in flight (a swap while the first `git log` is still running) the OLDER load finishing last overwrote the newer docs' code (`getCode()` stale until the next stamp change; entity cards and fold used the wrong code). `codeData` is now set in `applyCode`, only when `documents === docs`. Regression test in test/integration/code-load-order.test.ts (loads released out of order, tagged by call number); it fails on the Phase 3 code and passes now.
+- **Fixed, flaky test:** the "adding or removing .hewtd/graph.json" test compared per-doc metadata in `getDocuments()` order, which follows parallel indexing order (failed about 1 run in 3). It now sorts by path; 8 runs in a row green.
+- Fixed a comment in scripts/gate-release.sh ("~15 min", it is ~6 min).
+- Audited, no change: the chunk overlap guard (no overlap-only or duplicate chunk, a sentence longer than the window stays whole); `--settle` retry window (60 s per call, only for `_meta.stale`); `isStale()` covers the upgrade window (index-upgrade.test.ts, unchanged and green); `content[0]` of every search tool is untouched; `codeLoad`/`get_stats` shape.
+- Not changed, known limits: `setDocuments(docs)` in the reconcile path still leaves the previous `codeData` in place until the new load lands (marked `_meta.stale`); the gate does not check `related`/grounding inside the stale window, and the plain mcp arm settles; gate has no unit harness (the gate run against 1.21.0 is the test: its slow-git arm scores titled 0/63 on 1.21.0 and 63/63 on local).
+
+### Checks run on the final tree
+lint, build green. `npm test`: 1176 pass, 5 expected fail, 1 fail = hook-failure (known Jev-hang load flake, passes alone 14/14). `npm run eval`: 137 pass, 5 expected fail (section eval and parity tests included). `npm run gate:release -- 1.21.0`: PASS (output below).
+
+### #73 acceptance, 1.15.0 / 1.21.0 / local in the same run (clone of this repo + both long-section fixtures, 156 docs)
+All eight sets, 129 answerable questions (train + held-out pooled; per-set below). cli = in-process eval, mcp = `eval --via mcp --settle` on the same index, mcp-slow = stdio at once with `git log` sleeping 30 s.
+
+| run (no export) | hyb@1 | hyb@3 | multi@1 | #1+rel | titled #1 (mcp) | grounding |
+|---|---|---|---|---|---|---|
+| 1.15.0 cli / mcp / mcp-slow | 95 / 95 / 95 | 115 | 14/23 | 105 | 129 / 129 | 0 |
+| 1.21.0 cli / mcp | 90 / 90 | 121 | 14/23 | 106 | 129 | 59 |
+| 1.21.0 mcp-slow | 95 | 121 | 15/23 | 95 (related 0.00) | **0 of 129** | 0 |
+| local cli / mcp | 97 / 97 | 121 | 16/23 | 111 | 129 | 60 |
+| local mcp-slow | 98 | 121 | 16/23 | 111 | 129 | 0 (until the code graph lands) |
+
+| run (export) | hyb@1 | hyb@3 | multi@1 | #1+rel | titled |
+|---|---|---|---|---|---|
+| 1.15.0 cli / mcp | 95 / 95 | 115 | 14/23 | 105 | 129 |
+| 1.21.0 cli / mcp | 94 / 94 | 119 | 16/23 | 106 | 129 |
+| local cli / mcp | 99 / 99 | 119 | 14/23 | 110 | 129 |
+
+Hybrid @1 per set (answerable), no export / export:
+| set | 1.15.0 | 1.21.0 | local |
+|---|---|---|---|
+| real-corpus (train) | 18 / 18 of 27 | 18 / 20 | 20 / 20 |
+| real-corpus-heldout | 14 / 14 of 27 | 16 / 17 | 16 / 18 |
+| real-hub (train) | 6 / 6 of 12 | 6 / 6 | 6 / 6 |
+| real-hub-heldout | 4 / 4 of 10 | 6 / 6 | 6 / 6 |
+| long-section / -heldout | 15 and 14 (all) | 15 and 14 | 15 and 14 |
+| long-section-hard (train) | 11 / 11 of 12 | 7 / 7 | 10 / 10 |
+| long-section-hard-heldout | 12 / 12 of 12 | 8 / 8 | 10 / 10 |
+
+Gate against 1.21.0 (held-out, 63 answerable, 80 questions): PASS. No export: hybrid @1 46 vs 44 (cli), 46 vs 45 (mcp), multi 7 vs 7; export: 48 vs 45 both; mcp vs cli 0 of 80 differ (both modes); local mcp titled 63/63 (also with slow git); first answer 0.9 to 1.7 s.
+
+### Answers to each #73 item
+1. **Metadata missing without the export / the first query (claim 1): met.** Reproduced on main by the stdio slow-git test (title = path, `status` filter returns []). Fixed: titles, `load_priority`, decay, filters and `related` come with the vector index. 1.21.0 in the same run, queried at once with slow git: titled 0/129, `related` 0.00, no section/anchor/decay; local: 129/129 titled, related 0.78. What is NOT immediate: grounding, code edges and the entity card, which wait for the code graph (0 of 129 grounded in the slow arm; answers carry `_meta.stale`). This is the design, but `related` that comes from code edges is also absent until then.
+2. **Long multi-topic sections found at least as well as 1.15.0 (claim 2): partly met, not met on the hard sets.** Reproduced only on the hard fixture (1.21.0 loses 4 of 12 train and 4 of 12 held-out against 1.15.0). Local gets 3 of 4 back on train (10 vs 11) and 2 of 4 on held-out (10 vs 12). All versions are 12/12 at @3, so the doc is found but not always first. The first fixture saturates on every version. Pooled over all eight sets local is above both (97 vs 95 and 90; export 99 vs 95 and 94), but that is carried by real-corpus and hub, which gained in 1.16+. Bullets in both fixtures are 350-800 chars, not 1,000+, so a section with a 1,000+ character bullet was never tested.
+3. **The eval and the gate see the MCP path (claim 3): met.** `eval --via mcp` (stdio server as the plugin launches it, at once) and `gate:release` (no export, export, slow git; cli vs mcp parity in top 3, related and entity; titles on first answers). The gate's slow arm fails 1.21.0 (0/63 titled) and passes local. Gaps: the gate does not check grounding or `related` inside the stale window; stale-window ranking differences (seen before settling, 1-2 of 80) are not gated; the gate takes ~6 min and needs the network.
+4. **The reporter's built-in-eval loss on d0 (hybrid @1 32 to 26, multi 5 to 1): NOT reproduced, not explained.** On our 135-doc corpus 1.21.0 vs 1.15.0 is flat or up on real-corpus and hub, and the in-process eval never sees the load gap. Local is 97 vs 95 pooled. Their 919-doc tree is needed; this is the post-publish re-run on d0 and d1b.
+5. **Slow-git @1 51 vs 46 lead:** re-seen on 1.21.0 here (mcp-slow 95 vs 90 pooled: with no doc metadata @1 is higher). Local with metadata scores 97, so the 1.22 build does not carry that cost on these sets, but the cause (priority boost, decay, path class or fold) was not decomposed. Open, and a ranking question for a later issue.

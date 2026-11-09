@@ -258,9 +258,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       const code = await loadCodeData(notesPath, docs);
       groundDocs(docs, code);
       codeLoad = { source: !code ? "none" : [...code.docs.values()].some((d) => d.source === "export") ? "export" : "fallback", loadMs: Date.now() - t0 };
-      return (codeData = code);
+      return code;
     } catch (e: any) {
-      codeData = null;
       codeLoad = { source: "none", loadMs: Date.now() - t0 };
       process.stderr.write(`Code graph skipped: ${e?.message ?? e}\n`);
       return null;
@@ -276,7 +275,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     codePending++;
     return loadCode(docs)
       .then((code) => {
-        if (documents !== docs) return; // a later swap installed newer docs and runs its own load
+        if (documents !== docs) return; // a later swap installed newer docs and runs its own load (an older load finishing last must not overwrite its code)
+        codeData = code;
         graph.buildFromDocuments(docs, code);
         then?.();
       })
