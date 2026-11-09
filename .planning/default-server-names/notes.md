@@ -26,3 +26,6 @@ An entry's key is the MCP server name, so it sets the tool prefix: `mcp__semanti
 - permission allowlists in settings.json;
 - CLAUDE.md and rule files that name tools (this repo's own CLAUDE.md does);
 - the user's habits.
+
+## Eval results: Phase 2
+Test-only phase, no ranking change. test/unit/reconcile.test.ts: 6 pass, 5 expected-fail on main (fresh defaults; vault served by `my-vault` and by `semantic-memory`; docs served by `my-docs`; removal of `semantic-memory-docs`). Full validation green (148 passed, 4 expected fail in eval run).

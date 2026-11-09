@@ -12,16 +12,16 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Reproduce first, as failing tests (expected-fail until fixed)
-  - [ ] A new `test/unit/reconcile.test.ts`. Run `hooks/reconcile.js` as the SessionStart hook runs it, in temp projects with a fake local install, and check the resulting `.mcp.json`:
-    - [ ] fresh project, hewtd enabled with `.documentation/` → `semantic-memory` + `semantic-memory-docs` (fails on main: it writes `semantic-vault` + `semantic-sidekick`);
-    - [ ] existing `semantic-vault` → `./.claude/.vault` → unchanged; no `semantic-memory` added (passes on main, and must keep passing);
-    - [ ] existing `semantic-sidekick` → `./.documentation --read-only` → unchanged; no `semantic-memory-docs` added;
-    - [ ] an entry under ANY other name already serving `./.claude/.vault` (e.g. `my-vault`, `semantic-memory`) → no second vault entry. The rule is "a `semantic-*` (or any) entry whose `--notes` resolves to the same folder";
-    - [ ] hewtd disabled: our docs entry is removed under either name (`semantic-sidekick` or `semantic-memory-docs`), only when `isOurEntry` matches; a hand-written entry is kept;
-    - [ ] the `.mcp.json.bak` backup and the "could not parse" path are unchanged.
-  - [ ] The hook messages in `hooks/vault-context.js` print the writable entry's real name. Skip this if #81 (1.25.1) already did it; otherwise add a failing test (vault entry `my-vault` → messages say `mcp__my-vault__…`, never `mcp__semantic-vault__…`).
-  - [ ] Record which fail on main.
+- [x] Phase 2: Reproduce first, as failing tests (expected-fail until fixed)
+  - [x] A new `test/unit/reconcile.test.ts`. Run `hooks/reconcile.js` as the SessionStart hook runs it, in temp projects with a fake local install, and check the resulting `.mcp.json`:
+    - [x] fresh project, hewtd enabled with `.documentation/` → `semantic-memory` + `semantic-memory-docs` (fails on main: it writes `semantic-vault` + `semantic-sidekick`);
+    - [x] existing `semantic-vault` → `./.claude/.vault` → unchanged; no `semantic-memory` added (passes on main, and must keep passing);
+    - [x] existing `semantic-sidekick` → `./.documentation --read-only` → unchanged; no `semantic-memory-docs` added;
+    - [x] an entry under ANY other name already serving `./.claude/.vault` (e.g. `my-vault`, `semantic-memory`) → no second vault entry. The rule is "a `semantic-*` (or any) entry whose `--notes` resolves to the same folder";
+    - [x] hewtd disabled: our docs entry is removed under either name (`semantic-sidekick` or `semantic-memory-docs`), only when `isOurEntry` matches; a hand-written entry is kept;
+    - [x] the `.mcp.json.bak` backup and the "could not parse" path are unchanged.
+  - [x] (skipped: 1.25.1 vaultTool already prints the real name; only the fallback changes, Phase 4) The hook messages in `hooks/vault-context.js` print the writable entry's real name. Skip this if #81 (1.25.1) already did it; otherwise add a failing test (vault entry `my-vault` → messages say `mcp__my-vault__…`, never `mcp__semantic-vault__…`).
+  - [x] Record which fail on main. (5 it.fails: fresh defaults, vault served by my-vault/semantic-memory (2 cases), docs served by my-docs, removal of semantic-memory-docs. Passing on main: legacy entries unchanged, semantic-sidekick removal, hand-written kept, .bak, parse error.)
 - [ ] Phase 3: New defaults, served-folder check
   - [ ] `hooks/reconcile.js`: `VAULT_KEY = "semantic-memory"` and `DOCS_KEY = "semantic-memory-docs"`. Keep the legacy keys (`semantic-vault`, `semantic-sidekick`) as recognized names for removal and the served check.
   - [ ] Before adding an entry, check every existing entry: if one's `--notes` arg resolves (relative to the project root) to the same folder, add nothing. This prevents duplicates, whatever the existing entry is called.
@@ -68,7 +68,7 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 - Starts after #81 ships as 1.25.1, so the skill text it edits is the new one.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: tests run hooks/session-start.js as a subprocess (HOME and CLAUDE_PROJECT_DIR set to temp dirs), not reconcile() directly.
 
 ## Status
-**Currently in Phase 2.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
+**Currently in Phase 3.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
