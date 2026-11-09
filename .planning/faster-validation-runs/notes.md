@@ -56,3 +56,24 @@ PR #79's run (42637505899), on a 4-vCPU ubuntu-latest runner.
 ### Design constraint for the cache
 - In `eval-against-release.sh`, the MCP arm runs this checkout's `dist/` as the client against the release's server. So that arm depends on local code; only the release's index and CLI arm are independent of the checkout.
 - `gate-release.sh` checks "mcp vs cli differ on any question" with zero slack. HNSW noise failed it once (1 of 166, #78 Phase 9).
+
+## Eval results: Phase 2 (2026-11-09, this machine, 8 cores, one job at a time)
+
+### Baseline wall times
+
+| Command | Time | Notes |
+|---|---|---|
+| `npm test` | 390 s | 2 load flakes: hook-failure Jev-hang and skill-queue SessionEnd, each passes alone |
+| `npm run eval` | 118 s | |
+| `eval-against-release.sh 1.25.0`, default sets, one version | 40–42 s plain, 47–50 s export | of which the cold index is 32–34 s |
+| `gate:release` | 3m24s | recorded in #78 Phase 6, not re-run here |
+
+### Determinism
+1.25.0 was measured twice (runs A and B), each from a fresh clone and a fresh index, on the 6 default sets (144 questions).
+- Per-question `probes` differ: 0 of 144 on each of the four arms (plain cli, plain mcp, export cli, export mcp).
+- Hybrid aggregates (tiers, negatives flagged, false flags, dominance, cov) are identical.
+- **Decision:** the cache may reuse results for a published release, not only its build. p95 and the cold-index time are still not same-run, and are marked as cached.
+
+### Cache payoff, re-estimated
+- About 45 s per old version per call (32 s of it the cold index), less any MCP arm that has to re-run (about 10 s).
+- #76 made 27 eval-against-release calls (18.7 min). Expected saving: about 10 min per plan.

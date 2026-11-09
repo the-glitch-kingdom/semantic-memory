@@ -9,12 +9,12 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
     - test budget: the full suite once per phase, at commit; skipped for diffs that touch only `.planning/`;
     - one heavy job at a time;
     - reuse published-release counts for in-phase decisions.
-- [ ] Phase 2: Measure first (nothing else running heavy jobs)
-  - [ ] Baseline wall times on this machine: `npm test`, `npm run eval`, one `eval-against-release.sh <prev> local` (default sets), `npm run gate:release`.
-  - [ ] Determinism check for the cache: measure one published version twice, from two fresh clones and indexes (CLI and MCP, with and without `--export`). Diff the per-question results (`probes`, tiers, negatives flagged).
+- [x] Phase 2: Measure first (nothing else running heavy jobs)
+  - [x] Baseline wall times on this machine: `npm test`, `npm run eval`, one `eval-against-release.sh <prev> local` (default sets), `npm run gate:release`.
+  - [x] Determinism check for the cache: measure one published version twice, from two fresh clones and indexes (CLI and MCP, with and without `--export`). Diff the per-question results (`probes`, tiers, negatives flagged).
     - Record how many questions differ, if any.
     - If more than the real-corpus slack (1 per set) differ, the cache is limited to the npm pack and build and never reuses results. Record that decision.
-  - [ ] Record numbers in notes.md under "Eval results: Phase 2".
+  - [x] Record numbers in notes.md under "Eval results: Phase 2". (0 of 144 differ on every arm, so results are cacheable.)
 - [ ] Phase 3: Each test runs once
   - [ ] `package.json` "test" becomes `vitest run --exclude 'test/retrieval-eval/**'`. "eval" is unchanged (`vitest run test/retrieval-eval`).
   - [ ] Check that `npm test` plus `npm run eval` runs every `test/**/*.test.ts` file exactly once: compare file lists (`vitest list --json` or the run output) against the glob.
