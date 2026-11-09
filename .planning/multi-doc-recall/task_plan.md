@@ -62,8 +62,8 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields to 1.24.0 and update the lockfile
   - [x] Offline tarball deferred to release (built from the merge commit) -- deferred to release, not built here
-- [ ] Phase 8: Cleanup
-  - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
+- [x] Phase 8: Cleanup
+  - [x] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts -- audited main..HEAD: no env knobs, no losing variants, no scratch files in the repo; nothing dead left (MAX_FETCH_FACTOR, dropNonDead, applyCode all used)
 - [ ] Phase 9: Validation (independent review)
   - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
   - [ ] Unit: distinct-doc pool, the aggregation variant kept, `cov@k` and `dominance` metrics
@@ -99,4 +99,4 @@ One PR from `feat/multi-doc-recall`, rebased on main after #74 merges. The repor
 - Phase 2: a stale scratch dir (`git clone` into an existing `tree/`) failed the first eval-against-release run; rerun with fresh `GATE_TMP` dirs. No effect on numbers.
 
 ## Status
-**Currently in Phase 8** (Phase 6 done but its gate run is RED, see Errors Encountered) (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
+**Currently in Phase 9** (Phase 6 done but its gate run is RED, see Errors Encountered) (Phase 5 done: export dead-ref fix, notes.md "Eval results: Phase 5"; Phase 4 done: best-chunk kept, no variant wins, see notes.md "Eval results: Phase 4") (hook-failure Jev-hang flake in the full run, passes alone)
