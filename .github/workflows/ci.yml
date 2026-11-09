@@ -18,7 +18,7 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npm test
-      # retrieval floors (test/retrieval-eval/baseline.json): fails if answer@1, archive hits or link scores regress
+      # `npm test` excludes test/retrieval-eval/; this step runs it once. Retrieval floors (test/retrieval-eval/baseline.json): fails if answer@1, archive hits or link scores regress
       - run: npm run eval
 
   smoke:

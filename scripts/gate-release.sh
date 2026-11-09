@@ -7,7 +7,8 @@
 #     (top-3 slots one doc takes on questions it does not answer) rises by more than the band, on the arms that report them
 #     (a release before 1.24.0 reports cov and dominance only in its mcp arm);
 #   - flagged negatives drop (absent-terms-heldout holds the spelling-variant negatives hn28-hn30 and controls hc23-hc27, #78), or flagged answerable questions (false flags) rise, by more than the band, on cli or mcp;
-#   - local mcp and cli differ in top 3, `related` or the entity card on any question;
+#   - local mcp and cli differ in top 3, `related` or the entity card on more than the band of questions (HNSW builds differ:
+#     #78 Phase 9 failed once on 1 of 166); the differing questions are printed either way;
 #   - the first local mcp answers (also with slow git) lack titles on a #1 result.
 #   scripts/gate-release.sh [previous-version]   default: the newest published version below package.json's
 # Needs `npm run build` first. Takes ~6 min (4 clone indexes, 8 evals), never writes into the repo.
@@ -50,7 +51,8 @@ for (const [mode, sfx] of [["no export", ""], ["export", "-export"]]) {
   const cli = load(l, "eval"), mcp = load(l, "eval-mcp"), slow = load(l, "eval-mcp-slow");
   const diff = Object.keys(cli.probes).filter((q) => JSON.stringify(cli.probes[q]) !== JSON.stringify(mcp.probes[q]));
   console.log(`gate: ${mode} mcp vs cli: ${diff.length} of ${Object.keys(cli.probes).length} questions differ in top 3 / related / entity`);
-  if (diff.length) fails.push(`${mode}: mcp differs from cli on ${diff.length} questions, e.g. "${diff[0]}"`);
+  for (const q of diff) console.log(`gate:   differs: ${q}`);
+  if (diff.length > band) fails.push(`${mode}: mcp differs from cli on ${diff.length} questions, e.g. "${diff[0]}"`);
   for (const [name, e] of [["mcp", mcp], ["mcp-slow", slow]]) {
     if (!e) continue;
     console.log(`gate: ${mode} ${name}: titled #1 ${e.mcp.top1With.titled}/${e.mcp.questions}, first answer ${Math.round(e.mcp.firstAnswerMs)}ms`);
