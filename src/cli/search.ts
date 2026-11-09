@@ -10,7 +10,7 @@ import { TextSearch } from "../core/search-text.js";
 import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
-import { identifiers, missingTerms } from "../core/identifiers.js";
+import { identifiers, missingTerms, passingTerms } from "../core/identifiers.js";
 import { entityCard, knownToCode, loadCodeData, loadExport, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
 import { fold } from "../core/fold.js";
 import { sectionFields } from "../core/section-fields.js";
@@ -174,7 +174,8 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
       const code = identifiers(query, () => true).length || missingTerms(query, bm25, paths, () => true).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
       const absent = missingTerms(query, bm25, paths, knownToCode(code));
       const { missing, undocumented } = splitUndocumented(absent, code);
-      const weak = isWeak(all, bm25Min) || absent.length > 0;
+      const passing = passingTerms(query, bm25, paths, all.slice(0, 3).map((r) => r.path), knownToCode(code));
+      const weak = isWeak(all, bm25Min) || absent.length > 0 || passing.length > 0;
       const scoreOf = new Map(all.map((r) => [r.path, r.score]));
       const card = entityCard(query, code, docByPath, (p) => scoreOf.get(p) ?? -Infinity);
       const stale = await indexRebuilding(indexPath);
@@ -192,7 +193,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
         ...(r.matched && { matched: r.matched }),
         ...((r as any).also_in && { also_in: (r as any).also_in }),
         ...(i === 0 && card && { entity: card }),
-        ...(weak && { no_strong_match: true as const, ...(missing.length && { missing_terms: missing }), ...(undocumented.length && { undocumented }) }),
+        ...(weak && { no_strong_match: true as const, ...(missing.length && { missing_terms: missing }), ...(passing.length && { passing_terms: passing }), ...(undocumented.length && { undocumented }) }),
         ...(stale && { stale: true as const }),
         ...(decayOf(r.path).block && { decay: decayOf(r.path).block }),
         ...(decayOf(r.path).grounding && { grounding: decayOf(r.path).grounding }),

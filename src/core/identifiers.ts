@@ -56,3 +56,17 @@ export function missingTerms(query: string, index: Bm25Index, paths: string, kno
     tokenize(term.slice(term.lastIndexOf("/") + 1)).some((t) => !index.has(t) && !paths.includes(t)),
   );
 }
+
+/** A name in at most this many docs and in none of the top results is only mentioned in passing. Train is flat from 1 to 30 (one catch, no false flag), so the smallest: notes.md "Eval results: Phase 4". */
+export const PASSING_MAX_DOCS = 1;
+
+/**
+ * Names the docs have but only in passing: a candidate (as `missingTerms` lists them) that is not missing, is in no doc path,
+ * is in at most `maxDocs` docs and in none of `top` (the top results' paths). Reported in `passing_terms`, apart from `missing_terms`; it also marks `no_strong_match`.
+ */
+export function passingTerms(query: string, index: Bm25Index, paths: string, top: string[], known?: (term: string) => boolean, maxDocs = PASSING_MAX_DOCS): string[] {
+  return identifiers(query, known, true).filter((term) => {
+    const toks = tokenize(term.slice(term.lastIndexOf("/") + 1));
+    return toks.length > 0 && toks.every((t) => index.has(t) && !paths.includes(t) && index.docFreq(t) <= maxDocs) && !top.some((p) => toks.every((t) => index.docHas(p, t)));
+  });
+}

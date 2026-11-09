@@ -41,9 +41,9 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
         - (c) capitalization and shape only, with no dictionary.
   - [x] Rank and filter neutral: only `no_strong_match`/`missing_terms` change; the result order is identical (test/integration/search-parity.test.ts: Hotjar vs HOTJAR, same paths; `missingTerms` runs after ranking in MCP and CLI).
   - [x] Unit tests for each candidate shape. Include sentence-initial words, acronyms and quoted terms.
-- [ ] Phase 4: Named only in passing
-  - [ ] Rule 2: a candidate in at most N docs and in none of the top 3 results. Tune N on train. Report it in a separate field or note (for example `passing_terms`), so its false flags are visible, and decide on train whether it also sets `no_strong_match`.
-  - [ ] Measure its false flags on the answerable controls and on the real-corpus and hub answerable sets.
+- [x] Phase 4: Named only in passing
+  - [x] Rule 2: a candidate in at most N docs and in none of the top 3 results. Tune N on train. Report it in a separate field or note (for example `passing_terms`), so its false flags are visible, and decide on train whether it also sets `no_strong_match`.
+  - [x] Measure its false flags on the answerable controls and on the real-corpus and hub answerable sets.
 - [ ] Phase 5: Same answer on every path
   - [ ] MCP `search_hybrid`, `search_semantic`/`search_text` (where they report weak matches), the CLI `search` and `eval` all call the same function. Add a parity test with an absent vendor name over stdio and the CLI.
   - [ ] Federated search: a term absent from the primary but present in a ready source is not missing (check against the merged result).
@@ -76,12 +76,15 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
 - Phase 3: kept (b), a shipped word list with a suffix strip (src/core/common-words.ts, 31,676 words, ~284 KB, SCOWL/Debian wamerican, MIT-style notice in THIRD_PARTY_NOTICES.md). Not a frequency list: none was available offline. `identifiers(query, known, names)` gets `names` (off by default: query typing, entity cards and `knownToCode` loading read the old shapes); `missingTerms` passes `true`. The CLI loads the code graph also when a name candidate is missing from the docs.
 - One plan for #74. It waits for #73, because both extend the eval and the gate.
 
+- Phase 4: rule 2 is `passingTerms` (N = 1, train flat 1 to 30), reported as `passing_terms` and also sets `no_strong_match` (0 false flags on train and held-out answerable sets). Catches 1/3 train passing negatives (Pinecone, Weaviate sit in a top-3 doc by design), 3/3 held-out.
+
 ## Errors Encountered
+- Phase 4: freshness-scale warm start and hook-failure Jev-hang failed under full-suite load, passed alone (16/16). A first build after wiring the CLI had a missing `weak` (caught by lint, fixed before measuring).
 - Phase 3: first full run failed 4 tests. (1) `docs-eval` "fixture train: every negative is flagged" started passing under `it.fails`: now a real gate (`negatives: true` removed). (2) real held-out false-flag gate failed at 4 flagged: two new missing-term false flags (h03 `supposedly`, h12 `dotfiles`). `supposedly` was a bug in my list reduction (dropped `supposed`, but one strip level could not reach `suppose`): `isCommon` now strips two levels, no constant tuned. `dotfiles` stays (compound word), 1 held-out false flag; the gate passes again at its existing slack, no floor changed. (3) freshness-scale warm start and hook-failure Jev-hang failed under load, passed alone (16/16).
 - Phase 2: hook-failure Jev-hang and stdin-eof SIGTERM failed under full-suite load, passed alone (16/16).
 
 ## Status
-**Currently in Phase 4** (Phase 3 done: names rule shipped, numbers in notes.md)
+**Currently in Phase 5** (Phase 4 done: `passing_terms`, N = 1, sets `no_strong_match`; numbers in notes.md)
 
 ---
 

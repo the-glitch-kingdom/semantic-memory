@@ -107,3 +107,26 @@ Risk noted, not tuned: a capitalized weekday or month mid-sentence (`Monday`) ab
 The harness has no false-flag column; false flags are the confidence flags of 1.22.0 (0, the order and confidences are unchanged) plus `missingTerms` on the controls (0, measured above). The end-to-end count is one above the BM25-only count in each split (24 vs 23, 25 vs 24): the code graph or confidence adds one. Rank order is unchanged (search-parity test).
 Checks: lint, build, `npm test` (freshness-scale warm start and hook-failure Jev-hang failed under load, pass alone 16/16), `npm run eval` 138 passed, 4 expected fail (the fixture-train negatives gate now passes and is a real gate).
 Reporter targets so far (their tree decides): negatives well above 1.22.0's 14/56; passing-mention negatives (6 of 56) are Phase 4.
+
+## Eval results: Phase 4 (named only in passing)
+
+### Rule 2 (src/core/identifiers.ts `passingTerms`, `PASSING_MAX_DOCS`)
+A candidate (the `missingTerms` shapes) that is not missing, is in no doc path, is in at most N docs (new `Bm25Index.docFreq`) and in none of the top 3 results' docs (new `Bm25Index.docHas`, term set per doc incl. fields and path words). Reported as `passing_terms` on the items that carry `no_strong_match` (MCP and CLI), apart from `missing_terms`. Rank-neutral.
+
+### Tuning N on TRAIN only (in-process search_hybrid over `.documentation`; sets absent-terms, real-corpus, real-hub)
+| N | passing negatives with `passing_terms` (of 3) | other negatives | false: 23 controls | false: real-corpus answerable (27) | false: real-hub answerable (12) |
+|---|---|---|---|---|---|
+| 1, 3, 6, 12, 30 | 1 (n29 OpenTelemetry) | 0 | 0 | 0 | 0 |
+Flat from 1 to 30, so train cannot pick N; the smallest (N = 1) is kept, since a larger N can only add false-flag risk. Pinecone (n27) and Weaviate (n28) are missed by design: `legacy/how-it-works.md` holds both and ranks in the top 3, so the "in none of the top 3" clause excludes them. The reporter's N of 3 behaves the same here.
+
+### Does it set `no_strong_match`? Yes (decided on train)
+Train: +1 negative, 0 false flags on 62 answerable questions (23 controls, 27 real-corpus, 12 real-hub), so it sets `no_strong_match`. Held-out, measured once at N = 1 and not used for any choice: 3/3 passing negatives get `passing_terms` (Sentry, Obsidian, Postgres), 0 false flags on the 22 controls and on the real-corpus-heldout and real-hub-heldout answerable questions.
+
+### End to end, local build, `scripts/eval-against-release.sh --set <file> local` (clone, cli = mcp)
+| split | negatives flagged (Phase 3 -> now) | false flags on controls |
+|---|---|---|
+| train | 24/29 -> 26/29 | 0/23 |
+| held-out | 25/27 -> 27/27 | 0/22 |
+(Train +2, one more than the in-process check: the clone also holds the code and other docs; not investigated.) The harness has no false-flag column: false flags are those of Phase 3 (0) plus `passing_terms` on answerable questions (0, above).
+Caveats: held-out 27/27 is on a set whose 3 passing negatives happen to be single-doc names outside the top 3; the train catch rate for passing mentions is 1/3, so expect the held-out 3/3 to overstate it. Real-corpus false flags are unmeasured outside this repo's `.documentation`.
+Checks: lint, build, `npm test` (freshness-scale warm start and hook-failure Jev-hang failed under load, pass alone 16/16), `npm run eval` 138 passed, 4 expected fail.

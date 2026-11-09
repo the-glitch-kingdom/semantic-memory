@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { applyCoverage } from "../../core/rank.js";
 import { fuseScores } from "../../core/bm25.js";
-import { missingTerms } from "../../core/identifiers.js";
+import { missingTerms, passingTerms } from "../../core/identifiers.js";
 import { entityCard, knownToCode, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { fold } from "../../core/fold.js";
@@ -53,7 +53,8 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
   const page = scored.slice(0, limit);
   const absent = missingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), knownToCode(ctx.getCode()));
   const { missing, undocumented } = splitUndocumented(absent, ctx.getCode());
-  const weak = isWeak(scored, bm25Min) || absent.length > 0;
+  const passing = passingTerms(query, ctx.bm25, [...ctx.getDocByPath().keys()].join("\n").toLowerCase(), page.slice(0, 3).map((r) => r.path), knownToCode(ctx.getCode()));
+  const weak = isWeak(scored, bm25Min) || absent.length > 0 || passing.length > 0;
   const scoreOf = new Map(scored.map((r) => [r.path, r.score]));
   const card = entityCard(query, ctx.getCode(), ctx.getDocByPath(), (p) => scoreOf.get(p) ?? -Infinity);
   // flow only, and attached to #1: the ranked list is never reordered. `dropped` = copies fold merged into their owner.
@@ -81,7 +82,7 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
     if (full && granularity === "section") Object.assign(out, { ...(sec.section && { section: sec.section }), ...(sec.anchor && { anchor: sec.anchor }), ...(sec.code && { code: sec.code }) });
     const typed = i === 0 && queryType ? { ...out, query_type: queryType } : out;
     const withCard = i === 0 && (card || path.length) ? { ...typed, ...(card && { entity: card }), ...(path.length && { reading_path: path }) } : typed;
-    if (weak) return { ...withCard, no_strong_match: true, ...(missing.length && { missing_terms: missing }), ...(undocumented.length && { undocumented }) };
+    if (weak) return { ...withCard, no_strong_match: true, ...(missing.length && { missing_terms: missing }), ...(passing.length && { passing_terms: passing }), ...(undocumented.length && { undocumented }) };
     const related = i === 0 ? relatedTo(ctx, r.path, scored) : [];
     return related.length ? { ...withCard, related } : withCard;
   });

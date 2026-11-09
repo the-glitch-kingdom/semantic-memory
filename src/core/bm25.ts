@@ -79,6 +79,18 @@ export class Bm25Index {
     return this.df.has(term);
   }
 
+  /** Number of docs holding this token (tokenized, lowercase). */
+  docFreq(term: string): number {
+    let n = 0;
+    for (const t of this.docTerms.values()) if (t.has(term)) n++;
+    return n;
+  }
+
+  /** True when the doc holds this token anywhere (chunks, fields, path words). */
+  docHas(docPath: string, term: string): boolean {
+    return this.docTerms.get(docPath)?.has(term) ?? false;
+  }
+
   /** idf-weighted share of the query's distinct indexed terms that appear anywhere in the doc (0 when the query has none). */
   cover(docPath: string, query: string): number {
     const have = this.docTerms.get(docPath);

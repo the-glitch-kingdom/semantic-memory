@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Bm25Index, bm25Fields } from "../../src/core/bm25.js";
 import { Indexer } from "../../src/core/indexer.js";
-import { identifiers, missingTerms } from "../../src/core/identifiers.js";
+import { identifiers, missingTerms, passingTerms } from "../../src/core/identifiers.js";
 import { parseGolden } from "../retrieval-eval/eval.js";
 
 const build = (docs: { path: string; chunks: string[] }[]) => {
@@ -56,6 +56,32 @@ describe("missingTerms", () => {
     for (const q of ["retry_limit?", "what is CACHE_TTL", "`retry_limit`", "run_book", "docs/ops/run_book.md", "harbor.dlq", "__init__", "__init__.py", "_helper_fn", "v1.12.0", "TCP/IP", "e.g. SLA"]) {
       expect(missing(q, docs), q).toEqual([]);
     }
+  });
+});
+
+describe("passingTerms (named in one doc, in none of the top results)", () => {
+  const docs = [
+    { path: "a.md", chunks: ["the list of vector stores: Pinecone and others"] },
+    { path: "b.md", chunks: ["the search index"] },
+    { path: "c.md", chunks: ["Sentry and Sentry again"] },
+    { path: "d.md", chunks: ["Sentry in a second doc"] },
+    { path: "e.md", chunks: ["Weaviate here"] },
+    { path: "weaviate.md", chunks: ["unrelated"] },
+  ];
+  const passing = (q: string, top: string[]) => {
+    const { i, paths } = build(docs);
+    return passingTerms(q, i, paths, top);
+  };
+  it("flags a name in one doc that the top results do not hold", () => {
+    expect(passing("Does the Pinecone sync run?", ["b.md"])).toEqual(["Pinecone"]);
+  });
+  it("leaves it when a top result holds the name, when the docs lack it (that is missing), or when it sits in 2+ docs", () => {
+    expect(passing("Does the Pinecone sync run?", ["a.md", "b.md"])).toEqual([]);
+    expect(passing("Does the Hotjar sync run?", ["b.md"])).toEqual([]);
+    expect(passing("Does the Sentry sync run?", ["b.md"])).toEqual([]);
+  });
+  it("leaves a name that a doc path carries (that doc is about it)", () => {
+    expect(passing("Does the Weaviate sync run?", ["b.md"])).toEqual([]);
   });
 });
 
