@@ -40,7 +40,7 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
     - A test (extend `test/unit/skill-surfaces.test.ts`, or a sibling) asserting that no `commands/**` or `skills/**` body text hard-codes a single server prefix, and that `allowed-tools` lists both default names wherever it lists one.
   - [x] `vaultTool()` (`hooks/vault-context.js:93`) falls back to `semantic-vault` when no writable entry is found. Make the fallback `semantic-memory`, the new default.
 - [x] Phase 5: Release prep: bump all five version fields to 1.26.0 and the lockfile; the offline tarball is deferred to release. Check whether `scripts/install-offline.sh` writes `.mcp.json` entries; if it does, apply the same defaults. (done: five fields + lockfile at 1.26.0; tarball deferred to release; install-offline.sh writes no .mcp.json, so no change)
-- [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [x] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY) (done: no scratch files, probes, commented-out code, it.fails or dead constants left; every new constant in hooks/reconcile.js is used)
 - [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2 tests pass as plain `it`.
   - [ ] Upgrade scenario end-to-end: take a scratch project set up the old way (`semantic-vault` + `semantic-sidekick`), install the branch build, run the SessionStart hook twice. `.mcp.json` must be byte-identical, with no duplicates and no backup written.
@@ -72,4 +72,4 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 - Phase 2: tests run hooks/session-start.js as a subprocess (HOME and CLAUDE_PROJECT_DIR set to temp dirs), not reconcile() directly.
 
 ## Status
-**Currently in Phase 6.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
+**Currently in Phase 7.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).

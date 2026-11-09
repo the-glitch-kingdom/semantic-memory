@@ -39,3 +39,6 @@ Wording, comments, smoke assertion, command allowed-tools and one vaultTool fall
 
 ## Eval results: Phase 5
 Release prep only: versions bumped to 1.26.0 in package.json, package-lock.json (2 fields), plugin.json, marketplace.json (2 fields), AGENTS.md. install-offline.sh has no .mcp.json writes. No ranking numbers.
+
+## Eval results: Phase 6
+Cleanup only; no code changed, no ranking numbers. Checked git status (no untracked files), branch diff for console/debug/TODO (only the intentional smoke-script error messages), reconcile.test.ts for leftover it.fails/.only (none), reconcile.js constants (all used).
