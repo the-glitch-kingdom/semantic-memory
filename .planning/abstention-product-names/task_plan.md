@@ -54,7 +54,7 @@ One PR from `feat/abstention-product-names`, rebased on main after #73 merges. T
   - [x] Bump all five version fields to 1.23.0 and update the lockfile
   - [x] Offline tarball deferred to release (built from the merge commit)  (deferred to release)
 - [x] Phase 8: Cleanup
-  - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
+  - [x] Remove what this branch created or made dead (checked: no scratch files, trial knobs or unused exports in the branch diff; scratch lived under /tmp)
 - [ ] Phase 9: Validation (independent review)
   - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
   - [ ] Unit: candidate shapes, the dictionary choice, rule 2, absent vs present in docs/code/paths, federation
