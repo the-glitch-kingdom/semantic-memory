@@ -50,8 +50,9 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
         - Code: compare `knownToCode` symbols and file names in normalized form. (File names only, in `splitUndocumented`; see Decisions.)
   - [x] A name present only under a variant is neither in `missing_terms` nor in `passing_terms` (decide on train whether passing_terms uses the joined form's doc count). (Decided: a variant is not a passing term; `passingTerms` is unchanged. Joined doc counts add nothing the train needs.)
   - [x] Measure on train: negatives flagged, false flags (controls, real-corpus, hub, golden). Check that the known false flags (`wildcard`, `refetching`, `dotfiles`) are fixed or unchanged, and say which. (notes.md "Eval results: Phase 4")
-- [ ] Phase 5: Same answer on every path
-  - [ ] MCP `search_hybrid`, the CLI `search`, `eval` and federation agree on the Phase 2 fixture (parity test over stdio and the CLI).
+- [x] Phase 5: Same answer on every path
+  - [x] MCP `search_hybrid`, the CLI `search`, `eval` and federation agree on the Phase 2 fixture (parity test over stdio and the CLI).
+        (Done wider: `test/e2e/abstention-parity.test.ts` runs every question of both absent-terms sets on a tree clone, plain and with the hewtd export: stdio vs the CLI's `openSearch`, and a federated server with an identical source. No divergence found, so no src change. The Phase 2 fixture's stdio-vs-CLI check stays. `eval` is the same pipeline as stdio; its aggregates matched in Phases 3-4.)
 - [ ] Phase 6: Release gate
   - [ ] Add the variant controls to the gate's held-out absent-terms set. Run `gate:release` against the previous release; record the result and runtime.
 - [ ] Phase 7: Release prep
@@ -87,4 +88,4 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
 - Phase 2: the interrupted run left its work in stash@{0} (kept, not popped); it was sound and reused as is. Absent-terms baseline arms: 1.22.0 instead of 1.15.0 (see Phase 2).
 
 ## Status
-**Currently in Phase 5** (Phase 4 done: spelling variants count as present)
+**Currently in Phase 6** (Phase 5 done: parity test, no divergence)

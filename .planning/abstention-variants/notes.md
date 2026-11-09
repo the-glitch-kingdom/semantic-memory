@@ -63,3 +63,10 @@ Stdio `missing_terms` probe on the repo corpus (local, search_hybrid limit 5), b
 - Rank parity: top-5 paths of every train and held-out question identical before and after (cmp). Same-run `scripts/eval-against-release.sh 1.24.0 local`, default sets: hyb@1 77/105, hyb@3 98, multi 16/21/22, cov 0.80/0.96/0.98, dom 35, neg flagged 36/39, identical. On the absent-terms sets: hyb@1 38/55, @3 48, neg flagged 57/62 identical; `#1+rel` is 43 for 1.24.0 and 44 for local (rel/#1 1.11 vs 1.29), stable over two runs. Not touched by this change (related edges do not read presence); not investigated further, a check for Phase 9.
 - Fixture (`test/e2e/abstention-variants.test.ts`): the 40 remaining `it.fails` are plain `it` now; 68 pass on 4 arms over stdio and the CLI. Units: bm25 (joins, hub exclusion, removal), code-graph (`splitUndocumented` variants).
 - Checks: lint, build, `npm run eval` (148 passed, 4 expected fail). `npm test`: 1266 passed; load flakes this run (links-exclude, freshness-scale warm start, hook-failure Jev-hang) pass alone.
+
+## Eval results: Phase 5
+Parity test `test/e2e/abstention-parity.test.ts`, repo corpus clone, all 125 questions of the train and held-out absent-terms sets (result #1 flags: `no_strong_match`, `missing_terms`, `passing_terms`, `undocumented`):
+- stdio vs CLI searcher, plain and with `hewtd index` export: `missing_terms`, `passing_terms`, `undocumented` identical on every question; `no_strong_match` allowed to differ on at most 1 question (HNSW is random per build; two builds are compared). Observed: within that slack.
+- The export does not change `missing_terms` on any question.
+- Federated server (this tree plus an identical source "twin"): `missing_terms` and `passing_terms` equal the single-tree answer on every question. A first run caught that the federation was not active (schema file in the wrong dir), so the test asserts the source answered.
+- No divergence, no src change. The wait for the source's background build is load-sensitive (failed once at 120 s under full-suite load; now 300 s).
