@@ -38,11 +38,11 @@ Cut the time each plan's workflow and each CI run spends validating, by removing
   - [x] N/A: Phase 2 found 0 of 144 differ, so results are reused.
 - [x] Phase 6: Release gate tolerates HNSW noise in its MCP vs CLI check
   - [x] `gate-release.sh`: "local mcp and cli differ" fails only above `BAND` (1) questions, and prints the differing questions. Same slack as the real-corpus floors (#78 Phase 9 failed once on 1 of 166).
-- [ ] Phase 7: Workflow prompt follow-up (outside the repo)
-  - [ ] The plan-runner's REUSE MEASUREMENTS rule points at `eval-against-release.sh --cache` for in-phase measurements, and never for Phase 9 or the gate.
-  - [ ] Its test-budget rule matches the new `npm test` / `npm run eval` split.
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] No scratch timing scripts in the repo; the cache dir is outside the repo.
+- [x] Phase 7: Workflow prompt follow-up (outside the repo)
+  - [x] The plan-runner's REUSE MEASUREMENTS rule points at `eval-against-release.sh --cache` for in-phase measurements, and never for Phase 9 or the gate.
+  - [x] Its test-budget rule matches the new `npm test` / `npm run eval` split.
+- [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] No scratch timing scripts in the repo (git status clean apart from plan files); scratch dirs and the test cache are under /tmp/claude-1000, outside the repo. A durable copy of the plan-runner is at ~/.claude/issue-loop/plan-runner.js.
 - [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
   - [ ] Lint and build; `npm test` and `npm run eval` both green. Union of their files = every test file, each once (Phase 3 check re-run).
   - [x] Retry proof: a throwaway always-failing test with `{ retry: 2 }` ran 3 attempts, then FAILED; the file was removed. Retry proof: temporarily make one retried test's assertion always fail. It must fail after 3 attempts. Revert.
