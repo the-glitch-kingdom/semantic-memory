@@ -41,15 +41,15 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
   - [x] `vaultTool()` (`hooks/vault-context.js:93`) falls back to `semantic-vault` when no writable entry is found. Make the fallback `semantic-memory`, the new default.
 - [x] Phase 5: Release prep: bump all five version fields to 1.26.0 and the lockfile; the offline tarball is deferred to release. Check whether `scripts/install-offline.sh` writes `.mcp.json` entries; if it does, apply the same defaults. (done: five fields + lockfile at 1.26.0; tarball deferred to release; install-offline.sh writes no .mcp.json, so no change)
 - [x] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY) (done: no scratch files, probes, commented-out code, it.fails or dead constants left; every new constant in hooks/reconcile.js is used)
-- [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Phase 2 tests pass as plain `it`.
-  - [ ] Upgrade scenario end-to-end: take a scratch project set up the old way (`semantic-vault` + `semantic-sidekick`), install the branch build, run the SessionStart hook twice. `.mcp.json` must be byte-identical, with no duplicates and no backup written.
-  - [ ] Fresh scenario end-to-end: a scratch project with no `.mcp.json` gets the new names. Start the vault server from the written entry and call `search_hybrid`. The hook messages name `mcp__semantic-memory__…`.
-  - [ ] Mixed scenario: `semantic-memory` for the vault, plus a hand-written docs entry under another name → nothing added.
-  - [ ] `npm run smoke` (or `scripts/smoke-install.sh`) passes with the new assertion; CI's smoke job too.
-  - [ ] Healthcheck (`semantic-memory healthcheck --fast`) is clean in both the old-named and new-named scratch projects.
-  - [ ] Lint, build, `npm test`, `npm run eval`.
-  - [ ] Independent review of `git diff main...HEAD`.
+- [x] Phase 7: Validate success through comprehensive testing (MANDATORY)
+  - [x] Phase 2 tests pass as plain `it`.
+  - [x] Upgrade scenario end-to-end: take a scratch project set up the old way (`semantic-vault` + `semantic-sidekick`), install the branch build, run the SessionStart hook twice. `.mcp.json` must be byte-identical, with no duplicates and no backup written.
+  - [x] Fresh scenario end-to-end: a scratch project with no `.mcp.json` gets the new names. Start the vault server from the written entry and call `search_hybrid`. The hook messages name `mcp__semantic-memory__…`.
+  - [x] Mixed scenario: `semantic-memory` for the vault, plus a hand-written docs entry under another name → nothing added.
+  - [x] `npm run smoke` (or `scripts/smoke-install.sh`) passes with the new assertion; CI's smoke job too.
+  - [x] Healthcheck (`semantic-memory healthcheck --fast`) is clean in both the old-named and new-named scratch projects. (Only drift: "no index built yet" in each, no naming drift.)
+  - [x] Lint, build, `npm test`, `npm run eval`.
+  - [x] Independent review of `git diff main...HEAD`.
 - [ ] Phase 8: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/quickstart/installation-guide.md`: what the hook writes (new names), and that existing entries are kept as they are.
   - [ ] `.documentation/reference/configuration-reference.md`: the `.mcp.json` example and the names.
@@ -72,4 +72,4 @@ Asked by the user on 2026-11-09, after #81: "default install to carry those serv
 - Phase 2: tests run hooks/session-start.js as a subprocess (HOME and CLAUDE_PROJECT_DIR set to temp dirs), not reconcile() directly.
 
 ## Status
-**Currently in Phase 7.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).
+**Currently in Phase 8.** Queued behind #81 (1.25.1). Before launching, merge main into this branch (don't rebase).

@@ -42,3 +42,12 @@ Release prep only: versions bumped to 1.26.0 in package.json, package-lock.json 
 
 ## Eval results: Phase 6
 Cleanup only; no code changed, no ranking numbers. Checked git status (no untracked files), branch diff for console/debug/TODO (only the intentional smoke-script error messages), reconcile.test.ts for leftover it.fails/.only (none), reconcile.js constants (all used).
+
+## Eval results: Phase 7
+Independent review of `git diff main...HEAD`: no bugs found, no code changed. Scenarios run with the repo symlinked as the installed package, temp HOME:
+- Upgrade (semantic-vault + semantic-sidekick): .mcp.json byte-identical after two SessionStarts, no .mcp.json.bak.
+- Fresh: semantic-memory + semantic-memory-docs written; server started from the entry, search_hybrid returned a real hit; vaultTool gives mcp__semantic-memory__search_hybrid.
+- Mixed (semantic-memory + hand-written `my-docs` with --notes=./.documentation): unchanged, no backup.
+- healthcheck --fast in old and new projects: only "no index built yet".
+- smoke-install.sh: first run failed at npm install of the tarball (transient), passed on rerun (v1.26.0).
+- Full validation: lint, build, npm test 1146 passed/1 skipped, npm run eval 148 passed/4 expected fail.
