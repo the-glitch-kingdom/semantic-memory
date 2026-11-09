@@ -214,3 +214,14 @@ Jev-hang failed under load and pass alone). Tests and fixtures changed because t
 - docs-eval "mode flow" invariant relaxed by one question (see Errors Encountered).
 The doc chunk never shows as `matched` (that field names an authored metadata field), so result items keep their v1.20 fields.
 Phase 10 docs: INDEX_SCHEMA_VERSION 10, the doc summary chunk (retrieval-tuning-guide, indexing docs), `eval-against-release.sh` prints cold index time.
+
+## Eval results: Phase 6
+
+`npm run gate:release -- 1.20.0` (scripts/gate-release.sh, held-out real-corpus + hub sets combined, clones, no export):
+
+| run | hyb@1 | multi@1 | sem@1 | neg flagged |
+|---|---|---|---|---|
+| 1.20.0 | 19/37 | 6/10 | 16/37 | 13/17 |
+| local | 22/37 | 7/10 | 15/37 | 13/17 |
+
+PASS (band 1). The two sets run as one eval, so the gate is one combined number, not one per set. The default previous version is the newest published below package.json's version (1.19.0 until the Phase 7 bump; same ranking numbers as 1.20.0). Cold index 60 s vs 76 s.

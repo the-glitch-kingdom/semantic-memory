@@ -99,11 +99,11 @@ tree after publish.
   - [x] Section eval stays green (anchors). Bump `INDEX_SCHEMA_VERSION` if chunk text changes; measure cold index
         time against 1.15 and 1.20 on the same tree.
         Done: schema 9 to 10 (re-parse; only the new chunks embed); section eval green; cold index +7 to 17 percent over 1.20.0 (notes.md).
-- [ ] Phase 6: Release gate
-  - [ ] `npm run gate:release`: `scripts/eval-against-release.sh` against the previous published version on the
+- [x] Phase 6: Release gate
+  - [x] `npm run gate:release`: `scripts/eval-against-release.sh` against the previous published version on the
         real-corpus held-out set and the hub held-out set (on a clone), failing when hybrid @1 or multi @1 drops by
         more than the band (one question).
-  - [ ] Wire it into `.documentation/deployment/release-process.md` as a required step before `npm publish`.
+  - [x] Wire it into `.documentation/deployment/release-process.md` as a required step before `npm publish`.
 - [ ] Phase 7: Release prep v1.21.0
   - [ ] Bump all five version fields, lockfile. Offline tarball deferred to release (built from the merge commit).
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -184,7 +184,7 @@ tree after publish.
   task was not in the scratchpad; `scripts/lib/eval-probe.mjs` was written new.
 
 ## Status
-**Currently in Phase 6** - release gate
+**Currently in Phase 7** - release prep v1.21.0
 
 ---
 

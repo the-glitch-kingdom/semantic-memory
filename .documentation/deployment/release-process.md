@@ -54,6 +54,8 @@ Add the `CHANGELOG.md` entry and a `.documentation/changelog/v1-x-y-<slug>.md` d
 
 `npm test`, `npm run lint` and `npm run eval` (recall@1 86% / MRR 0.929 on the golden set) must pass. For a release that touches startup, hooks, redaction or packaging, also validate through the real entry points the way the 1.6.1 audit did: a fresh `npm i` of the packed build, a stdio MCP client, the hooks run as processes, and the offline tarball. See `.planning/v161-release-audit/` if it is still present locally.
 
+**Release gate (required before `npm publish`).** After `npm run build`, run `npm run gate:release` (`scripts/gate-release.sh`; pass the previous version to override the default, the newest published version below `package.json`'s). It compares this checkout with that release in one run, each on its own clone, on the held-out real-corpus and hub sets, and fails when hybrid @1 or multi @1 drops by more than one question. It takes about 2 minutes, needs network for `npm pack`, and never writes into the repo. A failure is a regression to fix or explain in the PR, not to publish through.
+
 ## 3. PR and merge
 
 One branch and one PR per plan. Push, create and merge as the `TheGlitchKing` gh account, then switch back. Create the PR through the API (`gh api repos/the-glitch-kingdom/semantic-memory/pulls -f title=… -f head=… -f base=main -F body=@file`). Merge only once CI is green.
