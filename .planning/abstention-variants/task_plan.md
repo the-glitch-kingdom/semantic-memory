@@ -58,8 +58,8 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields to 1.25.0 and update the lockfile
   - [x] Offline tarball deferred to release (built from the merge commit) (deferred to release)
-- [ ] Phase 8: Cleanup
-  - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
+- [x] Phase 8: Cleanup
+  - [x] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts
 - [ ] Phase 9: Validation (independent review)
   - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
   - [ ] Unit: presence with generated and results-excluded docs, normalized variants for docs and code, lock files are not presence
@@ -88,4 +88,4 @@ One PR from `feat/abstention-variants`, rebased on main after #76 merges. The re
 - Phase 2: the interrupted run left its work in stash@{0} (kept, not popped); it was sound and reused as is. Absent-terms baseline arms: 1.22.0 instead of 1.15.0 (see Phase 2).
 
 ## Status
-**Currently in Phase 7** (Phase 6 done: gate:release PASS vs 1.24.0)
+**Currently in Phase 9** (Phases 7 and 8 done: 1.25.0 bump; removed the always-empty MAIN_WRONG scaffold from the e2e test)

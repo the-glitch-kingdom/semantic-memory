@@ -15,7 +15,6 @@ const HUBS = ["api/INDEX.md", "api/REGISTRY.md"];
 /**
  * #78 phase 2, reproduced on a git repo built from test/fixtures/abstention-variants: hub files that name an absent product and
  * docs that spell a name with a hyphen, underscore or space, over stdio and the CLI.
- * `it.fails` marks what main gets wrong today; when a fix lands the case starts passing and becomes a plain `it`.
  */
 const Q = {
   graphql: "How does the API handle GraphQL queries?", // named only in the two hubs
@@ -38,9 +37,6 @@ const arms = [
   { arm: "hubs without generated:true, with export", flagged: false, exported: true },
   { arm: "hubs with generated:true, with export", flagged: true, exported: true },
 ];
-/** what main gets wrong on this arm, recorded before any change (notes.md "Eval results: Phase 2") */
-// Phase 3 fixed the hub-only product and Phase 4 the spelling variants: nothing is expected wrong any more.
-const MAIN_WRONG = (_a: (typeof arms)[number]): Name[] => [];
 
 describe.each(arms)("E2E #78: $arm", (a) => {
   let repo = "";
@@ -84,10 +80,8 @@ describe.each(arms)("E2E #78: $arm", (a) => {
 
   for (const name of Object.keys(Q) as Name[]) {
     const expectMissing = ABSENT.includes(name);
-    const wrongOnMain = MAIN_WRONG(a).includes(name);
     for (const via of ["mcp", "cli"] as const) {
-      const test = wrongOnMain ? it.fails : it;
-      test(`${name} over ${via}: ${expectMissing ? "is in missing_terms" : "is not in missing_terms"}`, () => {
+      it(`${name} over ${via}: ${expectMissing ? "is in missing_terms" : "is not in missing_terms"}`, () => {
         const m = missing(name, via).map((t) => t.toLowerCase());
         if (expectMissing) expect(m).toContain(Q[name].match(/\b(GraphQL|Zustand|Temporal)\b/)![0].toLowerCase());
         else expect(m).toEqual([]);
