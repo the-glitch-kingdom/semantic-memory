@@ -38,3 +38,19 @@ describe("openEval has no side effects", () => {
     expect(existsSync(join(dir, ".claude"))).toBe(false);
   }, 180_000);
 });
+
+describe("openEval --via mcp", () => {
+  let dir = "";
+  afterAll(async () => dir && (await cleanupTempDir(dir)));
+
+  it("queries the stdio server as soon as it answers, never scoring the 'Indexing in progress' message", async () => {
+    dir = await createTempVault();
+    await createServer(dir, { watch: false, waitForReady: true });
+    const ev = await openEval(dir, { cli: join(import.meta.dirname, "..", "..", "dist", "cli", "index.js"), cwd: dir });
+    const r = await ev.tool("search_hybrid")("project notes", 3);
+    await ev.close();
+    expect(r.results.length).toBeGreaterThan(0);
+    expect(r.top?.path).toBe(r.results[0].path);
+    expect(ev.timing.firstAnswerMs).toBeGreaterThan(0);
+  }, 180_000);
+});

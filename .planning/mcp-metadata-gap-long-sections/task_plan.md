@@ -27,20 +27,23 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
   - [x] Verify #73 against main @ 0ec988d (notes.md): claim 1 reproduced with a slow-`git log` shim; claim 2 checked in code; claim 3 confirmed
   - [x] Post the verification comment on #73
   - [x] Sync main, cut `feat/mcp-metadata-gap-long-sections`, commit this plan (with the archive move of `hub-doc-ranking-regression`)
-- [ ] Phase 2: Reproduce first (tests and eval before any fix)
-  - [ ] Stdio regression test (`test/e2e/`):
+- [x] Phase 2: Reproduce first (tests and eval before any fix)
+  - [x] Stdio regression test (`test/e2e/`):
         - Start the `--read-only` server on a git repo whose `git log` is slowed by a PATH shim.
         - Query at once, and assert the first answer carries real titles, `load_priority`/`status` (with `full`), honours the `status` filter, and never returns a `generated`/excluded doc.
         - Must fail on main. Record that it does.
-  - [ ] `eval --via mcp`: run the question sets through the stdio server as the plugin launches it.
+        - Done: fails on main (title = path, `status` filter returns []); kept as `it.fails` so the suite is green until Phase 3 flips it. The `generated`/`archive/` assertion is not reached yet.
+  - [x] `eval --via mcp`: run the question sets through the stdio server as the plugin launches it.
         - Default: query as soon as the server answers, not after waiting for ready.
         - Report the same metrics as the CLI eval, plus `related` per #1 and entity cards.
         - Reuse `scripts/lib/eval-probe.mjs` or move its client into `src/core/retrieval-eval/`; one client, not two.
-  - [ ] Long-section fixture and questions:
+        - Done: one client in `runner.ts` (`openEval(notes, via)`); `eval-probe.mjs` removed; `--server`/`--cwd`/`--wait-for-ready` added.
+  - [x] Long-section fixture and questions:
         - Fixture: a few docs with few headings, bullets/paragraphs of 1,000+ characters, several facts each, placed early, middle and late in the section.
         - Questions in train and held-out (`test/retrieval-eval/long-section*.jsonl`), written and facet-checked before measuring.
-  - [ ] Measure claim 2. For each fact, record its offset in its chunk, the chunk's token count (the model's tokenizer), and whether the doc is #1. Does the rank fall with offset or with chunk length? Record in notes.md.
-  - [ ] Baseline table in notes.md:
+        - Done, with a deviation: every section is one chunk of 366-413 tokens and the bullets are 350-500 chars, not 1,000+. The fixture saturates (29/29), see notes.md.
+  - [x] Measure claim 2. For each fact, record its offset in its chunk, the chunk's token count (the model's tokenizer), and whether the doc is #1. Does the rank fall with offset or with chunk length? Record in notes.md.
+  - [x] Baseline table in notes.md:
         - Versions: 1.15.0, 1.21.0 and local.
         - Sets: real-corpus, hub and long-section.
         - Arms: CLI eval and `eval --via mcp`, each with and without an export, on clones.
@@ -100,13 +103,16 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 
 ## Decisions Made
 - One plan for #73: all three claims meet in the MCP load path and the eval that cannot see it.
+- Phase 2: the `--via mcp` arm shares the in-process eval's client and arm code; only the transport differs. `eval-against-release.sh` drives every version with this checkout's `eval --server <pkg cli>`.
+- Phase 2 lead for Phase 3 and Key Question 1: with `git log` slowed, all four real sets scored @1 51 versus 46 with metadata. Decompose priority/decay/path-class/fold on TRAIN before touching ranking.
 - Fix order: metadata first (Phase 3), because every ranking number the reporter took on d0 was measured inside the gap.
 
 ## Errors Encountered
-- (none yet)
+- Phase 2: the long-section fixture does not discriminate (29/29 @1 on 1.15.0, 1.21.0 and local), so claim 2 is not reproduced by rank. Only a weak margin effect (r = -0.32 offset vs margin). Phase 5 must build a harder fixture first (near-duplicate distractors, 1,000+ char bullets, sections over 2,000 chars) before choosing a chunking variant on train.
+- Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 2**
+**Currently in Phase 3**
 
 ---
 

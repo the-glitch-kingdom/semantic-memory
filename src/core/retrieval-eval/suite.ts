@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { listMarkdown } from "../indexer.js";
 import { loadDecayConfig } from "../decay.js";
 import { deriveSessionDir } from "../session.js";
-import { openEval } from "./runner.js";
+import { openEval, type EvalVia } from "./runner.js";
 import { formatArm, grepPattern, parseGolden, runFacetEval, type ArmFn, type ArmMetrics, type FacetCase } from "./metrics.js";
 
 export const evalDir = (notes: string, dir?: string) => (dir ? resolve(dir) : join(deriveSessionDir(notes), "eval"));
@@ -47,7 +47,26 @@ export interface ArmReport {
   /** Per question: the first k in 1/3/8 that answers it (0 = none) or, for a negative, 1 when flagged. */
   outcomes: Record<string, number>;
 }
+/** What an agent sees from the stdio server (`eval --via mcp`): when the first real answer came, and what the #1 results carry. */
+export interface McpReport {
+  waitForReady: boolean;
+  firstAnswerMs: number | null;
+  questions: number;
+  relatedPerTop: number;
+  top1With: Record<string, number>;
+  /** Identifier queries whose #1 carried an entity card. */
+  entityCard: Record<string, boolean>;
+}
+const IDENTIFIERS = ["resolveDossierForPrompt", "findLocalBin", "runHealthcheck", "scripts/link-skills.js"];
+/** A title that is just the path is what a result carries before its doc metadata is installed (load_priority and status come with `full` only). */
+const TOP1_FIELDS: Record<string, (t: any) => boolean> = {
+  titled: (t) => !!t.title && t.title !== t.path,
+  section: (t) => !!t.section, anchor: (t) => !!t.anchor, code: (t) => !!t.code, decay: (t) => !!t.decay, grounding: (t) => !!t.grounding,
+};
+
 export interface EvalReport {
+  /** Present with `--via mcp`. */
+  mcp?: McpReport;
   cases: number;
   /** sha256 of the live question set, and of the doc paths + mtimes: what a baseline was measured on. */
   setHash: string;
@@ -64,7 +83,7 @@ const memo = (arm: ArmFn): ArmFn => {
   return (q, limit) => seen.get(`${limit}\0${q}`) ?? (seen.set(`${limit}\0${q}`, arm(q, limit)), seen.get(`${limit}\0${q}`)!);
 };
 
-export async function runSuite(notes: string, cases: FacetCase[]): Promise<EvalReport> {
+export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia): Promise<EvalReport> {
   const root = resolve(notes);
   const docs = new Map<string, string>();
   const stamp = createHash("sha256");
@@ -75,13 +94,24 @@ export async function runSuite(notes: string, cases: FacetCase[]): Promise<EvalR
   const { stale, live } = findStale(cases, docs);
   const textOf = (p: string) => docs.get(p) ?? "";
 
-  const ev = await openEval(root);
+  const ev = await openEval(via ? notes : root, via);
   try {
     const grep: ArmFn = async (q, limit) => {
       const { parsed, bytes } = await ev.call("search_text", { pattern: grepPattern(q), regex: true, limit });
       return { results: parsed.map((r: any) => ({ path: r.path, score: r.score })), bytes };
     };
-    const armFns: Record<string, ArmFn> = { search_hybrid: ev.tool("search_hybrid"), search_semantic: ev.tool("search_semantic"), search_text: ev.tool("search_text"), grep };
+    const negatives = new Set(live.filter((c) => c.tier === "negative").map((c) => c.q));
+    const seen = { n: 0, related: 0, fields: Object.fromEntries(Object.keys(TOP1_FIELDS).map((k) => [k, 0])) };
+    const hybrid = ev.tool("search_hybrid");
+    const counted: ArmFn = async (q, limit) => {
+      const r = await hybrid(q, limit);
+      if (!negatives.has(q) && r.top) {
+        seen.n++; seen.related += r.related?.length ?? 0;
+        for (const [k, has] of Object.entries(TOP1_FIELDS)) if (has(r.top)) seen.fields[k]++;
+      }
+      return r;
+    };
+    const armFns: Record<string, ArmFn> = { search_hybrid: counted, search_semantic: ev.tool("search_semantic"), search_text: ev.tool("search_text"), grep };
     const arms: Record<string, ArmReport> = {};
     for (const [name, raw] of Object.entries(armFns)) {
       const arm = memo(raw);
@@ -101,7 +131,13 @@ export async function runSuite(notes: string, cases: FacetCase[]): Promise<EvalR
     }
     const setHash = createHash("sha256").update(JSON.stringify(live)).digest("hex");
     const decay = loadDecayConfig(root);
-    return { cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms };
+    let mcp: McpReport | undefined;
+    if (via) {
+      const entityCard: Record<string, boolean> = {};
+      for (const id of IDENTIFIERS) entityCard[id] = !!(await ev.call("search_hybrid", { query: id, limit: 8 })).parsed[0]?.entity;
+      mcp = { waitForReady: !!via.waitForReady, firstAnswerMs: ev.timing.firstAnswerMs ?? null, questions: seen.n, relatedPerTop: seen.n ? +(seen.related / seen.n).toFixed(2) : 0, top1With: seen.fields, entityCard };
+    }
+    return { ...(mcp && { mcp }), cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms };
   } finally {
     await ev.close();
   }

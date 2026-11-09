@@ -134,6 +134,8 @@ export interface FacetCase {
 
 export interface ArmResponse {
   results: { path: string; score: number }[];
+  /** The #1 result item as the tool returned it (the `--via mcp` report counts its fields). */
+  top?: Record<string, any>;
   /** Size of the tool response, in bytes. */
   bytes: number;
   /** The response carried `no_strong_match`. */
