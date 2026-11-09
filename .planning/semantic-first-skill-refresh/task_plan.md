@@ -39,8 +39,8 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
     - Budget: at most 2 runs per prompt per skill, about 120 claude runs in total. State the cost and runtime in notes.md.
   - [x] (NOT EVALUATED: no valid counts; no description change made; left for a tooling fix) **Pass:** the new description triggers on at least as many should-trigger prompts as the old one, minus at most 1, with no more false triggers plus at most 1. If it fails, adjust only the description's trigger phrases, re-run once, and record both runs.
 - [x] Phase 6: Release prep: bump all five version fields to 1.25.1 and the lockfile; the offline tarball is deferred to release. (tarball deferred to release)
-- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove `draft-SKILL.md` from the plan folder if it is identical to the shipped skill apart from the documented server lines; otherwise keep it as the record of the change.
+- [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove `draft-SKILL.md` from the plan folder if it is identical to the shipped skill apart from the documented server lines; otherwise keep it as the record of the change. (done: differed only by the documented server lines; scratch check found no other junk, trigger-*.json kept as the Phase 5 record)
 - [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2's tests pass as plain `it`; no `it.fails` left.
   - [ ] Grep `skills/` for `mcp__semantic-sidekick__`, `mcp__semantic-vault__`, `top_k` and `create_note`: none, or `create_note` only as a fallback.
@@ -79,4 +79,4 @@ Release as 1.25.1: text, tests and a deleted file only. No ranking or index chan
 - Phase 2: the "every tool a skill names" regex also matches `read_time_min`, a frontmatter field in the reference file. It is deleted in Phase 3, so the regex stays simple.
 
 ## Status
-**Currently in Phase 6.**
+**Currently in Phase 8.**
