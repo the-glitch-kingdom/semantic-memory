@@ -85,8 +85,8 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields to 1.22.0 and update the lockfile
   - [x] Offline tarball deferred to release (built from the merge commit)
-- [ ] Phase 8: Cleanup
-  - [ ] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts, debug output
+- [x] Phase 8: Cleanup
+  - [x] Remove what this branch created or made dead: losing variants, trial knobs, scratch scripts, debug output  (checked: trial knob and losing variants already gone in Phase 5, eval-probe.mjs removed in Phase 2, no stray debug output, no dead exports; nothing left to remove)
 - [ ] Phase 9: Validation (independent review)
   - [ ] Review `git diff main...HEAD` adversarially against this plan, fix real bugs with regression tests, audit every ticked box
   - [ ] Unit: load order and reconcile swap, fallback bound, chunk windows, eval `--via mcp`, gate parity check
@@ -125,7 +125,7 @@ One PR from `feat/mcp-metadata-gap-long-sections`. Every missed target is stated
 - Phase 2: `eval --via mcp` first hung 300 s per call on tools whose reply is not a JSON array (`search_text` with no match): the wait now applies only to "Indexing in progress".
 
 ## Status
-**Currently in Phase 8**
+**Currently in Phase 9**
 
 ---
 
