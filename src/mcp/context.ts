@@ -570,7 +570,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       await embedder.init();
       await sync(true);
       // nothing was served before this, so ready waits for the code graph (grounding changes scores); warm swaps stay serve-then-stale (#73)
-      await lastCodeLoad;
+      if (coldBuilding) await lastCodeLoad;
       // a forced rebuild replaces whatever is on disk (unusable or stale), so it commits over the current generation
       generation = (await readMeta(indexPath))?.generation ?? 0;
       await save();

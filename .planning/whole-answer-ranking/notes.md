@@ -119,3 +119,8 @@ Per new set (cli, 1.27.1 vs local identical hybrid counts): whole-answer 11/12 @
 #90 by hand: `.documentation` copied to /tmp (index deleted), server started over stdio, 10 fixed queries at once, polled until none answered "Indexing in progress": first real answer after 40.4 s, again 10 s later: **0 differences of 10**. Before that point every query answers "Indexing in progress... Try again shortly" (21 ms), by design (Phase 3).
 
 Floors: baseline.json `newSets` (whole-answer hybrid @1/@3 11/12 train, 10/11 held-out; identifier top-3 8/8 both), enforced by new test/retrieval-eval/new-sets-floor.test.ts with one case of slack. gate-release.sh gates both held-out sets against the previous release.
+
+## Eval results: Phase 9
+- Independent `claude -p` review of src/scripts diff. Confirmed + fixed: fullIndex awaited the code load on warm forced rebuilds too (reindex tool), contradicting the comment; now `if (coldBuilding) await lastCodeLoad` (src/mcp/context.ts). Rejected: reranker (opt-in, off by default) can reorder the tier's output; the tier runs before it by plan, CLI has no reranker; documented, not changed. Review also confirmed clause_weight 0 is a no-op and code-load failure is caught in loadCode (index still ready).
+- Full lint, build, npm test, npm run eval: exit 0 after the fix. `BAND=1 npm run gate:release` fresh: PASS.
+- Edge cases covered by the Phase 2-6 tests (identifier tier unit tests, rank.test clause splitting, cold-build-ready); no new ones added.

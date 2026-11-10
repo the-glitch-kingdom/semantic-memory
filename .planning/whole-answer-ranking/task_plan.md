@@ -79,15 +79,15 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields to 1.28.0, plus the lockfile.
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Every Phase 2 test passes, and none is left as `it.fails` (except part 2 if it shipped off, then as a documented `it.fails` with the reason).
-  - [ ] Edge cases:
+- [x] Phase 9: Validate success through comprehensive testing (MANDATORY)
+  - [x] Every Phase 2 test passes, and none is left as `it.fails` (except part 2 if it shipped off, then as a documented `it.fails` with the reason).
+  - [x] Edge cases:
     - **Identifier tier:** an identifier in 0 docs; one present in every candidate; two identifiers where one is missing; a path identifier (`src/x/y.ts`); a backticked one; an identifier only in a doc's path, not its body; an excluded or `generated: true` doc holding it (must not count); the `mode` override.
     - **Clauses:** a question with no "and"; "and" inside a name ("Tom and Jerry"); a 4-clause question (the cap); an empty clause after splitting; a query that is only punctuation.
     - **#90:** a code load that throws (the index still goes ready); a vault with no code at all (no wait beyond the load); a warm restart (stable from the first answer, as before).
-  - [ ] Federation: `search_hybrid` over two sources applies the same tier per source and merges as before (the federation snapshot test; re-take a drifted score only if the order is unchanged, as 1.27.0 did).
-  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
-  - [ ] Independent review of `git diff main...HEAD` (`claude -p`, with the code, not our conclusions).
+  - [x] Federation: `search_hybrid` over two sources applies the same tier per source and merges as before (the federation snapshot test; re-take a drifted score only if the order is unchanged, as 1.27.0 did).
+  - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
+  - [x] Independent review of `git diff main...HEAD` (`claude -p`, with the code, not our conclusions).
 - [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/operational/retrieval-tuning-guide.md`: the identifier tier, `ranking.clause_weight` (its default and how it was chosen) and how both interact with coverage.
   - [ ] `.documentation/reference/mcp-tools-reference.md`: the `search_hybrid` ranking order (the tier) and readiness after a cold build.
@@ -124,4 +124,4 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - Phase 6: full validation: stdin-eof (known load flake) failed once in `npm test` and passed alone; real-corpus-eval hit its 600 s beforeAll timeout once in `npm run eval` (known flake) and passed alone (16 passed, 1 expected fail). Not re-run whole.
 
 ## Status
-**Phase 9 next** (validate). Phase 8 cleanup done: nothing to remove. Phase 7 done (1.28.0 in all five fields and lockfile). Phase 6 done: gate PASS, #90 by-hand 0/10 differences, floors set (baseline.json newSets + new-sets-floor.test.ts). Earlier note: (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).
+**Phase 10 next** (docs). Phase 9 done (validated; review fix: cold-only wait). Earlier: **Phase 9 was next** (validate). Phase 8 cleanup done: nothing to remove. Phase 7 done (1.28.0 in all five fields and lockfile). Phase 6 done: gate PASS, #90 by-hand 0/10 differences, floors set (baseline.json newSets + new-sets-floor.test.ts). Earlier note: (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).
