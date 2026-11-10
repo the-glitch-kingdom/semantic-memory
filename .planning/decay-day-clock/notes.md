@@ -34,3 +34,6 @@ No ranking numbers. The 4 Phase 2 cases are plain `it` and pass; added unit case
 
 ## Eval results: Phase 5
 No ranking change: version bump (package.json, lockfile, both marketplace.json fields, plugin.json, AGENTS.md frontmatter) and KB fact `exact-vector-search-must-return-k-chunks-not-k-docs`. `hewtd maintain --quick` reports 10 errors / 117 warnings, identical to before the change.
+
+## Eval results: Phase 7
+Fresh `npm run gate:release` vs 1.27.0: PASS (0 of 166 mcp/cli differences, titled #1 119/119). Added a decayForDoc test for evergreen, per_type null and git/mtime fallbacks. healthcheck.ts does not use decay; lint.ts passes its own nowMs to computeDecay (unchanged). Eval: 174 passed + 3 expected fail, plus real-corpus-eval passing alone (16 + 1 expected fail).
