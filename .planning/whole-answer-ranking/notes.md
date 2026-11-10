@@ -81,3 +81,22 @@ Train (counts identical to 1.27.1 unless noted; cli and mcp equal):
 Top-3 all identifier docs (hybrid, limit 8): identifier-tier train 0/8 -> **8/8** (slots 9/24 -> 24/24); held-out 0/8 -> **8/8** (slots 11/24 -> 24/24), as measured, not tuned on.
 
 Gate (`BAND=1 bash scripts/gate-release.sh 1.27.1`, held-out, this change alone): PASS. no export cli and mcp: hybrid @1 73 vs 73, multi @1/3/8 10/17/20 vs same, cov@3 0.776 vs 0.776, dominance 34 vs 35, negatives 43 vs 43, false flags 7 vs 7; export: hybrid @1 78 vs 78, dominance 23 vs 25. mcp vs cli 0 of 166 differ. No narrowing of the trigger was needed.
+
+## Eval results: Phase 5 (clause coverage; train sweep on a local clone with all fixtures, cli arm, hybrid)
+
+Form: `score *= 1 + w * clauseCover`, clauseCover = best min(cos) over clause pairs on distinct body chunks. Train rows (hyb@1/@3, dominance): w=0 vs w.
+
+| w | real-corpus | real-hub | absent-terms | multi-hub | whole-answer | long-section(+hard), identifier | dom |
+|---|---|---|---|---|---|---|---|
+| 0 | 18/27 @3 26 | 6/12 @3 10 | 21/28 | 12/29 | 11/12 | 15/15, 10/12, 8/8 | same |
+| 0.25 / 0.3 | 18 @3 26 | 6 @3 10 | 22 | 12 | 11 | same | same |
+| 0.4 | 18 @3 25 | 6 @3 10 | 22 | 12 | 11 | same | same |
+| 0.5 | 18 @3 24 | 6 @3 10 | 22 | 13 | 12 | same | same |
+| 1 | 18 @3 24 | 6 @3 10 | 22 | 13 (multi@8 13) | 12 | same | same |
+| 2 / 3 / 6 | 19 @3 24 | 6 @3 9 | 22 | 13 | 12 | same | same |
+
+(absent-terms 21 to 22 already at w=0.1: one question moved by a tiny reorder.) The multi-clause fixture flips (Y above X) first at w=1 (not at 0.5). Plateau from w=2. Rule (no @1 drop, no dominance rise) holds for every w; w=1 chosen as the smallest that flips the fixture, since w>=2 only adds one real-corpus @1 and costs one more real-hub @3.
+
+Gate (`BAND=1 bash scripts/gate-release.sh 1.27.1`, parts 1+2 at w=1, held-out): FAIL. no export: hybrid @1 72 vs 73, multi @1 9 vs 10, multi @3/@8 17/20 same, cov@3 0.779 vs 0.776, dominance 35 vs 35, negatives 43/43, false flags 7/7; export: hybrid @1 76 vs 78, multi @1 9 vs 10, dominance 24 vs 25. mcp vs cli 0 of 166 differ. p95 32 ms vs 14 ms (the clause embeddings). Part 1 alone passed the same gate (Phase 4: 73 vs 73, 78 vs 78), so the loss is part 2's. Not tuned on held-out; shipped `clause_weight: 0`. With it off the code path is skipped (no clause embeddings), so branch results equal Phase 4's.
+
+#87 relation: not measured (part 2 off). The release comment should ask the reporter for an anonymised multi-part repro.

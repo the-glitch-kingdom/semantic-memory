@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
-import { applyCoverage } from "../../core/rank.js";
+import { applyClauses, applyCoverage } from "../../core/rank.js";
 import { candidatePool, fuseScores } from "../../core/bm25.js";
 import { identifierTier, missingTerms, passingTerms } from "../../core/identifiers.js";
 import { entityCard, knownToCode, splitUndocumented } from "../../core/code-graph.js";
@@ -119,6 +119,7 @@ async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnT
       .sort((a, b) => b.score - a.score);
   const semanticResults = adjust(vectorIndex.search(queryEmbed, candidatePool(limit)));
   let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, candidatePool(limit)))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
+  hybrid = await applyClauses(hybrid, query, vectorIndex, (t) => ctx.embedder.embedQuery(t), ctx.ranking);
   hybrid = ctx.filterPathClass(hybrid);
 
   hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);

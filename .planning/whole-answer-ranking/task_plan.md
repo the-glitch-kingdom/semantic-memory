@@ -48,18 +48,24 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
     - `mode: "fact"` override still tiers? Decide (the tier keys on identifiers present, not on the label), record it, and test it.
   - [x] Measure on train only: the identifier rows and every existing set. Gate vs 1.27.1 (`bash scripts/gate-release.sh 1.27.1`, BAND=1) with only this change. Dominance must not rise beyond the band. Record numbers. If the gate fails, find the cause (e.g. a common identifier like `vault.schema.yml` in many docs reorders a non-identifier question). Narrow the trigger on TRAIN evidence only, e.g. skip identifiers present in more than N% of docs, with N picked on train. Then re-gate.
   - [x] Commit this phase on its own, so part 1 can ship without part 2.
-- [ ] Phase 5: #91 part 2, clause coverage (ships only if it passes)
-  - [ ] Split the query into clauses on ` and `, `,`, `;` and `?`. Keep a clause only if it has at least 2 non-stop tokens (`tokenize`). With fewer than 2 clauses, nothing changes.
-  - [ ] Per clause, one extra query embedding (batch the clauses into one `embedder` call if the API allows). For each candidate doc in the fused pool, the best body-chunk cosine for each clause comes from the stored unit vectors. Use `VectorIndex` (add one method there, next to `bestChunk`, that scores a doc's chunks against several query vectors). No re-embedding of docs, no new index.
-  - [ ] Score: a bonus for covering several clauses with DIFFERENT chunks, not for breadth. E.g. `score *= 1 + w * (second-best clause match, where the best two clauses' best chunks are distinct)`, or `w * mean(per-clause best) - …`. Pick the form and `w` on TRAIN only (the Phase 2 train rows plus the existing train sets).
+- [x] Phase 5: #91 part 2, clause coverage (ships only if it passes; SHIPPED OFF)
+  - [x] Split the query into clauses on ` and `, `,`, `;` and `?`. Keep a clause only if it has at least 2 non-stop tokens (`tokenize`). With fewer than 2 clauses, nothing changes.
+    - Done: `splitClauses` (src/core/rank.ts), cap 3 (`MAX_CLAUSES`).
+  - [x] Per clause, one extra query embedding (batch the clauses into one `embedder` call if the API allows). For each candidate doc in the fused pool, the best body-chunk cosine for each clause comes from the stored unit vectors. Use `VectorIndex` (add one method there, next to `bestChunk`, that scores a doc's chunks against several query vectors). No re-embedding of docs, no new index.
+    - Done: `VectorIndex.clauseCover` (src/core/vector.ts) keeps each clause's top two body chunks and returns the best min(cos) over clause pairs on DISTINCT chunks; clauses embedded with `Promise.all(embedQuery)` (no batch API for queries).
+  - [x] Score: a bonus for covering several clauses with DIFFERENT chunks, not for breadth. E.g. `score *= 1 + w * (second-best clause match, where the best two clauses' best chunks are distinct)`, or `w * mean(per-clause best) - …`. Pick the form and `w` on TRAIN only (the Phase 2 train rows plus the existing train sets).
+    - Done: `score *= 1 + w * clauseCover`, applied by `applyClauses` after coverage and before the path-class filter (MCP and CLI). Train sweep in notes.md. Result: no `w` met the rule AND passed the gate (see below).
     - The selection rule: train hybrid @1 must not drop on any set, and dominance must not rise (#87's failure mode: a breadth reward let overview docs take every slot).
     - Default `w` = the train-best value that meets both, or 0 if none does.
     - Put `w` in `RankingConfig` (`ranking.clause_weight` in vault.schema.yml), like `coverage_weight`.
-  - [ ] Latency: the extra embeddings must keep p95 within the gate's bound. Measure p95 with 2- and 3-clause queries. If it busts the bound, cap the number of clauses at 3 and record it.
-  - [ ] Gate vs 1.27.1 with parts 1 and 2 (BAND=1), then held-out as measured.
+  - [x] Latency: the extra embeddings must keep p95 within the gate's bound. Measure p95 with 2- and 3-clause queries. If it busts the bound, cap the number of clauses at 3 and record it.
+    - Measured in the gate run at w=1: p95 32 ms vs 14 ms (1.27.1), 3 clauses max. Within the gate (it has no p95 bound). Moot: ships off, so no extra embeddings run by default.
+  - [x] Gate vs 1.27.1 with parts 1 and 2 (BAND=1), then held-out as measured.
+    - Done at w=1: FAIL (hybrid @1 72 vs 73 no export, 76 vs 78 export, band 1). Shipped `clause_weight: 0`; multi-clause hybrid/CLI `it.fails` kept with the reason. #91 stays open for part 2.
     - **If no `w` > 0 passes on train, or the gate fails:** ship `clause_weight: 0` (off) with the code and tests. Say so in the changelog with the numbers. #91 then stays open for part 2 (as #76 did), and the release comment asks for the anonymised repro.
     - Do not tune on held-out.
-  - [ ] Relation to #87: if part 2 works, note in notes.md whether it also lets the candidate pool grow without the dominance rise (one train-only measurement at pool 60 is enough). Don't change the pool in this plan; #87 stays its own release.
+  - [x] Relation to #87: if part 2 works, note in notes.md whether it also lets the candidate pool grow without the dominance rise (one train-only measurement at pool 60 is enough). Don't change the pool in this plan; #87 stays its own release.
+    - Skipped: part 2 did not ship on, so there is no pool-60 measurement to make.
 - [ ] Phase 6: Measure the whole branch
   - [ ] `npm run eval` and the #85 per-limit check: limits 1, 3 and 5 are prefixes of limit 8 on every set. Reproducible builds still give 0 differing results (`test/retrieval-eval/reproducible-build.test.ts`).
   - [ ] Cold-build check by hand on this repo's `.documentation`, the #90 repro:
@@ -109,8 +115,11 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - Phase 4: `identifierTier` (src/core/identifiers.ts) is a stable sort by the count of present identifiers a candidate holds (covers "all first" and "most first" in one rule). An identifier is present when every token of its last path segment has df > 0 (`bm25.has`); a doc holds it when `docHas` finds every token (chunks, fields, path words). Applied in `hybridRanked` after filters and before the reranker, and in CLI `search` after filterPathClass and before fold (the CLI's code load moved ahead of it, to get `knownToCode`). The `mode` override still tiers (keys on identifiers, not the label; tested). No narrowing was needed: the gate passed with no train regression, so no N% rule. `hasJoined` spellings are not used (shortcut: a doc spelling `check-widgets` for `check_widgets` tokenizes alike or is not tiered).
 - Phase 4: out-of-pool identifier docs are not pulled in. The identifier eval rows all have their docs in the pool of 24, so none is left unfixed.
 
+- Phase 5: `clause_weight` swept on train only; ships 0 (off). Code, config key (`ranking.clause_weight`), unit tests and the multi-clause fixture test (`it.fails`) stay.
+
 ## Errors Encountered
+- Phase 5: w=1 passed the train rule (no @1 drop on any train set, dominance unchanged, fixture flips) but failed the held-out gate vs 1.27.1: no export hybrid @1 72 vs 73, multi @1 9 vs 10; export hybrid @1 76 vs 78 (beyond BAND 1). Not re-tuned on held-out; shipped off. Also on train at w>=0.5 real-corpus hybrid @3 fell 26 to 24.
 - Phase 2: the whole-answer rows leave little headroom on main (11/12 and 10/12 @1; hub docs hold both answers) and the identifier rows are 8/8 @1 already, so the eval counts alone cannot show the gains. Phase 4 reports "top-3 all identifier docs" (0/8 and 0/8 on main) and Phase 5 relies on the `multi-clause` fixture. Rows left as written.
 
 ## Status
-**Phase 5 next** (#91 part 2, clause coverage). Phases 2-4 done; #90 and identifier-tier tests are plain `it`; multi-clause.test.ts keeps its `it.fails` until Phase 5.
+**Phase 6 next** (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).

@@ -8,8 +8,9 @@ import { cleanupTempDir } from "../setup.js";
  * #91 part 2: ranking takes each doc's best single chunk, so a doc that answers every part of a question across two sections loses to
  * one whose single best chunk matches only one part. Here X (cert-rotation-runbook.md) holds the rotation answer in one strong chunk
  * and nothing on audit logs; Y (platform-handover-notes.md) answers both parts in two different sections, each weaker.
- * The two-part reproduction is `it.fails` until clause coverage lands (whole-answer-ranking Phase 5); if part 2 ships off by default it stays
- * `it.fails` with the reason. The one-part guard is plain `it`.
+ * Clause coverage is built (`ranking.clause_weight`) but ships OFF (default 0): at 1 it passes this test and gained train answers, but
+ * failed the held-out gate vs 1.27.1 (hybrid @1 -1 no export, -2 export; BAND 1). So the two-part reproduction stays `it.fails`
+ * (#91 part 2 open); flip it to `it` if the default turns on. The one-part guard is plain `it`.
  */
 const TWO_PART = "How do we rotate the cluster certificates, and where are the audit logs kept?";
 const ONE_PART = "How do we rotate the cluster certificates?";

@@ -8,7 +8,7 @@ import { GraphBuilder } from "../core/graph.js";
 import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
 import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
-import { applyCoverage, loadRanking } from "../core/rank.js";
+import { applyClauses, applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, candidatePool, fuseScores } from "../core/bm25.js";
 import { identifierTier, identifiers, missingTerms, passingTerms } from "../core/identifiers.js";
 import { entityCard, knownToCode, loadCodeData, loadExport, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
@@ -167,8 +167,9 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
           .sort((a, b) => b.score - a.score);
       // the code is read only for a query that names an identifier: it costs a git call
       const code = identifiers(query, () => true).length || missingTerms(query, bm25, paths, () => true).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
+      const covered = applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, candidatePool(limit)))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass));
       const filtered = identifierTier(filterPathClass(
-        applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, candidatePool(limit)))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
+        await applyClauses(covered, query, vectorIndex, (t) => embedder.embedQuery(t), ranking),
         pathClass
       ), query, bm25, knownToCode(code));
       const all = withConfidence(opts.granularity === "doc" ? filtered : fold(filtered, docByPath, exported()));
