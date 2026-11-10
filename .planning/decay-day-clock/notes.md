@@ -31,3 +31,6 @@ No ranking numbers. The 4 Phase 2 cases are plain `it` and pass; added unit case
 - Build twice on `.documentation` (98 answerable real-set questions, limit 8): search_hybrid and search_semantic 0 differing top-8, 0 differing #1, max score gap 0. The same query 20 times in one process (10 queries, search_hybrid): 0 non-identical results (paths and scores).
 - `BAND=1 npm run gate:release` (fresh, no --cache, 1.27.0 package.json vs 1.26.0): PASS. No export: hyb@1 73 vs 73, multi 10/17/21 vs 10/17/21, cov@3 .776 vs .776, dominance 36 vs 35, negatives 43/43, false flags 7/7, mcp vs cli 0 of 166, titled 119/119. Export: 78/78, multi same, dominance 25 vs 25. p95 mcp 26 vs 15 ms (one run, gate has no p95 threshold; cli 14 vs 15, mcp-slow 14 vs 14).
 - Note: the gate compares against 1.26.0 because package.json is still 1.27.0; Phase 5 bumps to 1.27.1 and the gate will then pick 1.27.0 (rerun in Phase 7).
+
+## Eval results: Phase 5
+No ranking change: version bump (package.json, lockfile, both marketplace.json fields, plugin.json, AGENTS.md frontmatter) and KB fact `exact-vector-search-must-return-k-chunks-not-k-docs`. `hewtd maintain --quick` reports 10 errors / 117 warnings, identical to before the change.

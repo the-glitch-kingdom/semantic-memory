@@ -24,9 +24,9 @@ Release as 1.27.1 (patch).
   - [x] Run the #85 per-limit script (`.planning/.archive/limit-stable-ranking/measure-limits.test.ts`, if present locally, or its equivalent) on the branch: #1 accuracy and eval metrics at limit 8 must be identical to 1.27.0's (21/18/6/6; all @1/@3/@8 as in that notes.md). Decay moves only at day granularity, so expect no change; record any difference.
   - [x] Build twice on this repo's `.documentation`: 0 differing top-8 results. The same query 20 times in one process: identical scores.
   - [x] `npm run gate:release` (fresh, BAND=1) vs 1.27.0 passes.
-- [ ] Phase 5: Release prep, plus #85's leftovers
-  - [ ] Bump all five version fields to 1.27.1, plus the lockfile.
-  - [ ] KB gotcha fact (left over from #85): exact vector search must return the k nearest chunks, not k docs. Returning k docs widened the vector pool and raised dominance (39 vs 35). `## Instead`: truncate to k chunks, then group by doc. `test/unit/vector-exact.test.ts` pins it.
+- [x] Phase 5: Release prep, plus #85's leftovers
+  - [x] Bump all five version fields to 1.27.1, plus the lockfile.
+  - [x] KB gotcha fact (left over from #85): exact vector search must return the k nearest chunks, not k docs. Returning k docs widened the vector pool and raised dominance (39 vs 35). `## Instead`: truncate to k chunks, then group by doc. `test/unit/vector-exact.test.ts` pins it.
 - [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2 tests pass, and none are left as `it.fails`.
@@ -55,4 +55,4 @@ Release as 1.27.1 (patch).
 ## Errors Encountered
 
 ## Status
-**Phases 1-4 done; next Phase 5.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
+**Phases 1-5 done; next Phase 6.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
