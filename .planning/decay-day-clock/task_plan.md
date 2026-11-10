@@ -27,7 +27,7 @@ Release as 1.27.1 (patch).
 - [x] Phase 5: Release prep, plus #85's leftovers
   - [x] Bump all five version fields to 1.27.1, plus the lockfile.
   - [x] KB gotcha fact (left over from #85): exact vector search must return the k nearest chunks, not k docs. Returning k docs widened the vector pool and raised dominance (39 vs 35). `## Instead`: truncate to k chunks, then group by doc. `test/unit/vector-exact.test.ts` pins it.
-- [ ] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [x] Phase 6: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 7: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2 tests pass, and none are left as `it.fails`.
   - [ ] Edge cases, with fake timers:
@@ -51,8 +51,9 @@ Release as 1.27.1 (patch).
 
 ## Decisions Made
 - Version 1.27.1. Ranking is unchanged apart from sub-day jitter.
+- Phase 6: removed the scratch measurement scripts and configs (measure-limits.test.ts, repeat.test.ts, two vitest configs); kept branch-phase4.json as raw numbers. src diff has no debug or dead code.
 
 ## Errors Encountered
 
 ## Status
-**Phases 1-5 done; next Phase 6.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
+**Phases 1-6 done; next Phase 7.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
