@@ -76,6 +76,10 @@ semantic-memory eval generate --notes <dir> [--docs 20] [--model <name>] [--dir 
 
 The host agent (`claude`) writes blind questions from sampled documents: keyword, paraphrase, multi-doc and negative. Each is validated (the question must not copy the document's own title or rare terms, facets must match the document) and rejected otherwise. The result is `generated.jsonl`, with the document, its sha256 and the generator version and model recorded. Half the questions go to the `tune` split and half to held-out, by the parity of the first hex digit of sha256(question). Re-running overwrites the file; a real model gives different questions each time.
 
+## Limit-stable ranking (v1.27)
+
+`test/retrieval-eval/limit-stable.test.ts` checks that `search(q, k)` equals `search(q, 8).slice(0, k)` (paths equal, scores within 1e-6) for k = 1, 3, 5, on MCP `search_hybrid`, `search_semantic` and the CLI, over 10 queries on `.documentation`. `limit-edge.test.ts` covers limits 1, 8, 20, 50, a corpus smaller than the pool, filters, MCP vs CLI parity and build-twice. `reproducible-build.test.ts` builds twice and compares. Run them with `npx vitest run test/retrieval-eval/limit-stable.test.ts`.
+
 ## Floors and the noise band
 
 ```bash

@@ -41,6 +41,12 @@ semantic-memory writes to three distinct locations with different lifecycles (pl
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+## Exact search (v1.27)
+
+`VectorIndex.search` (`src/core/vector.ts`) scores every live chunk by cosine against unit-length copies kept in memory when the index holds at most `EXACT_MAX_VECTORS = 100_000` live chunks. Ties break by doc path, then label (code-unit order, not locale), so the order is total. Above the threshold it uses HNSW, unchanged. `hnsw.bin` is still built and saved either way, and a loaded index past the threshold keeps no unit copies. Cost grows with the vault: a median 7 ms per query at 13k x 384.
+
+Why: HNSW is approximate and sensitive to insertion order. `reconcile` used to push files to `parse` in stat/read completion order, so the same files indexed in an order that changed with I/O timing, and two builds ranked differently (#85, second comment). `src/core/reconcile.ts` now sorts `parse`, which also makes HNSW above 100k reproducible. Embeddings were not the cause: two builds on one machine produced identical vectors. Rebuilds on different CPUs can still differ in the last float digits (batched ONNX output is not bit-exact), so tests compare scores with a tolerance. See the [KB fact](../knowledge-base/facts/approximate-hnsw-plus-insertion-order-makes-rebuilds-rank-differently.md).
+
 ## Tier 1: Per-vault derived indices
 
 Lives inside the vault: `<vault>/.semantic-sidekick-index/`. Created on first `reindex` (or `serve --reindex`). Five files.
