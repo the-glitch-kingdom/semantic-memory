@@ -9,23 +9,24 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Reproduce first, as failing tests (`it.fails` until fixed), and the new eval sets
-  - [ ] #90 integration (`test/integration/code-load-order.test.ts`, or a new `cold-build-ready.test.ts`).
+- [x] Phase 2: Reproduce first, as failing tests (`it.fails` until fixed), and the new eval sets
+  - [x] #90 integration (`test/integration/code-load-order.test.ts`, or a new `cold-build-ready.test.ts`).
     - Mock `loadCodeData` slow, as that file already does.
     - On a cold `fullIndex()` of a vault whose docs get a grounding below 1 (the `code-graph-vault` fixture has dead refs), assert that when `fullIndex()` resolves, `isStale()` is false.
     - Assert that a fixed query's hybrid scores and order equal the same query run after the code load has settled.
     - Also cover the MCP server path: the first `search_hybrid` answer that is not "Indexing in progress" equals the answer 5 s later, through `buildServer` with no `waitForReady`.
-  - [ ] #91 part 1 fixture test (`test/retrieval-eval/identifier-tier.test.ts`): a small fixture corpus. One identifier (`check_widgets.py`) appears in 3 docs. Two other docs do not contain it, but their titles and bodies match the rest of the question better ("what does it verify, and what exit codes does it return"; one says "exits 0" in its title). `search_hybrid` and CLI `search`: the top min(N,3) all contain the identifier. Also: a query that is only the identifier still ranks identifier docs first (already true; guard it). An identifier in NO doc changes nothing (`missing_terms` path, order identical to main).
-  - [ ] Our own docs reproduce it too. Record it, but don't gate on it (docs change). On `.documentation`, "What does gate-release.sh check, and what exit codes does it return?" ranks `changelog/v1-23-0-…` and `reference/cli-reference.md` #2 and #3. Neither contains `gate-release.sh`; 5 docs do (notes.md).
-  - [ ] #91 part 2 fixture test (`test/retrieval-eval/multi-clause.test.ts`).
+  - [x] #91 part 1 fixture test (`test/retrieval-eval/identifier-tier.test.ts`): a small fixture corpus. One identifier (`check_widgets.py`) appears in 3 docs. Two other docs do not contain it, but their titles and bodies match the rest of the question better ("what does it verify, and what exit codes does it return"; one says "exits 0" in its title). `search_hybrid` and CLI `search`: the top min(N,3) all contain the identifier. Also: a query that is only the identifier still ranks identifier docs first (already true; guard it). An identifier in NO doc changes nothing (`missing_terms` path, order identical to main).
+  - [x] Our own docs reproduce it too. Record it, but don't gate on it (docs change). On `.documentation`, "What does gate-release.sh check, and what exit codes does it return?" ranks `changelog/v1-23-0-…` and `reference/cli-reference.md` #2 and #3. Neither contains `gate-release.sh`; 5 docs do (notes.md).
+  - [x] #91 part 2 fixture test (`test/retrieval-eval/multi-clause.test.ts`).
     - Doc X answers clause 1 strongly in one chunk (plus unrelated sections, longer doc).
     - Doc Y answers clause 1 and clause 2 in two different chunks, each slightly weaker than X's best.
     - Query "<clause 1>, and <clause 2>?". Y ranks above X.
     - A single-clause query on the same corpus keeps X first (no regression for one-part questions).
-  - [ ] New eval rows, written BEFORE any ranking change and never edited to fit it.
+  - [x] New eval rows, written BEFORE any ranking change and never edited to fit it.
     - On the existing fixture corpora (whichever the golden sets already use), add multi-part questions in the `{id, tier, q, facets}` JSONL form: about 12 train and 12 held-out, split by id hash the way the other sets split.
     - Also add about 8 train and 8 held-out identifier questions of the "What does <name> verify, and what does it return?" shape.
     - Record the main/1.27.1 numbers for them in notes.md (`## Eval results: Phase 2`). Floors come later, from the measured numbers.
+    - Done: sets `whole-answer(-heldout).jsonl` (12+12, multi-hub fixture) and `identifier-tier(-heldout).jsonl` (8+8, new `test/fixtures/identifier-tier/`).
 - [ ] Phase 3: #90, scoring is final before the index says ready
   - [ ] `fullIndex()` (src/mcp/context.ts:562) awaits the code load its sync started before setting `indexState = "ready"`. Track the last `applyCode` promise; don't reorder the #73 design (docs are installed first, code after).
     - The `--wait-for-ready` path awaits it too (it calls `fullIndex`).
@@ -98,11 +99,13 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 3. Clause coverage vs #87? #87 is about the whole-doc term-coverage boost rewarding breadth in a larger pool. Part 2 rewards distinct chunks matching distinct clauses, a different signal. The pool stays 24 here.
 
 ## Decisions Made
+- Phase 2: identifier sets use a new small fixture (`test/fixtures/identifier-tier/`, flat so `eval-against-release.sh` copies it), because no existing fixture holds one identifier in several docs; whole-answer sets reuse the multi-hub fixture.
 - Version 1.28.0 (minor: ranking order changes for identifier and multi-part queries).
 - Each ranking change is gated separately against 1.27.1, then together (as #85 was).
 - Part 2 may ship off by default. #91 then stays open with numbers.
 
 ## Errors Encountered
+- Phase 2: the whole-answer rows leave little headroom on main (11/12 and 10/12 @1; hub docs hold both answers) and the identifier rows are 8/8 @1 already, so the eval counts alone cannot show the gains. Phase 4 reports "top-3 all identifier docs" (0/8 and 0/8 on main) and Phase 5 relies on the `multi-clause` fixture. Rows left as written.
 
 ## Status
-**Phase 2 next.** Phase 1: verified both issues on main (1.27.1); see notes.md.
+**Phase 3 next** (#90 readiness). Phase 2 done: failing tests and new eval rows are in; main's numbers are in notes.md (`## Eval results: Phase 2`).

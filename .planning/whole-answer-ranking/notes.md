@@ -36,3 +36,31 @@
 - Gate each change separately against the previous release at limit 8, BAND=1.
 - Tune on train only; dominance is the guard against breadth rewards.
 - The candidate pool stays 24 (`candidatePool`); a larger pool is #87's own release.
+
+## Eval results: Phase 2 (main = 1.27.1; the branch has no src change yet, so `local` equals main)
+
+New sets, written from the issue's question shapes before any change and never edited to fit a result. Run with `scripts/eval-against-release.sh --cache --set <file> 1.27.1 local` (cli arm, counts repeat exactly; p95 not same-run for cached rows).
+
+| set | questions | corpus | hyb@1 | hyb@3 | sem@1 | multi@1/3/8 | cov@1/3/8 | dom |
+|---|---|---|---|---|---|---|---|---|
+| whole-answer (train) | 12 | multi-hub fixture | 11/12 | 12 | 10/12 | 11/12/12 of 12 | 0.92/1.00/1.00 | 4 |
+| whole-answer-heldout | 12 | multi-hub fixture | 10/12 | 11 | 8/12 | 10/11/11 of 12 | 0.83/0.92/0.92 | 4 |
+| identifier-tier (train) | 8 | identifier-tier fixture | 8/8 | 8 | 8/8 | n/a | n/a | 2 |
+| identifier-tier-heldout | 8 | identifier-tier fixture | 8/8 | 8 | 6/8 | n/a | n/a | 1 |
+
+1.27.1 and local rows are identical on every set (no src change).
+
+Reading them honestly:
+- **Identifier sets**: @1 is already 8/8, because the best identifier doc is #1 (the issue reports #2 and #3). The failure the tier fixes is in slots 2 and 3, which @1/@3 facet metrics do not see. Measured separately on main (hybrid, limit 8): the top 3 hold only identifier docs for **0/8 train and 0/8 held-out** questions; identifier docs fill **9/24 (train) and 11/24 (held-out)** of the top-3 slots. Phase 4's gate must report this "top-3 all identifier docs" count next to the @1/@3 numbers; @1 cannot move.
+- **Whole-answer sets**: main already answers 11/12 and 10/12 at @1 (multi@3 12 and 11). The hub docs here hold both answers in one doc, so best-chunk ranking mostly finds the hub; the rows leave little headroom (1 and 2 misses). They guard against a regression and cannot show a large gain. The discriminating reproduction of part 2 is the `multi-clause` fixture (X first, Y third on main for "How do we rotate the cluster certificates, and where are the audit logs kept?": scores 0.6436 / 0.5847 (audit-log-retention) / 0.5662).
+- Our own `.documentation` reproduction (Phase 1) is not gated: "What does gate-release.sh check, and what exit codes does it return?" ranks two docs without the name at #2 and #3.
+
+### Failing tests written (all fail on main for the stated reason, verified by running them as plain `it`)
+- `test/integration/cold-build-ready.test.ts`: 3 `it.fails` (fullIndex() resolves with isStale() true; first answer with and without `waitForReady` differs from the settled answer on `golden-graph.jsonl` train questions, over `code-graph-vault` with the code load delayed 1.5 s).
+- `test/retrieval-eval/identifier-tier.test.ts`: 8 `it.fails` (4 scripts x hybrid and CLI: top 3 all contain the script) and 6 plain guards (identifier-only query ranks its docs first; an identifier in no doc keeps main's top 2).
+- `test/retrieval-eval/multi-clause.test.ts`: 2 `it.fails` (hybrid and CLI: Y above X) and 2 plain guards (one-part question keeps X first).
+- `test/retrieval-eval/whole-answer-fixture.test.ts`: facet-holder check of the four new sets (13 tests, plain).
+- `scripts/eval-against-release.sh` now copies `identifier-tier/` for the identifier sets and `multi-hub/` for the whole-answer sets.
+
+### Phase 2 validation
+`npm run lint && npm run build && npm test`: 145 files passed (1158 passed, 3 expected fail). `npm run eval`: all passed except `real-corpus-eval.test.ts`, whose beforeAll hit its 600 s hook timeout once under load (the 23-file run); alone it passed in 3m21 (16 passed, 1 expected fail). Recorded as a load flake, no change.
