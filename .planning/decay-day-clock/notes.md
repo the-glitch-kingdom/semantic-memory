@@ -37,3 +37,6 @@ No ranking change: version bump (package.json, lockfile, both marketplace.json f
 
 ## Eval results: Phase 7
 Fresh `npm run gate:release` vs 1.27.0: PASS (0 of 166 mcp/cli differences, titled #1 119/119). Added a decayForDoc test for evergreen, per_type null and git/mtime fallbacks. healthcheck.ts does not use decay; lint.ts passes its own nowMs to computeDecay (unchanged). Eval: 174 passed + 3 expected fail, plus real-corpus-eval passing alone (16 + 1 expected fail).
+
+## Eval results: Phase 8
+Docs only. Updated `operational/decay-guide.md`, added `changelog/v1-27-1-decay-day-clock.md`, KB fact `a-per-call-wall-clock-in-ranking-makes-near-ties-swap`, CHANGELOG 1.27.1; AGENTS.md regenerated from branch code (only the timestamp changed). `hewtd maintain --quick`: 10 errors, 120 warnings (117 before; the 3 extra are on the new docs/decay-guide, same class as existing warnings).

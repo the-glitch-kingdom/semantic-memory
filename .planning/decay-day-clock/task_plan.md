@@ -39,11 +39,11 @@ Release as 1.27.1 (patch).
   - [x] The healthcheck and lint decay paths (`src/core/healthcheck.ts`, `src/core/lint.ts`) still pass their own `nowMs` and are unaffected.
   - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
   - [x] Independent review of `git diff main...HEAD`.
-- [ ] Phase 8: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] The decay doc (find it: the one describing `computeDecay` / half-life, likely under `.documentation/operational/` or `architecture/`). Say that age is measured from the end of the current UTC day, so a score is fixed for the day.
-  - [ ] KB gotcha fact: a per-call wall clock in a ranking input makes near-tied docs swap between calls. `## Instead`: a quantized, injectable clock, plus a same-query-twice test.
-  - [ ] `CHANGELOG.md` 1.27.1, and `.documentation/changelog/v1-27-1-decay-day-clock.md`.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+- [x] Phase 8: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] The decay doc (find it: the one describing `computeDecay` / half-life, likely under `.documentation/operational/` or `architecture/`). Say that age is measured from the end of the current UTC day, so a score is fixed for the day.
+  - [x] KB gotcha fact: a per-call wall clock in a ranking input makes near-tied docs swap between calls. `## Instead`: a quantized, injectable clock, plus a same-query-twice test.
+  - [x] `CHANGELOG.md` 1.27.1, and `.documentation/changelog/v1-27-1-decay-day-clock.md`.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Start or end of the UTC day? The end (see Phase 3): a doc verified today must keep a positive age.
@@ -58,4 +58,4 @@ Release as 1.27.1 (patch).
 - Phase 7 review (claude -p): no bugs. Noted edge: a search straddling UTC midnight can use two clocks (one day of decay, ~0.2%); accepted, per Phase 3 decision. lint.ts, patch.ts and cli/index.ts keep computeDecay's own Date.now() by design.
 
 ## Status
-**Phases 1-7 done; next Phase 8.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
+**Phases 1-8 done; plan COMPLETE pending final PR.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.

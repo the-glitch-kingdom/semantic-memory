@@ -32,7 +32,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 41 | Release notes per version and phase |
+| [Changelog](#changelog) | 42 | Release notes per version and phase |
 | [Operational](#operational) | 19 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 7 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -243,6 +243,7 @@ purpose: Navigation hub for all documentation
 | [v1.25.1 - semantic-first skill refresh](changelog/v1-25-1-semantic-first-refresh.md) | reference | active | 2026-11-09 | What v1.25.1 changed (issue 81), what the tests now pin, and the trigger check that could not be measured. |
 | [v1.26.0 - default server names](changelog/v1-26-0-default-server-names.md) | reference | active | 2026-11-09 | What v1.26.0 changed about the server names written to .mcp.json, why existing projects need no action, and how to rename an old pair by hand. |
 | [v1.27.0 - limit-stable ranking](changelog/v1-27-0-limit-stable-ranking.md) | reference | active | 2026-11-09 | What v1.27.0 changed about ranking and limit, why two builds now rank the same, and the measured effect of exact search against 1.26.0. |
+| [v1.27.1 - decay day clock](changelog/v1-27-1-decay-day-clock.md) | reference | active | 2026-11-10 | What v1.27.1 changed about the decay clock, why near-tied notes no longer swap between calls, and the measured effect. |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
 | [v1.3 — confidence decay (age-aware retrieval ranking)](changelog/v1-3-confidence-decay.md) | reference | active | 2026-07-10 | What v1.3.0 added — smooth, type-aware confidence decay that down-weights stale notes in search ranking, verify_note to reset the clock, evergreen opt-out, and decay CLI introspection. |
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](changelog/v1-4-0-resident-bridge.md) | reference | active | 2026-07-10 | What v1.4.0 added — a golden eval harness, archive path-class down-weighting, injection hygiene for the vault-context block, a learned human-to-artifact lexicon with propose-and-confirm capture, verbatim symptom capture, two-tier query expansion, and a token-frugal tool surface. Tool count 41→42 (manage_lexicon). |
@@ -270,7 +271,7 @@ purpose: Navigation hub for all documentation
 |----------|------|--------|----------|---------|
 | [Capture Workflows](operational/capture-workflows.md) | guide | active | 2026-10-24 | synthesize_note, ingest_source, Stop-hook capture, /mode transitions — golden path |
 | [AGENTS.md contract guide](operational/contract-guide.md) | guide | active | 2026-05-09 | Operational guide to the AGENTS.md contract artifact. When to generate it, what it contains, how managed blocks work, what stays vs. regenerates, and how it interacts with CLAUDE.md. |
-| [Confidence Decay — Operating Guide](operational/decay-guide.md) | guide | active | 2026-07-10 | How to operate confidence decay day to day — read decay state, re-verify notes, tune half-lives, mark evergreen, and disable it. |
+| [Confidence Decay — Operating Guide](operational/decay-guide.md) | guide | active | 2026-11-10 | How to operate confidence decay day to day — read decay state, re-verify notes, tune half-lives, mark evergreen, and disable it. |
 | [Entity Dossiers — Operating Guide](operational/dossiers-guide.md) | guide | active | 2026-07-11 | How to operate v1.5.0 entity dossiers day to day — create them, accrete incidents and current state in place, understand two-hop retrieval, feed the lexicon via aliases, seed from babel-fish, and troubleshoot resolution misses. |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](operational/drift-detection.md) | guide | active | 2026-10-28 | Operational guide to drift detection. The fast-tier auto-check that fires on every SessionStart, the manual /healthcheck deep audit, what each finding means, and how to fix them. |
 | [Failure-time fact lookup — enabling it, writing findable facts, measuring it](operational/failure-lookup-guide.md) | guide | active | 2026-10-25 | How to turn on the opt-in PostToolUseFailure fact lookup, what it injects and when, how to write gotcha facts it can find (symptoms with the literal error), how it coexists with other failure hooks, and how to measure it on your own failures with eval-failures. |
