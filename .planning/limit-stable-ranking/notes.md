@@ -130,3 +130,48 @@ Note: once Phase 6 bumps to 1.27.0 the gate compares with 1.26.0 (main's ranking
 | first answer (mcp) | 1307 ms | 1333 ms |
 
 Same numbers on the cli and mcp arms. Dominance path: the top-3 slots one doc takes on questions it does not answer; no-export 44 (Phase 4 measured 38 vs 1.25.1). Not tuned. The user decides: widen the dominance/multi bands, or add a mitigation (a length prior, or a different coverage rule).
+
+## Eval results: Phase 6 (pool `max(24, limit*3)`, separate gates vs 1.26.0; raw: `branch-phase6.json`)
+All gate runs: fresh (no --cache), held-out gate sets (real-corpus, real-hub, long-section, long-section-hard, absent-terms, multi-hub), `scripts/eval-against-release.sh` / `gate-release.sh` shape, one heavy job at a time. Tuned on nothing.
+
+### Noise band: 1.26.0 from independent fresh builds
+Four fresh 1.26.0 builds in total (two dedicated runs, plus the 1.26.0 side of Gate A and Gate B). cli and mcp arms agree in every build.
+
+| metric | build 1 | build 2 | gap | (Gate A / B builds) |
+|---|---|---|---|---|
+| no-export hyb@1 | 73 | 73 | 0 | 73 / 73 |
+| multi@1 / @3 / @8 | 10 / 17 / 21 | 10 / 17 / 21 | 0 / 0 / 0 | same |
+| cov@3 | .776 | .776 | 0 | .776 |
+| dominance | 35 | 35 | 0 | 35 |
+| negatives flagged / false flags | 43 / 7 | 43 / 7 | 0 / 0 | same |
+| export hyb@1 | 78 | 78 | 0 | 78 |
+| export multi@3 / @8, dominance | 17 / 21, 26 | 17 / 21, 26 | 0 | same |
+
+So 1.26.0 is deterministic on this machine and corpus (as are the Phase 5 branch builds); the noise gap is 0 for every metric. Judged band per metric: max(1, 0) = 1, the same as the script's default. `BAND` was NOT widened: `BAND=${BAND:-1}` now lets a release pass a measured band, and the measured band is 1.
+
+### Gate A: determinism alone (main + Phase 5 `vector.ts` exact search + `reconcile.ts` sort, pool `limit*3`) vs 1.26.0
+RESULT: FAIL (band 1). no export (cli = mcp): hyb@1 74 vs 73, multi@1 10 vs 10, multi@3 16 vs 17, @8 20 vs 21, cov@3 .773 vs .776, **dominance 39 vs 35 (+4)**, negatives 43 vs 43, false flags 7 vs 7, mcp vs cli 0 of 166, titled #1 119/119. export: **hyb@1 76 vs 78 (-2)**, multi@1 10 vs 10, @3 17 vs 17, @8 20 vs 21, cov@3 .796 vs .776, dominance 27 vs 26, negatives/false flags same, 0 of 166.
+Exact search alone moves dominance by +4 (no export) and export hyb@1 by -2, beyond noise (gap 0). This is a real effect of HNSW being approximate: exact search returns the true top-k docs, so a broad doc (troubleshooting.md) reaches the vector arm's top-k more often. Recorded for the changelog; not reverted (user decision).
+
+### Gate B: full branch (pool 24) vs 1.26.0
+RESULT: FAIL, with numbers identical to Gate A in every row (no export: 74/10/16/20/.773/dom 39/neg 43/fals 7; export: 76/10/17/20/.796/dom 27/43/7; mcp vs cli 0 of 166; titled 119/119; first answer 1259 ms, export 1269 ms).
+Limit-8 rankings: all 166 gate-set questions, cli arm (`openSearch`) and mcp arm (`search_hybrid`), top 8 paths and order identical between Gate A and Gate B (0 of 332 differ), scores within 1e-4. Pool 24 at limit 8 is the same pool as `limit*3`, so the branch equals determinism alone at the default limit, as designed.
+Gap to 1.26.0 that remains (beyond a band of 1): dominance +4 (no export), export hyb@1 -2. Both come from exact search (Gate A), not from the pool. Judge by the user; no band widened, no threshold touched.
+
+### #1 accuracy by limit and limit-8 metrics (re-run of the Phase 4 script, branch with pool 24)
+| split | n | #1 at limits 1/3/5/8/10/20 | changed 3-10 | Phase 2 main | @1/@3/@8 | neg flagged | p50/p95 @8 |
+|---|---|---|---|---|---|---|---|
+| real-train | 27 | 21 at all | 0 | 21 at all | 21/27/27 | 11/12 | 10/44 ms |
+| real-heldout | 27 | 18 at all | 0 | 17/18/18/18/18/18 | 18/25/26 | 6/8 | 12/22 ms |
+| hub-train | 12 | 6 at all | 0 | 5/6/6/6/6/6 | 6/10/11 | 1/1 | 8/22 ms |
+| hub-heldout | 10 | 6 at all | 0 | 5/7/6/6/6/6 | 6/9/10 | 1/1 | 20/35 ms |
+#1 at limits 1-8 equals limit 8's on every set. Limit-8 metrics equal Phase 2's main baseline (21/27/27, 18/25/26, 6/10/11, 6/9/10). p95 is a single noisy pass (real-train 44 ms, hub-heldout 35 ms vs Phase 5's 17/13 ms; machine was busy right after the gate runs).
+
+### Follow-up for the larger-pool issue (to file at release time)
+Dominance (top-3 slots one doc takes on questions it does not answer), no export, held-out gate sets: 1.26.0 35; Phase 4 pool 60 (hnsw) 38 vs 1.25.1's 35; Phase 5 pool 60 + exact 44; Phase 6 exact + pool 24 (= Gate A) 39. Export: 26 / 27 / 30 / 27. Train-set dominance (docs-only, cli): 1.26.0 11, pool 40/60 14, pool 100 16. A larger pool pays off only once the coverage boost stops rewarding breadth; tune on train splits only, gate on dominance, own release.
+
+### Real-corpus slack
+Builds are deterministic from Phase 5 on (this machine); the +-1 slack in baseline.json and gate-release.sh stays (CI CPUs differ). Follow-up: it could be dropped.
+
+### Phase 6 validation
+Snapshot `test/fixtures/federation/single-source-snapshot.json` re-taken again (pool 24 changes 3 of the 10 queries' results; the rest identical). Lint, build, `npm test` (1149 passed + snapshot re-taken; stdin-eof timeout flake passed alone), `npm run eval` 173 passed + 4 expected fail.

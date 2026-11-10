@@ -14,7 +14,7 @@
 # Needs `npm run build` first. Takes ~6 min (4 clone indexes, 8 evals), never writes into the repo.
 set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-export BAND=1
+export BAND=${BAND:-1}
 cur=$(node -p "require('$REPO/package.json').version")
 prev="${1:-$(npm view @theglitchking/semantic-memory versions --json | node -e '
 const v=JSON.parse(require("fs").readFileSync(0,"utf8")),c=process.argv[1].split(".").map(Number);
