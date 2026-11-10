@@ -20,7 +20,7 @@ import { parseGolden } from "../retrieval-eval/eval.js";
 /**
  * Cold build: the first answer must equal the answer after the code graph has landed. Grounding (dead references, drift) multiplies
  * each doc's score, so an index that is ready before it lands ranks the first answers differently, and ranks 4 and 5 swap two seconds later.
- * code-graph-vault has docs whose grounding is below 1. The reproductions are `it.fails` until the cold path waits for the code load
+ * code-graph-vault has docs whose grounding is below 1. The reproductions were `it.fails` until the cold path waits for the code load
  * (whole-answer-ranking Phase 3), then plain `it`.
  */
 const FIXTURE = join(import.meta.dirname, "..", "fixtures", "code-graph-vault");
@@ -83,19 +83,19 @@ describe("cold build is final when it says ready (#90)", () => {
     return (await answers(c))!;
   };
 
-  it.fails("fullIndex() resolves only when the code graph has landed: not stale", async () => {
+  it("fullIndex() resolves only when the code graph has landed: not stale", async () => {
     ctx = await buildContext(notes, { reconcileThrottleMs: 0 });
     await ctx.fullIndex();
     expect(ctx.isStale()).toBe(false);
   }, 120_000);
 
-  it.fails("with waitForReady, the first answer equals the settled answer", async () => {
+  it("with waitForReady, the first answer equals the settled answer", async () => {
     const c = await connect(true);
     const first = (await answers(c))!;
     same(first, await settled(c));
   }, 120_000);
 
-  it.fails("without waitForReady, the first answer that is not 'Indexing in progress' equals the settled answer", async () => {
+  it("without waitForReady, the first answer that is not 'Indexing in progress' equals the settled answer", async () => {
     const c = await connect(false);
     let first: Hit[][] | null = null;
     await vi.waitFor(async () => { first = await answers(c); expect(first).not.toBeNull(); }, { timeout: 60_000, interval: 20 });

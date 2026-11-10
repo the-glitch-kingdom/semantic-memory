@@ -64,3 +64,6 @@ Reading them honestly:
 
 ### Phase 2 validation
 `npm run lint && npm run build && npm test`: 145 files passed (1158 passed, 3 expected fail). `npm run eval`: all passed except `real-corpus-eval.test.ts`, whose beforeAll hit its 600 s hook timeout once under load (the 23-file run); alone it passed in 3m21 (16 passed, 1 expected fail). Recorded as a load flake, no change.
+
+## Eval results: Phase 3
+No ranking numbers: measurement-free readiness fix. Cold-build tests (3) and code-load-order pass as plain `it`; the first answer after a cold build now equals the settled answer.

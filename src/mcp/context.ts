@@ -275,6 +275,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
    * `git log` never leaves a new vector index without doc metadata. Responses are marked stale until it lands.
    */
   let codePending = 0;
+  let lastCodeLoad: Promise<void> = Promise.resolve();
   function applyCode(docs: IndexedDocument[]): Promise<void> {
     codePending++;
     const before = JSON.stringify(docs.map((d) => d.grounding));
@@ -484,7 +485,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     manifest = plan.manifest;
     vectorIndex = next;
     setDocuments(docs);
-    void applyCode(docs);
+    lastCodeLoad = applyCode(docs);
     stale = false;
     dirty = true;
     // a forced rebuild is ready only once it is on disk (fullIndex), so "ready" always means a persisted index
@@ -559,18 +560,23 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   /** Write any pending change now (reindex, tests). */
   const flushIndex = () => serial(save);
 
+  let coldBuilding = false;
   function fullIndex(): Promise<void> {
     fullIndexing++;
     return serial(async () => {
+      coldBuilding = documents.length === 0;
       indexState = "indexing";
       indexProgress = { embedded: 0, total: 0 };
       await embedder.init();
       await sync(true);
+      // nothing was served before this, so ready waits for the code graph (grounding changes scores); warm swaps stay serve-then-stale (#73)
+      await lastCodeLoad;
       // a forced rebuild replaces whatever is on disk (unusable or stale), so it commits over the current generation
       generation = (await readMeta(indexPath))?.generation ?? 0;
       await save();
       indexState = "ready";
     }).finally(() => {
+      coldBuilding = false;
       fullIndexing--;
     });
   }
@@ -758,7 +764,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     },
     getCode: () => codeData,
     getCodeLoad: () => codeLoad,
-    getVectorIndex: () => vectorIndex,
+    getVectorIndex: () => (coldBuilding ? null : vectorIndex), // a cold build answers "Indexing in progress" until its code graph has landed
     getIndexState: () => indexState,
     getIndexProgress: () => indexProgress,
     tryLoadCachedIndex,

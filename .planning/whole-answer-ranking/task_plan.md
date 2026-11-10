@@ -27,15 +27,15 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
     - Also add about 8 train and 8 held-out identifier questions of the "What does <name> verify, and what does it return?" shape.
     - Record the main/1.27.1 numbers for them in notes.md (`## Eval results: Phase 2`). Floors come later, from the measured numbers.
     - Done: sets `whole-answer(-heldout).jsonl` (12+12, multi-hub fixture) and `identifier-tier(-heldout).jsonl` (8+8, new `test/fixtures/identifier-tier/`).
-- [ ] Phase 3: #90, scoring is final before the index says ready
-  - [ ] `fullIndex()` (src/mcp/context.ts:562) awaits the code load its sync started before setting `indexState = "ready"`. Track the last `applyCode` promise; don't reorder the #73 design (docs are installed first, code after).
+- [x] Phase 3: #90, scoring is final before the index says ready
+  - [x] `fullIndex()` (src/mcp/context.ts:562) awaits the code load its sync started before setting `indexState = "ready"`. Track the last `applyCode` promise; don't reorder the #73 design (docs are installed first, code after).
     - The `--wait-for-ready` path awaits it too (it calls `fullIndex`).
     - A failing or slow code load must not block forever: `loadCode` already catches. Keep that; time-box only if a test shows a hang.
-  - [ ] Warm swaps (reconcile, `loadFromDisk`) keep the #73 behavior: served at once and marked stale until the code lands. Only the cold path, where nothing was being served, waits. Record the decision.
-  - [ ] Readiness is visible: `get_stats` (or wherever index state is reported) says `stale`/`ready` truthfully while a code load is pending. Check what it reports today. Add a field only if nothing exposes it.
-  - [ ] The retrieval-eval runner and `gate-release.sh` wait for a non-stale answer (the `_meta.stale` flag or the stale note) before scoring, not just for a non-"Indexing" answer. Check `src/core/retrieval-eval/runner.ts:12`.
-  - [ ] The CLI `search` path loads code itself (src/cli/search.ts:174). Confirm it is not affected (no race there). Record it.
-  - [ ] Phase 2 #90 tests pass as plain `it`.
+  - [x] Warm swaps (reconcile, `loadFromDisk`) keep the #73 behavior: served at once and marked stale until the code lands. Only the cold path, where nothing was being served, waits. Record the decision.
+  - [x] Readiness is visible: `get_stats` (or wherever index state is reported) says `stale`/`ready` truthfully while a code load is pending. Check what it reports today. Add a field only if nothing exposes it.
+  - [x] The retrieval-eval runner and `gate-release.sh` wait for a non-stale answer (the `_meta.stale` flag or the stale note) before scoring, not just for a non-"Indexing" answer. Check `src/core/retrieval-eval/runner.ts:12`.
+  - [x] The CLI `search` path loads code itself (src/cli/search.ts:174). Confirm it is not affected (no race there). Record it.
+  - [x] Phase 2 #90 tests pass as plain `it`.
 - [ ] Phase 4: #91 part 1, an identifier tier after fusion
   - [ ] In `hybridRanked` (src/mcp/tools/search.ts:112), and the same step in CLI `search` (src/cli/search.ts:169), after fusion and coverage and before the reranker:
     - When the query has identifiers (`identifiers(query, known)`, the same detector `classifyQuery` uses) and at least one of them occurs in a searchable doc (`bm25.has` on its tokens, `hasJoined` for other spellings, the doc path words as `missingTerms` checks them), stably partition the candidates. Docs containing every such present identifier come first (`bm25.docHas` on all its tokens, or its path), then the rest, each group in its fused order.
@@ -104,8 +104,10 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - Each ranking change is gated separately against 1.27.1, then together (as #85 was).
 - Part 2 may ship off by default. #91 then stays open with numbers.
 
+- Phase 3: `fullIndex()` awaits the last `applyCode` promise before saving and setting ready (so the saved cache also holds the final grounding). The cold path is `documents.length === 0` at its start; there `getVectorIndex()` returns null until fullIndex ends, because search tools gate on the vector index existing, not on indexState. Warm swaps/reconcile/loadFromDisk are unchanged (#73). `get_stats` already reports `stale` from `isStale()` (codePending), so no new field. The eval runner already retries `_meta.stale` answers (runner.ts:16), so no change there. CLI `search` reads grounding from the saved cache and loads code only for the entity card, so no race. Graph tools (`search_graph`) gate on documents, so a cold build still answers them during the code load; not scored, left.
+
 ## Errors Encountered
 - Phase 2: the whole-answer rows leave little headroom on main (11/12 and 10/12 @1; hub docs hold both answers) and the identifier rows are 8/8 @1 already, so the eval counts alone cannot show the gains. Phase 4 reports "top-3 all identifier docs" (0/8 and 0/8 on main) and Phase 5 relies on the `multi-clause` fixture. Rows left as written.
 
 ## Status
-**Phase 3 next** (#90 readiness). Phase 2 done: failing tests and new eval rows are in; main's numbers are in notes.md (`## Eval results: Phase 2`).
+**Phase 4 next** (#91 part 1, identifier tier). Phases 2 and 3 done; #90 tests are plain `it`.
