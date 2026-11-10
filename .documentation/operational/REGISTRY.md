@@ -36,11 +36,11 @@ purpose: Quick reference for operational documentation
 
 ## Recently Updated
 
+- [Confidence Decay — Operating Guide](decay-guide.md) - 2026-11-10
 - [Federation guide](federation-guide.md) - 2026-11-08
 - [Retrieval Eval Guide](retrieval-eval-guide.md) - 2026-11-07
 - [Retrieval Tuning Guide](retrieval-tuning-guide.md) - 2026-11-07
 - [Search gaps - reading gaps and handing it to hewtd](search-gaps-guide.md) - 2026-11-07
-- [The skill loop — learned skills between sessions](skill-loop.md) - 2026-11-03
 
 ## By Status
 

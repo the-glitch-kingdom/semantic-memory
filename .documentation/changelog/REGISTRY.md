@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 41 |
+| Documents | 42 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -36,17 +36,17 @@ purpose: Quick reference for changelog documentation
 
 ## Recently Updated
 
+- [v1.27.1 - decay day clock](v1-27-1-decay-day-clock.md) - 2026-11-10
 - [v1.22.0 - MCP metadata gap and long sections](v1-22-0-mcp-metadata-gap-long-sections.md) - 2026-11-09
 - [v1.23.0 - abstention for product and tool names](v1-23-0-abstention-product-names.md) - 2026-11-09
 - [v1.24.0 - multi-doc recall measurement](v1-24-0-multi-doc-recall.md) - 2026-11-09
 - [v1.25.0 - abstention counts searchable docs and spelling variants](v1-25-0-abstention-variants.md) - 2026-11-09
-- [v1.25.1 - semantic-first skill refresh](v1-25-1-semantic-first-refresh.md) - 2026-11-09
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 41 |
+| active | 42 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

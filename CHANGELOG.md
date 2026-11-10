@@ -2,6 +2,18 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.27.1] - 2026-11-10 — decay day clock
+
+Issue #88. Details: `.documentation/changelog/v1-27-1-decay-day-clock.md`.
+
+### Fixed
+
+- Decay measured age from `Date.now()` in milliseconds, so a note's score moved in the 10th decimal between calls and near-tied notes could swap between calls, limits and builds. `decayForDoc` now defaults to `decayClock()`, the end of the current UTC day: a score is fixed for the day. Ranking counts are unchanged against 1.27.0 (`gate:release`, 0 of 166 mcp/cli differences).
+
+### Added
+
+- Knowledge-base facts on exact vector search returning k chunks (not k docs) and on per-call clocks in ranking.
+
 ## [1.27.0] - 2026-11-09 — limit-stable ranking
 
 Issue #85. Details: `.documentation/changelog/v1-27-0-limit-stable-ranking.md`.

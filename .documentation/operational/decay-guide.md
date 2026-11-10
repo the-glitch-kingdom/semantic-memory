@@ -5,7 +5,7 @@ domains: [operational]
 audience: [developers, admin]
 tags: [decay, confidence, verify_note, evergreen, ranking, last_verified]
 status: active
-last_updated: '2026-07-10'
+last_updated: '2026-11-10'
 version: '1.3.0'
 purpose: How to operate confidence decay day to day — read decay state, re-verify notes, tune half-lives, mark evergreen, and disable it.
 load_priority: 6
@@ -27,6 +27,8 @@ Decay keys on the `last_verified` frontmatter date. That date is set at note cre
 { "path": "gotchas/flaky-indexer.md", "score": 0.28,
   "decay": { "multiplier": 0.35, "age_days": 300, "effective_half_life": 180, "reason": "type=gotcha" } }
 ```
+
+Age is measured from the end of the current UTC day (`decayClock()` in `src/core/decay.ts`), not from the millisecond of the call, so a multiplier and a ranking are fixed for the whole day: the same query returns identical scores on every call, at every limit and across builds. A note verified today is fresh, and `age_days` steps by one at UTC midnight. See the [v1.27.1 changelog](../changelog/v1-27-1-decay-day-clock.md).
 
 Fresh notes have no block. Since v1.11 a note with no usable `last_verified` also carries a compact block `{ multiplier, age_days, source }` even at multiplier 1; `source` is `last_verified`, `git`, `mtime`, `penalty` or `fresh`. A low `multiplier` on a note that's still relevant is your signal to re-verify.
 
