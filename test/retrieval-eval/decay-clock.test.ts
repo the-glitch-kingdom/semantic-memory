@@ -34,8 +34,7 @@ describe("decay is stable within a UTC day", () => {
   });
 
   for (const tool of ["search_hybrid", "cli"]) {
-    // it.fails until Phase 3 makes decay read a day clock
-    it.fails(`${tool}: same query 40 ms apart, and at limit 5 vs 8, gives identical scores`, async () => {
+    it(`${tool}: same query 40 ms apart, and at limit 5 vs 8, gives identical scores`, async () => {
       vi.useFakeTimers({ toFake: ["Date"] });
       for (const q of QUERIES) {
         vi.setSystemTime(T0);

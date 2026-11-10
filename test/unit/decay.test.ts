@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { groundingBlock, groundingMultiplier, computeDecay, decayForDoc, normalizeVerifiedDate, DEFAULT_DECAY_CONFIG, type DecayConfig } from "../../src/core/decay.js";
+import { groundingBlock, groundingMultiplier, computeDecay, decayClock, decayForDoc, normalizeVerifiedDate, DEFAULT_DECAY_CONFIG, type DecayConfig } from "../../src/core/decay.js";
 
 const NOW = Date.parse("2026-07-10T00:00:00Z");
 function daysAgo(n: number): string {
@@ -187,8 +187,7 @@ describe("decayForDoc day clock (#88)", () => {
   afterEach(() => vi.useRealTimers());
   const doc = { frontmatter: { last_verified: "2026-06-01" } };
 
-  // expected to fail until Phase 3: the multiplier reads Date.now() in ms, so it drifts between calls
-  it.fails("gives one multiplier for every call on the same UTC day", () => {
+  it("gives one multiplier for every call on the same UTC day", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(Date.parse("2026-07-10T10:00:00Z"));
     const first = decayForDoc(doc, cfg()).multiplier;
@@ -196,7 +195,7 @@ describe("decayForDoc day clock (#88)", () => {
     expect(decayForDoc(doc, cfg()).multiplier).toBe(first);
   });
 
-  it.fails("keeps near-tied docs in the same order and scores 40 ms apart", () => {
+  it("keeps near-tied docs in the same order and scores 40 ms apart", () => {
     // A is older than B, so its multiplier is lower; B's base score is set so the two cross inside the 40 ms window
     const a = { frontmatter: { last_verified: "2026-06-01" } }, b = { frontmatter: { last_verified: "2026-06-02" } };
     const rank = () => [["a", 1, a], ["b", 0.9999999995, b]].map(([n, s, d]) => ({ n, score: (s as number) * decayForDoc(d as typeof a, cfg()).multiplier })).sort((x, y) => y.score - x.score);
@@ -207,5 +206,27 @@ describe("decayForDoc day clock (#88)", () => {
     const t1 = rank();
     expect(t1.map((r) => r.n)).toEqual(t0.map((r) => r.n));
     expect(t1.map((r) => r.score)).toEqual(t0.map((r) => r.score));
+  });
+
+  it("ends the UTC day, and a doc verified today or later today is not penalised", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.parse("2026-07-10T10:00:00Z"));
+    expect(decayClock()).toBe(Date.parse("2026-07-11T00:00:00Z"));
+    for (const lv of ["2026-07-10", "2026-07-10T09:00:00Z", "2026-07-10T23:00:00Z"]) {
+      const d = decayForDoc({ frontmatter: { last_verified: lv } }, cfg());
+      expect(d.block?.source ?? "last_verified").toBe("last_verified");
+      expect(d.multiplier).toBeGreaterThan(0.99);
+    }
+    // tomorrow is still the future, so it takes the fallback
+    expect(decayForDoc({ frontmatter: { last_verified: "2026-07-11" } }, { ...cfg(), missing_last_verified: "penalty" }).block?.source).toBe("penalty");
+  });
+
+  it("moves exactly one day across UTC midnight", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.parse("2026-07-10T23:59:59Z"));
+    const before = decayForDoc(doc, cfg()).multiplier;
+    vi.setSystemTime(Date.parse("2026-07-11T00:00:01Z"));
+    const hl = cfg().default_half_life_days;
+    expect(decayForDoc(doc, cfg()).multiplier / before).toBeCloseTo(Math.pow(0.5, 1 / hl), 10);
   });
 });

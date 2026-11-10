@@ -21,3 +21,6 @@ The reporter (1.27.0, 4 cold builds, 59 questions): 1 question swaps ranks 4 and
 ## Eval results: Phase 2
 No ranking numbers (tests only). Un-`fails`-ed, all four cases fail on 1.27.0 by sub-1e-9 score drift 40 ms apart (e.g. 0.4683146373095556 vs 0.4683146368978217 for search_hybrid and CLI; unit 0.9278793492164188 vs 0.9278793500321937).
 The unit near-tie case shows score drift but the order did not flip with my guessed base ratio; it still pins score equality. The eval file covers search_hybrid and CLI (not search_semantic), limit 5 vs 8 scores.
+
+## Eval results: Phase 3
+No ranking numbers. The 4 Phase 2 cases are plain `it` and pass; added unit cases for end-of-day clock, verified-today not penalised, future date, one-day step across midnight UTC.

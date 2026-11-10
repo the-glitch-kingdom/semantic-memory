@@ -190,12 +190,21 @@ export interface DecayBlock {
 }
 
 /**
+ * The ranking clock: the END of the current UTC day, so a score is fixed for the day and near-ties cannot swap between calls (#88).
+ * The end, not the start: a doc verified today (midnight UTC) must keep a positive age, as `computeDecay` treats age <= 0 as unusable.
+ */
+export function decayClock(): number {
+  return (Math.floor(Date.now() / MS_PER_DAY) + 1) * MS_PER_DAY;
+}
+
+/**
  * Decay for an indexed doc, shared by the MCP server and the CLI so both rank alike. `block` is what an agent is shown: present when
  * the note is down-weighted or its age came from a fallback (even at 1.0), so healthy results stay clean.
  */
 export function decayForDoc(
   doc: { frontmatter?: Record<string, unknown>; gitDate?: string; mtime?: string; grounding?: Grounding },
-  config: DecayConfig
+  config: DecayConfig,
+  nowMs: number = decayClock()
 ): { multiplier: number; block?: DecayBlock; grounding?: ReturnType<typeof groundingBlock> } {
   const fm = doc.frontmatter ?? {};
   const d = computeDecay({
@@ -203,6 +212,7 @@ export function decayForDoc(
     last_verified: normalizeVerifiedDate(fm.last_verified),
     evergreen: fm.evergreen === true,
     config,
+    nowMs,
     fallback_date: config.missing_last_verified === "git" ? doc.gitDate : doc.mtime,
   });
   // the block reports the age decay alone; the score carries grounding on top
