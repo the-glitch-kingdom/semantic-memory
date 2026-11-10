@@ -20,10 +20,10 @@ Release as 1.27.1 (patch).
   - [x] Eval and release check: they must give the same numbers whatever the time of day. If eval or `gate-release.sh` compare runs taken minutes apart that could straddle midnight UTC, pin the clock, e.g. with an env override such as `SEMANTIC_MEMORY_NOW` read once in `decayClock()`. Add the override only if a real straddle risk exists, and record the decision.
     - Decided: no override. The only other per-call clocks are context.ts:439 (a boolean flag) and :693 (a citation cache TTL); neither moves a score. Midnight straddle moves a score by one day of decay (a ~0.2% step at 365d), not a tie-break flip risk worth an env knob.
   - [x] Phase 2 tests pass as plain `it`.
-- [ ] Phase 4: Measure
-  - [ ] Run the #85 per-limit script (`.planning/.archive/limit-stable-ranking/measure-limits.test.ts`, if present locally, or its equivalent) on the branch: #1 accuracy and eval metrics at limit 8 must be identical to 1.27.0's (21/18/6/6; all @1/@3/@8 as in that notes.md). Decay moves only at day granularity, so expect no change; record any difference.
-  - [ ] Build twice on this repo's `.documentation`: 0 differing top-8 results. The same query 20 times in one process: identical scores.
-  - [ ] `npm run gate:release` (fresh, BAND=1) vs 1.27.0 passes.
+- [x] Phase 4: Measure
+  - [x] Run the #85 per-limit script (`.planning/.archive/limit-stable-ranking/measure-limits.test.ts`, if present locally, or its equivalent) on the branch: #1 accuracy and eval metrics at limit 8 must be identical to 1.27.0's (21/18/6/6; all @1/@3/@8 as in that notes.md). Decay moves only at day granularity, so expect no change; record any difference.
+  - [x] Build twice on this repo's `.documentation`: 0 differing top-8 results. The same query 20 times in one process: identical scores.
+  - [x] `npm run gate:release` (fresh, BAND=1) vs 1.27.0 passes.
 - [ ] Phase 5: Release prep, plus #85's leftovers
   - [ ] Bump all five version fields to 1.27.1, plus the lockfile.
   - [ ] KB gotcha fact (left over from #85): exact vector search must return the k nearest chunks, not k docs. Returning k docs widened the vector pool and raised dominance (39 vs 35). `## Instead`: truncate to k chunks, then group by doc. `test/unit/vector-exact.test.ts` pins it.
@@ -55,4 +55,4 @@ Release as 1.27.1 (patch).
 ## Errors Encountered
 
 ## Status
-**Phases 1-3 done; next Phase 4.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
+**Phases 1-4 done; next Phase 5.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
