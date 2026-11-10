@@ -68,9 +68,9 @@ Release as 1.27.0: ranking changes for every caller.
   - [x] Real-corpus slack: from this release on, builds are deterministic. Keep the ±1 slack (CI CPUs differ), and note it as a follow-up.
   - [x] Built-in eval and per-limit #1 accuracy: re-run the Phase 4 script. #1 accuracy at limits 1–8 must equal limit 8's on every set. Record the numbers next to Phase 2's baseline.
   - [x] Follow-up (an issue filed at release time by the main session, not by this phase): a larger pool only pays off once the coverage boost stops rewarding breadth in a bigger pool. Tune it on train splits only, gate it on dominance, and ship it in its own release. Put the Phase 4/5 dominance numbers in notes.md for that issue.
-- [ ] Phase 7: The reporter's nit, plus release prep
-  - [ ] `hooks/reconcile.js` header comment (lines ~21-23): it still says the docs entry "stays semantic-sidekick". Make it describe `DOCS_KEY = "semantic-memory-docs"` and the legacy name.
-  - [ ] Bump all five version fields to 1.27.0, plus the lockfile. The offline tarball is deferred to release.
+- [x] Phase 7: The reporter's nit, plus release prep
+  - [x] `hooks/reconcile.js` header comment (lines ~21-23): it still says the docs entry "stays semantic-sidekick". Make it describe `DOCS_KEY = "semantic-memory-docs"` and the legacy name.
+  - [x] Bump all five version fields to 1.27.0, plus the lockfile. The offline tarball is deferred to release. (gate:release run fresh with BAND=1, the band Phase 6 recorded: RED, same numbers as Phase 6; see notes.)
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2 tests pass, and none are left as `it.fails`.
@@ -117,4 +117,4 @@ Phase 6: Gate A (exact search + sorted parse, pool limit*3) and Gate B (full bra
 (Phase 3: none. Other `* 3` sites: only `GRAPH_SEARCH_SEEDS * 3` in search_graph, a constant independent of `limit`, left as is. ef = max(100, 60) = 100 >= pool, so recall is unchanged. The trial script `repro.sh` was not copied: limit-stable.test.ts covers it.)
 
 ## Status
-**Phase 6 done (pool 24, separate gates). Gate A and B both RED vs 1.26.0 with identical numbers: dominance 39 vs 35, export hyb@1 76 vs 78; noise gap 0; caused by exact search, not the pool. Next: Phase 7.** Earlier: **Phase 5 done (exact search + sorted parse order); gate vs 1.26.0 RED (dominance 44 vs 35, multi @8 19 vs 21, export hyb@1 75 vs 78): needs the user's decision before Phase 6.** (Phase 4 gate was red too.) Phase 1 done. Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.
+**Phase 7 done (reconcile.js comment, 1.27.0 bump in all five fields + lockfile). `npm run gate:release` at 1.27.0 vs 1.26.0, BAND=1, fresh: FAIL (dominance 39 vs 35; export hyb@1 76 vs 78), awaiting the user's decision. Next: Phase 8.** Earlier: **Phase 6 done (pool 24, separate gates). Gate A and B both RED vs 1.26.0 with identical numbers: dominance 39 vs 35, export hyb@1 76 vs 78; noise gap 0; caused by exact search, not the pool. Next: Phase 7.** Earlier: **Phase 5 done (exact search + sorted parse order); gate vs 1.26.0 RED (dominance 44 vs 35, multi @8 19 vs 21, export hyb@1 75 vs 78): needs the user's decision before Phase 6.** (Phase 4 gate was red too.) Phase 1 done. Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.

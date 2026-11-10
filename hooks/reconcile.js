@@ -19,10 +19,10 @@
 // Package-name resolution (post-1.1.1):
 //   Prefer the rebranded `@theglitchking/semantic-memory`. Fall back to the
 //   legacy `@theglitchking/semantic-sidekick` if the new package isn't
-//   installed — supports machines mid-migration. The DOCS_KEY entry name
-//   stays "semantic-sidekick" for backwards-compat with existing .mcp.json
-//   entries; renaming it would orphan user state without offering a
-//   meaningful behavioral upgrade.
+//   installed — supports machines mid-migration. The docs entry is
+//   DOCS_KEY = "semantic-memory-docs"; an entry under the legacy name
+//   "semantic-sidekick" is still recognized (LEGACY_DOCS_KEY) so existing
+//   .mcp.json files keep working.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";

@@ -175,3 +175,9 @@ Builds are deterministic from Phase 5 on (this machine); the +-1 slack in baseli
 
 ### Phase 6 validation
 Snapshot `test/fixtures/federation/single-source-snapshot.json` re-taken again (pool 24 changes 3 of the 10 queries' results; the rest identical). Lint, build, `npm test` (1149 passed + snapshot re-taken; stdin-eof timeout flake passed alone), `npm run eval` 173 passed + 4 expected fail.
+
+## Eval results: Phase 7
+`BAND=1 npm run gate:release` (fresh, no --cache, 1.27.0 vs 1.26.0; Phase 6 recorded band 1): FAIL. Identical to Phase 6.
+no export (cli = mcp): hyb@1 74 vs 73, multi@3 16 vs 17, @8 20 vs 21, cov@3 .773 vs .776, dominance 39 vs 35 (FAIL), negatives 43 vs 43, false flags 7 vs 7, mcp vs cli 0 of 166, titled 119/119.
+export: hyb@1 76 vs 78 (FAIL), multi@3 17 vs 17, @8 20 vs 21, cov@3 .796 vs .776, dominance 27 vs 26, 0 of 166.
+No band or threshold changed. Cause is exact search (Phase 6 Gate A); the user decides.
