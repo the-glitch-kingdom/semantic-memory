@@ -56,6 +56,8 @@ export async function reconcile(notesPath: string, prev: Manifest): Promise<Reco
     })
   );
 
+  // completion order is I/O timing; the index is built in this order and HNSW is order-sensitive (#85)
+  parse.sort();
   const onDisk = new Set(files);
   const gone = Object.keys(prev).filter((f) => !onDisk.has(f));
   return { parse, gone, manifest, changed: changed || gone.length > 0 };

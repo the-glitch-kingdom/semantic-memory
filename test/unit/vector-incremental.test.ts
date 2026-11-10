@@ -54,4 +54,22 @@ describe("VectorIndex incremental updates", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("an index loaded past the exact threshold stays on HNSW through removeDoc and addChunks", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "vec-"));
+    try {
+      const names = Array.from({ length: 30 }, (_, i) => `n${i}`);
+      const ix = new VectorIndex(D);
+      ix.build(names.map((_, i) => unit(i)), names.map((p) => meta(p)));
+      await ix.save(dir);
+      const loaded = new VectorIndex(D, 1, 20);
+      await loaded.load(dir);
+      for (const p of names.slice(10)) loaded.removeDoc(p); // 10 live, but 30 slots: still HNSW
+      loaded.addChunks([unit(40)], [meta("fresh")]);
+      expect(loaded.search(unit(40), 5).map((r) => r.path)).toContain("fresh");
+      expect(loaded.search(unit(3), 20).length).toBe(11);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

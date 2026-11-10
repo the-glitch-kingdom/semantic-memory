@@ -2,6 +2,21 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.27.0] - 2026-11-09 — limit-stable ranking
+
+Issue #85. Details: `.documentation/changelog/v1-27-0-limit-stable-ranking.md`.
+
+### Changed
+
+- The prefix rule now holds up to limit 8: limits 1-8 rank like limit 8 (same order and scores) for `search_hybrid`, `search_semantic` and CLI `search`. Both arms fetch `max(24, limit * 3)` candidates; above 8 the pool grows. The MCP default `limit` is 10, so a call with no `limit` is not a prefix of `limit: 5`.
+- Two builds of the same files rank identically: vector search is exact below 100,000 chunks (ties by path, then label), and `reconcile` sorts its parse list. The cause was insertion order: files were queued in stat/read completion order, so HNSW was built in I/O-timing order.
+- Measured against 1.26.0 (held-out gate sets; 1.26.0's own build-to-build gap was 0, so the band is 1): `gate:release` passes. hyb@1, multi@1/3/8, cov@3, negatives and false flags are identical in both arms; dominance is 36 vs 35 without export and 26 vs 26 with it. Exact search returns the k nearest chunks, as HNSW does: a first version that returned k docs widened the vector pool and raised dominance to 39.
+- `scripts/gate-release.sh` accepts `BAND=<n>`.
+
+### Fixed
+
+- `hooks/reconcile.js` header comment describes `semantic-memory-docs` and the legacy `semantic-sidekick` name.
+
 ## [1.26.0] - 2026-11-09 — default server names
 
 Issue #81 follow-up. Details: `.documentation/changelog/v1-26-0-default-server-names.md`.

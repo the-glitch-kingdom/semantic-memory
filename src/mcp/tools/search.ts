@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { applyCoverage } from "../../core/rank.js";
-import { fuseScores } from "../../core/bm25.js";
+import { candidatePool, fuseScores } from "../../core/bm25.js";
 import { missingTerms, passingTerms } from "../../core/identifiers.js";
 import { entityCard, knownToCode, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
@@ -117,8 +117,8 @@ async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnT
     rs
       .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
       .sort((a, b) => b.score - a.score);
-  const semanticResults = adjust(vectorIndex.search(queryEmbed, limit * 3));
-  let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, limit * 3))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
+  const semanticResults = adjust(vectorIndex.search(queryEmbed, candidatePool(limit)));
+  let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, candidatePool(limit)))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
   hybrid = ctx.filterPathClass(hybrid);
 
   hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);
@@ -127,6 +127,7 @@ async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnT
   if (tier) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.tier === tier);
   if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
 
+  // reranks max(RERANK_TOP, limit): independent of limit for limit <= RERANK_TOP
   if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
   // path members that were not hits must pass the same filters as the hits
   const allowed = (p: string) => {
@@ -170,7 +171,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       }
       const queryEmbed = await ctx.embedder.embedQuery(query);
       await ctx.refreshUsageBoost();
-      let results = vectorIndex.search(queryEmbed, limit * 3);
+      let results = vectorIndex.search(queryEmbed, candidatePool(limit));
       results = results.map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))));
       results.sort((a, b) => b.score - a.score);
       results = ctx.filterPathClass(results);

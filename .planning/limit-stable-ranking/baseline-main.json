@@ -1,0 +1,404 @@
+{
+  "real-train": {
+    "n": 27,
+    "at1": {
+      "1": 21,
+      "3": 21,
+      "5": 21,
+      "8": 21,
+      "10": 21,
+      "20": 21
+    },
+    "changedAcross3to10": 1,
+    "changedIds": [
+      "p01"
+    ],
+    "p95Ms": 38,
+    "p50Ms": 16,
+    "metrics": {
+      "tiers": {
+        "exact": {
+          "n": 10,
+          "at": {
+            "1": 9,
+            "3": 10,
+            "8": 10
+          },
+          "expandedAt1": 10,
+          "pathAt1": 9
+        },
+        "all": {
+          "n": 27,
+          "at": {
+            "1": 21,
+            "3": 27,
+            "8": 27
+          },
+          "expandedAt1": 24,
+          "pathAt1": 21
+        },
+        "paraphrase": {
+          "n": 8,
+          "at": {
+            "1": 5,
+            "3": 8,
+            "8": 8
+          },
+          "expandedAt1": 5,
+          "pathAt1": 5
+        },
+        "multi": {
+          "n": 9,
+          "at": {
+            "1": 7,
+            "3": 9,
+            "8": 9
+          },
+          "expandedAt1": 9,
+          "pathAt1": 7
+        }
+      },
+      "negativeTop": [
+        0.30000000000000004,
+        0.23785581131897285,
+        0.40016540424570923,
+        0.2849380026379137,
+        0.5770961218711558,
+        0.3295480986234428,
+        0.5733536695945916,
+        0.30000000000000004,
+        0.4674412001647469,
+        0.5664956286836875,
+        0.49154944622209806,
+        0.34634893129989386
+      ],
+      "archiveHits": 0,
+      "meanBytes": 7991,
+      "negativesFlagged": 11,
+      "answeredFlagged": 1,
+      "answerableFlagged": 1,
+      "relatedPerTop": 1.2592592592592593,
+      "expectedN": 0,
+      "foundAt": {
+        "1": 0,
+        "3": 0,
+        "8": 0
+      },
+      "mrr": 0,
+      "latencyMs": {
+        "p50": 16.01246600000013,
+        "p95": 37.962670000008075
+      },
+      "cov": {
+        "facet": {
+          "1": 0.8888888888888888,
+          "3": 1,
+          "8": 1
+        },
+        "docs": {
+          "1": 0,
+          "3": 0,
+          "8": 0
+        }
+      },
+      "dominance": {
+        "path": "troubleshooting/troubleshooting.md",
+        "slots": 11
+      }
+    }
+  },
+  "real-heldout": {
+    "n": 27,
+    "at1": {
+      "1": 17,
+      "3": 18,
+      "5": 18,
+      "8": 18,
+      "10": 18,
+      "20": 18
+    },
+    "changedAcross3to10": 0,
+    "changedIds": [],
+    "p95Ms": 33,
+    "p50Ms": 19,
+    "metrics": {
+      "tiers": {
+        "paraphrase": {
+          "n": 17,
+          "at": {
+            "1": 12,
+            "3": 16,
+            "8": 17
+          },
+          "expandedAt1": 12,
+          "pathAt1": 12
+        },
+        "all": {
+          "n": 27,
+          "at": {
+            "1": 18,
+            "3": 25,
+            "8": 26
+          },
+          "expandedAt1": 20,
+          "pathAt1": 18
+        },
+        "exact": {
+          "n": 4,
+          "at": {
+            "1": 2,
+            "3": 4,
+            "8": 4
+          },
+          "expandedAt1": 4,
+          "pathAt1": 2
+        },
+        "multi": {
+          "n": 6,
+          "at": {
+            "1": 4,
+            "3": 5,
+            "8": 5
+          },
+          "expandedAt1": 4,
+          "pathAt1": 4
+        }
+      },
+      "negativeTop": [
+        0.5043024912692278,
+        0.3080113617554931,
+        0.4139862766701883,
+        0.3888874165970158,
+        0.496769766466731,
+        0.35472946755918977,
+        0.4881724372944329,
+        0.5384547404260521
+      ],
+      "archiveHits": 0,
+      "meanBytes": 7577,
+      "negativesFlagged": 6,
+      "answeredFlagged": 1,
+      "answerableFlagged": 3,
+      "relatedPerTop": 0.8518518518518519,
+      "expectedN": 0,
+      "foundAt": {
+        "1": 0,
+        "3": 0,
+        "8": 0
+      },
+      "mrr": 0,
+      "latencyMs": {
+        "p50": 18.953296000006958,
+        "p95": 32.6532220000081
+      },
+      "cov": {
+        "facet": {
+          "1": 0.6666666666666666,
+          "3": 0.9166666666666666,
+          "8": 0.9166666666666666
+        },
+        "docs": {
+          "1": 0,
+          "3": 0,
+          "8": 0
+        }
+      },
+      "dominance": {
+        "path": "troubleshooting/troubleshooting.md",
+        "slots": 14
+      }
+    }
+  },
+  "hub-train": {
+    "n": 12,
+    "at1": {
+      "1": 5,
+      "3": 6,
+      "5": 6,
+      "8": 6,
+      "10": 6,
+      "20": 6
+    },
+    "changedAcross3to10": 0,
+    "changedIds": [],
+    "p95Ms": 32,
+    "p50Ms": 17,
+    "metrics": {
+      "tiers": {
+        "exact": {
+          "n": 4,
+          "at": {
+            "1": 3,
+            "3": 4,
+            "8": 4
+          },
+          "expandedAt1": 4,
+          "pathAt1": 3
+        },
+        "all": {
+          "n": 12,
+          "at": {
+            "1": 6,
+            "3": 10,
+            "8": 11
+          },
+          "expandedAt1": 9,
+          "pathAt1": 7
+        },
+        "paraphrase": {
+          "n": 4,
+          "at": {
+            "1": 1,
+            "3": 2,
+            "8": 3
+          },
+          "expandedAt1": 3,
+          "pathAt1": 1
+        },
+        "multi": {
+          "n": 4,
+          "at": {
+            "1": 2,
+            "3": 4,
+            "8": 4
+          },
+          "expandedAt1": 2,
+          "pathAt1": 3
+        }
+      },
+      "negativeTop": [
+        0.30000000000000004
+      ],
+      "archiveHits": 0,
+      "meanBytes": 8060,
+      "negativesFlagged": 1,
+      "answeredFlagged": 0,
+      "answerableFlagged": 0,
+      "relatedPerTop": 1.6666666666666667,
+      "expectedN": 0,
+      "foundAt": {
+        "1": 0,
+        "3": 0,
+        "8": 0
+      },
+      "mrr": 0,
+      "latencyMs": {
+        "p50": 17.05145299999276,
+        "p95": 32.27966600000218
+      },
+      "cov": {
+        "facet": {
+          "1": 0.75,
+          "3": 1,
+          "8": 1
+        },
+        "docs": {
+          "1": 0,
+          "3": 0,
+          "8": 0
+        }
+      },
+      "dominance": {
+        "path": "architecture/what-gets-indexed.md",
+        "slots": 3
+      }
+    }
+  },
+  "hub-heldout": {
+    "n": 10,
+    "at1": {
+      "1": 5,
+      "3": 7,
+      "5": 6,
+      "8": 6,
+      "10": 6,
+      "20": 6
+    },
+    "changedAcross3to10": 1,
+    "changedIds": [
+      "hub-h09"
+    ],
+    "p95Ms": 33,
+    "p50Ms": 16,
+    "metrics": {
+      "tiers": {
+        "exact": {
+          "n": 3,
+          "at": {
+            "1": 2,
+            "3": 3,
+            "8": 3
+          },
+          "expandedAt1": 3,
+          "pathAt1": 2
+        },
+        "all": {
+          "n": 10,
+          "at": {
+            "1": 6,
+            "3": 9,
+            "8": 10
+          },
+          "expandedAt1": 9,
+          "pathAt1": 6
+        },
+        "paraphrase": {
+          "n": 3,
+          "at": {
+            "1": 1,
+            "3": 2,
+            "8": 3
+          },
+          "expandedAt1": 2,
+          "pathAt1": 1
+        },
+        "multi": {
+          "n": 4,
+          "at": {
+            "1": 3,
+            "3": 4,
+            "8": 4
+          },
+          "expandedAt1": 4,
+          "pathAt1": 3
+        }
+      },
+      "negativeTop": [
+        0.5824644809131858
+      ],
+      "archiveHits": 0,
+      "meanBytes": 8150,
+      "negativesFlagged": 1,
+      "answeredFlagged": 0,
+      "answerableFlagged": 0,
+      "relatedPerTop": 1.5,
+      "expectedN": 0,
+      "foundAt": {
+        "1": 0,
+        "3": 0,
+        "8": 0
+      },
+      "mrr": 0,
+      "latencyMs": {
+        "p50": 16.325070000006235,
+        "p95": 33.006205999990925
+      },
+      "cov": {
+        "facet": {
+          "1": 0.875,
+          "3": 1,
+          "8": 1
+        },
+        "docs": {
+          "1": 0,
+          "3": 0,
+          "8": 0
+        }
+      },
+      "dominance": {
+        "path": "troubleshooting/troubleshooting.md",
+        "slots": 4
+      }
+    }
+  }
+}

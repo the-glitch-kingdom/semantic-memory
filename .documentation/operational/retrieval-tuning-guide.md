@@ -35,13 +35,15 @@ Since v1.9.0 `search_hybrid` is the tool to ask a question with. This guide cove
 
 ## How a query is ranked
 
-1. **Vector arm**: cosine over chunk embeddings (one result per doc). Since v1.10 a doc's score is `max(best body cosine, meta_weight x best metadata cosine)`, where metadata chunks are the embedded `purpose` / `summary` / `description` and each symptom phrase (below). HNSW runs with `ef = max(100, k)` so recall vs exact cosine is 0.999 ([KB fact](../knowledge-base/facts/hnswlib-ef-defaults-to-10.md)).
+1. **Vector arm**: cosine over chunk embeddings (one result per doc). Since v1.10 a doc's score is `max(best body cosine, meta_weight x best metadata cosine)`, where metadata chunks are the embedded `purpose` / `summary` / `description` and each symptom phrase (below). Since v1.27 the search is exact (brute-force cosine, ties by doc path then label) while the index holds at most 100,000 live chunks, so two builds of the same files rank the same; above that HNSW runs with `ef = max(100, k)` (recall vs exact cosine 0.999, [KB fact](../knowledge-base/facts/hnswlib-ef-defaults-to-10.md)). See [indices and storage](../architecture/indices-and-storage.md#exact-search-v127).
 2. **Lexical arm**: an in-house BM25 index (`src/core/bm25.ts`, no dependency). Each chunk is indexed with its doc's field text (v1.10: `title`, `purpose`, `summary`, `description`, `keywords`, `tags`, `symptoms`) and path tokens (split on `/ . - _`) prepended; the returned text is unchanged. A chunk counts only when it matches at least `min(2, query terms)` query terms.
 3. **Boosts on each list before fusion**: `load_priority`, confidence decay, usage boost and `path_class` multipliers.
 4. **Score fusion** per doc (best chunk): `0.7 * cosine + 0.3 * bm25 / max(bm25 over candidates)`. With no BM25 hits the order is pure cosine. Rank-only RRF was replaced because it let a weak lexical arm displace a strong #1 ([KB fact](../knowledge-base/facts/rank-only-rrf-lets-a-weak-arm-displace-a-strong-first.md)). The 0.7 weight was swept on the train splits only and left at 0.7.
 5. **Graph boost**: removed in v1.11.0 (see Trials below).
 6. **Content-hash dedup**: a live doc and a byte-identical archived copy collapse to the live one.
 7. **Optional cross-encoder rerank** (off by default, below).
+
+**Candidate pool (v1.27, #85).** Both arms fetch `candidatePool(limit) = max(24, limit * 3)` docs (`src/core/bm25.ts`), so ranking does not depend on `limit` for `limit <= 8`: `search(q, k)` is the first k of `search(q, 8)`, with the same scores. Above 8 the pool grows with `limit`. The MCP default `limit` is 10 (pool 30), so a call with no `limit` is not a prefix of an explicit `limit: 5`; pass an explicit limit of 8 or less when you need the guarantee. Why: a pool sized by `limit` made a doc outside one arm's pool lose that arm's score, so fused and coverage scores moved with `limit` ([KB fact](../knowledge-base/facts/a-candidate-pool-sized-by-limit-makes-ranking-depend-on-limit.md)). A larger pool is a follow-up: it needs the coverage boost to stop rewarding breadth first.
 
 Between 4 and 5 sits an optional whole-doc **coverage** boost and **link prior** (`ranking:`), both off by default (below).
 

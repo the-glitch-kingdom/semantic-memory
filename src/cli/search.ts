@@ -9,7 +9,7 @@ import { VectorIndex } from "../core/vector.js";
 import { TextSearch } from "../core/search-text.js";
 import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
-import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, fuseScores } from "../core/bm25.js";
+import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, candidatePool, fuseScores } from "../core/bm25.js";
 import { identifiers, missingTerms, passingTerms } from "../core/identifiers.js";
 import { entityCard, knownToCode, loadCodeData, loadExport, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
 import { fold } from "../core/fold.js";
@@ -153,7 +153,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
   return {
     async search(query, limit = 8) {
       const queryEmbed = await embedder.embedQuery(query);
-      const semantic = vectorIndex.search(queryEmbed, limit * 3);
+      const semantic = vectorIndex.search(queryEmbed, candidatePool(limit));
 
       // same order as search_hybrid: each arm adjusted, then fused (the CLI skips usage boosts)
       const adjust = (rs: SearchHitRaw[]) =>
@@ -166,7 +166,7 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
           })
           .sort((a, b) => b.score - a.score);
       const filtered = filterPathClass(
-        applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, limit * 3))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
+        applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, candidatePool(limit)))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
         pathClass
       );
       const all = withConfidence(opts.granularity === "doc" ? filtered : fold(filtered, docByPath, exported()));
