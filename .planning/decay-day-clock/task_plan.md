@@ -7,9 +7,9 @@ Release as 1.27.1 (patch).
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Reproduce first, as failing tests (expected-fail until fixed)
-  - [ ] Unit (`test/unit/decay.test.ts`): `decayForDoc` on the same doc, called twice with a real clock 20+ ms apart (or with `vi.useFakeTimers` advancing 40 ms within one UTC day), returns an identical multiplier. Fails on main.
-  - [ ] Ranking: two docs whose decayed scores tie to within 1e-9. The same query run twice in one process, and at limit 5 vs 8, returns identical scores and order (`search_hybrid` and CLI `search`). Build the near-tie with fake timers, or by injecting the clock, whichever needs no sleeps. Mark failing cases `it.fails`.
+- [x] Phase 2: Reproduce first, as failing tests (expected-fail until fixed)
+  - [x] Unit (`test/unit/decay.test.ts`): `decayForDoc` on the same doc, called twice with a real clock 20+ ms apart (or with `vi.useFakeTimers` advancing 40 ms within one UTC day), returns an identical multiplier. Fails on main.
+  - [x] Ranking (`test/retrieval-eval/decay-clock.test.ts`, `it.fails`, fake Date; plus the near-tie unit case in decay.test.ts): two docs whose decayed scores tie to within 1e-9. The same query run twice in one process, and at limit 5 vs 8, returns identical scores and order (`search_hybrid` and CLI `search`). Build the near-tie with fake timers, or by injecting the clock, whichever needs no sleeps. Mark failing cases `it.fails`.
 - [ ] Phase 3: The day clock
   - [ ] `decayForDoc(doc, config, nowMs = decayClock())`, keeping `nowMs` injectable. `decayClock()` returns the END of the current UTC day: `(Math.floor(Date.now() / MS_PER_DAY) + 1) * MS_PER_DAY`.
     - Why the end, not the start: `computeDecay` treats age ≤ 0 as missing or in the future (`!(ageDays > 0)`). With the start of the day, a doc verified today (date-only `last_verified` = midnight UTC) would get age exactly 0 and fall to the fallback or penalty path. The end of the day keeps today's verification positive. Every age is then measured from one fixed instant per day.
@@ -54,4 +54,4 @@ Release as 1.27.1 (patch).
 ## Errors Encountered
 
 ## Status
-**Phase 1 done.** Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.
+**Phases 1-2 done; next Phase 3.** Phase 1: Reproduced on 1.27.0: `decayForDoc` on one doc, 40 ms apart, gives 0.7348984551199071 and then 0.7348984544253394.

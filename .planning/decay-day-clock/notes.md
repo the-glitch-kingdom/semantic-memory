@@ -17,3 +17,7 @@ The reporter (1.27.0, 4 cold builds, 59 questions): 1 question swaps ranks 4 and
 ## Reporter's 1.27.0 numbers (for the changelog)
 - #1 by limit, of 59: tree A 50 at limits 1/3/5/8, then 49, 48 (1.26.0: 43/49/49/49/48/47); tree B 49 at limits 1–8, then 48, 47 (1.26.0: 42/46/46/48/47/45).
 - Set A+B @1 0.72 → 0.75, @3 0.86 → 0.89.
+
+## Eval results: Phase 2
+No ranking numbers (tests only). Un-`fails`-ed, all four cases fail on 1.27.0 by sub-1e-9 score drift 40 ms apart (e.g. 0.4683146373095556 vs 0.4683146368978217 for search_hybrid and CLI; unit 0.9278793492164188 vs 0.9278793500321937).
+The unit near-tie case shows score drift but the order did not flip with my guessed base ratio; it still pins score equality. The eval file covers search_hybrid and CLI (not search_semantic), limit 5 vs 8 scores.

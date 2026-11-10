@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { groundingBlock, groundingMultiplier, computeDecay, normalizeVerifiedDate, DEFAULT_DECAY_CONFIG, type DecayConfig } from "../../src/core/decay.js";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { groundingBlock, groundingMultiplier, computeDecay, decayForDoc, normalizeVerifiedDate, DEFAULT_DECAY_CONFIG, type DecayConfig } from "../../src/core/decay.js";
 
 const NOW = Date.parse("2026-07-10T00:00:00Z");
 function daysAgo(n: number): string {
@@ -180,5 +180,32 @@ describe("groundingMultiplier and groundingBlock", () => {
     expect(groundingBlock(g(0, 0, "verified"))).toBeUndefined();
     expect(groundingBlock(g(0, 0, "check"))).toMatchObject({ verdict: "check" });
     expect(groundingBlock(g(5, 4))).toMatchObject({ code_drift: ["f0", "f1", "f2"], dead_refs: ["d0", "d1", "d2"], more: 3 });
+  });
+});
+
+describe("decayForDoc day clock (#88)", () => {
+  afterEach(() => vi.useRealTimers());
+  const doc = { frontmatter: { last_verified: "2026-06-01" } };
+
+  // expected to fail until Phase 3: the multiplier reads Date.now() in ms, so it drifts between calls
+  it.fails("gives one multiplier for every call on the same UTC day", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.parse("2026-07-10T10:00:00Z"));
+    const first = decayForDoc(doc, cfg()).multiplier;
+    vi.setSystemTime(Date.parse("2026-07-10T10:00:00.040Z"));
+    expect(decayForDoc(doc, cfg()).multiplier).toBe(first);
+  });
+
+  it.fails("keeps near-tied docs in the same order and scores 40 ms apart", () => {
+    // A is older than B, so its multiplier is lower; B's base score is set so the two cross inside the 40 ms window
+    const a = { frontmatter: { last_verified: "2026-06-01" } }, b = { frontmatter: { last_verified: "2026-06-02" } };
+    const rank = () => [["a", 1, a], ["b", 0.9999999995, b]].map(([n, s, d]) => ({ n, score: (s as number) * decayForDoc(d as typeof a, cfg()).multiplier })).sort((x, y) => y.score - x.score);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.parse("2026-07-10T10:00:00Z"));
+    const t0 = rank();
+    vi.setSystemTime(Date.parse("2026-07-10T10:00:00.040Z"));
+    const t1 = rank();
+    expect(t1.map((r) => r.n)).toEqual(t0.map((r) => r.n));
+    expect(t1.map((r) => r.score)).toEqual(t0.map((r) => r.score));
   });
 });
