@@ -54,7 +54,6 @@ describe("two builds of the same files rank the same", () => {
     const [ma, mb] = await Promise.all([load(a), load(b)]);
     let max = 0;
     for (const [k, v] of ma) v.forEach((x, i) => (max = Math.max(max, Math.abs(x - mb.get(k)![i]))));
-    console.log(`max abs embedding difference across builds: ${max} over ${ma.size} vectors`);
     expect(max).toBeLessThan(1e-6);
   });
 });
