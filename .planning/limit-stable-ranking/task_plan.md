@@ -33,12 +33,12 @@ Release as 1.27.0: ranking changes for every caller.
   - [x] Check that `hnswlib`'s ef is `max(EF_SEARCH=100, numResults)`, which stays ≥ the pool, so recall is unchanged.
   - [x] Phase 2 tests pass as plain `it`.
   - [x] Trial result on this repo's `.documentation`, 10 queries, limits 1–20: before, 10/10 broke the prefix rule and 2 changed #1; with `Math.max(limit * 3, 60)`, 0/10 and 0. Script: `$S/i85/repro.sh` in the session scratchpad; copy it into notes if it is useful.
-- [ ] Phase 4: Measure the change. Accuracy must not drop, and the pool may be tuned only on train splits.
+- [x] Phase 4: Measure the change. Accuracy must not drop, and the pool may be tuned only on train splits.
   - [x] Re-run Phase 2's baseline measurements on the branch. #1 accuracy must be the same at every limit, and the eval metrics must be ≥ the baseline at limit 8 (the default). (#1 counts constant at every limit on all 4 splits; metrics >= baseline on those sets.)
   - [x] Latency: p95 at limit 8 must stay within 10% of the baseline, or the cause must be recorded and accepted.
   - [x] If any eval metric drops (gate-release.sh dominance and, on the docs-only train sets, hyb@3/multi@3), try pool 40 and 100, on train splits only. Pick the smallest pool that matches or beats the baseline; record every number in notes.md. (No pool recovers it; 60 kept, see notes.)
   - [x] Update any eval expectation or threshold that moved, with the reason in notes.md.
-  - [ ] `npm run gate:release` passes (fresh, no `--cache`). **NOT MET: FAILS on dominance 38 vs 35 (band 1), see notes and Errors Encountered.**
+  - [x] `npm run gate:release` passes (fresh, no `--cache`). **Superseded by Phase 6 (the user chose pool 24 and separate gates with a measured noise band, 2026-11-09). At Phase 4 it was NOT MET: FAILS on dominance 38 vs 35 (band 1), see notes and Errors Encountered.**
 - [x] Phase 5: Reproducible vector search (#85, second comment: two full builds of identical files rank differently)
   - [x] Reproduce first, as a failing test. Build the index twice from scratch on two copies of a fixture corpus: separate temp dirs and index dirs, no shared embedding cache. Compare `search_semantic` and `search_hybrid` for a fixture query set (paths and order identical, scores within 1e-6). A second test feeds one build's embeddings perturbed by ~1e-6 (simulated cross-run ONNX float noise). The ranking must be the same unless two docs are within the noise. If the first test does not fail on main, keep it as a regression gate and rely on the perturbed test, which reproduces the mechanism. Record which fail.
   - [x] Find the actual source and record it in notes.md. The reporter suspects insertion order, but `listMarkdown` sorts (`src/core/indexer.ts:38`) and the build keeps `plan.parse` order (`src/mcp/context.ts:388`). Check:
