@@ -1,0 +1,108 @@
+# Task Plan: cold-build readiness and whole-answer ranking (#90, #91)
+
+## Goal
+Three fixes, released together as 1.28.0 (minor: ranking changes).
+
+1. **#90.** Right after a cold build, the first answers already rank, but the code-graph grounding multiplier has not landed yet. `applyCode` runs fire-and-forget after `ready`, so two docs drop about 2 s later and ranks 4 and 5 swap. After this fix, the first answer after a cold build equals the answer 10 s later.
+2. **#91 part 1.** For an identifier query, a doc that does not contain the identifier must not outrank one that does, when the identifier is in the corpus.
+3. **#91 part 2.** For a multi-part question, a doc that answers every part across two or three sections should beat a doc whose single best chunk matches only one part. This part ships only if it passes the train/gate rules below.
+
+## Phases
+- [x] Phase 1: Verify and plan (notes.md)
+- [ ] Phase 2: Reproduce first, as failing tests (`it.fails` until fixed), and the new eval sets
+  - [ ] #90 integration (`test/integration/code-load-order.test.ts`, or a new `cold-build-ready.test.ts`).
+    - Mock `loadCodeData` slow, as that file already does.
+    - On a cold `fullIndex()` of a vault whose docs get a grounding below 1 (the `code-graph-vault` fixture has dead refs), assert that when `fullIndex()` resolves, `isStale()` is false.
+    - Assert that a fixed query's hybrid scores and order equal the same query run after the code load has settled.
+    - Also cover the MCP server path: the first `search_hybrid` answer that is not "Indexing in progress" equals the answer 5 s later, through `buildServer` with no `waitForReady`.
+  - [ ] #91 part 1 fixture test (`test/retrieval-eval/identifier-tier.test.ts`): a small fixture corpus. One identifier (`check_widgets.py`) appears in 3 docs. Two other docs do not contain it, but their titles and bodies match the rest of the question better ("what does it verify, and what exit codes does it return"; one says "exits 0" in its title). `search_hybrid` and CLI `search`: the top min(N,3) all contain the identifier. Also: a query that is only the identifier still ranks identifier docs first (already true; guard it). An identifier in NO doc changes nothing (`missing_terms` path, order identical to main).
+  - [ ] Our own docs reproduce it too. Record it, but don't gate on it (docs change). On `.documentation`, "What does gate-release.sh check, and what exit codes does it return?" ranks `changelog/v1-23-0-…` and `reference/cli-reference.md` #2 and #3. Neither contains `gate-release.sh`; 5 docs do (notes.md).
+  - [ ] #91 part 2 fixture test (`test/retrieval-eval/multi-clause.test.ts`).
+    - Doc X answers clause 1 strongly in one chunk (plus unrelated sections, longer doc).
+    - Doc Y answers clause 1 and clause 2 in two different chunks, each slightly weaker than X's best.
+    - Query "<clause 1>, and <clause 2>?". Y ranks above X.
+    - A single-clause query on the same corpus keeps X first (no regression for one-part questions).
+  - [ ] New eval rows, written BEFORE any ranking change and never edited to fit it.
+    - On the existing fixture corpora (whichever the golden sets already use), add multi-part questions in the `{id, tier, q, facets}` JSONL form: about 12 train and 12 held-out, split by id hash the way the other sets split.
+    - Also add about 8 train and 8 held-out identifier questions of the "What does <name> verify, and what does it return?" shape.
+    - Record the main/1.27.1 numbers for them in notes.md (`## Eval results: Phase 2`). Floors come later, from the measured numbers.
+- [ ] Phase 3: #90, scoring is final before the index says ready
+  - [ ] `fullIndex()` (src/mcp/context.ts:562) awaits the code load its sync started before setting `indexState = "ready"`. Track the last `applyCode` promise; don't reorder the #73 design (docs are installed first, code after).
+    - The `--wait-for-ready` path awaits it too (it calls `fullIndex`).
+    - A failing or slow code load must not block forever: `loadCode` already catches. Keep that; time-box only if a test shows a hang.
+  - [ ] Warm swaps (reconcile, `loadFromDisk`) keep the #73 behavior: served at once and marked stale until the code lands. Only the cold path, where nothing was being served, waits. Record the decision.
+  - [ ] Readiness is visible: `get_stats` (or wherever index state is reported) says `stale`/`ready` truthfully while a code load is pending. Check what it reports today. Add a field only if nothing exposes it.
+  - [ ] The retrieval-eval runner and `gate-release.sh` wait for a non-stale answer (the `_meta.stale` flag or the stale note) before scoring, not just for a non-"Indexing" answer. Check `src/core/retrieval-eval/runner.ts:12`.
+  - [ ] The CLI `search` path loads code itself (src/cli/search.ts:174). Confirm it is not affected (no race there). Record it.
+  - [ ] Phase 2 #90 tests pass as plain `it`.
+- [ ] Phase 4: #91 part 1, an identifier tier after fusion
+  - [ ] In `hybridRanked` (src/mcp/tools/search.ts:112), and the same step in CLI `search` (src/cli/search.ts:169), after fusion and coverage and before the reranker:
+    - When the query has identifiers (`identifiers(query, known)`, the same detector `classifyQuery` uses) and at least one of them occurs in a searchable doc (`bm25.has` on its tokens, `hasJoined` for other spellings, the doc path words as `missingTerms` checks them), stably partition the candidates. Docs containing every such present identifier come first (`bm25.docHas` on all its tokens, or its path), then the rest, each group in its fused order.
+    - With several identifiers and no doc holding all of them, partition on the count held (more first).
+    - Put the shared helper in `src/core/` next to `identifiers.ts`, used by both MCP and CLI.
+  - [ ] An identifier present only in docs outside the candidate pool still changes nothing (no pool widening here; the pool stays `candidatePool(limit)`). Record whether that leaves any Phase 2 eval row unfixed.
+  - [ ] `search_semantic` is unchanged (cosine only, by design).
+  - [ ] Tests: the Phase 2 part 1 cases pass as plain `it`.
+    - Also: limit 1, 3 and 5 are prefixes of limit 8 (the #85 rule), and the tier is stable when every candidate or none contains the identifier.
+    - `mode: "fact"` override still tiers? Decide (the tier keys on identifiers present, not on the label), record it, and test it.
+  - [ ] Measure on train only: the identifier rows and every existing set. Gate vs 1.27.1 (`bash scripts/gate-release.sh 1.27.1`, BAND=1) with only this change. Dominance must not rise beyond the band. Record numbers. If the gate fails, find the cause (e.g. a common identifier like `vault.schema.yml` in many docs reorders a non-identifier question). Narrow the trigger on TRAIN evidence only, e.g. skip identifiers present in more than N% of docs, with N picked on train. Then re-gate.
+  - [ ] Commit this phase on its own, so part 1 can ship without part 2.
+- [ ] Phase 5: #91 part 2, clause coverage (ships only if it passes)
+  - [ ] Split the query into clauses on ` and `, `,`, `;` and `?`. Keep a clause only if it has at least 2 non-stop tokens (`tokenize`). With fewer than 2 clauses, nothing changes.
+  - [ ] Per clause, one extra query embedding (batch the clauses into one `embedder` call if the API allows). For each candidate doc in the fused pool, the best body-chunk cosine for each clause comes from the stored unit vectors. Use `VectorIndex` (add one method there, next to `bestChunk`, that scores a doc's chunks against several query vectors). No re-embedding of docs, no new index.
+  - [ ] Score: a bonus for covering several clauses with DIFFERENT chunks, not for breadth. E.g. `score *= 1 + w * (second-best clause match, where the best two clauses' best chunks are distinct)`, or `w * mean(per-clause best) - …`. Pick the form and `w` on TRAIN only (the Phase 2 train rows plus the existing train sets).
+    - The selection rule: train hybrid @1 must not drop on any set, and dominance must not rise (#87's failure mode: a breadth reward let overview docs take every slot).
+    - Default `w` = the train-best value that meets both, or 0 if none does.
+    - Put `w` in `RankingConfig` (`ranking.clause_weight` in vault.schema.yml), like `coverage_weight`.
+  - [ ] Latency: the extra embeddings must keep p95 within the gate's bound. Measure p95 with 2- and 3-clause queries. If it busts the bound, cap the number of clauses at 3 and record it.
+  - [ ] Gate vs 1.27.1 with parts 1 and 2 (BAND=1), then held-out as measured.
+    - **If no `w` > 0 passes on train, or the gate fails:** ship `clause_weight: 0` (off) with the code and tests. Say so in the changelog with the numbers. #91 then stays open for part 2 (as #76 did), and the release comment asks for the anonymised repro.
+    - Do not tune on held-out.
+  - [ ] Relation to #87: if part 2 works, note in notes.md whether it also lets the candidate pool grow without the dominance rise (one train-only measurement at pool 60 is enough). Don't change the pool in this plan; #87 stays its own release.
+- [ ] Phase 6: Measure the whole branch
+  - [ ] `npm run eval` and the #85 per-limit check: limits 1, 3 and 5 are prefixes of limit 8 on every set. Reproducible builds still give 0 differing results (`test/retrieval-eval/reproducible-build.test.ts`).
+  - [ ] Cold-build check by hand on this repo's `.documentation`, the #90 repro:
+    1. delete the index;
+    2. start the server;
+    3. poll until ready;
+    4. run a fixed 10-query set at once and again 10 s later.
+    Expect 0 differences.
+  - [ ] `npm run gate:release` (fresh, BAND=1) vs 1.27.1 passes. Record @1/@3/@8 per set, dominance and p95 in notes.md, with the per-change split from Phases 4 and 5.
+  - [ ] Set floors for the new eval rows from the measured branch numbers (train and held-out, real-corpus slack as baseline.json describes).
+- [ ] Phase 7: Release prep
+  - [ ] Bump all five version fields to 1.28.0, plus the lockfile.
+- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
+  - [ ] Every Phase 2 test passes, and none is left as `it.fails` (except part 2 if it shipped off, then as a documented `it.fails` with the reason).
+  - [ ] Edge cases:
+    - **Identifier tier:** an identifier in 0 docs; one present in every candidate; two identifiers where one is missing; a path identifier (`src/x/y.ts`); a backticked one; an identifier only in a doc's path, not its body; an excluded or `generated: true` doc holding it (must not count); the `mode` override.
+    - **Clauses:** a question with no "and"; "and" inside a name ("Tom and Jerry"); a 4-clause question (the cap); an empty clause after splitting; a query that is only punctuation.
+    - **#90:** a code load that throws (the index still goes ready); a vault with no code at all (no wait beyond the load); a warm restart (stable from the first answer, as before).
+  - [ ] Federation: `search_hybrid` over two sources applies the same tier per source and merges as before (the federation snapshot test; re-take a drifted score only if the order is unchanged, as 1.27.0 did).
+  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
+  - [ ] Independent review of `git diff main...HEAD` (`claude -p`, with the code, not our conclusions).
+- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [ ] `.documentation/operational/retrieval-tuning-guide.md`: the identifier tier, `ranking.clause_weight` (its default and how it was chosen) and how both interact with coverage.
+  - [ ] `.documentation/reference/mcp-tools-reference.md`: the `search_hybrid` ranking order (the tier) and readiness after a cold build.
+  - [ ] `.documentation/architecture/indices-and-storage.md`, or wherever the #73 code-graph-after-docs order is described: a cold build is ready only after the code graph lands.
+  - [ ] `.documentation/operational/retrieval-eval-guide.md`: the new eval sets and their floors.
+  - [ ] KB gotcha facts:
+    - "a readiness flag set before every score input lands makes the first answers rank differently" (`## Instead`: await every scoring input on the cold path; a first-answer-equals-later test);
+    - "best-single-chunk ranking loses to multi-part questions" (`## Instead`: per-clause matching), only if part 2 shipped on, or as a measured-negative fact if it shipped off.
+  - [ ] `CHANGELOG.md` 1.28.0 and `.documentation/changelog/v1-28-0-whole-answer-ranking.md`, with the per-change gate numbers.
+  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+
+## Key Questions
+1. Should a cold build wait for the code graph, or answer marked stale? Wait. Before ready, nothing was being served ("Indexing in progress"), so waiting costs only the `git log` time, and it makes the first answer final. Warm swaps keep #73's serve-then-mark-stale.
+2. Is the identifier tier hard or a boost? Hard (a stable partition), as the reporter suggests, but only for identifiers present in the corpus, and narrowed on train evidence if the gate shows a cost.
+3. Clause coverage vs #87? #87 is about the whole-doc term-coverage boost rewarding breadth in a larger pool. Part 2 rewards distinct chunks matching distinct clauses, a different signal. The pool stays 24 here.
+
+## Decisions Made
+- Version 1.28.0 (minor: ranking order changes for identifier and multi-part queries).
+- Each ranking change is gated separately against 1.27.1, then together (as #85 was).
+- Part 2 may ship off by default. #91 then stays open with numbers.
+
+## Errors Encountered
+
+## Status
+**Phase 2 next.** Phase 1: verified both issues on main (1.27.1); see notes.md.
