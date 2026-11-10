@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { applyCoverage } from "../../core/rank.js";
 import { candidatePool, fuseScores } from "../../core/bm25.js";
-import { missingTerms, passingTerms } from "../../core/identifiers.js";
+import { identifierTier, missingTerms, passingTerms } from "../../core/identifiers.js";
 import { entityCard, knownToCode, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { fold } from "../../core/fold.js";
@@ -126,6 +126,8 @@ async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnT
   if (status) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.status === status);
   if (tier) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.tier === tier);
   if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
+
+  hybrid = identifierTier(hybrid, query, ctx.bm25, knownToCode(ctx.getCode()));
 
   // reranks max(RERANK_TOP, limit): independent of limit for limit <= RERANK_TOP
   if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];

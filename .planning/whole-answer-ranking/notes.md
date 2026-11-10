@@ -67,3 +67,17 @@ Reading them honestly:
 
 ## Eval results: Phase 3
 No ranking numbers: measurement-free readiness fix. Cold-build tests (3) and code-load-order pass as plain `it`; the first answer after a cold build now equals the settled answer.
+
+## Eval results: Phase 4 (identifier tier only; parts 1 vs 1.27.1, `--cache`, counts repeat)
+
+Train (counts identical to 1.27.1 unless noted; cli and mcp equal):
+| set | hyb@1 | hyb@3 | multi@1/3/8 | dom (1.27.1 -> local) |
+|---|---|---|---|---|
+| real-corpus+real-hub+long-section(+hard)+absent-terms (94 q) | 70/94 | 88 | 7/13/13 of 13 | 28 -> 28 |
+| multi-hub (29 q) | 12/29 -> 13/29 | 21 | 3/11/12 of 19 | 5 -> 5 |
+| whole-answer (12 q) | 11/12 | 12 | 11/12/12 | 4 -> 4 |
+| identifier-tier (8 q) | 8/8 | 8 | n/a | 2 -> - |
+
+Top-3 all identifier docs (hybrid, limit 8): identifier-tier train 0/8 -> **8/8** (slots 9/24 -> 24/24); held-out 0/8 -> **8/8** (slots 11/24 -> 24/24), as measured, not tuned on.
+
+Gate (`BAND=1 bash scripts/gate-release.sh 1.27.1`, held-out, this change alone): PASS. no export cli and mcp: hybrid @1 73 vs 73, multi @1/3/8 10/17/20 vs same, cov@3 0.776 vs 0.776, dominance 34 vs 35, negatives 43 vs 43, false flags 7 vs 7; export: hybrid @1 78 vs 78, dominance 23 vs 25. mcp vs cli 0 of 166 differ. No narrowing of the trigger was needed.

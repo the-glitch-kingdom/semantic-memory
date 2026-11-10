@@ -70,3 +70,18 @@ export function passingTerms(query: string, index: Bm25Index, paths: string, top
     return toks.length > 0 && toks.every((t) => index.has(t) && !paths.includes(t) && index.docFreq(t) <= maxDocs) && !top.some((p) => toks.every((t) => index.docHas(p, t)));
   });
 }
+
+/**
+ * #91 part 1: stable partition of fused candidates by how many of the query's identifiers they hold, most first.
+ * Only identifiers present in the corpus count (every token of the name has df > 0), so a name in no doc, or a query
+ * without one, changes nothing. A doc holds a name when it has every token anywhere (chunks, fields, path words).
+ * shortcut: identifiers outside the candidate pool are not pulled in; upgrade with a wider pool (#87).
+ */
+export function identifierTier<T extends { path: string }>(results: T[], query: string, index: Bm25Index, known?: (term: string) => boolean): T[] {
+  const present = identifiers(query, known)
+    .map((id) => tokenize(id.slice(id.lastIndexOf("/") + 1)))
+    .filter((toks) => toks.length > 0 && toks.every((t) => index.has(t)));
+  if (!present.length) return results;
+  const held = (r: T) => present.filter((toks) => toks.every((t) => index.docHas(r.path, t))).length;
+  return results.map((r) => ({ r, n: held(r) })).sort((a, b) => b.n - a.n).map((x) => x.r);
+}

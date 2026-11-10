@@ -10,7 +10,7 @@ import { TextSearch } from "../core/search-text.js";
 import { loadEmbeddingOverrides, loadIndexFields } from "../core/fields.js";
 import { applyCoverage, loadRanking } from "../core/rank.js";
 import { Bm25Index, BM25_FRACTION, bm25Fields, bm25SelfTop, candidatePool, fuseScores } from "../core/bm25.js";
-import { identifiers, missingTerms, passingTerms } from "../core/identifiers.js";
+import { identifierTier, identifiers, missingTerms, passingTerms } from "../core/identifiers.js";
 import { entityCard, knownToCode, loadCodeData, loadExport, splitUndocumented, type CodeData, type EntityCard } from "../core/code-graph.js";
 import { fold } from "../core/fold.js";
 import { sectionFields } from "../core/section-fields.js";
@@ -165,13 +165,13 @@ export async function openSearch(notes: string, opts: { textOnly?: boolean; gran
             return { ...r, score };
           })
           .sort((a, b) => b.score - a.score);
-      const filtered = filterPathClass(
-        applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, candidatePool(limit)))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
-        pathClass
-      );
-      const all = withConfidence(opts.granularity === "doc" ? filtered : fold(filtered, docByPath, exported()));
       // the code is read only for a query that names an identifier: it costs a git call
       const code = identifiers(query, () => true).length || missingTerms(query, bm25, paths, () => true).length ? await (codeP ??= loadCodeData(notes, docs).catch((): CodeData | null => null)) : null;
+      const filtered = identifierTier(filterPathClass(
+        applyCoverage(fuseScores(adjust(semantic), adjust(bm25.search(query, candidatePool(limit)))), query, bm25, graph, ranking, (p) => isExcludedPath(p, pathClass)),
+        pathClass
+      ), query, bm25, knownToCode(code));
+      const all = withConfidence(opts.granularity === "doc" ? filtered : fold(filtered, docByPath, exported()));
       const absent = missingTerms(query, bm25, paths, knownToCode(code));
       const { missing, undocumented } = splitUndocumented(absent, code);
       const passing = passingTerms(query, bm25, paths, all.slice(0, 3).map((r) => r.path), knownToCode(code));

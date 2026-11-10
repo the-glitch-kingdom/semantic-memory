@@ -7,7 +7,7 @@ import { cleanupTempDir } from "../setup.js";
 /**
  * #91 part 1: a doc that does not contain an identifier of the question must not outrank one that does, when the identifier is in the corpus.
  * Each script name is in 3 docs; 4 generic exit-code docs match the rest of the question better and do not hold it.
- * The reproductions are `it.fails` until the identifier tier lands (whole-answer-ranking Phase 4), then plain `it`.
+ * Gates the identifier tier (whole-answer-ranking Phase 4).
  */
 const SCRIPTS = ["check_widgets.py", "audit_ledger.sh", "verify_seals.sh", "scan_manifests.py"];
 const question = (s: string) => `What does ${s} verify, and what does it return?`;
@@ -33,11 +33,16 @@ describe("identifier tier (#91 part 1)", () => {
 
   for (const arm of ["search_hybrid", "cli"]) {
     for (const s of SCRIPTS) {
-      it.fails(`${arm}: the top 3 for "${s}" all contain it`, async () => {
+      it(`${arm}: the top 3 for "${s}" all contain it`, async () => {
         const top = (await arms[arm](question(s), 8)).slice(0, 3);
         expect(top.filter((h) => !holds(s)(h)).map((h) => h.path)).toEqual([]);
       });
     }
+    it(`${arm}: limits 1, 3 and 5 are prefixes of limit 8 (#85)`, async () => {
+      const q = question(SCRIPTS[1]);
+      const full = (await arms[arm](q, 8)).map((h) => h.path);
+      for (const k of [1, 3, 5]) expect((await arms[arm](q, k)).map((h) => h.path)).toEqual(full.slice(0, k));
+    });
     it(`${arm}: a query that is only the identifier ranks its docs first`, async () => {
       const top = (await arms[arm](SCRIPTS[0], 8)).slice(0, 3);
       expect(top.every(holds(SCRIPTS[0]))).toBe(true);
@@ -47,4 +52,9 @@ describe("identifier tier (#91 part 1)", () => {
       expect(top.sort()).toEqual(["return-values-guide.md", "scripts-exit-0-on-success.md"]);
     });
   }
+
+  it("search_hybrid: mode override still tiers (the tier keys on identifiers present, not the label)", async () => {
+    const top = (await env.call("search_hybrid", { query: question(SCRIPTS[0]), limit: 8, mode: "fact" })).parsed.slice(0, 3);
+    expect(top.every(holds(SCRIPTS[0]))).toBe(true);
+  });
 });

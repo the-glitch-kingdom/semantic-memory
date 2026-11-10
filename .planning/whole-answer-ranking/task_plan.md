@@ -36,18 +36,18 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
   - [x] The retrieval-eval runner and `gate-release.sh` wait for a non-stale answer (the `_meta.stale` flag or the stale note) before scoring, not just for a non-"Indexing" answer. Check `src/core/retrieval-eval/runner.ts:12`.
   - [x] The CLI `search` path loads code itself (src/cli/search.ts:174). Confirm it is not affected (no race there). Record it.
   - [x] Phase 2 #90 tests pass as plain `it`.
-- [ ] Phase 4: #91 part 1, an identifier tier after fusion
-  - [ ] In `hybridRanked` (src/mcp/tools/search.ts:112), and the same step in CLI `search` (src/cli/search.ts:169), after fusion and coverage and before the reranker:
+- [x] Phase 4: #91 part 1, an identifier tier after fusion
+  - [x] In `hybridRanked` (src/mcp/tools/search.ts:112), and the same step in CLI `search` (src/cli/search.ts:169), after fusion and coverage and before the reranker:
     - When the query has identifiers (`identifiers(query, known)`, the same detector `classifyQuery` uses) and at least one of them occurs in a searchable doc (`bm25.has` on its tokens, `hasJoined` for other spellings, the doc path words as `missingTerms` checks them), stably partition the candidates. Docs containing every such present identifier come first (`bm25.docHas` on all its tokens, or its path), then the rest, each group in its fused order.
     - With several identifiers and no doc holding all of them, partition on the count held (more first).
     - Put the shared helper in `src/core/` next to `identifiers.ts`, used by both MCP and CLI.
-  - [ ] An identifier present only in docs outside the candidate pool still changes nothing (no pool widening here; the pool stays `candidatePool(limit)`). Record whether that leaves any Phase 2 eval row unfixed.
-  - [ ] `search_semantic` is unchanged (cosine only, by design).
-  - [ ] Tests: the Phase 2 part 1 cases pass as plain `it`.
+  - [x] An identifier present only in docs outside the candidate pool still changes nothing (no pool widening here; the pool stays `candidatePool(limit)`). Record whether that leaves any Phase 2 eval row unfixed.
+  - [x] `search_semantic` is unchanged (cosine only, by design).
+  - [x] Tests: the Phase 2 part 1 cases pass as plain `it`.
     - Also: limit 1, 3 and 5 are prefixes of limit 8 (the #85 rule), and the tier is stable when every candidate or none contains the identifier.
     - `mode: "fact"` override still tiers? Decide (the tier keys on identifiers present, not on the label), record it, and test it.
-  - [ ] Measure on train only: the identifier rows and every existing set. Gate vs 1.27.1 (`bash scripts/gate-release.sh 1.27.1`, BAND=1) with only this change. Dominance must not rise beyond the band. Record numbers. If the gate fails, find the cause (e.g. a common identifier like `vault.schema.yml` in many docs reorders a non-identifier question). Narrow the trigger on TRAIN evidence only, e.g. skip identifiers present in more than N% of docs, with N picked on train. Then re-gate.
-  - [ ] Commit this phase on its own, so part 1 can ship without part 2.
+  - [x] Measure on train only: the identifier rows and every existing set. Gate vs 1.27.1 (`bash scripts/gate-release.sh 1.27.1`, BAND=1) with only this change. Dominance must not rise beyond the band. Record numbers. If the gate fails, find the cause (e.g. a common identifier like `vault.schema.yml` in many docs reorders a non-identifier question). Narrow the trigger on TRAIN evidence only, e.g. skip identifiers present in more than N% of docs, with N picked on train. Then re-gate.
+  - [x] Commit this phase on its own, so part 1 can ship without part 2.
 - [ ] Phase 5: #91 part 2, clause coverage (ships only if it passes)
   - [ ] Split the query into clauses on ` and `, `,`, `;` and `?`. Keep a clause only if it has at least 2 non-stop tokens (`tokenize`). With fewer than 2 clauses, nothing changes.
   - [ ] Per clause, one extra query embedding (batch the clauses into one `embedder` call if the API allows). For each candidate doc in the fused pool, the best body-chunk cosine for each clause comes from the stored unit vectors. Use `VectorIndex` (add one method there, next to `bestChunk`, that scores a doc's chunks against several query vectors). No re-embedding of docs, no new index.
@@ -106,8 +106,11 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 
 - Phase 3: `fullIndex()` awaits the last `applyCode` promise before saving and setting ready (so the saved cache also holds the final grounding). The cold path is `documents.length === 0` at its start; there `getVectorIndex()` returns null until fullIndex ends, because search tools gate on the vector index existing, not on indexState. Warm swaps/reconcile/loadFromDisk are unchanged (#73). `get_stats` already reports `stale` from `isStale()` (codePending), so no new field. The eval runner already retries `_meta.stale` answers (runner.ts:16), so no change there. CLI `search` reads grounding from the saved cache and loads code only for the entity card, so no race. Graph tools (`search_graph`) gate on documents, so a cold build still answers them during the code load; not scored, left.
 
+- Phase 4: `identifierTier` (src/core/identifiers.ts) is a stable sort by the count of present identifiers a candidate holds (covers "all first" and "most first" in one rule). An identifier is present when every token of its last path segment has df > 0 (`bm25.has`); a doc holds it when `docHas` finds every token (chunks, fields, path words). Applied in `hybridRanked` after filters and before the reranker, and in CLI `search` after filterPathClass and before fold (the CLI's code load moved ahead of it, to get `knownToCode`). The `mode` override still tiers (keys on identifiers, not the label; tested). No narrowing was needed: the gate passed with no train regression, so no N% rule. `hasJoined` spellings are not used (shortcut: a doc spelling `check-widgets` for `check_widgets` tokenizes alike or is not tiered).
+- Phase 4: out-of-pool identifier docs are not pulled in. The identifier eval rows all have their docs in the pool of 24, so none is left unfixed.
+
 ## Errors Encountered
 - Phase 2: the whole-answer rows leave little headroom on main (11/12 and 10/12 @1; hub docs hold both answers) and the identifier rows are 8/8 @1 already, so the eval counts alone cannot show the gains. Phase 4 reports "top-3 all identifier docs" (0/8 and 0/8 on main) and Phase 5 relies on the `multi-clause` fixture. Rows left as written.
 
 ## Status
-**Phase 4 next** (#91 part 1, identifier tier). Phases 2 and 3 done; #90 tests are plain `it`.
+**Phase 5 next** (#91 part 2, clause coverage). Phases 2-4 done; #90 and identifier-tier tests are plain `it`; multi-clause.test.ts keeps its `it.fails` until Phase 5.
