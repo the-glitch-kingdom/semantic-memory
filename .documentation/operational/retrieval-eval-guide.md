@@ -80,6 +80,10 @@ The host agent (`claude`) writes blind questions from sampled documents: keyword
 
 `test/retrieval-eval/limit-stable.test.ts` checks that `search(q, k)` equals `search(q, 8).slice(0, k)` (paths equal, scores within 1e-6) for k = 1, 3, 5, on MCP `search_hybrid`, `search_semantic` and the CLI, over 10 queries on `.documentation`. `limit-edge.test.ts` covers limits 1, 8, 20, 50, a corpus smaller than the pool, filters, MCP vs CLI parity and build-twice. `reproducible-build.test.ts` builds twice and compares. Run them with `npx vitest run test/retrieval-eval/limit-stable.test.ts`.
 
+## Identifier and whole-answer sets (v1.28)
+
+`identifier-tier(-heldout).jsonl` (8 + 8, flat fixture `test/fixtures/identifier-tier/`) and `whole-answer(-heldout).jsonl` (12 + 12, over the multi-hub fixture) are facet sets. They have little headroom at @1/@3 on 1.27.1 (identifier 8/8, whole-answer 11/12 and 10/12), so the identifier test also counts "top-3 all identifier docs" (main 0/8, branch 8/8). `multi-clause.test.ts` holds the clause fixture; its two-part tests stay `it.fails` while `clause_weight` is 0. Floors are in `baseline.json` `newSets` (whole-answer hybrid @1/@3 11/12 train, 10/11 held-out; identifier top-3 8/8), enforced by `new-sets-floor.test.ts` with one case of slack. `gate-release.sh` gates both held-out sets against the previous release. `cold-build-ready.test.ts` checks a first answer equals a later one after a cold build.
+
 ## Floors and the noise band
 
 ```bash

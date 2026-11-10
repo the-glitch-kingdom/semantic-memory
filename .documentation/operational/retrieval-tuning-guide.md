@@ -45,6 +45,10 @@ Since v1.9.0 `search_hybrid` is the tool to ask a question with. This guide cove
 
 **Candidate pool (v1.27, #85).** Both arms fetch `candidatePool(limit) = max(24, limit * 3)` docs (`src/core/bm25.ts`), so ranking does not depend on `limit` for `limit <= 8`: `search(q, k)` is the first k of `search(q, 8)`, with the same scores. Above 8 the pool grows with `limit`. The MCP default `limit` is 10 (pool 30), so a call with no `limit` is not a prefix of an explicit `limit: 5`; pass an explicit limit of 8 or less when you need the guarantee. Why: a pool sized by `limit` made a doc outside one arm's pool lose that arm's score, so fused and coverage scores moved with `limit` ([KB fact](../knowledge-base/facts/a-candidate-pool-sized-by-limit-makes-ranking-depend-on-limit.md)). A larger pool is a follow-up: it needs the coverage boost to stop rewarding breadth first.
 
+**Identifier tier (v1.28, #91).** After fusion, coverage and filters (before the optional reranker), `identifierTier()` in `src/core/identifiers.ts` stable-sorts candidates by how many of the query's identifiers they hold. An identifier counts only when it is present in the corpus (every token of its last path segment has a document frequency above 0), so one that appears in no doc changes nothing. A doc holds it when BM25 finds every token in its chunks, fields or path words. Before this, a doc holding all of `check_widgets` could sit below a doc that merely matched prose around it, so slots 2 and 3 were wrong even when @1 was right. It applies to MCP `search_hybrid` and CLI `search`, whatever `mode` says. Limits: it only reorders the pool of 24, it does not pull in docs outside it; a doc spelling `check-widgets` for `check_widgets` only counts if it tokenizes alike; a very common identifier reorders queries that merely mention it (not seen in train or the gate); the opt-in reranker runs after the tier and can reorder its output. Measured: top-3 all identifier docs 8/8 on both identifier sets (main: 0/8), no change in hybrid @1/@3 on any set, dominance -1 to -2 on held-out.
+
+**Clause coverage (v1.28, #91 part 2, ships off).** `ranking.clause_weight` (default `0`, off) splits a multi-part question on ` and `, `,`, `;` and `?` into up to 3 clauses of 2+ non-stop tokens, and boosts a doc whose distinct body chunks each match a distinct clause (`VectorIndex.clauseCover`, from stored vectors, no re-embedding). It differs from `coverage_weight`, which rewards whole-doc term coverage. Weight 1 was the smallest that flipped the multi-clause fixture and passed the train rule (no @1 drop on any train set), but it failed the held-out gate against 1.27.1 (no-export hybrid @1 72 vs 73, export hybrid @1 76 vs 78), and on train it cost real-corpus hybrid @3 (26 to 24) from weight 0.5 up. It was not re-tuned on held-out, so it stays off. The identifier tier and clause coverage are independent: the tier acts on identifiers, clause coverage on prose clauses. See the [v1.28.0 changelog](../changelog/v1-28-0-whole-answer-ranking.md).
+
 Between 4 and 5 sits an optional whole-doc **coverage** boost and **link prior** (`ranking:`), both off by default (below).
 
 Paths in `path_class.exclude` are never indexed (no chunks, vectors or BM25 entries); they stay graph-only nodes so `supersedes` edges resolve. Paths in `results.exclude` are indexed but dropped from results.
@@ -132,6 +136,7 @@ index_fields:
 ranking:
   coverage_weight: 0     # off
   link_prior: 1          # off
+  clause_weight: 0       # off (v1.28; measured negative on held-out)
   link_prior_min_links: 5
 ```
 

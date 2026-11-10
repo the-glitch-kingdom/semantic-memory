@@ -88,16 +88,16 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
   - [x] Federation: `search_hybrid` over two sources applies the same tier per source and merges as before (the federation snapshot test; re-take a drifted score only if the order is unchanged, as 1.27.0 did).
   - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
   - [x] Independent review of `git diff main...HEAD` (`claude -p`, with the code, not our conclusions).
-- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/operational/retrieval-tuning-guide.md`: the identifier tier, `ranking.clause_weight` (its default and how it was chosen) and how both interact with coverage.
-  - [ ] `.documentation/reference/mcp-tools-reference.md`: the `search_hybrid` ranking order (the tier) and readiness after a cold build.
-  - [ ] `.documentation/architecture/indices-and-storage.md`, or wherever the #73 code-graph-after-docs order is described: a cold build is ready only after the code graph lands.
-  - [ ] `.documentation/operational/retrieval-eval-guide.md`: the new eval sets and their floors.
-  - [ ] KB gotcha facts:
+- [x] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/operational/retrieval-tuning-guide.md`: the identifier tier, `ranking.clause_weight` (its default and how it was chosen) and how both interact with coverage.
+  - [x] `.documentation/reference/mcp-tools-reference.md`: the `search_hybrid` ranking order (the tier) and readiness after a cold build.
+  - [x] `.documentation/architecture/indices-and-storage.md`, or wherever the #73 code-graph-after-docs order is described: a cold build is ready only after the code graph lands.
+  - [x] `.documentation/operational/retrieval-eval-guide.md`: the new eval sets and their floors.
+  - [x] KB gotcha facts:
     - "a readiness flag set before every score input lands makes the first answers rank differently" (`## Instead`: await every scoring input on the cold path; a first-answer-equals-later test);
     - "best-single-chunk ranking loses to multi-part questions" (`## Instead`: per-clause matching), only if part 2 shipped on, or as a measured-negative fact if it shipped off.
-  - [ ] `CHANGELOG.md` 1.28.0 and `.documentation/changelog/v1-28-0-whole-answer-ranking.md`, with the per-change gate numbers.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+  - [x] `CHANGELOG.md` 1.28.0 and `.documentation/changelog/v1-28-0-whole-answer-ranking.md`, with the per-change gate numbers.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Should a cold build wait for the code graph, or answer marked stale? Wait. Before ready, nothing was being served ("Indexing in progress"), so waiting costs only the `git log` time, and it makes the first answer final. Warm swaps keep #73's serve-then-mark-stale.
@@ -124,4 +124,4 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - Phase 6: full validation: stdin-eof (known load flake) failed once in `npm test` and passed alone; real-corpus-eval hit its 600 s beforeAll timeout once in `npm run eval` (known flake) and passed alone (16 passed, 1 expected fail). Not re-run whole.
 
 ## Status
-**Phase 10 next** (docs). Phase 9 done (validated; review fix: cold-only wait). Earlier: **Phase 9 was next** (validate). Phase 8 cleanup done: nothing to remove. Phase 7 done (1.28.0 in all five fields and lockfile). Phase 6 done: gate PASS, #90 by-hand 0/10 differences, floors set (baseline.json newSets + new-sets-floor.test.ts). Earlier note: (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).
+**COMPLETE.** Phase 10 done (docs, KB facts, CHANGELOG 1.28.0, AGENTS.md regenerated, hewtd maintain --quick). All earlier phases done; #91 part 2 ships off (`clause_weight: 0`) and #91 stays open.
