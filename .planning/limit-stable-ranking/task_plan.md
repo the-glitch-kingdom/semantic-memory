@@ -1,7 +1,7 @@
 # Task Plan: ranking that does not depend on `limit` (#85)
 
 ## Goal
-`search(q, k)` returns the first k results of `search(q, K)` for any K > k, in order and with the same scores, for k ≤ 20. This holds for MCP `search_hybrid`, `search_semantic` and CLI `search` (hooks, kit).
+`search(q, k)` returns the first k results of `search(q, K)` for any K > k, in order and with the same scores, for k ≤ 8 (the default limit; the pool is `max(24, limit * 3)`). This holds for MCP `search_hybrid`, `search_semantic` and CLI `search` (hooks, kit).
 
 Today the candidate pool is `limit * 3` for both the vector and BM25 lists. So:
 - a doc in one list but outside the other gets 0 for the missing part;
@@ -58,27 +58,37 @@ Release as 1.27.0: ranking changes for every caller.
     - build twice and confirm zero differing top-8 results on the real-corpus sets.
     Record all of it in notes.md.
   - [x] Real-corpus slack: `baseline.json` and `gate-release.sh` allow about ±1 case for HNSW randomness. If two fresh builds now give identical results on the real corpus, record that in notes.md. Keep the slack for now (CI CPUs differ), and note that it could be removed as a follow-up.
-- [ ] Phase 6: The reporter's nit, plus release prep
+- [ ] Phase 6: Pool `max(24, limit * 3)`, and gate the two changes separately (user decision, 2026-11-09)
+  - [ ] Set `CANDIDATE_POOL = 24`. That is the old pool at limit 8, so the default limit ranks exactly as 1.26.0 did (apart from Phase 5's exact search). Limits 1–8 then all rank like limit 8, and limits above 8 still grow the pool. Fix the comment: the prefix rule holds up to limit 8 (#85).
+  - [ ] Update the prefix tests (`test/retrieval-eval/limit-stable.test.ts` and any other) to check limits 1, 3 and 5 against `search(q, 8).slice(0, k)`. Add one case showing that limit 10 is NOT required to match (no assertion), or simply drop 10/20 from the checks. Update `measure-limits.test.ts` only if needed.
+  - [ ] Noise band: 1.26.0's baseline is not deterministic. Measure 1.26.0's gate numbers twice, from two independent fresh builds (no `--cache`). The per-metric gap between those two builds is that metric's noise. Record the table in notes.md.
+  - [ ] Gate A, determinism alone, vs 1.26.0 at limit 8. Build a measurement-only worktree from main with only Phase 5's src changes (`src/core/vector.ts` exact search with the tie-break, plus the `src/core/reconcile.ts` sort). Pool stays `limit * 3`. Never commit it, and remove the worktree afterwards. Run the gate numbers vs 1.26.0. Judge each metric against max(1, its noise gap). If exact search moves a metric beyond noise, that is a real effect of HNSW being approximate: record it for the changelog, but don't revert.
+  - [ ] Gate B, the full branch (pool 24) vs 1.26.0. Assert that its limit-8 rankings on the gate sets are identical to Gate A's: same paths and order for every question, in both arms. Any difference is a bug to find.
+  - [ ] `scripts/gate-release.sh`: change `export BAND=1` to `export BAND=${BAND:-1}`, so a release can pass a measured noise band. Record the band used, and why, in notes.md.
+  - [ ] Real-corpus slack: from this release on, builds are deterministic. Keep the ±1 slack (CI CPUs differ), and note it as a follow-up.
+  - [ ] Built-in eval and per-limit #1 accuracy: re-run the Phase 4 script. #1 accuracy at limits 1–8 must equal limit 8's on every set. Record the numbers next to Phase 2's baseline.
+  - [ ] Follow-up (an issue filed at release time by the main session, not by this phase): a larger pool only pays off once the coverage boost stops rewarding breadth in a bigger pool. Tune it on train splits only, gate it on dominance, and ship it in its own release. Put the Phase 4/5 dominance numbers in notes.md for that issue.
+- [ ] Phase 7: The reporter's nit, plus release prep
   - [ ] `hooks/reconcile.js` header comment (lines ~21-23): it still says the docs entry "stays semantic-sidekick". Make it describe `DOCS_KEY = "semantic-memory-docs"` and the legacy name.
   - [ ] Bump all five version fields to 1.27.0, plus the lockfile. The offline tarball is deferred to release.
-- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
+- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
   - [ ] Phase 2 tests pass, and none are left as `it.fails`.
   - [ ] Edge cases:
-    - limit 1, and limit 20 (the boundary);
-    - limit 50 (above the guarantee: results come back, no crash, and the first 20 are a superset of `search(q, 20)`'s);
+    - limit 1, and limit 8 (the boundary);
+    - limit 20 and limit 50 (above the guarantee): results come back, with no crash;
     - a corpus smaller than the pool (6 docs);
     - status/tier/domain filters at limit 3 return no fewer results than on main;
     - text-only CLI (`--text-only`) unchanged.
   - [ ] Build twice from scratch (fixture corpus and this repo's `.documentation`): identical `search_semantic`/`search_hybrid` results.
   - [ ] Exact-search edge cases: an empty index, one chunk, every chunk of a doc deleted (`removeDoc`), and an index that crosses `EXACT_MAX_VECTORS` (a test-only lower threshold) and switches to HNSW.
   - [ ] MCP vs CLI parity: same #1 for the fixture queries at limits 3 and 8.
-  - [ ] Re-run the reporter-style check on this repo's `.documentation`: 10 queries × limits 1, 3, 5, 8, 10, 20, prefix property holds.
+  - [ ] Re-run the reporter-style check on this repo's `.documentation`: 10 queries × limits 1, 3, 5 and 8: the prefix property holds against limit 8.
   - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
   - [ ] Independent review of `git diff main...HEAD`.
-- [ ] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/architecture/` search pipeline doc (find it: the one that describes `hybridRanked`, fusion and coverage). Describe the fixed candidate pool and the prefix property.
-  - [ ] `.documentation/reference/mcp-tools-reference.md`: `limit` cuts a stable ranking (≤ 20).
+  - [ ] `.documentation/reference/mcp-tools-reference.md`: `limit` cuts a stable ranking up to 8; above 8 the candidate pool grows.
   - [ ] `.documentation/testing/retrieval-eval-guide.md`: if Phase 4 adds the per-limit #1 report.
   - [ ] A KB gotcha fact: a candidate pool sized by `limit` makes ranking depend on `limit`. In `## Instead`: a fixed pool, plus the prefix test.
   - [ ] Phase 5 docs: the architecture/indices doc (exact search below `EXACT_MAX_VECTORS`, HNSW above), and a KB gotcha fact: approximate HNSW plus float noise means rebuilds rank differently. In `## Instead`: exact search for typical vault sizes, and a build-twice test.
@@ -86,10 +96,11 @@ Release as 1.27.0: ranking changes for every caller.
   - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
-1. Pool size: 60 (the reporter's suggestion, ≥ the old pool for any limit ≤ 20), unless Phase 4's train-split numbers say otherwise.
-2. Limits above 20: the pool grows (`limit * 3`), so the prefix property is only guaranteed up to 20. This is documented, not hidden.
+1. Pool size: 24 (user, 2026-11-09). Pool 60 raised dominance (35 → 38, then 44 with exact search), and the default limit 8 should rank as 1.26.0. A larger pool waits for a coverage-boost fix in its own release.
+2. Limits above 8: the pool grows (`limit * 3`), so the prefix property is only guaranteed up to 8. This is documented, not hidden.
 
 ## Decisions Made
+- 2026-11-09 (user): pool `max(24, limit * 3)`. Ship exact search plus the tie-break (a correctness fix). Gate determinism alone and the full branch separately against 1.26.0, with 1.26.0's own build-to-build noise as the band. A larger pool plus a coverage-boost fix comes later, as its own issue and release.
 - 2026-11-09: the second #85 comment (build-to-build ranking noise) is folded into this plan as Phase 5, same release. The workflow was stopped after Phase 3 and relaunched from Phase 4.
 - Version 1.27.0, not a patch: every caller's ranking can change.
 - 2026-11-09 (Phase 5): the reporter was right about the source. `reconcile` pushed files to `parse` in stat/read completion order, so the index was built in I/O-timing order (`listMarkdown` sorts, but the order was lost). Fixed by sorting `parse` (src/core/reconcile.ts), on top of exact search. HNSW above 100k is therefore now reproducible too.
