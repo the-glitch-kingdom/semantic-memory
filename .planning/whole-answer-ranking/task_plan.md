@@ -76,8 +76,8 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
     Expect 0 differences.
   - [x] `npm run gate:release` (fresh, BAND=1) vs 1.27.1 passes. Record @1/@3/@8 per set, dominance and p95 in notes.md, with the per-change split from Phases 4 and 5.
   - [x] Set floors for the new eval rows from the measured branch numbers (train and held-out, real-corpus slack as baseline.json describes).
-- [ ] Phase 7: Release prep
-  - [ ] Bump all five version fields to 1.28.0, plus the lockfile.
+- [x] Phase 7: Release prep
+  - [x] Bump all five version fields to 1.28.0, plus the lockfile.
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes, and none is left as `it.fails` (except part 2 if it shipped off, then as a documented `it.fails` with the reason).
@@ -124,4 +124,4 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - Phase 6: full validation: stdin-eof (known load flake) failed once in `npm test` and passed alone; real-corpus-eval hit its 600 s beforeAll timeout once in `npm run eval` (known flake) and passed alone (16 passed, 1 expected fail). Not re-run whole.
 
 ## Status
-**Phase 7 next** (release prep). Phase 6 done: gate PASS, #90 by-hand 0/10 differences, floors set (baseline.json newSets + new-sets-floor.test.ts). Earlier note: (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).
+**Phase 8 next** (cleanup). Phase 7 done (1.28.0 in all five fields and lockfile). Phase 6 done: gate PASS, #90 by-hand 0/10 differences, floors set (baseline.json newSets + new-sets-floor.test.ts). Earlier note: (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).
