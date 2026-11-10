@@ -72,20 +72,20 @@ Release as 1.27.0: ranking changes for every caller.
   - [x] `hooks/reconcile.js` header comment (lines ~21-23): it still says the docs entry "stays semantic-sidekick". Make it describe `DOCS_KEY = "semantic-memory-docs"` and the legacy name.
   - [x] Bump all five version fields to 1.27.0, plus the lockfile. The offline tarball is deferred to release. (gate:release run fresh with BAND=1, the band Phase 6 recorded: RED, same numbers as Phase 6; see notes.)
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Phase 2 tests pass, and none are left as `it.fails`.
-  - [ ] Edge cases:
+- [x] Phase 9: Validate success through comprehensive testing (MANDATORY)
+  - [x] Phase 2 tests pass, and none are left as `it.fails`.
+  - [x] Edge cases:
     - limit 1, and limit 8 (the boundary);
     - limit 20 and limit 50 (above the guarantee): results come back, with no crash;
     - a corpus smaller than the pool (6 docs);
     - status/tier/domain filters at limit 3 return no fewer results than on main;
     - text-only CLI (`--text-only`) unchanged.
-  - [ ] Build twice from scratch (fixture corpus and this repo's `.documentation`): identical `search_semantic`/`search_hybrid` results.
-  - [ ] Exact-search edge cases: an empty index, one chunk, every chunk of a doc deleted (`removeDoc`), and an index that crosses `EXACT_MAX_VECTORS` (a test-only lower threshold) and switches to HNSW.
-  - [ ] MCP vs CLI parity: same #1 for the fixture queries at limits 3 and 8.
-  - [ ] Re-run the reporter-style check on this repo's `.documentation`: 10 queries × limits 1, 3, 5 and 8: the prefix property holds against limit 8.
-  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
-  - [ ] Independent review of `git diff main...HEAD`.
+  - [x] Build twice from scratch (fixture corpus and this repo's `.documentation`): identical `search_semantic`/`search_hybrid` results.
+  - [x] Exact-search edge cases: an empty index, one chunk, every chunk of a doc deleted (`removeDoc`), and an index that crosses `EXACT_MAX_VECTORS` (a test-only lower threshold) and switches to HNSW.
+  - [x] MCP vs CLI parity: same #1 for the fixture queries at limits 3 and 8.
+  - [x] Re-run the reporter-style check on this repo's `.documentation`: 10 queries × limits 1, 3, 5 and 8: the prefix property holds against limit 8.
+  - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh). (gate RED with BAND=1, same numbers as Phase 6/7: dominance 39 vs 35; awaiting the user.)
+  - [x] Independent review of `git diff main...HEAD`. (done by a separate `claude -p` process given only the diff, no Agent tool here; 2 real findings fixed, 1 documented, see notes.)
 - [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/architecture/` search pipeline doc (find it: the one that describes `hybridRanked`, fusion and coverage). Describe the fixed candidate pool and the prefix property.
   - [ ] `.documentation/reference/mcp-tools-reference.md`: `limit` cuts a stable ranking up to 8; above 8 the candidate pool grows.
@@ -114,7 +114,9 @@ Phase 5: gate vs 1.26.0 (fresh, local branch with exact search) is RED, and wors
 
 Phase 6: Gate A (exact search + sorted parse, pool limit*3) and Gate B (full branch, pool 24) vs 1.26.0 are both RED beyond a band of 1: dominance 39 vs 35 (no export), export hyb@1 76 vs 78. 1.26.0's own build-to-build noise gap is 0 on every metric, so BAND stays 1 (`BAND=${BAND:-1}` added to gate-release.sh). Limit-8 rankings of A and B are identical (0 of 332). Not tuned, nothing reverted (user decision). `npm run gate:release` at release time will fail on these unless the user widens the band or accepts it.
 
+Phase 9: review found `VectorIndex.load` past exactMax left `unit` empty so `removeDoc`/`addChunks` half-filled it (wrong exact results when 100k+ slots and live <= 100k); fixed with a `keepUnit` flag. `localeCompare` tie-breaks replaced by code-unit order (ICU differs by machine). Gate still RED (not a Phase 9 regression).
+
 (Phase 3: none. Other `* 3` sites: only `GRAPH_SEARCH_SEEDS * 3` in search_graph, a constant independent of `limit`, left as is. ef = max(100, 60) = 100 >= pool, so recall is unchanged. The trial script `repro.sh` was not copied: limit-stable.test.ts covers it.)
 
 ## Status
-**Phase 8 done (cleanup: removed a probe console.log from reproducible-build.test.ts; src and scripts diffs checked, no dead code; .planning measure-limits.test.ts, vitest.measure.config.ts and raw JSONs are referenced by notes.md, kept for Phase 9 re-measurement). Next: Phase 9.** Earlier: **Phase 7 done (reconcile.js comment, 1.27.0 bump in all five fields + lockfile). `npm run gate:release` at 1.27.0 vs 1.26.0, BAND=1, fresh: FAIL (dominance 39 vs 35; export hyb@1 76 vs 78), awaiting the user's decision. Next: Phase 8.** Earlier: **Phase 6 done (pool 24, separate gates). Gate A and B both RED vs 1.26.0 with identical numbers: dominance 39 vs 35, export hyb@1 76 vs 78; noise gap 0; caused by exact search, not the pool. Next: Phase 7.** Earlier: **Phase 5 done (exact search + sorted parse order); gate vs 1.26.0 RED (dominance 44 vs 35, multi @8 19 vs 21, export hyb@1 75 vs 78): needs the user's decision before Phase 6.** (Phase 4 gate was red too.) Phase 1 done. Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.
+**Phase 9 done (new limit-edge tests, review fixes in vector.ts, lint/build/test/eval green; gate:release still RED on dominance 39 vs 35 with BAND=1, the user decides). Next: Phase 10.** Earlier: **Phase 8 done (cleanup: removed a probe console.log from reproducible-build.test.ts; src and scripts diffs checked, no dead code; .planning measure-limits.test.ts, vitest.measure.config.ts and raw JSONs are referenced by notes.md, kept for Phase 9 re-measurement). Next: Phase 9.** Earlier: **Phase 7 done (reconcile.js comment, 1.27.0 bump in all five fields + lockfile). `npm run gate:release` at 1.27.0 vs 1.26.0, BAND=1, fresh: FAIL (dominance 39 vs 35; export hyb@1 76 vs 78), awaiting the user's decision. Next: Phase 8.** Earlier: **Phase 6 done (pool 24, separate gates). Gate A and B both RED vs 1.26.0 with identical numbers: dominance 39 vs 35, export hyb@1 76 vs 78; noise gap 0; caused by exact search, not the pool. Next: Phase 7.** Earlier: **Phase 5 done (exact search + sorted parse order); gate vs 1.26.0 RED (dominance 44 vs 35, multi @8 19 vs 21, export hyb@1 75 vs 78): needs the user's decision before Phase 6.** (Phase 4 gate was red too.) Phase 1 done. Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.

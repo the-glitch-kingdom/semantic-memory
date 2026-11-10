@@ -19,6 +19,9 @@ const QUERIES = [
   "which hooks run when a session starts",
   "how does the offline tarball install on an air-gapped host",
   "fuseScores",
+  "how do I undo a bad release",
+  "where are embeddings stored on disk",
+  "what is the candidate pool",
 ];
 
 type Hit = { path: string; score: number };

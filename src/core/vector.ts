@@ -30,6 +30,9 @@ const cosineOf = (a: ArrayLike<number>, b: ArrayLike<number>): number => {
   return na && nb ? dot / Math.sqrt(na * nb) : 0;
 };
 
+// code-unit order, not localeCompare: ICU can call distinct paths equal and differs by machine
+const byPath = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
 const unitOf = (v: ArrayLike<number>): Float32Array => {
   let n = 0;
   for (let i = 0; i < v.length; i++) n += v[i] * v[i];
@@ -46,6 +49,8 @@ export class VectorIndex {
   private live = 0;
   // unit-length copy by label (null = deleted), what exact search scores; same indexing as chunkMeta
   private unit: (Float32Array | null)[] = [];
+  // false after a load past exactMax: no copies are kept, and removeDoc/addChunks must not half-fill `unit`
+  private keepUnit = true;
 
   constructor(dimensions: number, private metaWeight = 1, private exactMax = EXACT_MAX_VECTORS) {
     this.dimensions = dimensions;
@@ -58,6 +63,7 @@ export class VectorIndex {
     this.index = null;
     this.chunkMeta = [];
     this.unit = [];
+    this.keepUnit = true;
     this.labelsByDoc.clear();
     this.live = 0;
     this.addChunks(embeddings, meta);
@@ -77,7 +83,7 @@ export class VectorIndex {
       const label = this.chunkMeta.length;
       this.index.addPoint(Array.from(embeddings[i]), label);
       this.chunkMeta.push(meta[i]);
-      this.unit.push(unitOf(embeddings[i]));
+      if (this.keepUnit) this.unit.push(unitOf(embeddings[i]));
       const labels = this.labelsByDoc.get(meta[i].docPath);
       if (labels) labels.push(label);
       else this.labelsByDoc.set(meta[i].docPath, [label]);
@@ -92,7 +98,7 @@ export class VectorIndex {
     for (const label of labels) {
       this.index.markDelete(label);
       this.chunkMeta[label] = null;
-      this.unit[label] = null;
+      if (this.keepUnit) this.unit[label] = null;
       this.live--;
     }
     this.labelsByDoc.delete(docPath);
@@ -109,7 +115,7 @@ export class VectorIndex {
     const numResults = Math.min(k, this.live);
     // nearest first
     const near: { label: number; cos: number }[] = [];
-    if (this.live <= this.exactMax && this.unit.length === this.chunkMeta.length) {
+    if (this.live <= this.exactMax && this.keepUnit) {
       const q = unitOf(queryEmbedding);
       this.unit.forEach((u, label) => {
         if (!u) return;
@@ -118,7 +124,7 @@ export class VectorIndex {
         near.push({ label, cos: dot });
       });
       // ties by path, then label, so the order is total
-      near.sort((a, b) => b.cos - a.cos || this.chunkMeta[a.label]!.docPath.localeCompare(this.chunkMeta[b.label]!.docPath) || a.label - b.label);
+      near.sort((a, b) => b.cos - a.cos || byPath(this.chunkMeta[a.label]!.docPath, this.chunkMeta[b.label]!.docPath) || a.label - b.label);
     } else {
       // hnswlib searches at ef=10 unless told otherwise (recall 0.93 on real vectors); set per search so a loaded, grown or rebuilt index all get it
       this.index.setEf(Math.max(EF_SEARCH, numResults));
@@ -163,7 +169,7 @@ export class VectorIndex {
         ...(win && meta!.m.field !== "doc" && { matched: { field: meta!.m.field ?? "meta", text: meta!.m.text } }),
       });
     }
-    results.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
+    results.sort((a, b) => b.score - a.score || byPath(a.path, b.path));
 
     return results.slice(0, numResults);
   }
@@ -207,9 +213,9 @@ export class VectorIndex {
     this.live = 0;
     // exact search needs the vectors; past the threshold HNSW answers and they are not kept
     this.unit = [];
-    const keep = this.chunkMeta.length <= this.exactMax;
+    this.keepUnit = this.chunkMeta.length <= this.exactMax;
     this.chunkMeta.forEach((m, label) => {
-      if (keep) this.unit.push(m ? unitOf(this.index!.getPoint(label)) : null);
+      if (this.keepUnit) this.unit.push(m ? unitOf(this.index!.getPoint(label)) : null);
       if (!m) return;
       this.live++;
       const labels = this.labelsByDoc.get(m.docPath);
