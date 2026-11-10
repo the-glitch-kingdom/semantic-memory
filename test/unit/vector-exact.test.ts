@@ -28,6 +28,15 @@ describe("VectorIndex exact search", () => {
     expect(b.search(vec(1), 3).map((r) => r.path)).toEqual(["a.md", "b.md", "c.md"]);
   });
 
+  it("takes the k nearest chunks, as HNSW does, not k docs", () => {
+    // two chunks of a.md are nearest; at k=2 b.md must not come in, or the pool fusion sees is wider than with HNSW
+    const at = (...xs: number[]) => Float32Array.from({ length: 8 }, (_, i) => xs[i] ?? 0);
+    const v = new VectorIndex(8);
+    v.build([at(1), at(1, 0.1), at(1, 0.5), at(0, 1)], [chunk(1, "a.md", 0), chunk(2, "a.md", 1), chunk(3, "b.md"), chunk(4, "c.md")]);
+    expect(v.search(at(1), 2).map((r) => r.path)).toEqual(["a.md"]);
+    expect(v.search(at(1), 3).map((r) => r.path)).toEqual(["a.md", "b.md"]);
+  });
+
   it("handles an empty index, one chunk and a fully deleted doc", () => {
     expect(new VectorIndex(8).search(vec(1), 5)).toEqual([]);
     const one = make(1);

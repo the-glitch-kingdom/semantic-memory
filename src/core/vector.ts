@@ -125,6 +125,8 @@ export class VectorIndex {
       });
       // ties by path, then label, so the order is total
       near.sort((a, b) => b.cos - a.cos || byPath(this.chunkMeta[a.label]!.docPath, this.chunkMeta[b.label]!.docPath) || a.label - b.label);
+      // k nearest chunks, as HNSW's knn returns: keeping every chunk would hand fusion up to k docs instead, a wider pool (#85)
+      near.length = Math.min(near.length, numResults);
     } else {
       // hnswlib searches at ef=10 unless told otherwise (recall 0.93 on real vectors); set per search so a loaded, grown or rebuilt index all get it
       this.index.setEf(Math.max(EF_SEARCH, numResults));

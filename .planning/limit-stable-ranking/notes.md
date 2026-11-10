@@ -192,3 +192,11 @@ No band or threshold changed. Cause is exact search (Phase 6 Gate A); the user d
 
 ## Eval results: Phase 10 (docs)
 Docs only; no code change. Search pipeline doc is `operational/retrieval-tuning-guide.md` (there is no architecture doc for `hybridRanked`); exact search is in `architecture/indices-and-storage.md#exact-search-v127`. Two KB facts, a changelog page and CHANGELOG 1.27.0 added. `testing/retrieval-eval-guide.md` does not exist; the eval guide is `operational/retrieval-eval-guide.md`, and it got a limit-stable section. AGENTS.md regenerated from branch code: only `last_generated` differed, so it was reverted. `npx hewtd maintain --quick`: 10 errors / 116 warnings across the whole tree (pre-existing; none reference the new files).
+
+## Release review (main session, 2026-11-09)
+In the exact path, `VectorIndex.search` kept every chunk and returned `numResults` docs. HNSW's knn returns `numResults` chunks, which come to ≤ `numResults` docs. So the vector arm handed fusion a wider pool, which is the same effect that raised dominance with pool 60. The fix is `near.length = Math.min(near.length, numResults)` after the sort. `test/unit/vector-exact.test.ts` "takes the k nearest chunks" fails without it.
+
+`BAND=1 npm run gate:release` (fresh, 1.27.0 vs 1.26.0): **PASS**.
+- No export: hyb@1 73 vs 73, multi@1/3/8 10/17/21 vs 10/17/21, cov@3 .776 vs .776, dominance 36 vs 35, negatives 43 vs 43, false flags 7 vs 7.
+- Export: hyb@1 78 vs 78, multi 10/17/21 vs 10/17/21, dominance 26 vs 26.
+- mcp vs cli: 0 of 166 in both arms. p95 (mcp): 18 ms vs 21 ms; export 34 ms vs 16 ms (one run).
