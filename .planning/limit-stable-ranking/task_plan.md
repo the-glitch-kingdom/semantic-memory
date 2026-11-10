@@ -39,25 +39,25 @@ Release as 1.27.0: ranking changes for every caller.
   - [x] If any eval metric drops (gate-release.sh dominance and, on the docs-only train sets, hyb@3/multi@3), try pool 40 and 100, on train splits only. Pick the smallest pool that matches or beats the baseline; record every number in notes.md. (No pool recovers it; 60 kept, see notes.)
   - [x] Update any eval expectation or threshold that moved, with the reason in notes.md.
   - [ ] `npm run gate:release` passes (fresh, no `--cache`). **NOT MET: FAILS on dominance 38 vs 35 (band 1), see notes and Errors Encountered.**
-- [ ] Phase 5: Reproducible vector search (#85, second comment: two full builds of identical files rank differently)
-  - [ ] Reproduce first, as a failing test. Build the index twice from scratch on two copies of a fixture corpus: separate temp dirs and index dirs, no shared embedding cache. Compare `search_semantic` and `search_hybrid` for a fixture query set (paths and order identical, scores within 1e-6). A second test feeds one build's embeddings perturbed by ~1e-6 (simulated cross-run ONNX float noise). The ranking must be the same unless two docs are within the noise. If the first test does not fail on main, keep it as a regression gate and rely on the perturbed test, which reproduces the mechanism. Record which fail.
-  - [ ] Find the actual source and record it in notes.md. The reporter suspects insertion order, but `listMarkdown` sorts (`src/core/indexer.ts:38`) and the build keeps `plan.parse` order (`src/mcp/context.ts:388`). Check:
+- [x] Phase 5: Reproducible vector search (#85, second comment: two full builds of identical files rank differently)
+  - [x] Reproduce first, as a failing test. Build the index twice from scratch on two copies of a fixture corpus: separate temp dirs and index dirs, no shared embedding cache. Compare `search_semantic` and `search_hybrid` for a fixture query set (paths and order identical, scores within 1e-6). A second test feeds one build's embeddings perturbed by ~1e-6 (simulated cross-run ONNX float noise). The ranking must be the same unless two docs are within the noise. If the first test does not fail on main, keep it as a regression gate and rely on the perturbed test, which reproduces the mechanism. Record which fail.
+  - [x] Find the actual source and record it in notes.md. The reporter suspects insertion order, but `listMarkdown` sorts (`src/core/indexer.ts:38`) and the build keeps `plan.parse` order (`src/mcp/context.ts:388`). Check:
     - the max abs difference between the two builds' embeddings (ONNX batching/threads);
     - whether a resumed build (`SAVE_INTERVAL`) or an incremental `addChunks` path changes the batch composition or the insertion order;
     - hnswlib's level RNG seed (`initIndex` defaults).
-  - [ ] Exact search below a size threshold:
+  - [x] Exact search below a size threshold:
     - `VectorIndex.search` scores every live chunk by cosine (brute force over the stored vectors: `getPoint` or a kept `Float32Array`) when live chunks ≤ `EXACT_MAX_VECTORS` (100_000). Break ties by doc path, then label, so the order is total.
     - Keep the per-doc best body/meta chunk logic and the result shape as they are.
     - Above the threshold, HNSW is unchanged (insertion is already sorted).
     - Keep building and saving `hnsw.bin` this release (load compatibility, and the large-vault path). Dropping it for small vaults is out of scope; note it as a possible follow-up.
-  - [ ] Phase 5 tests pass as plain `it`. The Phase 2/3 prefix tests still pass. `search_semantic` and the hybrid vector arm now return the exact top-k, so the recall of `ef=100` no longer limits them.
-  - [ ] Measure on the same script and sets as Phase 4:
+  - [x] Phase 5 tests pass as plain `it`. The Phase 2/3 prefix tests still pass. `search_semantic` and the hybrid vector arm now return the exact top-k, so the recall of `ef=100` no longer limits them.
+  - [x] Measure on the same script and sets as Phase 4:
     - the eval metrics at limit 8 must be ≥ Phase 4's;
     - p95 `search_hybrid` at limit 8 must stay within +10 ms of Phase 4's on the eval corpus;
     - one timing on a synthetic 13k × 384 index (the reporter's size): one exact query must take < 20 ms;
     - build twice and confirm zero differing top-8 results on the real-corpus sets.
     Record all of it in notes.md.
-  - [ ] Real-corpus slack: `baseline.json` and `gate-release.sh` allow about ±1 case for HNSW randomness. If two fresh builds now give identical results on the real corpus, record that in notes.md. Keep the slack for now (CI CPUs differ), and note that it could be removed as a follow-up.
+  - [x] Real-corpus slack: `baseline.json` and `gate-release.sh` allow about ±1 case for HNSW randomness. If two fresh builds now give identical results on the real corpus, record that in notes.md. Keep the slack for now (CI CPUs differ), and note that it could be removed as a follow-up.
 - [ ] Phase 6: The reporter's nit, plus release prep
   - [ ] `hooks/reconcile.js` header comment (lines ~21-23): it still says the docs entry "stays semantic-sidekick". Make it describe `DOCS_KEY = "semantic-memory-docs"` and the legacy name.
   - [ ] Bump all five version fields to 1.27.0, plus the lockfile. The offline tarball is deferred to release.
@@ -92,13 +92,16 @@ Release as 1.27.0: ranking changes for every caller.
 ## Decisions Made
 - 2026-11-09: the second #85 comment (build-to-build ranking noise) is folded into this plan as Phase 5, same release. The workflow was stopped after Phase 3 and relaunched from Phase 4.
 - Version 1.27.0, not a patch: every caller's ranking can change.
+- 2026-11-09 (Phase 5): the reporter was right about the source. `reconcile` pushed files to `parse` in stat/read completion order, so the index was built in I/O-timing order (`listMarkdown` sorts, but the order was lost). Fixed by sorting `parse` (src/core/reconcile.ts), on top of exact search. HNSW above 100k is therefore now reproducible too.
 - Measure first: the baseline in Phase 2 happens before the fix lands.
 
 ## Errors Encountered
 
 Phase 4: `npm run gate:release` (fresh, local 1.26.0 tree vs 1.25.1) FAILS: "dominance rises beyond the band", no-export eval and eval-mcp (38 vs 35, band 1). Everything else passes (hyb@1 74 vs 73, multi@1 10 vs 10, multi@3 16 vs 17 and @8 20 vs 21 within band, cov@3 .773 vs .776, negatives 43 vs 43, false flags 7 vs 7, mcp vs cli 0/166, export arm passes with dominance 27 vs 26). Not tuned on held-out; gate script and band untouched. Needs the user to accept a dominance change or choose another fix. See notes.
 
+Phase 5: gate vs 1.26.0 (fresh, local branch with exact search) is RED, and worse than Phase 4's vs 1.25.1: dominance 44 vs 35 (export 30 vs 26), multi @3 16 vs 17 and @8 19 vs 21 (no export), hyb@1 75 vs 78 (export). Not tuned; no threshold, band or floor touched. Exact search returns the true top-k docs, so a broad doc reaches the vector arm's top-k more often. See notes, "Gate vs 1.26.0 after Phase 5".
+
 (Phase 3: none. Other `* 3` sites: only `GRAPH_SEARCH_SEEDS * 3` in search_graph, a constant independent of `limit`, left as is. ef = max(100, 60) = 100 >= pool, so recall is unchanged. The trial script `repro.sh` was not copied: limit-stable.test.ts covers it.)
 
 ## Status
-**Phase 4 measured; gate:release RED on dominance (needs a decision); next: Phase 5 once decided.** Phase 1 done. Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.
+**Phase 5 done (exact search + sorted parse order); gate vs 1.26.0 RED (dominance 44 vs 35, multi @8 19 vs 21, export hyb@1 75 vs 78): needs the user's decision before Phase 6.** (Phase 4 gate was red too.) Phase 1 done. Reproduced on 1.26.0 (this repo's `.documentation`, CLI search): 10/10 queries break the prefix property, and 2 change #1. A trial of `Math.max(limit * 3, 60)` fixes all 10.

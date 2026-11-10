@@ -92,3 +92,41 @@ No pool size recovers hyb@3 (-1) / multi@3 (-1) or the dominance; larger is wors
 - export: hyb@1 77 vs 78, multi@3 17 vs 17, @8 20 vs 21, cov@3 .796 vs .776, dominance 27 vs 26 (ok), same negatives/false flags, 0/166.
 - p95 in the gate table (local mcp 35/16 ms vs 22/39 ms): noisy, no pattern.
 Note: once Phase 6 bumps to 1.27.0 the gate compares with 1.26.0 (main's ranking), not 1.25.1; its dominance was not measured held-out here. Decision for the user: accept dominance +3 (troubleshooting.md top-3 slots, a doc this repo's sets answer often; see multi-doc-recall notes) by widening the band for dominance, or add a mitigation (e.g. a length prior, previously noted as a trade).
+
+## Eval results: Phase 5 (exact search; raw: `branch-phase5.json`)
+
+### Source of the build-to-build noise (reproduced)
+- Reproduction: `test/retrieval-eval/reproducible-build.test.ts` builds `.documentation` twice (separate temp dirs, no shared cache). On the unfixed code `search_semantic` top-8 differed on query 1 (`architecture/v1-stack-overview.md` vs `operational/retrieval-eval-guide.md` at rank 8); `search_hybrid` passed that run. The embedding-difference test and the perturbation test passed on main (HNSW is not that sensitive to 1e-6 noise on this corpus), so the perturbation test is a regression gate.
+- Embeddings are NOT the source: across the two builds 1761 vectors, 0 differ, max abs diff 0 (same machine; ONNX batch composition is identical). The same embeddings built into two HNSW indexes in the same order gave 0 differing top-8; in a different order (cache-file order vs the other build's) 337 of 353 queries differed. So HNSW is deterministic but order-sensitive, as the reporter said.
+- The order: `reconcile` (`src/core/reconcile.ts`) filled `parse` inside `Promise.all` of stat+readFile, i.e. in completion order. `listMarkdown` is sorted, `context.ts:388` keeps `plan.parse` order, but `plan.parse` was already racy. Unit test `test/unit/reconcile-order.test.ts` fails on the old code (200 files, mixed sizes), passes with `parse.sort()`.
+- With only the sort (HNSW kept), the build-twice test passed 2 of 2 runs; exact search is kept regardless as asked. resumed builds (`SAVE_INTERVAL`) only save the vector cache, not the insertion order. hnswlib's `initIndex` uses its default fixed seed (not changed).
+
+### What changed
+- `src/core/vector.ts`: `EXACT_MAX_VECTORS = 100_000`; live chunks at or below it are scored by brute-force cosine over unit-length copies kept per label (`unit`), ties by doc path then label, results total-ordered (score, then path) and cut to k docs (the HNSW path returned up to k docs from k chunks, so exact now returns the true top-k docs). Above it HNSW is unchanged (and `load` keeps no copies). `hnsw.bin` is still written. Constructor takes `exactMax` for tests.
+- Snapshot `test/fixtures/federation/single-source-snapshot.json` re-taken: "telemetry message ... cold storage" gains `blank-charts-playbook.md` (0.256) at rank 5 (HNSW missed it), nonexistent_function #1 0.300 -> 0.304; other 8 identical.
+
+### Measurements
+- Eval metrics at limit 8 on the 4 real sets: identical to Phase 4 (only meanBytes moved); #1 counts the same at every limit (21/18/6/6).
+- p50/p95 @8 (ms), Phase 4 -> Phase 5: real-train 8/21 -> 9/17, real-heldout 11/27 -> 9/16, hub-train 11/22 -> 9/19, hub-heldout 9/17 -> 9/13 (all within +10 ms).
+- Synthetic 13256 x 384 exact search (random vectors, 590 docs, k=24): median 6.9 ms, max 18.0 ms over 30 queries (target < 20 ms).
+- Build twice on this repo's `.documentation` with git history, all 115 queries of the 4 real sets, limit 8: top-8 differ in 0 for `search_semantic` and 0 for `search_hybrid`, #1 differ 0 (the reporter's 4 and 2 of 41). Real-corpus slack: fresh builds now agree exactly here; the +-1 slack stays (CI CPUs differ). Follow-up: it could be dropped, and `hnsw.bin` skipped for small vaults.
+- Full validation: lint, build, `npm test` (1150 passed after the snapshot re-take), `npm run eval` 173 passed + 4 expected fail.
+
+## Gate vs 1.26.0 after Phase 5
+`scripts/gate-release.sh 1.26.0` (fresh, no --cache, held-out gate sets, band 1; package.json still 1.26.0, so it was run with the version as an argument). RESULT: FAIL.
+
+| metric | no export: branch vs 1.26.0 | export: branch vs 1.26.0 |
+|---|---|---|
+| hyb@1 | 73 vs 73 | 75 vs 78 (drop 3, FAIL) |
+| multi@1 | 10 vs 10 | 10 vs 10 |
+| multi@3 | 16 vs 17 | 17 vs 17 |
+| multi@8 | 19 vs 21 (FAIL) | 20 vs 21 |
+| cov@3 | .773 vs .776 | .796 vs .776 |
+| dominance slots | 44 vs 35 (FAIL) | 30 vs 26 (FAIL) |
+| negatives flagged | 42 vs 43 | 42 vs 43 |
+| false flags | 7 vs 7 | 7 vs 7 |
+| mcp vs cli differ | 0 of 166 | 0 of 166 |
+| titled #1 | 119/119 | 119/119 |
+| first answer (mcp) | 1307 ms | 1333 ms |
+
+Same numbers on the cli and mcp arms. Dominance path: the top-3 slots one doc takes on questions it does not answer; no-export 44 (Phase 4 measured 38 vs 1.25.1). Not tuned. The user decides: widen the dominance/multi bands, or add a mitigation (a length prior, or a different coverage rule).

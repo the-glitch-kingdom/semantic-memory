@@ -6,6 +6,8 @@ import { existsSync } from "node:fs";
 import type { SearchResult } from "./types.js";
 
 const EF_SEARCH = 100;
+/** At or below this many live chunks search is exact (brute-force cosine): HNSW is approximate, so two builds of the same files could rank differently (#85). */
+export const EXACT_MAX_VECTORS = 100_000;
 
 export interface ChunkMeta {
   docPath: string;
@@ -28,6 +30,13 @@ const cosineOf = (a: ArrayLike<number>, b: ArrayLike<number>): number => {
   return na && nb ? dot / Math.sqrt(na * nb) : 0;
 };
 
+const unitOf = (v: ArrayLike<number>): Float32Array => {
+  let n = 0;
+  for (let i = 0; i < v.length; i++) n += v[i] * v[i];
+  const s = n ? 1 / Math.sqrt(n) : 0;
+  return Float32Array.from(v, (x) => x * s);
+};
+
 export class VectorIndex {
   private index: InstanceType<typeof HierarchicalNSW> | null = null;
   private dimensions: number;
@@ -35,8 +44,10 @@ export class VectorIndex {
   private chunkMeta: (ChunkMeta | null)[] = [];
   private labelsByDoc = new Map<string, number[]>();
   private live = 0;
+  // unit-length copy by label (null = deleted), what exact search scores; same indexing as chunkMeta
+  private unit: (Float32Array | null)[] = [];
 
-  constructor(dimensions: number, private metaWeight = 1) {
+  constructor(dimensions: number, private metaWeight = 1, private exactMax = EXACT_MAX_VECTORS) {
     this.dimensions = dimensions;
   }
 
@@ -46,6 +57,7 @@ export class VectorIndex {
   ): void {
     this.index = null;
     this.chunkMeta = [];
+    this.unit = [];
     this.labelsByDoc.clear();
     this.live = 0;
     this.addChunks(embeddings, meta);
@@ -65,6 +77,7 @@ export class VectorIndex {
       const label = this.chunkMeta.length;
       this.index.addPoint(Array.from(embeddings[i]), label);
       this.chunkMeta.push(meta[i]);
+      this.unit.push(unitOf(embeddings[i]));
       const labels = this.labelsByDoc.get(meta[i].docPath);
       if (labels) labels.push(label);
       else this.labelsByDoc.set(meta[i].docPath, [label]);
@@ -79,6 +92,7 @@ export class VectorIndex {
     for (const label of labels) {
       this.index.markDelete(label);
       this.chunkMeta[label] = null;
+      this.unit[label] = null;
       this.live--;
     }
     this.labelsByDoc.delete(docPath);
@@ -93,18 +107,33 @@ export class VectorIndex {
     if (!this.index || this.live === 0) return [];
 
     const numResults = Math.min(k, this.live);
-    // hnswlib searches at ef=10 unless told otherwise (recall 0.93 on real vectors); set per search so a loaded, grown or rebuilt index all get it
-    this.index.setEf(Math.max(EF_SEARCH, numResults));
-    const result = this.index.searchKnn(Array.from(queryEmbedding), numResults);
+    // nearest first
+    const near: { label: number; cos: number }[] = [];
+    if (this.live <= this.exactMax && this.unit.length === this.chunkMeta.length) {
+      const q = unitOf(queryEmbedding);
+      this.unit.forEach((u, label) => {
+        if (!u) return;
+        let dot = 0;
+        for (let i = 0; i < u.length; i++) dot += u[i] * q[i];
+        near.push({ label, cos: dot });
+      });
+      // ties by path, then label, so the order is total
+      near.sort((a, b) => b.cos - a.cos || this.chunkMeta[a.label]!.docPath.localeCompare(this.chunkMeta[b.label]!.docPath) || a.label - b.label);
+    } else {
+      // hnswlib searches at ef=10 unless told otherwise (recall 0.93 on real vectors); set per search so a loaded, grown or rebuilt index all get it
+      this.index.setEf(Math.max(EF_SEARCH, numResults));
+      const result = this.index.searchKnn(Array.from(queryEmbedding), numResults);
+      result.neighbors.forEach((label, i) => near.push({ label, cos: 1 - result.distances[i] }));
+    }
 
-    // per doc: the best body chunk and the best metadata chunk (neighbours come nearest first)
+    // per doc: the best body chunk and the best metadata chunk
     const docs = new Map<string, { body?: { cos: number; m: ChunkMeta }; meta?: { cos: number; m: ChunkMeta } }>();
-    for (let i = 0; i < result.neighbors.length; i++) {
-      const m = this.chunkMeta[result.neighbors[i]];
+    for (const { label, cos } of near) {
+      const m = this.chunkMeta[label];
       if (!m) continue;
       const slot = docs.get(m.docPath) ?? {};
       const kind = m.kind === "meta" ? "meta" : "body";
-      slot[kind] ??= { cos: 1 - result.distances[i], m };
+      slot[kind] ??= { cos, m };
       docs.set(m.docPath, slot);
     }
 
@@ -134,9 +163,9 @@ export class VectorIndex {
         ...(win && meta!.m.field !== "doc" && { matched: { field: meta!.m.field ?? "meta", text: meta!.m.text } }),
       });
     }
-    results.sort((a, b) => b.score - a.score);
+    results.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
 
-    return results;
+    return results.slice(0, numResults);
   }
 
   /** The doc's body chunk nearest the query vector, read from the stored embeddings (no re-embedding, no search). */
@@ -176,7 +205,11 @@ export class VectorIndex {
 
     this.labelsByDoc.clear();
     this.live = 0;
+    // exact search needs the vectors; past the threshold HNSW answers and they are not kept
+    this.unit = [];
+    const keep = this.chunkMeta.length <= this.exactMax;
     this.chunkMeta.forEach((m, label) => {
+      if (keep) this.unit.push(m ? unitOf(this.index!.getPoint(label)) : null);
       if (!m) return;
       this.live++;
       const labels = this.labelsByDoc.get(m.docPath);
