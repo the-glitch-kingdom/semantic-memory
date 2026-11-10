@@ -100,3 +100,22 @@ Form: `score *= 1 + w * clauseCover`, clauseCover = best min(cos) over clause pa
 Gate (`BAND=1 bash scripts/gate-release.sh 1.27.1`, parts 1+2 at w=1, held-out): FAIL. no export: hybrid @1 72 vs 73, multi @1 9 vs 10, multi @3/@8 17/20 same, cov@3 0.779 vs 0.776, dominance 35 vs 35, negatives 43/43, false flags 7/7; export: hybrid @1 76 vs 78, multi @1 9 vs 10, dominance 24 vs 25. mcp vs cli 0 of 166 differ. p95 32 ms vs 14 ms (the clause embeddings). Part 1 alone passed the same gate (Phase 4: 73 vs 73, 78 vs 78), so the loss is part 2's. Not tuned on held-out; shipped `clause_weight: 0`. With it off the code path is skipped (no clause embeddings), so branch results equal Phase 4's.
 
 #87 relation: not measured (part 2 off). The release comment should ask the reporter for an anonymised multi-part repro.
+
+## Eval results: Phase 6 (whole branch; fresh `BAND=1 bash scripts/gate-release.sh 1.27.1`, no --cache; branch = #90 + identifier tier, clause_weight 0)
+
+Gate: **PASS** (now with whole-answer-heldout and identifier-tier-heldout added to its sets; 139 held-out questions, 186 probes). 1.27.1 vs local, same run:
+| arm | hyb@1 | hyb@3 | sem@1 | multi@1/3/8 | cov@1/3/8 | dominance | neg flagged | p95 |
+|---|---|---|---|---|---|---|---|---|
+| no export cli | 92 vs 92 | 116 vs 116 | 79 vs 79 | 20/28/31 vs same of 41 | 0.62/0.82/0.87 vs same | 33 vs 34 | 43 vs 43 | 14 ms vs 12 ms |
+| no export mcp | 92 vs 92 | 116 | 79 | same | same | 33 vs 34 | 43/43 | 14 vs 15 ms |
+| export cli | 95 vs 95 | 117 | 81 | 20/28/32 | 0.62/0.82/0.91 | 23 vs 25 | 43/43 | 16 vs 12 ms |
+| export mcp | 95 vs 95 | 117 | 81 | 20/28/32 | same | 23 vs 25 | 43/43 | 15 vs 16 ms |
+False flags 7 vs 7; mcp vs cli 0 of 186 differ (both modes); titled #1 139/139 (also with slow git); first mcp answer 1290 ms (990 ms slow git) vs 1253/1007 for 1.27.1. Per-change split: identifier tier gave dominance -1/-2 and nothing else on held-out (Phase 4); clause coverage is off, so adds nothing (Phase 5 numbers above).
+
+Per new set (cli, 1.27.1 vs local identical hybrid counts): whole-answer 11/12 @1, @3 12, p95 308 vs 304 ms; whole-answer-heldout 10/12, @3 11; identifier-tier 8/8; identifier-tier-heldout 8/8. Top-3 all identifier docs (limit 8, via test/retrieval-eval/identifier-tier.test.ts and new-sets-floor.test.ts): 8/8 train and 8/8 held-out (main: 0/8, 0/8).
+
+#85 per-limit prefix (limit-stable.test.ts, identifier-tier.test.ts) and reproducible-build.test.ts: pass (51 passed, 2 expected fail in the 4 files run).
+
+#90 by hand: `.documentation` copied to /tmp (index deleted), server started over stdio, 10 fixed queries at once, polled until none answered "Indexing in progress": first real answer after 40.4 s, again 10 s later: **0 differences of 10**. Before that point every query answers "Indexing in progress... Try again shortly" (21 ms), by design (Phase 3).
+
+Floors: baseline.json `newSets` (whole-answer hybrid @1/@3 11/12 train, 10/11 held-out; identifier top-3 8/8 both), enforced by new test/retrieval-eval/new-sets-floor.test.ts with one case of slack. gate-release.sh gates both held-out sets against the previous release.

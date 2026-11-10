@@ -283,5 +283,26 @@
         "anchorAt1": 12
       }
     }
+  },
+  "newSets": {
+    "_comment": "whole-answer-ranking Phase 6: floors for the #91 sets, measured on the branch (1.28.0 dev; main = 1.27.1 gives the same hybrid counts, the identifier tier moves only the top-3 slots). wholeAnswer: hybrid @1/@3 over test/fixtures/multi-hub; identifierTier: questions whose top 3 (limit 8) all hold the identifier, of 8 (main: 0 of 8 on both splits). new-sets-floor.test.ts allows one case below each floor (HNSW is random per build); gate-release.sh also gates both held-out sets against the previous release.",
+    "wholeAnswer": {
+      "train": {
+        "at1": 11,
+        "at3": 12
+      },
+      "heldout": {
+        "at1": 10,
+        "at3": 11
+      }
+    },
+    "identifierTier": {
+      "train": {
+        "top3": 8
+      },
+      "heldout": {
+        "top3": 8
+      }
+    }
   }
 }

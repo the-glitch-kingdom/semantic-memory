@@ -66,16 +66,16 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
     - Do not tune on held-out.
   - [x] Relation to #87: if part 2 works, note in notes.md whether it also lets the candidate pool grow without the dominance rise (one train-only measurement at pool 60 is enough). Don't change the pool in this plan; #87 stays its own release.
     - Skipped: part 2 did not ship on, so there is no pool-60 measurement to make.
-- [ ] Phase 6: Measure the whole branch
-  - [ ] `npm run eval` and the #85 per-limit check: limits 1, 3 and 5 are prefixes of limit 8 on every set. Reproducible builds still give 0 differing results (`test/retrieval-eval/reproducible-build.test.ts`).
-  - [ ] Cold-build check by hand on this repo's `.documentation`, the #90 repro:
+- [x] Phase 6: Measure the whole branch
+  - [x] `npm run eval` and the #85 per-limit check: limits 1, 3 and 5 are prefixes of limit 8 on every set. Reproducible builds still give 0 differing results (`test/retrieval-eval/reproducible-build.test.ts`).
+  - [x] Cold-build check by hand on this repo's `.documentation`, the #90 repro:
     1. delete the index;
     2. start the server;
     3. poll until ready;
     4. run a fixed 10-query set at once and again 10 s later.
     Expect 0 differences.
-  - [ ] `npm run gate:release` (fresh, BAND=1) vs 1.27.1 passes. Record @1/@3/@8 per set, dominance and p95 in notes.md, with the per-change split from Phases 4 and 5.
-  - [ ] Set floors for the new eval rows from the measured branch numbers (train and held-out, real-corpus slack as baseline.json describes).
+  - [x] `npm run gate:release` (fresh, BAND=1) vs 1.27.1 passes. Record @1/@3/@8 per set, dominance and p95 in notes.md, with the per-change split from Phases 4 and 5.
+  - [x] Set floors for the new eval rows from the measured branch numbers (train and held-out, real-corpus slack as baseline.json describes).
 - [ ] Phase 7: Release prep
   - [ ] Bump all five version fields to 1.28.0, plus the lockfile.
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -121,5 +121,7 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - Phase 5: w=1 passed the train rule (no @1 drop on any train set, dominance unchanged, fixture flips) but failed the held-out gate vs 1.27.1: no export hybrid @1 72 vs 73, multi @1 9 vs 10; export hybrid @1 76 vs 78 (beyond BAND 1). Not re-tuned on held-out; shipped off. Also on train at w>=0.5 real-corpus hybrid @3 fell 26 to 24.
 - Phase 2: the whole-answer rows leave little headroom on main (11/12 and 10/12 @1; hub docs hold both answers) and the identifier rows are 8/8 @1 already, so the eval counts alone cannot show the gains. Phase 4 reports "top-3 all identifier docs" (0/8 and 0/8 on main) and Phase 5 relies on the `multi-clause` fixture. Rows left as written.
 
+- Phase 6: full validation: stdin-eof (known load flake) failed once in `npm test` and passed alone; real-corpus-eval hit its 600 s beforeAll timeout once in `npm run eval` (known flake) and passed alone (16 passed, 1 expected fail). Not re-run whole.
+
 ## Status
-**Phase 6 next** (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).
+**Phase 7 next** (release prep). Phase 6 done: gate PASS, #90 by-hand 0/10 differences, floors set (baseline.json newSets + new-sets-floor.test.ts). Earlier note: (measure the whole branch). Phases 2-5 done; #91 part 2 is built but ships OFF (`clause_weight: 0`) after failing the held-out gate; the multi-clause two-part tests stay `it.fails`. Floors for the new eval sets and gate-release.sh entries are still pending (Phase 6).
