@@ -19,7 +19,7 @@
 # Each run is measured twice, on the same index: `eval` (in-process) and `eval --via mcp --settle` (the stdio server as the plugin
 # launches it, queried as soon as it answers, answers marked stale retried until the code graph has landed). Prints one table, a row per run and arm: hybrid / semantic @1, @3, multi @1, #1+related,
 # related per #1, negatives flagged, p95, then for the mcp arm the first-answer time, entity cards and fields on #1.
-# A set named long-section*.jsonl or multi-hub*.jsonl also copies its fixture dir (test/fixtures/long-section/, long-section-hard/ or multi-hub/) into each clone's .documentation first.
+# A set named long-section*.jsonl, multi-hub*.jsonl, identifier-tier*.jsonl or whole-answer*.jsonl (multi-hub) also copies its fixture dir (test/fixtures/long-section/, long-section-hard/, multi-hub/ or identifier-tier/) into each clone's .documentation first.
 # multi@1/@3/@8, cov (mean facet coverage of the multi questions at @1/@3/@8) and dom (most top-3 slots one doc takes) come from the report's own metrics: a release before 1.24.0 has no cov/dom in its own `cli` arm (shown as -), but the `mcp` arm is driven by this checkout, so it has them for every version.
 # Set GATE_TMP to reuse a directory (it is not removed).
 set -euo pipefail
@@ -44,9 +44,11 @@ if [ ${#SETS[@]} -eq 0 ]; then
 fi
 
 if [ -n "${GATE_TMP:-}" ]; then T="$GATE_TMP"; mkdir -p "$T"; else T="$(mktemp -d "${TMPDIR:-/tmp}/eval-release.XXXXXX")"; trap 'rm -rf "$T"' EXIT; fi
-FIXTURES=(); for fx in long-section long-section-hard multi-hub; do
+FIXTURES=(); for fx in long-section long-section-hard multi-hub identifier-tier; do
   case " ${SETS[*]} " in *"/$fx.jsonl"*|*"/$fx-heldout.jsonl"*) FIXTURES+=("$fx") ;; esac
 done
+# the whole-answer sets (#91 part 2) are questions over the multi-hub fixture
+case " ${SETS[*]} " in *"/whole-answer.jsonl"*|*"/whole-answer-heldout.jsonl"*) case " ${FIXTURES[*]} " in *" multi-hub "*) ;; *) FIXTURES+=(multi-hub) ;; esac ;; esac
 if [ $CACHE = 1 ]; then
   # shortcut: no lock, so two runs filling the same key at once can collide; the plan-runner runs one heavy job at a time
   CROOT="${EVAL_CACHE:-$HOME/.cache/semantic-memory-eval}"; mkdir -p "$CROOT"

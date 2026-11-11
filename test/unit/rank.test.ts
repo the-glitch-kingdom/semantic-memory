@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Bm25Index } from "../../src/core/bm25.js";
 import { GraphBuilder } from "../../src/core/graph.js";
-import { applyCoverage, DEFAULT_RANKING, loadRanking } from "../../src/core/rank.js";
+import { applyClauses, applyCoverage, DEFAULT_RANKING, loadRanking, splitClauses } from "../../src/core/rank.js";
+import type { VectorIndex } from "../../src/core/vector.js";
 import type { IndexedDocument } from "../../src/core/types.js";
 
 const doc = (path: string, mdLinks: string[] = [], extra: Partial<IndexedDocument> = {}) =>
@@ -46,7 +47,7 @@ describe("applyCoverage", () => {
   const q = "collecting alerts storage";
 
   it("is a no-op with the shipped defaults", () => {
-    expect(DEFAULT_RANKING).toMatchObject({ coverage_weight: 0, link_prior: 1 });
+    expect(DEFAULT_RANKING).toMatchObject({ coverage_weight: 0, link_prior: 1, clause_weight: 0 });
     expect(applyCoverage(fused, q, bm, g, DEFAULT_RANKING)).toBe(fused);
   });
   it("ranks the doc that covers the whole broad query above a narrower doc", () => {
@@ -59,7 +60,7 @@ describe("applyCoverage", () => {
     const graph = new GraphBuilder({ excludeHubs: [] });
     graph.buildFromDocuments(docs);
     const rs = [{ path: "lone.md", score: 1 }, { path: "hub.md", score: 0.95 }];
-    const cfg = { coverage_weight: 0, link_prior: 1.1, link_prior_min_links: 3 };
+    const cfg = { ...DEFAULT_RANKING, link_prior: 1.1, link_prior_min_links: 3 };
     expect(applyCoverage(rs, "x", bm, graph, cfg)[0].path).toBe("hub.md"); // 3 live links reach the threshold (gen.md is no node)
     expect(applyCoverage(rs, "x", bm, graph, { ...cfg, link_prior_min_links: 4 })[0].path).toBe("lone.md");
     expect(applyCoverage(rs, "x", bm, graph, cfg, (p) => p === "a.md")[0].path).toBe("lone.md"); // an excluded target does not count
@@ -72,9 +73,31 @@ describe("loadRanking", () => {
     try {
       expect(loadRanking(dir)).toEqual(DEFAULT_RANKING);
       await writeFile(join(dir, "vault.schema.yml"), "ranking:\n  coverage_weight: 0.3\n  link_prior: -2\n  link_prior_min_links: 8\n");
-      expect(loadRanking(dir)).toEqual({ coverage_weight: 0.3, link_prior: DEFAULT_RANKING.link_prior, link_prior_min_links: 8 });
+      expect(loadRanking(dir)).toEqual({ coverage_weight: 0.3, link_prior: DEFAULT_RANKING.link_prior, link_prior_min_links: 8, clause_weight: DEFAULT_RANKING.clause_weight });
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("clause coverage (#91 part 2)", () => {
+  it("splits on and / comma / semicolon / question mark and keeps clauses with 2+ non-stop tokens", () => {
+    expect(splitClauses("How do we rotate the cluster certificates, and where are the audit logs kept?")).toEqual(["How do we rotate the cluster certificates", "where are the audit logs kept"]);
+    expect(splitClauses("rotate certificates; audit logs")).toHaveLength(2);
+  });
+  it("does nothing for a one-part question, a name with 'and', or punctuation only", () => {
+    for (const q of ["How do we rotate the cluster certificates?", "Tom and Jerry", "?,;", ""]) expect(splitClauses(q)).toEqual([]);
+  });
+  it("caps at 3 clauses", () => {
+    expect(splitClauses("alpha beta, gamma delta, epsilon zeta, eta theta")).toHaveLength(3);
+  });
+  it("re-ranks by the cover, and is a no-op when off or for one clause", async () => {
+    const vi = { clauseCover: (p: string) => (p === "y.md" ? 0.5 : 0) } as unknown as VectorIndex;
+    const embed = async () => new Float32Array(1);
+    const rs = [{ path: "x.md", score: 1 }, { path: "y.md", score: 0.8 }];
+    const q = "alpha beta, gamma delta";
+    expect((await applyClauses(rs, q, vi, embed, { ...DEFAULT_RANKING, clause_weight: 1 }))[0].path).toBe("y.md");
+    expect(await applyClauses(rs, q, vi, embed, { ...DEFAULT_RANKING, clause_weight: 0 })).toBe(rs);
+    expect(await applyClauses(rs, "alpha beta", vi, embed, { ...DEFAULT_RANKING, clause_weight: 1 })).toBe(rs);
   });
 });

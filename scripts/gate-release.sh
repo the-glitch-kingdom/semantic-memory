@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Release gate: this checkout against the previous published version on the held-out sets (real-corpus, hub, long-section,
-# long-section-hard, absent-terms, multi-hub), same run, each on its own clone, three ways: no export, with `.hewtd/graph.json`, and with `git log`
+# long-section-hard, absent-terms, multi-hub, whole-answer, identifier-tier), same run, each on its own clone, three ways: no export, with `.hewtd/graph.json`, and with `git log`
 # slowed to 30 s. Each run is measured in-process (cli) and through the stdio server (mcp). Fails when
 #   - local hybrid @1 or multi @1 drops by more than the band (one question) against the previous version, on cli or mcp;
 #   - multi @3 or @8, or cov@3 (by one question's share), drops by more than the band against the previous version, or dominance
@@ -21,7 +21,7 @@ const v=JSON.parse(require("fs").readFileSync(0,"utf8")),c=process.argv[1].split
 const lt=(a)=>{a=a.split(".").map(Number);for(let i=0;i<3;i++)if(a[i]!==c[i])return a[i]<c[i];return false};
 console.log(v.filter(x=>/^\d+\.\d+\.\d+$/.test(x)&&lt(x)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).pop())' "$cur")}"
 echo "gate: local ($cur) vs $prev, held-out sets, band $BAND"
-SETS=(); for f in real-corpus-heldout real-hub-heldout long-section-heldout long-section-hard-heldout absent-terms-heldout multi-hub-heldout; do SETS+=(--set "$REPO/test/retrieval-eval/$f.jsonl"); done
+SETS=(); for f in real-corpus-heldout real-hub-heldout long-section-heldout long-section-hard-heldout absent-terms-heldout multi-hub-heldout whole-answer-heldout identifier-tier-heldout; do SETS+=(--set "$REPO/test/retrieval-eval/$f.jsonl"); done
 T="$(mktemp -d "${TMPDIR:-/tmp}/gate-release.XXXXXX")"; trap 'rm -rf "$T"' EXIT
 GATE_TMP="$T/plain" "$REPO/scripts/eval-against-release.sh" --slow-git "${SETS[@]}" "$prev" local
 GATE_TMP="$T/export" "$REPO/scripts/eval-against-release.sh" --export "${SETS[@]}" "$prev" local

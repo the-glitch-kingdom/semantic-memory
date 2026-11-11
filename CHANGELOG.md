@@ -2,6 +2,24 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.28.0] - 2026-11-10 — whole-answer ranking
+
+Issues #90 and #91 (part 1). Part 2 of #91 ships off and the issue stays open. Details: `.documentation/changelog/v1-28-0-whole-answer-ranking.md`.
+
+### Fixed
+
+- #90: a cold build was marked ready before the code graph landed, so the first answers ranked with unfinished grounding. `fullIndex()` now awaits the code load before saving and before search tools answer; until then they answer "Indexing in progress". By hand on `.documentation`: the first real answer equals the answer 10 s later (0 of 10 differ). Warm swaps keep #73's serve-then-stale.
+
+### Changed
+
+- #91 part 1: an identifier tier after fusion orders candidates that hold more of the query's corpus-present identifiers first (MCP `search_hybrid`, CLI `search`). Top-3 all identifier docs: 8/8 on both new identifier sets (1.27.1: 0/8). `gate:release` against 1.27.1 passes: hybrid @1/@3 identical, dominance 33 vs 34 (no export) and 23 vs 25 (export).
+
+### Added
+
+- `ranking.clause_weight` (default 0, off): per-clause chunk matching for multi-part questions. At weight 1 it fixed the multi-clause fixture but failed the held-out gate (no-export hybrid @1 72 vs 73, export 76 vs 78), so it ships off. #91 stays open; an anonymised multi-part repro is welcome.
+- Eval sets `identifier-tier`, `whole-answer` (train and held-out), the multi-clause and identifier fixtures, floors in `baseline.json` `newSets`, and both held-out sets in `gate-release.sh`.
+- Knowledge-base facts on readiness flags set before score inputs land and on the measured-negative clause coverage.
+
 ## [1.27.1] - 2026-11-10 — decay day clock
 
 Issue #88. Details: `.documentation/changelog/v1-27-1-decay-day-clock.md`.

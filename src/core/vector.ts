@@ -188,6 +188,32 @@ export class VectorIndex {
     return best?.text;
   }
 
+  /**
+   * How well the doc answers several query vectors with DIFFERENT body chunks: the best, over pairs of vectors and over distinct
+   * chunks a != b, of min(cos(a, vi), cos(b, vj)). Read from the stored embeddings; 0 when the doc has no two body chunks.
+   */
+  clauseCover(docPath: string, queryEmbeddings: Float32Array[]): number {
+    if (!this.index) return 0;
+    const top = queryEmbeddings.map(() => [] as { label: number; cos: number }[]);
+    for (const label of this.labelsByDoc.get(docPath) ?? []) {
+      if (this.chunkMeta[label]?.kind === "meta") continue;
+      const point = this.index.getPoint(label);
+      queryEmbeddings.forEach((q, i) => {
+        const t = top[i];
+        t.push({ label, cos: cosineOf(point, q) });
+        t.sort((a, b) => b.cos - a.cos);
+        if (t.length > 2) t.pop();
+      });
+    }
+    let cover = 0;
+    for (let i = 0; i < top.length; i++) {
+      for (let j = i + 1; j < top.length; j++) {
+        for (const a of top[i]) for (const b of top[j]) if (a.label !== b.label) cover = Math.max(cover, Math.min(a.cos, b.cos));
+      }
+    }
+    return cover;
+  }
+
   async save(indexPath: string): Promise<void> {
     if (!this.index) return;
 

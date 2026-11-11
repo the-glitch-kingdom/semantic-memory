@@ -1,7 +1,7 @@
 ---
 generated_by: semantic-memory
-version: 1.27.1
-last_generated: 2026-11-10T06:38:51.299Z
+version: 1.28.0
+last_generated: 2026-11-10T23:44:37.568Z
 ---
 
 # Project Agent Contract

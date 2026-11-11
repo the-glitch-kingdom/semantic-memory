@@ -47,6 +47,10 @@ semantic-memory writes to three distinct locations with different lifecycles (pl
 
 Why: HNSW is approximate and sensitive to insertion order. `reconcile` used to push files to `parse` in stat/read completion order, so the same files indexed in an order that changed with I/O timing, and two builds ranked differently (#85, second comment). `src/core/reconcile.ts` now sorts `parse`, which also makes HNSW above 100k reproducible. Embeddings were not the cause: two builds on one machine produced identical vectors. Rebuilds on different CPUs can still differ in the last float digits (batched ONNX output is not bit-exact), so tests compare scores with a tolerance. See the [KB fact](../knowledge-base/facts/approximate-hnsw-plus-insertion-order-makes-rebuilds-rank-differently.md).
 
+## Cold build readiness (v1.28)
+
+On a cold build (no saved index, `documents` empty when `fullIndex` starts) the code graph loads after the docs (#73), and it feeds grounding, which feeds ranking. `fullIndex()` in `src/mcp/context.ts` keeps the `applyCode` promise and awaits it before saving the cache and before `indexState = "ready"`; until then `getVectorIndex()` returns null, so search tools answer "Indexing in progress" (the search tools gate on the vector index existing, not on `indexState`). The saved cache then holds final grounding. Warm swaps, `reconcile`, `reindex` and `loadFromDisk` keep #73's serve-then-mark-stale. Graph tools gate on `documents`, so they may answer during the load. Failure of the code load is caught: the index still becomes ready.
+
 ## Tier 1: Per-vault derived indices
 
 Lives inside the vault: `<vault>/.semantic-sidekick-index/`. Created on first `reindex` (or `serve --reindex`). Five files.

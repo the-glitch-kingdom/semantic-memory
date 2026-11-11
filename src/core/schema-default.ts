@@ -157,6 +157,8 @@ ranking:
   coverage_weight: 0
   link_prior: 1
   link_prior_min_links: 5
+  # score *= 1 + clause_weight * (best cosine at which a note answers two clauses of a question in different sections); 0 (the default) is off
+  clause_weight: 0
 
 # Cross-encoder rerank of the top 30 fused search_hybrid results (v1.9). Off by default: it
 # adds ~0.7 s per search on CPU and the model (~90 MB) downloads on first use. See the

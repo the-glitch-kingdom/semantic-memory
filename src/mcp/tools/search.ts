@@ -1,9 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
-import { applyCoverage } from "../../core/rank.js";
+import { applyClauses, applyCoverage } from "../../core/rank.js";
 import { candidatePool, fuseScores } from "../../core/bm25.js";
-import { missingTerms, passingTerms } from "../../core/identifiers.js";
+import { identifierTier, missingTerms, passingTerms } from "../../core/identifiers.js";
 import { entityCard, knownToCode, splitUndocumented } from "../../core/code-graph.js";
 import { RERANK_TOP } from "../../core/reranker.js";
 import { fold } from "../../core/fold.js";
@@ -119,6 +119,7 @@ async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnT
       .sort((a, b) => b.score - a.score);
   const semanticResults = adjust(vectorIndex.search(queryEmbed, candidatePool(limit)));
   let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, candidatePool(limit)))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
+  hybrid = await applyClauses(hybrid, query, vectorIndex, (t) => ctx.embedder.embedQuery(t), ctx.ranking);
   hybrid = ctx.filterPathClass(hybrid);
 
   hybrid = ctx.applyDateFilter(hybrid, modifiedAfter, modifiedBefore);
@@ -126,6 +127,8 @@ async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnT
   if (status) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.status === status);
   if (tier) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.tier === tier);
   if (domain) hybrid = hybrid.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
+
+  hybrid = identifierTier(hybrid, query, ctx.bm25, knownToCode(ctx.getCode()));
 
   // reranks max(RERANK_TOP, limit): independent of limit for limit <= RERANK_TOP
   if (ctx.reranker) hybrid = [...(await ctx.reranker.rerank(query, hybrid.slice(0, Math.max(RERANK_TOP, limit)))), ...hybrid.slice(Math.max(RERANK_TOP, limit))];
