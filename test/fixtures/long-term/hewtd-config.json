@@ -1,0 +1,26 @@
+{
+  "docs_root": ".documentation",
+  "reconcile": {
+    "related_repos": [{ "name": "sibling", "path": "../sibling" }]
+  },
+  "cold_storage": [
+    {
+      "generation": "2026-01-15",
+      "path": ".documentation-cold/2026-01-15",
+      "source_commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "rotated_at": "2026-01-15T09:30:00Z",
+      "checksum": "__CHECKSUM__",
+      "secrets_findings": ["operational/deploy-credentials.md:7"],
+      "untracked_files": []
+    },
+    {
+      "generation": "2026-03-01-2",
+      "path": ".documentation-cold/2026-03-01-2",
+      "source_commit": "0f1e2d3c4b5a69788796a5b4c3d2e1f001234567",
+      "rotated_at": "2026-03-01T16:05:00Z",
+      "checksum": "__CHECKSUM__",
+      "secrets_findings": [],
+      "untracked_files": []
+    }
+  ]
+}

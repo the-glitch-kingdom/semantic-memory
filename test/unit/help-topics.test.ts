@@ -63,3 +63,40 @@ describe("help surfaces", () => {
     }
   }, 60_000);
 });
+
+// #93: the long-term-memory topic. `it.fails` = the topic does not exist yet (Phase 12).
+describe("long-term-memory topic", () => {
+  it.fails.each(["long-term memory", "cold storage", "opt-in", "documentation-cold"])("`help %s` resolves to it", (words) => {
+    expect(findTopics(words).map((t) => t.id)).toEqual(["long-term-memory"]); // what `help <words>` renders
+  });
+
+  it.fails("is in the group \"Search more\", says it is opt-in, and the no-topic index lists it there", () => {
+    const t = TOPICS.find((x) => x.id === "long-term-memory")!;
+    expect(t.group).toBe("Search more");
+    expect(renderTopic(t, "text")).toMatch(/opt-in/i);
+    const idx = renderHelp(undefined, "text");
+    const section = idx.slice(idx.indexOf("Search more"));
+    expect(section.slice(0, section.indexOf("\n\n") > 0 ? section.indexOf("\n\n") : undefined)).toContain("long-term-memory");
+  });
+
+  it.fails("the MCP `help {topic: \"long-term-memory\"}` serves the same text", async () => {
+    const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+    const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
+    const { createServer } = await import("../../src/mcp/server.js");
+    const { createTempVault, cleanupTempDir } = await import("../setup.js");
+    const dir = await createTempVault();
+    try {
+      const server = await createServer(dir, { watch: false, waitForReady: false });
+      const [ct, st] = InMemoryTransport.createLinkedPair();
+      await server.connect(st);
+      const client = new Client({ name: "help", version: "1.0.0" });
+      await client.connect(ct);
+      const r: any = await client.callTool({ name: "help", arguments: { topic: "long-term-memory" } });
+      expect(r.content[0].text).toBe(renderHelp("long-term-memory", "markdown"));
+      expect(r.content[0].text).toContain("Search long-term memory");
+      await client.close();
+    } finally {
+      await cleanupTempDir(dir);
+    }
+  }, 60_000);
+});

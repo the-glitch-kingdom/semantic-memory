@@ -20,44 +20,44 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Acceptance as failing tests first (`it.fails` until fixed); fixtures
-  - [ ] Fixtures:
+- [x] Phase 2: Acceptance as failing tests first (`it.fails` until fixed); fixtures
+  - [x] Fixtures:
     - a cold-generation tree under `test/fixtures/long-term/` with 2 generations (`cold-a/`, `cold-b/`), each with an `archive/` subfolder and a doc that answers a "what did we do about X" question the live fixture does not;
     - a hewtd config fixture with `reconcile.related_repos` and a `cold_storage` list in the hit-em-with-the-docs#97 shape: `{generation, path, source_commit, rotated_at, checksum, secrets_findings: ["rel/path.md:51"]}`;
     - one generation with a secrets-flagged file that holds a fake credential-shaped value (built at test time, never committed as a real-looking secret).
-  - [ ] **Default output unchanged** (the core acceptance). With an opt-in source configured (`default: false`) and with a `cold_storage` manifest, these are byte-identical to a run with no source configured:
+  - [x] **Default output unchanged** (the core acceptance). With an opt-in source configured (`default: false`) and with a `cold_storage` manifest, these are byte-identical to a run with no source configured:
     - `search_hybrid`, `search_semantic` and `search_text` output, and `read_note` without `source`;
     - CLI `search`, on the existing snapshot (`test/fixtures/federation/single-source-snapshot.json`) and a golden set;
     - abstention flags (`no_strong_match`, `missing_terms`, `passing_terms`, `undocumented`) identical.
     - And the opt-in source's index is never built or loaded by default traffic: no context is created, nothing under `<primary index>/sources/` appears.
-  - [ ] **Opt-in query.** `search_hybrid {sources: ["legacy"]}` returns only that source's hits, each with `source`. `sources: ["primary", "legacy"]` adds it to the default set. An unknown label gets a clear message, never silently the default. `search_text` and `search_semantic` take `sources` the same way. `read_note {source: "legacy"}` works for an opt-in label.
-  - [ ] **Lazy index.** The first opt-in query on an unbuilt source answers "Indexing in progress" (as a cold start), then real hits once built.
-  - [ ] **Locked, read-only.**
+  - [x] **Opt-in query.** `search_hybrid {sources: ["legacy"]}` returns only that source's hits, each with `source`. `sources: ["primary", "legacy"]` adds it to the default set. An unknown label gets a clear message, never silently the default. `search_text` and `search_semantic` take `sources` the same way. `read_note {source: "legacy"}` works for an opt-in label.
+  - [x] **Lazy index.** The first opt-in query on an unbuilt source answers "Indexing in progress" (as a cold start), then real hits once built.
+  - [x] **Locked, read-only.**
     - A locked source in a `chmod -R a-w` folder indexes without writing into it; its index lives under `sourceIndexPath`.
     - After a file in it changes, it does not reindex. The next opt-in query answers from the old index and warns, never rebuilds.
     - A rebuild happens only on an explicit human action (MCP `reindex {source}`, or the CLI rebuild flag from Phase 6).
-  - [ ] **cold_storage manifest.**
+  - [x] **cold_storage manifest.**
     - Each generation is registered as an opt-in locked source labelled `cold-<generation>`.
     - Every hit carries `historical: {generation, source_commit, rotated_at}`.
     - A file named in `secrets_findings` is never indexed, embedded or returned. Its text is absent from the index files on disk too (grep the index dir for the fake value).
     - A checksum mismatch refuses that generation with a one-line warning; the others still answer.
-  - [ ] **"long-term" target.** `sources: ["long-term"]` searches every cold generation, merged, each hit labelled with source and generation date. A query can also name one generation.
-  - [ ] **Prompt hook.**
+  - [x] **"long-term" target.** `sources: ["long-term"]` searches every cold generation, merged, each hit labelled with source and generation date. A query can also name one generation.
+  - [x] **Prompt hook.**
     - "search long-term memory for X" and "what did we do back in 2025 about X" inject a block from cold generations only, marked historical, with generation dates.
     - Ordinary prompts never surface an opt-in or cold source, with negatives like "our long-term plan", "back in the day the API", "long term support".
-  - [ ] **CLI parity.**
+  - [x] **CLI parity.**
     - `semantic-memory search --notes <primary> --source legacy "..."`, repeatable, plus `--source long-term`.
     - It resolves the label through the primary's federation config and uses `sourceIndexPath`, so it never writes into the source folder.
-  - [ ] **Opt-in notice** (`test/integration/cold-notice.test.ts`, hook run as a process with a temp project root).
+  - [x] **Opt-in notice** (`test/integration/cold-notice.test.ts`, hook run as a process with a temp project root).
     - With `.documentation-cold/2026-11-10/` present (or the folder named by `reconcile.cold_root`), the SessionStart hook prints a user-visible `systemMessage`. It says long-term memory exists, names the generations, says they are NOT searched by default, and says how to opt in ("search long-term memory for …", `sources: ["long-term"]`, `--source long-term`). It also adds one `additionalContext` line so Claude knows the same.
     - Without the folder: no message, and the output is byte-identical to today.
     - A generation folder on disk that is not in the `cold_storage` manifest, a checksum mismatch, or `federation.cold_storage: false` gets a message saying that generation is NOT searchable and why. An unregistered generation is never indexed (no secrets record exists for it).
     - Frequency: the full `systemMessage` once per new generation, recorded in `.claude/.semantic-memory/cold-notified.json`. The one `additionalContext` line on every `startup`/`resume`, never on `clear`/`compact`. A problem message on every startup until it is fixed.
-  - [ ] **Help** (`test/unit/help-topics.test.ts`):
+  - [x] **Help** (`test/unit/help-topics.test.ts`; resolves through `findTopics`, which is what `help <words>` renders, not the typo-fuzzy `closestTopics`):
     - `semantic-memory help long-term memory`, `help cold storage`, `help opt-in` and `help documentation-cold` each resolve to the new `long-term-memory` topic (`closestTopics`);
     - the MCP `help {topic: "long-term-memory"}` serves the same text;
     - `help` with no topic lists it under "Search more".
-  - [ ] **related_repos opt-in.** `federation.related_repos: opt-in` registers hewtd related repos as `default: false` sources. `true` (the default) and `false` behave as today.
+  - [x] **related_repos opt-in.** `federation.related_repos: opt-in` registers hewtd related repos as `default: false` sources. `true` (the default) and `false` behave as today.
 - [ ] Phase 3: Config, `default` and `locked` on sources, `related_repos: opt-in`, `cold_storage`
   - [ ] `FederationSource` gains `default: boolean` (true unless `default: false`), `locked: boolean` and optional `historical` metadata. Parse them in `loadFederation` (src/core/federation.ts), lenient as today: a bad value is dropped with a warning.
   - [ ] `federation.related_repos`: `true` | `false` | `"opt-in"`.
@@ -237,7 +237,16 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - The search side only (#93 rescoped 2026-11-11). Rotation is hit-em-with-the-docs#97.
 - Default search must be byte-identical; that is the gate, not a band.
 
+- Phase 2 test layout: `test/long-term-fixture.ts` (project builder, checksum, fake secret), `test/fixtures/long-term/`, `test/integration/{long-term-default,long-term-optin,long-term-cli,long-term-hook,cold-notice}.test.ts`, `test/unit/{long-term-federation,long-term-checksum}.test.ts`, plus a block in `test/unit/help-topics.test.ts`.
+- Names the tests pin that the plan left open (later phases follow them, or change the test with a reason): the SessionStart notice is a new `hooks/cold-notice.js`; `coldChecksum` lives in `src/core/cold.ts`; the manifest fields parsed onto a source are `checksum` and `secrets` (paths); `get_stats` rows are `{label, default, locked, generation}` under `sources`; the locked-source warning contains "changed"; an unknown label message matches /unknown.*source/; a cold_root inside the docs root says "inside the docs"; the notice for a checksum mismatch says "checksum", for a missing manifest "not registered", for the opt-out "disabled".
+- The fake credential is assembled in `test/long-term-fixture.ts` (`FAKE_SECRET`) and written into the fixture copy at test time; the committed fixture holds only `__FAKE_SECRET__`. Tests never put it in a query: the tools echo a query's unknown identifiers back in `missing_terms`.
+- Tests that hold today are plain `it` regression guards, not `it.fails`: `search_semantic`/`search_text`/`read_note` default equality, CLI default equality, a locked source in a `chmod -R a-w` folder indexing under `sourceIndexPath`, a plain search never surfacing a cold generation, `cold_storage: false`, `related_repos: true|false`, and the prompt-hook negatives.
+
 ## Errors Encountered
+- Phase 2: the first draft of the secrets test put the fake secret in a query; `missing_terms` echoed it back, so the test failed for the wrong reason. Queries now describe the file instead.
+- Phase 2: "a locked source indexes without writing into it" and `cold_storage: false` already passed (an `it.fails` flipped to unexpected-pass), so they became plain `it` guards.
+- Phase 2: the abstention/default tests passed by timing while the opt-in source was still building (federated only once ready). `long-term-default.test.ts` now waits up to 20 s for that build in `beforeAll`, so it fails on every run today; once `default: false` is honoured the wait just times out (20 s, once).
+- Phase 2 validation: `npm run eval` twice hit `real-corpus-eval` beforeAll "Hook timed out in 600000ms" (machine load average 16-35 from other sessions; the corpus and src are unchanged by this phase). The file passes alone (16 passed, 1 expected fail). Load flake, not a regression; the first run was left in the background by a tool timeout and its output cut before the failing name, so the second (verbose) run identified it.
 
 ## Status
-**Phase 2 next.** Phase 1: verified on main (1.28.0); see notes.md.
+**Phase 3 next.** Phase 2 done: 31 `it.fails` acceptance cases (each confirmed failing as plain `it` for its stated reason) and 20 passing regression guards; see notes.md.

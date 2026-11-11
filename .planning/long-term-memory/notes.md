@@ -37,3 +37,8 @@
 - Staging is `reconcile --stage <dir>`, under `.hewtd/`. It ships in hewtd 3.2.0 (`feat/cold-rotation-97`), and the names may still change: #97 says it will confirm.
 - User requirement (2026-11-11): when that folder exists, the user is told long-term memory is opt-in. That is the session-start notice (task_plan Phase 7).
 - Precedent: `hooks/skill-loop.js:40-60` prints the skill-loop notice as SessionStart `additionalContext`. For the user to see it, use `systemMessage` too.
+
+## Eval results: Phase 2
+No ranking or search change; tests and fixtures only. New files: 5 integration, 2 unit and a help block, 31 `it.fails` cases across them (confirmed failing as plain `it`: `Cannot find module hooks/cold-notice.js`, `unknown option '--source'`, `Cannot find src/core/cold.js`, `sources` ignored so default hits come back, no `source`/`historical` fields, no cold index under `<index>/sources/`, no `long-term-memory` topic). The notice hook can only see a checksum mismatch if `coldGenerations()` compares something cheap; the plan says it never hashes. Phase 3 must decide how (e.g. compare the manifest checksum with one recorded at registration, or hash only on the first notice and cache by folder mtime); the test only needs the message.
+
+The `hewtd-config.json` fixture pins the #97 contract (comment 2026-11-11): `cold_storage[]` entries `{generation, path, source_commit, rotated_at, checksum, secrets_findings, untracked_files}`; `checksum` is ours (sha256 over sorted `relpath\0sha256(file)\n`, regular files, no symlinks), hand-pinned in `test/unit/long-term-checksum.test.ts`. #97 must adopt the same definition.
