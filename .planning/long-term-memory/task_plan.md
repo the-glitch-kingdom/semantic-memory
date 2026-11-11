@@ -105,8 +105,8 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - [x] First use with no index: build it (the CLI is synchronous; no "Indexing in progress"). Measure that cost on the fixture and record it.
   - [x] The explicit human rebuild for a locked source. There is NO `reindex` CLI command today: a rebuild is `serve --reindex`, and MCP has a `reindex` tool. Pick the smallest consistent surface: `search --source <label> --reindex` (rebuild that source's index, then search), plus MCP `reindex {source}`. Record the choice, and use that name everywhere `reindex --source` appears in this plan.
   - [x] Output adds `source` and `historical` on hits; with no `--source`, output is byte-identical (Phase 2).
-- [ ] Phase 7: Prompt hook, "search long-term memory"
-  - [ ] `hooks/vault-context.js`: a narrow rule set recognises an explicit long-term request:
+- [x] Phase 7: Prompt hook, "search long-term memory"
+  - [x] `hooks/vault-context.js`: a narrow rule set recognises an explicit long-term request:
     - "search/check/look in long-term memory";
     - "in (the) long-term memory";
     - "what did we do back in <year>";
@@ -114,15 +114,15 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - "in the old/cold docs";
     - "historically, what did we".
     On a match, run the CLI with `--source long-term` and inject a block labelled historical (`<vault-context source="long-term" …>` plus one line: past behaviour, not current; each hit with its generation date). Skip the default block for that prompt.
-  - [ ] Negatives that must NOT trigger, as tests: "long-term plan", "long term support", "back in the day", "go back in the file", "memory leak in long-running", "back in 2025 we shipped" without a question shape. Keep the rule list in one place, as a module-level constant with a comment. No Jev or LLM call in the hook path.
-  - [ ] **Opt-in notice at session start.** If `coldGenerations()` finds a cold root, the user must be told that long-term memory exists and is opt-in.
+  - [x] Negatives that must NOT trigger, as tests: "long-term plan", "long term support", "back in the day", "go back in the file", "memory leak in long-running", "back in 2025 we shipped" without a question shape. Keep the rule list in one place, as a module-level constant with a comment. No Jev or LLM call in the hook path.
+  - [x] **Opt-in notice at session start.** If `coldGenerations()` finds a cold root, the user must be told that long-term memory exists and is opt-in.
     - Implement it in a SessionStart hook, beside the skill-loop notice pattern (`hooks/skill-loop.js:40-60`). Import the dist module, never load the model, never compute checksums; target under 100 ms.
     - Output: `systemMessage` (shown to the user), plus one `additionalContext` line for Claude.
     - Wording, roughly: "Long-term memory: N old docs generation(s) in .documentation-cold/ (2026-11-10, …). Not searched by default. To search them, ask 'search long-term memory for …' (or pass sources: ["long-term"] / --source long-term). More: /help long-term-memory."
     - Problem wording: "… 2026-11-12 is on disk but not registered by hit-em-with-the-docs (or its checksum changed), so it is not searchable."
     - Frequency as in Phase 2. Skip under `SEMANTIC_MEMORY_REVIEWER=1`, like the other hooks.
-  - [ ] `healthcheck` reports each generation's status from `coldGenerations()` (a warning for unregistered or mismatched ones). `get_stats` lists them (Phase 5).
-  - [ ] A semantic-first or vault-first skill line: the user can say "search long-term memory for X". Add one line to `skills/semantic-first/SKILL.md` naming the `sources: ["long-term"]` parameter. No new skill.
+  - [x] `healthcheck` reports each generation's status from `coldGenerations()` (a warning for unregistered or mismatched ones). `get_stats` lists them (Phase 5).
+  - [x] A semantic-first or vault-first skill line: the user can say "search long-term memory for X". Add one line to `skills/semantic-first/SKILL.md` naming the `sources: ["long-term"]` parameter. No new skill.
 - [ ] Phase 8: Measure
   - [ ] `npm run gate:release` (fresh, BAND=1) vs 1.28.0: every count identical, mcp vs cli 0 differ, p95 within band. Default search must not change at all. Run it once more with a `cold_storage` manifest pointing at a large cold copy configured (the gate's corpus duplicated as a generation): again identical, and no index built under `sources/`.
   - [ ] Opt-in cost on a ~1,000-file cold tree (copy this repo's `.documentation` plus fixtures, or generate one): first-query build time, checksum time, warm p95 and RSS before/after opening. Record in notes.md.
@@ -252,6 +252,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 3: src/mcp/sources.ts `start()` now builds only `default` sources (one filter line), else the cold generations would join every search once the manifest is read. That closes opt-in sources until Phase 4 adds `openOptIn`, so the "locked source indexes without writing into it" guard in long-term-optin.test.ts became `it.fails` until Phase 4 (it passed only because `default` was ignored).
 - Phase 3: the 7 `it.fails` in long-term-federation.test.ts and the `coldChecksum` one became plain `it`; `coldGenerations` tests added there; federation.test.ts expectations gained `default: true, locked: false`.
 
+- Phase 7: hooks/cold-notice.js does hash (via coldGenerations), unlike the plan's "no checksum": a mismatch cannot be seen otherwise. Measured 39 ms wall for a tiny tree, about 20 ms per 1,000 files. Systemmessage: once per new registered generation (`.claude/.semantic-memory/cold-notified.json`); problems on every startup/resume; additionalContext on startup/resume only. The prompt trigger is `LONG_TERM_RULES` in hooks/vault-context.js; on a match it runs `search --source long-term` (60 s cap) and emits only that block, falling back to the default block if it returns nothing. Healthcheck adds a `cold-generations` finding.
 - Phase 4: `SourceRegistry.openOptIn(labels)` returns `{ready, notes, unknown}`; `long-term` expands to every source with `historical`; `primary` and default labels are ignored (open() has them). Opt-in handles are built on first ask, in a separate map from `open()`, so default traffic cannot reach them (unit test: no dir under `<index>/sources/`).
 - Phase 4: locked is a `buildContext` option `locked` (plus `skipFiles`). `ensureFresh` returns at once; a cached index loads as `ready` (never `stale`); an older-parser cached index is rebuilt, not served. The registry never calls `reconcileNow` on a locked source.
 - Phase 4: change detection. Cold: the manifest checksum is compared before building and again when the folder's own mtime moves; a mismatch skips the source with `[federation: source "x" skipped, checksum does not match the manifest, ...]`. Locked without a manifest checksum (`frozen`): the checksum of the folder at build time is recorded in `<index>/locked.json`; a later difference keeps the old index answering with `[federation: source "x" changed since it was indexed, ...]`. Shortcut: hashed once per process, re-hashed only when the folder's mtime moves, so an in-place edit of a locked file is seen at the next restart. Measured: coldChecksum on 1,000 files (7.9 MB) takes about 20 ms warm (under 65 ms for three runs including the first), far under the 2 s line, so the mtime cache is a nicety, not a need.
@@ -260,6 +261,8 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 4: `read_note {source}` already resolves opt-in labels through openOptIn (Phase 5 item, done here because the secrets refusal sits on that path).
 
 ## Errors Encountered
+
+- Phase 7: the cold-notice test for an unreadable state file called mkdir on a path that already held the file (EEXIST); fixed the test (rmSync first). `core/cold` was not a tsup entry, so the hook could not import it; added.
 
 - Phase 6: none. `--source` runs the MCP `search_hybrid` in-process (src/cli/search-sources.ts), so its hits are the tool's shape (extra fields, `source`, `historical`), not the plain CLI shape. It waits (polls 1 s, up to 10 min) for a building source.
 
@@ -274,7 +277,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 2 validation: `npm run eval` twice hit `real-corpus-eval` beforeAll "Hook timed out in 600000ms" (machine load average 16-35 from other sessions; the corpus and src are unchanged by this phase). The file passes alone (16 passed, 1 expected fail). Load flake, not a regression; the first run was left in the background by a tool timeout and its output cut before the failing name, so the second (verbose) run identified it.
 
 ## Status
-**Phase 7 next.** Phase 6 done (`search --source`, `--reindex`).
+**Phase 8 next.** Phase 7 done (cold-notice hook, long-term prompt trigger, healthcheck). Phase 6 done (`search --source`, `--reindex`).
 
 Previous: Phase 6 done.
 **Phase 6 next.** Phase 5 done (tools take `sources`, MCP `reindex {source}`, get_stats `sources`). Phase 4 done (lazy opt-in registry, locked, checksum, secrets, archive).

@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { GEN_A, makeProject, type Project } from "../long-term-fixture.js";
 
 // #93 Phase 7 acceptance: the prompt hook injects cold generations only on an explicit long-term request.
-// The positives need the CLI's `--source long-term` (Phase 6) and the hook rule (Phase 7): `it.fails` until then.
+// The positives need the CLI's `--source long-term` (Phase 6) and the hook rule (Phase 7).
 // The negatives hold today (the hook never reads cold sources) and stay as regression guards.
 
 const ROOT = resolve(import.meta.dirname, "..", "..");
@@ -34,7 +34,7 @@ describe("prompt hook and long-term memory", () => {
   }, 300_000);
   afterAll(() => p.cleanup());
 
-  it.fails.each([
+  it.each([
     "search long-term memory for the Skerry cache stampede decision",
     "what did we do back in 2025 about the Skerry cache stampede?",
     "check the old docs for why we added request coalescing to the Skerry cache",

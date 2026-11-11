@@ -56,3 +56,6 @@ No ranking change for default calls (no `sources`): federated-search, federation
 ## Eval results: Phase 6
 
 No ranking change (the default path is untouched; `--source` reuses search_hybrid). First-use cost on the fixture (`--source long-term`, two cold generations, built outside the folders): 1.7 s including model load and index build; warm 0.65 s; `--reindex` 0.72 s. No eval measured.
+
+## Eval results: Phase 7
+No ranking change, no eval measured. cold-notice hook: 39 ms wall on a one-file cold tree (node start included).

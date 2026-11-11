@@ -1131,6 +1131,30 @@ async function handleFailure(projectRoot, sources, cliBin, input, sessionId, sta
 // injects noise (161 + 49 such searches in real transcripts, up to 0.57-score hits).
 export const isNonHumanPrompt = (prompt) => /^\s*<(task-notification|agent-message)[\s>]/.test(prompt);
 
+// The only prompts that search long-term memory (old docs generations): an explicit request. One list, no model call.
+// Deliberately narrow: "long-term plan", "long term support", "back in the day", "back in 2025 we shipped" must not match.
+export const LONG_TERM_RULES = [
+  /\b(?:search|check|look)\b[^.?!\n]{0,30}\blong[- ]term memory\b/i,
+  /\bin (?:the )?long[- ]term memory\b/i,
+  /\bwhat did we\b[^.?!\n]{0,30}\bback in (?:19|20)\d\d\b/i,
+  /\bback in (?:19|20)\d\d,?\s+(?:what|how|why)\b/i,
+  /\b(?:in|check|search|look (?:in|at|through)) the (?:old|cold) docs\b/i,
+  /\bhistorically,? what did we\b/i,
+];
+export const isLongTermRequest = (prompt) => LONG_TERM_RULES.some((r) => r.test(prompt));
+
+export function formatLongTermBlock(query, hits) {
+  hits = (hits || []).filter((h) => h.historical);
+  if (!hits.length || Math.max(...hits.map((h) => h.score ?? 0)) < INJECT_MIN_SCORE) return "";
+  const lines = [`<vault-context source="long-term" query="${escapeAttr(query)}">`, `Historical: these old docs generations describe past behaviour, not current. Say so when you cite them.`, ""];
+  for (const h of hits.slice(0, 3)) {
+    lines.push(`- \`${h.path}\` (generation ${h.historical.generation}${typeof h.score === "number" ? `, score: ${h.score.toFixed(2)}` : ""})`);
+    if (h.snippet) lines.push(`  > ${h.snippet.replace(/\s+/g, " ").slice(0, 240)}`);
+  }
+  lines.push(`</vault-context>`);
+  return lines.join("\n");
+}
+
 async function handlePrompt(projectRoot, sources, cliBin, input) {
   const prompt = typeof input.prompt === "string" ? input.prompt : "";
   if (!prompt || prompt.length < 8 || isNonHumanPrompt(prompt)) {
@@ -1152,6 +1176,17 @@ async function handlePrompt(projectRoot, sources, cliBin, input) {
     debug(`fingerprint ${fp} recently fired — suppressing`);
     emit("UserPromptSubmit", "");
     return;
+  }
+  if (isLongTermRequest(prompt)) {
+    const notes = sources.find((x) => x.readOnly)?.path ?? sources[0]?.path;
+    const hits = notes ? await runSearchCli(cliBin, ["--notes", notes, "--source", "long-term", "--limit", "8", prompt], 60_000) : null;
+    const block = Array.isArray(hits) ? formatLongTermBlock(prompt.slice(0, 120), hits) : "";
+    if (block) {
+      state.recent = [fp, ...recent].slice(0, 10);
+      saveFingerprints(projectRoot, state);
+      emit("UserPromptSubmit", block); // the default block is skipped for this prompt
+      return;
+    }
   }
   // Tier-1 lexicon expansion: search with the alias-expanded query, but keep the
   // original prompt for display in the block.
