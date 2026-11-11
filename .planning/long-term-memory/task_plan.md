@@ -35,7 +35,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
   - [ ] **Locked, read-only.**
     - A locked source in a `chmod -R a-w` folder indexes without writing into it; its index lives under `sourceIndexPath`.
     - After a file in it changes, it does not reindex. The next opt-in query answers from the old index and warns, never rebuilds.
-    - A rebuild happens only on an explicit human action (CLI `reindex --source <label>`, or MCP `reindex` with `source`).
+    - A rebuild happens only on an explicit human action (MCP `reindex {source}`, or the CLI rebuild flag from Phase 6).
   - [ ] **cold_storage manifest.**
     - Each generation is registered as an opt-in locked source labelled `cold-<generation>`.
     - Every hit carries `historical: {generation, source_commit, rotated_at}`.
@@ -103,7 +103,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
   - [ ] `--source <label>`, repeatable, including `long-term` and `primary`, with the same semantics as the tool. It resolves through `loadFederation(--notes)` and reads or builds the index at `sourceIndexPath(<primary index>, source)`, never inside the source folder.
     - Locked: never rebuilds unless asked.
     - First use with no index: build it (the CLI is synchronous; no "Indexing in progress"). Measure that cost on the fixture and record it.
-  - [ ] `reindex --source <label>` is the explicit human rebuild for a locked source.
+  - [ ] The explicit human rebuild for a locked source. There is NO `reindex` CLI command today: a rebuild is `serve --reindex`, and MCP has a `reindex` tool. Pick the smallest consistent surface: `search --source <label> --reindex` (rebuild that source's index, then search), plus MCP `reindex {source}`. Record the choice, and use that name everywhere `reindex --source` appears in this plan.
   - [ ] Output adds `source` and `historical` on hits; with no `--source`, output is byte-identical (Phase 2).
 - [ ] Phase 7: Prompt hook, "search long-term memory"
   - [ ] `hooks/vault-context.js`: a narrow rule set recognises an explicit long-term request:
@@ -168,13 +168,13 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
         2. the session-start notice says it exists;
         3. ask "search long-term memory for …", or pass `sources: ["long-term"]`;
         4. results carry `historical`;
-        5. `reindex --source <label>` rebuilds a locked source.
-      - Commands: `semantic-memory search --notes .documentation --source long-term "…"`, `search_hybrid {query, sources: ["long-term"]}`, `semantic-memory reindex --source cold-<date>`, `semantic-memory healthcheck`.
+        5. the Phase 6 rebuild command rebuilds a locked source.
+      - Commands: `semantic-memory search --notes .documentation --source long-term "…"`, `search_hybrid {query, sources: ["long-term"]}`, the Phase 6 rebuild command for `cold-<date>`, `semantic-memory healthcheck`.
       - Verify: results carry `source: cold-<date>` and `historical.generation`; a plain search shows none.
       - `doc`: the new long-term-memory guide.
     - **Update `federated-search`:** add steps for `default: false`, `locked: true`, `related_repos: opt-in` and searching an opt-in source with `sources`.
     - **Update `add-index`:** for a rarely used frozen tree, point at long-term-memory instead of a second server.
-    - **Coverage:** `test/unit/help-coverage.test.ts` must pass with the new schema keys (`federation.sources[].default` and `locked`, `federation.cold_storage`, `related_repos: opt-in`), the new CLI flags (`search --source`, `reindex --source`) and the new tool parameter (`sources`), with no new exemptions.
+    - **Coverage:** `test/unit/help-coverage.test.ts` must pass with the new schema keys (`federation.sources[].default` and `locked`, `federation.cold_storage`, `related_repos: opt-in`), the new CLI flags (`search --source` and the Phase 6 rebuild flag) and the new tool parameter (`sources`), with no new exemptions.
     - **Fill in `commands/help.md`'s example topics** if it lists any.
   - [ ] **Bring the help up to date with 1.21-1.28** (audit 2026-11-11; the user asked that help cover every new feature). Each change lands in `src/core/help/topics.ts`; the coverage test is the check.
     - **`getting-started`:** new installs get `.mcp.json` entries `semantic-memory` (vault) and `semantic-memory-docs` (docs, read-only); `semantic-vault` and `semantic-sidekick` still work (1.26).
@@ -206,7 +206,20 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
       - a test that every topic's `doc` path exists (add it if missing);
       - `semantic-memory help` (no topic) lists every topic under its group;
       - the MCP `help` tool and `/help` (`commands/help.md`) serve the same text (existing tests).
-  - [ ] `.documentation/reference/mcp-tools-reference.md` (`sources` on three tools, `historical` on hits, `get_stats` sources) and `.documentation/reference/cli-reference.md` (`--source`, `reindex --source`).
+  - [ ] **Every `--help` is accurate and complete** (the user asked for this alongside the help topics).
+    - **Scope:** `semantic-memory --help`, each of its 27 commands' `--help`, and every subcommand of the 8 command groups (`skills`, `lexicon`, `dossier`, `profile`, `skill-loop`, `jev-mode`, `skill-eval`, `eval`).
+    - **For each:**
+      - the description matches what the command does today;
+      - every option the command registers is listed, with a description and the real default (e.g. `search --limit` default 8 vs MCP's 10: say which);
+      - no stale names: the `semantic-vault`/`semantic-sidekick` server names only as legacy, no "(v1.6 …)"-style version tags that read as current limits;
+      - the new flags (`search --source`, the rebuild flag, anything else this plan adds) are described.
+    - Keep the wording short; commander wraps long descriptions badly (see `healthcheck`, `migrate-state`).
+    - **MCP side:** the tool descriptions are the tools' `--help` (`semantic-memory tools <name>` prints them). `sources` on `search_hybrid`, `search_semantic`, `search_text` and `read_note`, and `source` on `reindex`, are described there.
+    - **Test** (`test/unit/cli-help.test.ts`, new). It walks `program.commands` recursively (import the program, or parse `--help` output) and, for every command and subcommand:
+      - runs `--help`;
+      - asserts exit 0, a non-empty description, and every registered option shown with a non-empty description.
+      It also asserts that `search --help` mentions `--source`, and that `tools search_hybrid` mentions `sources`. Cheap (no model load); runs in `npm test`.
+  - [ ] `.documentation/reference/mcp-tools-reference.md` (`sources` on three tools, `historical` on hits, `get_stats` sources) and `.documentation/reference/cli-reference.md` (`--source` and the rebuild flag).
   - [ ] KB gotcha facts:
     - owed from 1.28.0: matching an identifier token by token credits docs with the words scattered (`gate`/`release`/`sh`); `## Instead`: match the name literally (`Bm25Index.docContains`), with `test/unit/identifier-tier.test.ts` as the check;
     - plus any found in this work.
