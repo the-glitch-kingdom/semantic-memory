@@ -11,8 +11,8 @@ export const GEN_B = "2026-03-01-2";
 export const FAKE_SECRET = ["sk", "live", "Zq7Xv3Lm9Rt2Kp8Wd4Hn6Yb1Cs5Ga0"].join("_");
 
 /**
- * The checksum definition from the plan (Phase 4): sha256 over the sorted `relpath\0sha256(file)\n` lines of every
- * regular file, symlinks not followed. Written out here so the fixtures do not depend on src/ code that does not exist yet.
+ * hit-em-with-the-docs 3.2.0's checksum (checked read-only in Phase 9): sha256 over the sorted `relpath\0sha256(file)`
+ * lines joined by `\n`, regular files only here (the fixtures hold no symlinks). Written out so the fixtures do not depend on src/.
  */
 export function checksumOf(dir: string): string {
   const lines: string[] = [];
@@ -20,11 +20,11 @@ export function checksumOf(dir: string): string {
     for (const e of readdirSync(join(dir, rel), { withFileTypes: true })) {
       const r = rel ? `${rel}/${e.name}` : e.name;
       if (e.isDirectory()) walk(r);
-      else if (e.isFile()) lines.push(`${r}\0${createHash("sha256").update(readFileSync(join(dir, r))).digest("hex")}\n`);
+      else if (e.isFile()) lines.push(`${r}\0${createHash("sha256").update(readFileSync(join(dir, r))).digest("hex")}`);
     }
   };
   walk("");
-  return createHash("sha256").update(lines.sort().join("")).digest("hex");
+  return createHash("sha256").update(lines.sort().join("\n")).digest("hex");
 }
 
 export function lockTree(dir: string): void {

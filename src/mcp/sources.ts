@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { coldChecksum } from "../core/cold.js";
+import { coldChecksum, coldMatches } from "../core/cold.js";
 import { loadFederation, type FederationSource } from "../core/federation.js";
 import { buildContext, type ServerContext } from "./context.js";
 
@@ -107,7 +107,7 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
     if (why) return { skip: `${why}: ${s.path}`, mtime, builtHere: false };
     // shortcut: hashed once per process and again only when the folder's own mtime moves; an in-place edit of a locked file is not seen until restart
     const sum = s.locked ? coldChecksum(s.path) : undefined;
-    if (s.checksum && sum !== s.checksum.toLowerCase()) return { skip: "checksum does not match the manifest, the folder changed after it was registered", mtime, builtHere: false };
+    if (s.checksum && !coldMatches(s.path, s.checksum, s.diskChecksum)) return { skip: "checksum does not match the manifest, the folder changed after it was registered", mtime, builtHere: false };
     try {
       const indexPath = sourceIndexPath(primary.indexPath, s);
       const ctx = await buildContext(s.path, { readOnly: true, indexPath, embedder: primary.embedder, telemetry: false, locked: s.locked, skipFiles: s.secrets });
@@ -168,7 +168,7 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
           if (m !== e.mtime) { // the folder moved since it was verified
             e.mtime = m;
             const now = coldChecksum(s.path);
-            if (s.checksum && now !== s.checksum.toLowerCase()) note = "skipped, checksum does not match the manifest, the folder changed after it was registered";
+            if (s.checksum && !coldMatches(s.path, s.checksum, s.diskChecksum)) note = "skipped, checksum does not match the manifest, the folder changed after it was registered";
             else e.sum = now;
           }
           if (!note && s.locked && !s.checksum && e.sum) {

@@ -1,25 +1,43 @@
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { coldStorageDisabled, readColdManifest } from "./federation.js";
 
 const HEWTD_CONFIG = join(".claude", "hit-em-with-the-docs.json");
 
 /**
- * sha256 over the sorted `relpath\0sha256(file)\n` lines of every regular file (symlinks not followed). The definition
- * hit-em-with-the-docs#97 must also use for `cold_storage[].checksum`.
+ * hit-em-with-the-docs 3.2.0 `compute_tree_checksum`: sha256 over the sorted `relpath\0sha256(file)` lines joined by `\n`;
+ * a symlink contributes `relpath\0link:sha256(target)` (not followed). `only` limits it to those relative paths.
  */
-export function coldChecksum(dir: string): string {
+export function coldChecksum(dir: string, only?: Set<string>): string {
+  const sha = (d: string | Buffer) => createHash("sha256").update(d).digest("hex");
   const lines: string[] = [];
   const walk = (rel: string) => {
     for (const e of readdirSync(join(dir, rel), { withFileTypes: true })) {
       const r = rel ? `${rel}/${e.name}` : e.name;
-      if (e.isDirectory()) walk(r);
-      else if (e.isFile()) lines.push(`${r}\0${createHash("sha256").update(readFileSync(join(dir, r))).digest("hex")}\n`);
+      if (only && !e.isDirectory() && !only.has(r)) continue;
+      if (e.isSymbolicLink()) lines.push(`${r}\0link:${sha(readlinkSync(join(dir, r)))}`);
+      else if (e.isDirectory()) walk(r);
+      else if (e.isFile()) lines.push(`${r}\0${sha(readFileSync(join(dir, r)))}`);
     }
   };
   walk("");
-  return createHash("sha256").update(lines.sort().join("")).digest("hex");
+  return sha(lines.sort().join("\n"));
+}
+
+/**
+ * Whether a generation folder matches its manifest. `checksum` covers the git-tracked files, `disk_checksum` every file
+ * (a fresh clone lacks the gitignored ones). shortcut: when only the tracked files match, an edited disk-only file is not caught.
+ */
+export function coldMatches(dir: string, checksum?: string, diskChecksum?: string): boolean {
+  const want = (checksum ?? "").toLowerCase();
+  const full = coldChecksum(dir).toLowerCase();
+  if (full === (diskChecksum || checksum || "").toLowerCase()) return true;
+  try {
+    const tracked = new Set(execFileSync("git", ["ls-files", "-z"], { cwd: dir, encoding: "utf-8" }).split("\0").filter(Boolean));
+    return tracked.size > 0 && coldChecksum(dir, tracked).toLowerCase() === want;
+  } catch { return false; }
 }
 
 export type ColdStatus = "registered" | "unregistered" | "checksum-mismatch" | "disabled" | "missing-path";
@@ -70,7 +88,7 @@ export function coldGenerations(projectRoot: string, notesPath?: string): ColdSt
     if (!entry) status = "unregistered";
     else if (!existsSync(path)) status = "missing-path";
     else if (disabled) status = "disabled";
-    else status = coldChecksum(path).toLowerCase() === entry.checksum?.toLowerCase() ? "registered" : "checksum-mismatch";
+    else status = coldMatches(path, entry.checksum, entry.diskChecksum) ? "registered" : "checksum-mismatch";
     if (disabled && status === "unregistered") status = "disabled";
     generations.push({ generation: gen, path, status });
   }

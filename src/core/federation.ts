@@ -15,6 +15,8 @@ export interface FederationSource {
   historical?: { generation: string; source_commit: string; rotated_at: string };
   /** The manifest's checksum of the generation folder (cold generations only). */
   checksum?: string;
+  /** Checksum over every file, gitignored ones included (hewtd 3.2.0). */
+  diskChecksum?: string;
   /** Paths, relative to the generation, that the rotation's secrets scan flagged (cold generations only). */
   secrets?: string[];
 }
@@ -135,6 +137,7 @@ export function readColdManifest(root: string, warnings: string[]): FederationSo
       locked: true,
       historical: { generation: gen, source_commit: str("source_commit"), rotated_at: str("rotated_at") },
       checksum: str("checksum"),
+      diskChecksum: str("disk_checksum"),
       secrets: secretPaths(e.secrets_findings),
     });
   }

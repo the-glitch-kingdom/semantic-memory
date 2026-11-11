@@ -127,9 +127,9 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
   - [x] `npm run gate:release` (fresh, BAND=1) vs 1.28.0: every count identical, mcp vs cli 0 differ, p95 within band. Default search must not change at all. Run it once more with a `cold_storage` manifest pointing at a large cold copy configured (the gate's corpus duplicated as a generation): again identical, and no index built under `sources/`.
   - [x] Opt-in cost on a ~1,000-file cold tree (copy this repo's `.documentation` plus fixtures, or generate one): first-query build time, checksum time, warm p95 and RSS before/after opening. Record in notes.md.
   - [x] Long-term recall check: a small set of "what did we do about X" questions against the two fixture generations (train/held-out split as usual). Record @1/@3. Floors come from the measured numbers.
-- [ ] Phase 9: Release prep
-  - [ ] Bump all five version fields to 1.29.0, plus the lockfile.
-  - [ ] Contract check: re-read hit-em-with-the-docs#97 and its `feat/cold-rotation-97` branch (read only). Confirm the cold root name, the generation folder pattern, the manifest fields and the checksum definition still match ours. If hewtd 3.2.0 has shipped, run one real `reconcile` rotation into a temp repo copy and check that semantic-memory registers, notifies and searches it. Record any mismatch under Errors Encountered and fix it on our side. If #97 is not settled, ship anyway: the fixtures pin the published contract. Say so in the changelog.
+- [x] Phase 9: Release prep
+  - [x] Bump all five version fields to 1.29.0, plus the lockfile.
+  - [x] Contract check (done: hewtd 3.2.0 shipped; a real rotation into /tmp registered, notified and searched; checksum mismatch found and fixed, see Errors Encountered): re-read hit-em-with-the-docs#97 and its `feat/cold-rotation-97` branch (read only). Confirm the cold root name, the generation folder pattern, the manifest fields and the checksum definition still match ours. If hewtd 3.2.0 has shipped, run one real `reconcile` rotation into a temp repo copy and check that semantic-memory registers, notifies and searches it. Record any mismatch under Errors Encountered and fix it on our side. If #97 is not settled, ship anyway: the fixtures pin the published contract. Say so in the changelog.
 - [ ] Phase 10: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 11: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as plain `it`.
@@ -277,9 +277,12 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 2: "a locked source indexes without writing into it" and `cold_storage: false` already passed (an `it.fails` flipped to unexpected-pass), so they became plain `it` guards.
 - Phase 2: the abstention/default tests passed by timing while the opt-in source was still building (federated only once ready). `long-term-default.test.ts` now waits up to 20 s for that build in `beforeAll`, so it fails on every run today; once `default: false` is honoured the wait just times out (20 s, once).
 - Phase 2 validation: `npm run eval` twice hit `real-corpus-eval` beforeAll "Hook timed out in 600000ms" (machine load average 16-35 from other sessions; the corpus and src are unchanged by this phase). The file passes alone (16 passed, 1 expected fail). Load flake, not a regression; the first run was left in the background by a tool timeout and its output cut before the failing name, so the second (verbose) run identified it.
+- Phase 9: hewtd 3.2.0's `checksum` differs from ours: lines joined by `\n` with no trailing newline, symlinks as `relpath\0link:sha256(target)`, `checksum` covers only git-tracked files and a second `disk_checksum` covers all. With our Phase 4 definition every real rotated generation read `checksum-mismatch` and was skipped. Fixed on our side: `coldChecksum` now equals hewtd's `compute_tree_checksum`, new `coldMatches(dir, checksum, diskChecksum)` accepts the full tree against `disk_checksum` or the `git ls-files` subset against `checksum` (a fresh clone), `FederationSource.diskChecksum`. Shortcut: when only the tracked files match, an edited disk-only file is not caught. #97 had nothing to adopt; the Phase 2 note saying it must is obsolete.
 
 ## Status
-**Phase 9 next.** Phase 8 done (gate identical to 1.28.0 with and without a 892-file cold generation; opt-in cost and long-term recall recorded in notes.md). Phase 7 done (cold-notice hook, long-term prompt trigger, healthcheck). Phase 6 done (`search --source`, `--reindex`).
+**Phase 10 next.** Phase 9 done (1.29.0 version fields; checksum aligned to hewtd 3.2.0 after a real rotation; the docs phase must document `disk_checksum` and the tracked-files rule).
+
+Previous: **Phase 9 next.** Phase 8 done (gate identical to 1.28.0 with and without a 892-file cold generation; opt-in cost and long-term recall recorded in notes.md). Phase 7 done (cold-notice hook, long-term prompt trigger, healthcheck). Phase 6 done (`search --source`, `--reindex`).
 
 Previous: Phase 6 done.
 **Phase 6 next.** Phase 5 done (tools take `sources`, MCP `reindex {source}`, get_stats `sources`). Phase 4 done (lazy opt-in registry, locked, checksum, secrets, archive).
@@ -287,3 +290,4 @@ Previous: Phase 6 done.
 Previous: Phase 3 done (config parsing, `coldGenerations`).
 
 Previous: **Phase 3 next.** Phase 2 done: 31 `it.fails` acceptance cases (each confirmed failing as plain `it` for its stated reason) and 20 passing regression guards; see notes.md.
+- Phase 9 validation: lint, build, npm test (154 files) passed. In `npm run eval`, `long-term-eval` afterAll hit its 10 s hook timeout and `real-corpus-eval` beforeAll its 600 s (load average 20-30 from other sessions); both pass alone. Load flakes, not changes. The long-term-eval afterAll (cleanup of the read-only cold trees) has no explicit timeout and could be given one.
