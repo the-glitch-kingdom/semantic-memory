@@ -264,14 +264,14 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     const root = repoRoot(notesPath);
     return `${m(join(root, ".hewtd", "graph.json"))}:${m(join(root, ".git", "logs", "HEAD"))}`;
   }
-  let codeLoad: { source: "export" | "fallback" | "none"; loadMs: number } | undefined;
+  let codeLoad: { source: "export" | "fallback" | "none"; loadMs: number; export_commit?: string | null; behind_head?: number | null; files_changed_since?: number | null } | undefined;
   async function loadCode(docs: IndexedDocument[]): Promise<CodeData | null> {
     lastCodeStamp = codeStamp();
     const t0 = Date.now();
     try {
       const code = await loadCodeData(notesPath, docs);
       groundDocs(docs, code);
-      codeLoad = { source: !code ? "none" : [...code.docs.values()].some((d) => d.source !== "code-spans") ? "export" : "fallback", loadMs: Date.now() - t0 };
+      codeLoad = { source: !code ? "none" : [...code.docs.values()].some((d) => d.source !== "code-spans") ? "export" : "fallback", loadMs: Date.now() - t0, ...(code?.export && { export_commit: code.export.commit, behind_head: code.export.behind, files_changed_since: code.export.changed }) };
       return code;
     } catch (e: any) {
       codeLoad = { source: "none", loadMs: Date.now() - t0 };

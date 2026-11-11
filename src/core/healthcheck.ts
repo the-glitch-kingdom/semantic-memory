@@ -7,6 +7,7 @@ import { homedir } from "node:os";
 import { lintVault } from "./lint.js";
 import { deriveProjectRoot } from "./session.js";
 import { coldGenerations } from "./cold.js";
+import { CODE_GRAPH_STALE_COMMITS } from "./code-graph.js";
 
 export type Tier = "fast" | "slow" | "all";
 export type Severity = "ok" | "warn" | "error";
@@ -123,6 +124,7 @@ async function runFastTier(opts: HealthcheckOptions): Promise<DriftFinding[]> {
     checkLegacyStateFiles(opts.projectRoot),
     checkUsageLogIgnored(opts.projectRoot),
     checkColdGenerations(opts.projectRoot),
+    checkCodeGraphStale(opts.projectRoot),
     ...(await skillManifestChecks(opts.projectRoot)),
   ];
   const results = await Promise.all(checks.map((p) => p.catch((err) => failOpenWarn(err))));
@@ -165,6 +167,23 @@ async function checkColdGenerations(projectRoot: string): Promise<DriftFinding |
     severity: "warn",
     summary: `long-term generations not searchable: ${bad.map((g) => `${g.generation} (${g.status})`).join(", ")}`,
     detail: "Register them with hit-em-with-the-docs reconcile, or restore the folder so its checksum matches the manifest.",
+  };
+}
+
+/** The hewtd code-graph export is a snapshot of `source_commit`: warn when it is far behind HEAD or git cannot place it. Reads only; never runs hewtd. */
+async function checkCodeGraphStale(projectRoot: string): Promise<DriftFinding | null> {
+  let g: any;
+  try { g = JSON.parse(readFileSync(join(projectRoot, ".hewtd", "graph.json"), "utf-8")); } catch { return null; }
+  if (g?.version !== 1) return null;
+  const c = typeof g.source_commit === "string" && /^[0-9a-f]{4,64}$/i.test(g.source_commit) ? g.source_commit : null;
+  const r = c && spawnSync("git", ["-C", projectRoot, "rev-list", "--count", `${c}..HEAD`], { encoding: "utf-8", timeout: 10_000 });
+  const behind = r && r.status === 0 ? Number(r.stdout.trim()) : null;
+  if (behind !== null && behind <= CODE_GRAPH_STALE_COMMITS) return { check: "code-graph-stale", severity: "ok", summary: `code-graph export is ${behind} commit(s) behind HEAD` };
+  return {
+    check: "code-graph-stale",
+    severity: "warn",
+    summary: behind === null ? "code-graph export's source_commit is unknown to git; refresh it with `npx hewtd index`" : `code-graph export is ${behind} commits behind HEAD; refresh it with \`npx hewtd index\``,
+    detail: "Search patches refs to changed files live, but the symbol table and other refs still describe the old tree.",
   };
 }
 

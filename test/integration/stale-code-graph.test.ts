@@ -108,14 +108,14 @@ describe("a stale code-graph export (#95)", () => {
     }
   }, 300_000);
 
-  t("get_stats.codeGraph reports export_commit, behind_head and files_changed_since", async () => {
+  it("get_stats.codeGraph reports export_commit, behind_head and files_changed_since", async () => {
     const r = await repo();
     await rm(join(r.dir, X));
     await appendFile(join(r.dir, Y), "\n# changed\n");
     commit(r.dir, "x and y");
     commit(r.dir, "empty");
     const { stats } = await observe(r.vault, E, QUERY_E);
-    expect(stats.codeGraph).toMatchObject({ source: "export", export_commit: r.head, behind_head: 2, files_changed_since: 2 });
+    expect(stats.codeGraph).toMatchObject({ source: "export", export_commit: r.head, behind_head: 2, files_changed_since: 3 }); // x, y and the fixture's truth.json, which the first commit() sweeps in
   }, 300_000);
 
   it("export at HEAD: grounding is exactly the export's, so the release gate does not move (guard)", async () => {
@@ -124,10 +124,22 @@ describe("a stale code-graph export (#95)", () => {
     for (const g of [o.mcp, o.cli]) expect(g).toEqual({ source: "export", verdict: "check", code_drift: [], dead_refs: [] });
   }, 300_000);
 
-  t("export at HEAD: get_stats reports export_commit, 0 behind and 0 files changed", async () => {
+  it("export at HEAD: get_stats reports export_commit, 0 behind and 0 files changed", async () => {
     const r = await repo();
     const { stats } = await observe(r.vault, D, QUERY);
     expect(stats.codeGraph).toMatchObject({ export_commit: r.head, behind_head: 0, files_changed_since: 0 });
+  }, 300_000);
+
+  it("a running server picks up a commit made after it started: the next search shows the dead ref", async () => {
+    const r = await repo();
+    const client = await connect(r.vault);
+    const dead = async () => JSON.parse((((await client.callTool({ name: "search_hybrid", arguments: { query: QUERY, limit: 20 } })).content) as { text: string }[])[0].text).find((x: any) => x.path === D)?.grounding?.dead_refs;
+    expect(await dead()).toEqual([]);
+    await rm(join(r.dir, X));
+    commit(r.dir, "delete x");
+    let got: string[] | undefined;
+    for (let i = 0; i < 20 && !got?.length; i++) { got = await dead(); if (!got?.length) await new Promise((res) => setTimeout(res, 500)); }
+    expect(got).toEqual([X]);
   }, 300_000);
 
   it("an uncommitted deletion of a cited file is caught too (diff against the working tree)", async () => {
@@ -147,7 +159,7 @@ describe("a stale code-graph export (#95)", () => {
     expect(o.cli?.dead_refs ?? []).toEqual([]);
   }, 300_000);
 
-  t.each([["a commit git does not know", ZERO], ["null (an export made outside git)", null]])("source_commit is %s: every file ref is checked live, behind_head is unknown, nothing throws", async (_n, commitId) => {
+  it.each([["a commit git does not know", ZERO], ["null (an export made outside git)", null]])("source_commit is %s: every file ref is checked live, behind_head is unknown, nothing throws", async (_n, commitId) => {
     const r = await repo({ commit: commitId });
     await rm(join(r.dir, X));
     commit(r.dir, "delete x");
@@ -168,11 +180,11 @@ describe("a stale code-graph export (#95)", () => {
     }
   }, 300_000);
 
-  t("healthcheck reports a code-graph finding when the export is far behind HEAD, and none at HEAD", async () => {
+  it("healthcheck reports a code-graph finding when the export is far behind HEAD, and none at HEAD", async () => {
     const found = (res: Awaited<ReturnType<typeof runHealthcheck>>) => res.findings.find((f) => /code[-_]?graph/i.test(f.check) && f.severity !== "ok");
     const r = await repo();
     expect(found(await runHealthcheck({ projectRoot: r.dir, tier: "fast", force: true }))).toBeUndefined(); // at HEAD
-    for (let i = 0; i < 60; i++) commit(r.dir, `c${i}`); // Phase 3 picks CODE_GRAPH_STALE_COMMITS below 60
+    for (let i = 0; i < 60; i++) commit(r.dir, `c${i}`); // CODE_GRAPH_STALE_COMMITS is below 60
     const f = found(await runHealthcheck({ projectRoot: r.dir, tier: "fast", force: true }));
     expect(f?.severity).toBe("warn");
     expect(`${f?.summary} ${f?.detail}`).toContain("npx hewtd index");
