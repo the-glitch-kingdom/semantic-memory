@@ -52,10 +52,10 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
   - [x] `healthcheck`: a `code-graph-stale` warning when `behind_head > CODE_GRAPH_STALE_COMMITS` or unknown. It names the fix: run `npx hewtd index` (hit-em-with-the-docs' command; the finding only names it, never runs it).
   - [x] `grounding.stale` and `source: "export+live"` reach `search_hybrid`, `search_semantic`, CLI `search` and federated results unchanged (`shape` already passes `grounding` through; confirm).
   - [x] The MCP server already reloads code when HEAD's reflog moves (`codeStamp`, context.ts:262), so a commit is picked up at the next reconcile. Confirm with a test (commit, then the next search shows the dead ref), not just by reading.
-- [ ] Phase 5: Locked sources skip the code graph
-  - [ ] `buildContext` with `locked: true` never calls `loadCodeData`: no export, no span fallback, no grounding. A frozen generation's refs point at code that has moved on, and grounding it against today's tree would mark its history dead. Record the decision.
-  - [ ] Opt-in sources that are not locked keep today's behaviour (a sibling repo's own export is valid). Record it.
-  - [ ] Phase 2 locked-source tests pass as plain `it`.
+- [x] Phase 5: Locked sources skip the code graph
+  - [x] `buildContext` with `locked: true` never calls `loadCodeData`: no export, no span fallback, no grounding. A frozen generation's refs point at code that has moved on, and grounding it against today's tree would mark its history dead. Record the decision.
+  - [x] Opt-in sources that are not locked keep today's behaviour (a sibling repo's own export is valid). Record it.
+  - [x] Phase 2 locked-source tests pass as plain `it`.
 - [ ] Phase 6: Measure
   - [ ] Fresh `BAND=1 bash scripts/gate-release.sh 1.29.0`: every count identical (the gate's exports are at HEAD).
   - [ ] Code-load cost with a stale export (100 commits behind, a few hundred changed files) on a ~1,000-file repo: before and after, in ms. Record it in notes.md.
@@ -106,6 +106,6 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - Phase 2: a first `--source long-term` search only starts the cold index in the background ("skipped, still indexing"); the locked-source test retries up to 4 times until cold hits arrive.
 
 ## Status
-**Phase 5 next.** Phase 4 done: get_stats.codeGraph fields, `code-graph-stale` healthcheck finding (warn above 20 commits or unknown commit; ok otherwise), reload-on-commit test; the get_stats and healthcheck it.fails are plain `it` now. Only the locked-source case stays it.fails (Phase 5).
+**Phase 6 next.** Phase 5 done: `loadCode` in src/mcp/context.ts returns null for `locked` (decision: a frozen generation's refs would be graded against today's tree; non-locked opt-in sources keep their own export, since a sibling repo's export is valid). Locked-source test is plain `it`, stderr proves no `fewer than half` warning. Earlier: **Phase 5 next.** Phase 4 done: get_stats.codeGraph fields, `code-graph-stale` healthcheck finding (warn above 20 commits or unknown commit; ok otherwise), reload-on-commit test; the get_stats and healthcheck it.fails are plain `it` now. Only the locked-source case stays it.fails (Phase 5).
 
 Previous: Phase 3 done: per-ref patching in src/core/code-graph.ts. Three Phase 2 cases are now plain `it`; six `it.fails` remain (get_stats x3, healthcheck, locked source) for Phases 4-5.

@@ -268,6 +268,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   async function loadCode(docs: IndexedDocument[]): Promise<CodeData | null> {
     lastCodeStamp = codeStamp();
     const t0 = Date.now();
+    // a locked source is a frozen generation: grounding it against today's tree would mark its history dead
+    if (options.locked) { codeLoad = { source: "none", loadMs: 0 }; return null; }
     try {
       const code = await loadCodeData(notesPath, docs);
       groundDocs(docs, code);

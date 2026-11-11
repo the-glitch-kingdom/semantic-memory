@@ -30,3 +30,6 @@ Validation: lint, build, `npm test` (1 load flake: stdin-eof, passes alone) gree
 ## Eval results: Phase 4
 No ranking change (reporting only). `get_stats.codeGraph` gains export_commit/behind_head/files_changed_since only with an export (no export: byte-identical, guard passes). Healthcheck `code-graph-stale` reads graph.json and one `git rev-list --count`; never runs hewtd. `shape` passes grounding through (MCP and CLI cases in the suite assert export+live/stale). Full validation below.
 Validation: lint, build, npm test (157 files, 1277 passed) green; eval 24 of 25, real-corpus-eval fails the same 2 floors (search_semantic answer@1 10 < 11) as on clean main; not lowered.
+
+## Eval results: Phase 5
+No ranking change (locked sources only lose grounding). Locked-source test captures dist CLI stderr: no `fewer than half` warning, no grounding on cold hits. The test now unlocks the read-only generations in cleanup (makeProject().cleanup()).

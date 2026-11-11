@@ -13,9 +13,7 @@ import { cleanupTempDir } from "../setup.js";
 import { gitHistory, stampDates } from "../retrieval-eval/git-history.js";
 import { GEN_A, makeProject } from "../long-term-fixture.js";
 
-// #95 Phase 2 acceptance: a hewtd export older than HEAD is detected, patched per ref and reported. Every case that needs the fix is
-// it.fails until Phase 3-5 land it (PLAIN=1 runs them as plain `it` to confirm each fails for the stated reason); the guards are plain `it`.
-const t = Object.assign(process.env.PLAIN ? it : it.fails, { each: process.env.PLAIN ? it.each : it.fails.each });
+// #95 acceptance: a hewtd export older than HEAD is detected, patched per ref and reported.
 
 const X = "backend/scripts/export_audit_log.py"; // cited by D, resolved in the export
 const Y = "backend/scripts/prune_backups.py"; // cited by D, with a code_changed date
@@ -29,11 +27,14 @@ const ZERO = "0".repeat(40);
 
 let dirs: string[] = [];
 let clients: Client[] = [];
+let projects: Awaited<ReturnType<typeof makeProject>>[] = []; // read-only generations need their own unlock
 afterEach(async () => {
   for (const c of clients) await c.close().catch(() => {});
   for (const d of dirs) await cleanupTempDir(d);
+  for (const p of projects) await p.cleanup();
   dirs = [];
   clients = [];
+  projects = [];
 });
 
 const git = (dir: string, ...args: string[]) =>
@@ -190,9 +191,9 @@ describe("a stale code-graph export (#95)", () => {
     expect(`${f?.summary} ${f?.detail}`).toContain("npx hewtd index");
   }, 120_000);
 
-  t("a locked (long-term) source gets no grounding from the live tree and no doc-key warning", async () => {
+  it("a locked (long-term) source gets no grounding from the live tree and no doc-key warning", async () => {
     const p = await makeProject();
-    dirs.push(p.root);
+    projects.push(p);
     git(p.root, "init", "-q");
     await mkdir(join(p.root, "backend"), { recursive: true });
     await writeFile(join(p.root, "backend", "live.py"), "x = 1\n");
