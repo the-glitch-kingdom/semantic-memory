@@ -62,7 +62,7 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
   - [x] By hand on a real stale export: build one with hewtd 3.3.0 (read only, its built dist, in a temp copy of this repo), commit a deletion of a cited file, and check `dead_refs` and `get_stats`.
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields to 1.30.0, plus the lockfile.
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as plain `it`.
   - [ ] Edge cases:
@@ -106,7 +106,7 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - Phase 2: a first `--source long-term` search only starts the cold index in the background ("skipped, still indexing"); the locked-source test retries up to 4 times until cold hits arrive.
 
 ## Status
-**Phase 8 next.** Phase 7 done (1.30.0 in package.json, package-lock.json, plugin.json, both marketplace.json fields, AGENTS.md). Earlier: Phase 6 done (gate PASS, +19 ms stale patch, by-hand check ok).
+**Phase 9 next.** Phase 8 done (cleanup: no scratch files, probe logging, commented-out code or unused exports found; lint passes). Earlier: Phase 7 done (1.30.0 in package.json, package-lock.json, plugin.json, both marketplace.json fields, AGENTS.md). Earlier: Phase 6 done (gate PASS, +19 ms stale patch, by-hand check ok).
 
 Earlier: **Phase 6 next.** Phase 5 done: `loadCode` in src/mcp/context.ts returns null for `locked` (decision: a frozen generation's refs would be graded against today's tree; non-locked opt-in sources keep their own export, since a sibling repo's export is valid). Locked-source test is plain `it`, stderr proves no `fewer than half` warning. Earlier: **Phase 5 next.** Phase 4 done: get_stats.codeGraph fields, `code-graph-stale` healthcheck finding (warn above 20 commits or unknown commit; ok otherwise), reload-on-commit test; the get_stats and healthcheck it.fails are plain `it` now. Only the locked-source case stays it.fails (Phase 5).
 
