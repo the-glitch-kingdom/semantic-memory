@@ -1,0 +1,31 @@
+# Notes: long-term memory (#93)
+
+## Phase 1: verification on main (1.28.0, c25ea68)
+
+### Scope
+#93 was rescoped on 2026-11-11 to the search side. Rotation (staged reconcile, confirmation, swap, locked dated cold generations, undo, secrets scan of the outgoing tree) is the-glitch-kingdom/hit-em-with-the-docs#97. #97 proposes the `cold_storage` list in `.claude/hit-em-with-the-docs.json`:
+`{generation, path, source_commit, rotated_at, checksum, secrets_findings: ["rel/path.md:51"]}`, with `<cold_root>` outside the live docs tree. **#97 does not define what `checksum` hashes**, so we define it (task_plan Key Question 2).
+
+### Federation today
+- `loadFederation` (src/core/federation.ts:82) reads `federation.sources` from `vault.schema.yml` (`{label, path, weight}`) plus hewtd `reconcile.related_repos` (federation.ts:46) unless `federation.related_repos: false`. It is lenient: warnings, never throws. It drops duplicates by realpath and label.
+- The registry (src/mcp/sources.ts:46):
+  - It builds every source eagerly at the first `open()`: `buildContext(path, {readOnly: true, indexPath: sourceIndexPath(...)})`, then `tryLoadCachedIndex` → `reconcileNow` or `backgroundIndex`.
+  - Indexes live at `<primary index>/sources/<label>-<hash8>` (sources.ts:21), so nothing is written into the source tree.
+  - A source that is not ready is skipped with a one-line note.
+- Only **`search_hybrid`** (src/mcp/tools/search.ts:265, `sources.open()` → `hybridSearch` per source → `mergeSources`) and **`read_note`** (src/mcp/tools/read.ts:16, `source` param) federate. `search_semantic` and `search_text` search the primary alone.
+- `mergeSources` (src/core/federation-merge.ts) labels every item with `source`. `no_strong_match` stays only if every answering source is weak, and `missing_terms`/`passing_terms` only if every source lacks the term. Opt-in sources must not reach this on default queries.
+- `search_hybrid` already calls `ensureFresh` on every ready source per query (search.ts:276). A locked source must skip that.
+
+### Prompt hook
+- `hooks/vault-context.js` `findNotesSources` (:52) reads `.mcp.json` `semantic-*` servers with `--notes`. `searchSources` (:128) spawns CLI `search --notes <path>` per server and merges. The hook **never federates** (the CLI has no federation), so an opt-in federation source is already out of the hook. Only the explicit long-term trigger is new.
+- `formatContextBlock` (:197) drops `archive/` hits (`isArchived`), has a 0.35 score gate, and shows the top 3.
+
+### CLI
+- `search <query> --notes --limit --text-only --paths` (src/cli/index.ts:405) → `runSearch` (src/cli/search.ts). It has no federation. It keeps the index inside the notes tree (`.semantic-sidekick-index`), so `--source` must resolve through the primary's federation and use `sourceIndexPath`. Pointing `--notes` at a read-only cold tree would try to write into it.
+
+### Archive and secrets
+- `src/core/path-class.ts:37-38`: default `rules: [{glob: "**/archive/**", multiplier: 0.3}]`, `exclude: ["**/archive/**"]`. A cold tree's own `archive/` would be invisible unless locked and cold sources skip the exclude.
+- `src/core/redact.ts` redacts what semantic-memory *writes* (notes, logs). It does not scan docs at index time, so secret-flagged files must be excluded before parsing (Phase 4).
+
+### hit-em-with-the-docs side (read only, never modified)
+- `/reconcile` is hewtd 3.1.8 `commands/reconcile.md`. Its only external hook is `reconcile.search_command` (an argv template). The confirmation gate and rotation are #97's.
