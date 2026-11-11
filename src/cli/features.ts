@@ -50,7 +50,7 @@ export function registerFeatureCommands(program: Command, extraStatus: Partial<R
       }
       cmd
         .command("auto <on|off>")
-        .description(`Auto mode (v1.8): the worker applies create / update / archive to learned skills itself, ledgered (sets ${AUTO_ENV}=1). Hand-written skills only ever get suggestions.`)
+        .description(`Auto mode: the worker applies create / update / archive to learned skills itself, ledgered (sets ${AUTO_ENV}=1). Hand-written skills only ever get suggestions.`)
         .option("--repo", "Write skill_loop_auto in .claude/.semantic-memory/config instead (beats the global switch)")
         .option("--clear", "With --repo: remove the override so the global switch applies")
         .action((state: string, opts: { repo?: boolean; clear?: boolean }) => {

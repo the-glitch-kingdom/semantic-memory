@@ -76,3 +76,7 @@ No ranking change, no eval measured. Contract check against hewtd 3.2.0 (read on
 ## Eval results: Phase 11
 Fresh `BAND=1 bash scripts/gate-release.sh 1.28.0` (no --cache) PASS after the review fixes: local equals 1.28.0 on every count in both modes and arms (no export hybrid @1 92, multi 20/28/31 of 41, negatives 43/47, false flags 7; export hybrid @1 95, multi 20/28/32); mcp vs cli differ on 0 of 186 in both modes. p95 14 ms (cli and mcp), one local-export mcp reading of 29 ms on a loaded machine, inside the gate band. `npm test` 155 files and `npm run eval` 25 files pass, no load flakes.
 
+
+## Eval results: Phase 12
+
+Docs, help and `--help` only; the one src behaviour change is the wording of the locked-source `changed` note. No ranking change, nothing measured. `npm test` (156 files) passed except a load-flake stdin-eof test that passes alone; `npm run eval` (25 files) passed after the docs.

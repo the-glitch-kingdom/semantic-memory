@@ -152,15 +152,15 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
   - [x] Security: a path in `cold_storage` or `secrets_findings` cannot escape (`..` traversal, absolute paths in `secrets_findings`). The fake secret value is absent from every file under the index dir and from every tool output.
   - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
   - [x] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions).
-- [ ] Phase 12: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/operational/federation-guide.md`: `default`, `locked`, `related_repos: opt-in`, `cold_storage`, the reserved labels, the checksum definition and the secrets exclusion.
-  - [ ] New guide `.documentation/operational/long-term-memory-guide.md` (via `hewtd integrate`). It covers:
+- [x] Phase 12: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/operational/federation-guide.md`: `default`, `locked`, `related_repos: opt-in`, `cold_storage`, the reserved labels, the checksum definition and the secrets exclusion.
+  - [x] New guide `.documentation/operational/long-term-memory-guide.md` (via `hewtd integrate`). It covers:
     - what long-term memory is, and how it is fed by hit-em-with-the-docs#97's rotation;
     - how to search it (tool `sources`, CLI `--source`, the prompt phrases);
     - what is never searched by default;
     - how to rebuild a locked source;
     - the session-start opt-in notice and what each status means.
-  - [ ] **Plugin help** (`src/core/help/topics.ts`, the one source for CLI `help`, the MCP `help` tool and `/help`):
+  - [x] **Plugin help** (`src/core/help/topics.ts`, the one source for CLI `help`, the MCP `help` tool and `/help`):
     - **New topic** `long-term-memory`: title "Search long-term memory (old docs generations)", group "Search more", aliases `long-term`, `cold-storage`, `documentation-cold`, `legacy-docs`, `opt-in`, `historical`.
       - The summary says it is opt-in and never in default search.
       - Steps:
@@ -176,7 +176,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - **Update `add-index`:** for a rarely used frozen tree, point at long-term-memory instead of a second server.
     - **Coverage:** `test/unit/help-coverage.test.ts` must pass with the new schema keys (`federation.sources[].default` and `locked`, `federation.cold_storage`, `related_repos: opt-in`), the new CLI flags (`search --source` and the Phase 6 rebuild flag) and the new tool parameter (`sources`), with no new exemptions.
     - **Fill in `commands/help.md`'s example topics** if it lists any.
-  - [ ] **Bring the help up to date with 1.21-1.28** (audit 2026-11-11; the user asked that help cover every new feature). Each change lands in `src/core/help/topics.ts`; the coverage test is the check.
+  - [x] **Bring the help up to date with 1.21-1.28** (audit 2026-11-11; the user asked that help cover every new feature). Each change lands in `src/core/help/topics.ts`; the coverage test is the check.
     - **`getting-started`:** new installs get `.mcp.json` entries `semantic-memory` (vault) and `semantic-memory-docs` (docs, read-only); `semantic-vault` and `semantic-sidekick` still work (1.26).
     - **New topic `tune-ranking`** ("Tune ranking", group "Measure and improve"; aliases `ranking`, `rerank`, `reranker`, `path_class`, `usage_boost`, `coverage_weight`, `link_prior`, `clause_weight`, `identifier-tier`). It covers:
       - the `ranking:` block and its measured defaults (coverage and link prior off, `clause_weight` 0 and why);
@@ -206,7 +206,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
       - a test that every topic's `doc` path exists (add it if missing);
       - `semantic-memory help` (no topic) lists every topic under its group;
       - the MCP `help` tool and `/help` (`commands/help.md`) serve the same text (existing tests).
-  - [ ] **Every `--help` is accurate and complete** (the user asked for this alongside the help topics).
+  - [x] **Every `--help` is accurate and complete** (the user asked for this alongside the help topics).
     - **Scope:** `semantic-memory --help`, each of its 27 commands' `--help`, and every subcommand of the 8 command groups (`skills`, `lexicon`, `dossier`, `profile`, `skill-loop`, `jev-mode`, `skill-eval`, `eval`).
     - **For each:**
       - the description matches what the command does today;
@@ -219,12 +219,12 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
       - runs `--help`;
       - asserts exit 0, a non-empty description, and every registered option shown with a non-empty description.
       It also asserts that `search --help` mentions `--source`, and that `tools search_hybrid` mentions `sources`. Cheap (no model load); runs in `npm test`.
-  - [ ] `.documentation/reference/mcp-tools-reference.md` (`sources` on three tools, `historical` on hits, `get_stats` sources) and `.documentation/reference/cli-reference.md` (`--source` and the rebuild flag).
-  - [ ] KB gotcha facts:
+  - [x] `.documentation/reference/mcp-tools-reference.md` (`sources` on three tools, `historical` on hits, `get_stats` sources) and `.documentation/reference/cli-reference.md` (`--source` and the rebuild flag).
+  - [x] KB gotcha facts:
     - owed from 1.28.0: matching an identifier token by token credits docs with the words scattered (`gate`/`release`/`sh`); `## Instead`: match the name literally (`Bm25Index.docContains`), with `test/unit/identifier-tier.test.ts` as the check;
     - plus any found in this work.
-  - [ ] `CHANGELOG.md` 1.29.0 and `.documentation/changelog/v1-29-0-long-term-memory.md`.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+  - [x] `CHANGELOG.md` 1.29.0 and `.documentation/changelog/v1-29-0-long-term-memory.md`.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Exclude secrets-flagged content by line or by file? By file. A line number can drift, and a missed line embeds a secret. A whole flagged file is the safe unit.
@@ -233,6 +233,8 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 4. Can a locked source be in the default set? Allowed (`default: true, locked: true`) but documented as unusual. Cold generations are always `default: false`.
 
 ## Decisions Made
+
+- Phase 12: the `changed since it was indexed` note now names the rebuild (`search --source <label> --reindex` or the reindex tool), closing the carried-over open item. `tools <name>` (TOOL_HELP in src/cli/index.ts) lists `sources` on the three search tools, `source` on read_note and reindex. The root command's `(rebrand ... v1.0.0)` text, the `(v1.6/v1.7/v1.8)` tags, doubled `(default: ...)` suffixes and the no-op `--json` default are gone; `--notes` says it is required; `search --limit` says the MCP default is 10. The schema default's commented `federation:` block documents `default`, `locked`, `cold_storage` (the help drift test needs the keys in DEFAULT_SCHEMA_YAML). Topic `doc` fields cannot carry an anchor (the test checks the file exists), so section-results points at mcp-tools-reference.md and query-routing/weak-matches at retrieval-tuning-guide.md. The `help-coverage` exemptions for ranking, rerank, path_class, results, usage_boost, search_semantic and search_text were removed; `graph` and `index_fields` stay (ranking internals). cli-help.test.ts walks all 58 command paths by spawning `--help` and asserts >= 27 top-level commands (28 today: serve counts). New KB facts: the identifier-token gotcha (owed from 1.28.0) and the checksum-contract gotcha, filed under knowledge-base/facts/ after `hewtd integrate` put them in troubleshooting/. AGENTS.md regenerated from branch code: only `last_generated` changed (no tool description changed), so it was left as committed.
 
 - Phase 8: the cold-copy gate run is `COLD_COPY=1 BAND=1 bash scripts/gate-release.sh 1.28.0` (new option of scripts/eval-against-release.sh: the corpus copied `COLD_COPY_N` times, default 4, into one registered generation; the run fails if an index appears under `sources/`). Long-term recall is a committed eval, test/retrieval-eval/long-term-eval.test.ts, with floors in baseline.json `longTerm`; opt-in cost was measured with a scratch script and is recorded in notes.md only (timings are not gated).
 
@@ -264,6 +266,8 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 
 ## Errors Encountered
 
+- Phase 12 validation: `npm test` had one failure, `test/e2e/stdin-eof.test.ts` ("Server did not exit within 3 s"), at load average 25-28 from other sessions; it passes alone (2 passed). Load flake. `npm run eval` (25 files) passed, 591 s.
+
 - Phase 7: the cold-notice test for an unreadable state file called mkdir on a path that already held the file (EEXIST); fixed the test (rmSync first). `core/cold` was not a tsup entry, so the hook could not import it; added.
 
 - Phase 6: none. `--source` runs the MCP `search_hybrid` in-process (src/cli/search-sources.ts), so its hits are the tool's shape (extra fields, `source`, `historical`), not the plain CLI shape. It waits (polls 1 s, up to 10 min) for a building source.
@@ -280,7 +284,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 9: hewtd 3.2.0's `checksum` differs from ours: lines joined by `\n` with no trailing newline, symlinks as `relpath\0link:sha256(target)`, `checksum` covers only git-tracked files and a second `disk_checksum` covers all. With our Phase 4 definition every real rotated generation read `checksum-mismatch` and was skipped. Fixed on our side: `coldChecksum` now equals hewtd's `compute_tree_checksum`, new `coldMatches(dir, checksum, diskChecksum)` accepts the full tree against `disk_checksum` or the `git ls-files` subset against `checksum` (a fresh clone), `FederationSource.diskChecksum`. Shortcut: when only the tracked files match, an edited disk-only file is not caught. #97 had nothing to adopt; the Phase 2 note saying it must is obsolete.
 
 ## Status
-**Phase 12 next.** Phase 11 done (validation: edge-case and security tests added, independent review fixed, fresh gate PASS).
+**COMPLETE after Phase 12 (docs, help, --help).** Phase 11 done (validation: edge-case and security tests added, independent review fixed, fresh gate PASS).
 
 Previous: **Phase 11 next.** Phase 10 done (cleanup: no scratch, probe or dead code found; long-term-eval afterAll given a 60 s timeout). Phase 9 done (1.29.0 version fields; checksum aligned to hewtd 3.2.0 after a real rotation; the docs phase must document `disk_checksum` and the tracked-files rule).
 

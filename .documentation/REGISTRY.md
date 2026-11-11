@@ -3,7 +3,7 @@ title: Documentation Registry
 tier: reference
 domains: [root]
 status: active
-last_updated: '2026-11-10'
+last_updated: '2026-11-11'
 version: '1.0.0'
 generated: true
 purpose: Quick reference for all documentation domains
@@ -62,4 +62,4 @@ purpose: Quick reference for all documentation domains
 
 ---
 
-*Last updated: 2026-11-10*
+*Last updated: 2026-11-11*

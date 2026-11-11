@@ -77,12 +77,15 @@ semantic-memory --notes <path> [--reindex] [--stats] [--wait-for-ready] [--read-
 Underpins the UserPromptSubmit + SessionStart hook injection.
 
 ```bash
-semantic-memory search "<query>" --notes <path> [--limit N] [--text-only] [--json]
+semantic-memory search "<query>" --notes <path> [--limit N] [--text-only] [--paths]
+                       [--source <label>]... [--reindex]
 ```
 
-- `--limit <n>` — max results (default 8).
+- `--limit <n>` — max results (default 8; the MCP `search_hybrid` tool defaults to 10).
 - `--text-only` — skip ONNX embedder, use TextSearch only. Faster cold start but noisier for natural-language queries.
-- `--json` — default is also JSON; flag exists for self-documentation.
+- `--json` — accepted for scripts; the output is JSON already.
+- `--source <label>` (v1.29+, repeatable) — search that source instead of the default set: an opt-in source label, `long-term` (every old docs generation) or `primary`. It runs the MCP `search_hybrid` in-process with the same label rules, waits (up to 10 minutes) while a source builds, prints notes to stderr, and exits 1 with `Unknown source` for a bad label. Hits use the MCP shape (`source`, `historical`), not the plain CLI shape. Without `--source` nothing changes. See the [long-term memory guide](../operational/long-term-memory-guide.md).
+- `--reindex` (v1.29+) — with `--source`: rebuild each named source's index first, then search. This is how a locked source is rebuilt; it is an error without `--source`.
 - `--paths` (v1.20+) — print the unique vault-relative doc paths, one per line, instead of JSON. For hit-em-with-the-docs `reconcile`: `search_command: npx semantic-memory search --notes .documentation --paths {query}`.
 
 **Output:** JSON array of `{ path, title, score, confidence, snippet, mtime }` (v1.9.0: `confidence`, `no_strong_match` when weak, ~600-char snippet). Ranks like `search_hybrid` (vector + BM25 fused, archive excluded) and, since v1.11, applies the same decay (hits carry the `decay` block with `source`), without usage boosts. While another process holds `index.lock`, hits carry `stale: true`. v1.14.0: when the query names an identifier absent from the docs, hits carry `no_strong_match: true` and `missing_terms: [...]`, as in MCP search. Read-only: it never writes the index.

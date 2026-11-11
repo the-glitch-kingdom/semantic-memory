@@ -3,7 +3,7 @@ title: Documentation Index
 tier: reference
 domains: [root]
 status: active
-last_updated: '2026-11-10'
+last_updated: '2026-11-11'
 version: '1.0.0'
 generated: true
 purpose: Navigation hub for all documentation
@@ -32,8 +32,8 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 43 | Release notes per version and phase |
-| [Operational](#operational) | 19 | Day-to-day operating guides for the plugin |
+| [Changelog](#changelog) | 44 | Release notes per version and phase |
+| [Operational](#operational) | 20 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 7 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
 | [Deployment](#deployment) | 1 | Publishing and offline packaging |
@@ -245,6 +245,7 @@ purpose: Navigation hub for all documentation
 | [v1.27.0 - limit-stable ranking](changelog/v1-27-0-limit-stable-ranking.md) | reference | active | 2026-11-09 | What v1.27.0 changed about ranking and limit, why two builds now rank the same, and the measured effect of exact search against 1.26.0. |
 | [v1.27.1 - decay day clock](changelog/v1-27-1-decay-day-clock.md) | reference | active | 2026-11-10 | What v1.27.1 changed about the decay clock, why near-tied notes no longer swap between calls, and the measured effect. |
 | [v1.28.0 - whole-answer ranking](changelog/v1-28-0-whole-answer-ranking.md) | reference | active | 2026-11-10 | What v1.28.0 changed (cold-build readiness, identifier tier, clause coverage shipped off) and the per-change gate numbers. |
+| [v1.29.0 - long-term memory](changelog/v1-29-0-long-term-memory.md) | reference | active | 2026-11-11 | What v1.29.0 added (opt-in and locked sources, long-term memory over hit-em-with-the-docs cold generations) and the measurements behind "default search is unchanged". |
 | [v1.3.1 — selection-logging telemetry](changelog/v1-3-1-telemetry.md) | reference | active | 2026-07-10 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
 | [v1.3 — confidence decay (age-aware retrieval ranking)](changelog/v1-3-confidence-decay.md) | reference | active | 2026-07-10 | What v1.3.0 added — smooth, type-aware confidence decay that down-weights stale notes in search ranking, verify_note to reset the clock, evergreen opt-out, and decay CLI introspection. |
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](changelog/v1-4-0-resident-bridge.md) | reference | active | 2026-07-10 | What v1.4.0 added — a golden eval harness, archive path-class down-weighting, injection hygiene for the vault-context block, a learned human-to-artifact lexicon with propose-and-confirm capture, verbatim symptom capture, two-tier query expansion, and a token-frugal tool surface. Tool count 41→42 (manage_lexicon). |
@@ -276,10 +277,11 @@ purpose: Navigation hub for all documentation
 | [Entity Dossiers — Operating Guide](operational/dossiers-guide.md) | guide | active | 2026-07-11 | How to operate v1.5.0 entity dossiers day to day — create them, accrete incidents and current state in place, understand two-hop retrieval, feed the lexicon via aliases, seed from babel-fish, and troubleshoot resolution misses. |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](operational/drift-detection.md) | guide | active | 2026-10-28 | Operational guide to drift detection. The fast-tier auto-check that fires on every SessionStart, the manual /healthcheck deep audit, what each finding means, and how to fix them. |
 | [Failure-time fact lookup — enabling it, writing findable facts, measuring it](operational/failure-lookup-guide.md) | guide | active | 2026-10-25 | How to turn on the opt-in PostToolUseFailure fact lookup, what it injects and when, how to write gotcha facts it can find (symptoms with the literal error), how it coexists with other failure hooks, and how to measure it on your own failures with eval-failures. |
-| [Federation guide](operational/federation-guide.md) | guide | active | 2026-11-08 | How to search other vaults and sibling docs trees from one search_hybrid call, what it costs, and its limits. |
+| [Federation guide](operational/federation-guide.md) | guide | active | 2026-11-11 | How to search other vaults and sibling docs trees from one search_hybrid call, what it costs, and its limits. |
 | [Jev mode — closed-set decisions through jev-loop](operational/jev-mode.md) | guide | active | 2026-10-25 | What jev mode does, what it needs, what is sent to TypeSafe and how, what it costs, the measured judge agreement and failure-hook results, the skill-loop questions it answers, and how to turn it off. |
 | [Lexicon & Query Expansion — Operating Guide](operational/lexicon-guide.md) | guide | active | 2026-07-10 | How to operate the v1.4.0 human-to-LLM bridge day to day — add and inspect lexicon aliases, resolve alias_conflicts, capture verbatim symptoms, and understand Tier-1/Tier-2 query expansion. |
 | [Logs and Events (log.md)](operational/logs-and-events.md) | reference | active | 2026-04-23 | log.md format, auto-kinds, state-delta preload, future-Claude usage |
+| [Long-term memory guide](operational/long-term-memory-guide.md) | guide | active | 2026-11-11 | How to search old docs generations (long-term memory) on request, what is never searched by default, how to rebuild a frozen generation, and what the session-start notice means. |
 | [Modes Guide](operational/modes-guide.md) | guide | active | 2026-10-28 | vault-first / research / outage-silence entry signals, behavior, misroute recovery |
 | [Retrieval Eval Guide](operational/retrieval-eval-guide.md) | guide | active | 2026-11-07 | How to measure retrieval on your own vault with semantic-memory eval - question sets, generated questions, floors, the noise band, all versus clean. |
 | [Retrieval Tuning Guide](operational/retrieval-tuning-guide.md) | guide | active | 2026-11-07 | How search_hybrid ranks, how frontmatter fields are indexed, what confidence and no_strong_match mean, which knobs exist (index_fields, ranking, path_class.exclude, graph.exclude_hubs, rerank), what lost, and how to run and extend the retrieval eval. |
@@ -340,6 +342,6 @@ purpose: Navigation hub for all documentation
 
 ## Maintenance
 
-- **Last generated:** 2026-11-10
+- **Last generated:** 2026-11-11
 - **Run maintenance:** `npx hit-em-with-the-docs maintain`
 - **Regenerate index:** `npx hit-em-with-the-docs index`

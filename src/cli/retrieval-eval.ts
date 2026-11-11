@@ -12,7 +12,7 @@ export function registerEvalCommand(program: Command): void {
     .command("eval")
     .enablePositionalOptions()
     .description("Measure retrieval on this vault through the live search path (never re-embeds the index or writes search logs; notes changed since the last index are indexed first, as on a server start)")
-    .option("--notes <path>", "Path to markdown notes directory")
+    .option("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
     .option("--set <files...>", "JSONL question sets ({id, tier, q, facets}); default: *.jsonl in the eval dir")
     .option("--dir <path>", "Eval dir (default <project>/.claude/.semantic-memory/eval)")
     .option("--baseline", "Write the measured counts to <eval dir>/baseline.json as the floor")
@@ -55,7 +55,7 @@ export function registerEvalCommand(program: Command): void {
   evalCmd
     .command("generate")
     .description("Write blind questions for this vault with the host agent (claude): keyword, paraphrase, multi-doc and negative")
-    .requiredOption("--notes <path>", "Path to markdown notes directory")
+    .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
     .option("--docs <n>", "Documents to sample", "20")
     .option("--model <name>", "Model for the generator (default: the skill loop model)")
     .option("--dir <path>", "Eval dir (default <project>/.claude/.semantic-memory/eval)")

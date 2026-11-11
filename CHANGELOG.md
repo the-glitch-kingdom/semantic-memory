@@ -2,6 +2,24 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.29.0] - 2026-11-11 — long-term memory
+
+Issue #93 (search side; rotation is hit-em-with-the-docs 3.2.0). Details: `.documentation/changelog/v1-29-0-long-term-memory.md`.
+
+### Added
+
+- Opt-in and locked sources: `federation.sources[].default: false` (searched only when a call names it) and `locked: true` (indexed once, never reconciled, nothing written into the folder); `related_repos: opt-in`; `federation.cold_storage: false` to turn off cold generations.
+- hit-em-with-the-docs `cold_storage` generations become locked opt-in sources `cold-<date>`, label `long-term` for all. Checked against the manifest checksum (`checksum` over tracked files or `disk_checksum`, hewtd's definition); `secrets_findings` files are not indexed or readable.
+- `sources` on `search_hybrid`, `search_semantic` and `search_text`; hits carry `source` and `historical`. MCP `reindex {source}`, `get_stats` `sources`, `read_note` on opt-in labels.
+- CLI `search --source <label>` (repeatable) and `--reindex`.
+- SessionStart cold-generation notice, a prompt trigger for "search long-term memory", a `cold-generations` healthcheck finding.
+- Help topics `long-term-memory`, `tune-ranking`, `stable-results`, `index-readiness`; `test/unit/cli-help.test.ts`; the long-term recall eval and `COLD_COPY=1` for `eval-against-release.sh`.
+
+### Changed
+
+- Default search is unchanged: `gate:release` against 1.28.0 gives identical counts with and without a cold generation configured.
+- `--help` text: stale version tags and doubled defaults removed, `--notes` marked required, `search --limit` says the MCP default is 10. Help topics `getting-started`, `federated-search`, `add-index`, `eval` and `query-routing` brought up to 1.28.
+
 ## [1.28.0] - 2026-11-10 — whole-answer ranking
 
 Issues #90 and #91 (part 1). Part 2 of #91 ships off and the issue stays open. Details: `.documentation/changelog/v1-28-0-whole-answer-ranking.md`.

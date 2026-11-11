@@ -177,7 +177,7 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
             let recorded: string | undefined;
             try { recorded = JSON.parse(readFileSync(recordFile, "utf-8")).checksum; } catch { /* not recorded yet */ }
             if (!recorded && e.builtHere && h.ctx.getIndexState() === "ready") writeFileSync(recordFile, JSON.stringify({ checksum: e.sum }));
-            else if (recorded && e.sum !== recorded) note = "changed since it was indexed, the old index is still answering";
+            else if (recorded && e.sum !== recorded) note = `changed since it was indexed, the old index is still answering; rebuild it with \`search --source ${s.label} --reindex\` or the reindex tool`;
           }
           if (!note || note.startsWith("changed")) {
             const state = h.ctx.getIndexState();

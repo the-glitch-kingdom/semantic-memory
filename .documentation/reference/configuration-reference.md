@@ -505,10 +505,12 @@ Cross-encoder re-scoring of the top 30 fused `search_hybrid` results. Off by def
 federation:
   sources:
     - { label: platform-docs, path: ../platform/.documentation, weight: 1 }
-  related_repos: true
+    - { label: legacy, path: ../frozen-docs, default: false, locked: true }
+  related_repos: true      # true | false | opt-in
+  cold_storage: true       # false ignores hewtd's old docs generations
 ```
 
-`search_hybrid` also searches each source (read-only, indexed under `<index>/sources/`) and merges one list; `path` is relative to the vault, `weight` a positive number, `label` `[\w.-]+` and not `primary`. `related_repos` (default on, no effect without hit-em-with-the-docs' config file) adds the `reconcile.related_repos` siblings; `false` opts out. See the [federation guide](../operational/federation-guide.md).
+`search_hybrid` also searches each source (read-only, indexed under `<index>/sources/`) and merges one list; `path` is relative to the vault, `weight` a positive number, `label` `[\w.-]+` and not `primary`. `related_repos` (default on, no effect without hit-em-with-the-docs' config file) adds the `reconcile.related_repos` siblings; `false` opts out; `opt-in` adds them as `default: false`. `default: false` makes a source opt-in (searched only when a call names it), `locked: true` indexes it once and never reconciles it, and `cold_storage` (v1.29.0) controls the old docs generations. `primary` and `long-term` are reserved labels. See the [federation guide](../operational/federation-guide.md).
 
 ### Embedder and reconcile throttle (v1.9)
 

@@ -64,13 +64,32 @@ describe("help surfaces", () => {
   }, 60_000);
 });
 
-// #93: the long-term-memory topic. `it.fails` = the topic does not exist yet (Phase 12).
+// #93: the long-term-memory topic.
+describe("1.29 topics resolve by id and by two aliases", () => {
+  it.each([
+    ["long-term-memory", "long-term", "documentation-cold"],
+    ["tune-ranking", "reranker", "identifier-tier"],
+    ["stable-results", "determinism", "same-order"],
+    ["index-readiness", "wait-for-ready", "warm-up"],
+  ])("%s", (id, a, b) => {
+    for (const w of [id, a, b]) expect(findTopics(w).map((t) => t.id), w).toEqual([id]);
+  });
+  it("the no-topic index lists every topic under its group", () => {
+    const idx = renderHelp(undefined, "text");
+    for (const g of GROUPS) {
+      const from = idx.indexOf(g);
+      const section = idx.slice(from, idx.indexOf("\n\n", from));
+      for (const t of TOPICS.filter((x) => x.group === g)) expect(section, `${t.id} under ${g}`).toContain(t.id);
+    }
+  });
+});
+
 describe("long-term-memory topic", () => {
-  it.fails.each(["long-term memory", "cold storage", "opt-in", "documentation-cold"])("`help %s` resolves to it", (words) => {
+  it.each(["long-term memory", "cold storage", "opt-in", "documentation-cold"])("`help %s` resolves to it", (words) => {
     expect(findTopics(words).map((t) => t.id)).toEqual(["long-term-memory"]); // what `help <words>` renders
   });
 
-  it.fails("is in the group \"Search more\", says it is opt-in, and the no-topic index lists it there", () => {
+  it("is in the group \"Search more\", says it is opt-in, and the no-topic index lists it there", () => {
     const t = TOPICS.find((x) => x.id === "long-term-memory")!;
     expect(t.group).toBe("Search more");
     expect(renderTopic(t, "text")).toMatch(/opt-in/i);
@@ -79,7 +98,7 @@ describe("long-term-memory topic", () => {
     expect(section.slice(0, section.indexOf("\n\n") > 0 ? section.indexOf("\n\n") : undefined)).toContain("long-term-memory");
   });
 
-  it.fails("the MCP `help {topic: \"long-term-memory\"}` serves the same text", async () => {
+  it("the MCP `help {topic: \"long-term-memory\"}` serves the same text", async () => {
     const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
     const { InMemoryTransport } = await import("@modelcontextprotocol/sdk/inMemory.js");
     const { createServer } = await import("../../src/mcp/server.js");
