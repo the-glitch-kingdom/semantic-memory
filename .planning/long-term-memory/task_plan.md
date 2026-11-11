@@ -53,6 +53,10 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - Without the folder: no message, and the output is byte-identical to today.
     - A generation folder on disk that is not in the `cold_storage` manifest, a checksum mismatch, or `federation.cold_storage: false` gets a message saying that generation is NOT searchable and why. An unregistered generation is never indexed (no secrets record exists for it).
     - Frequency: the full `systemMessage` once per new generation, recorded in `.claude/.semantic-memory/cold-notified.json`. The one `additionalContext` line on every `startup`/`resume`, never on `clear`/`compact`. A problem message on every startup until it is fixed.
+  - [ ] **Help** (`test/unit/help-topics.test.ts`):
+    - `semantic-memory help long-term memory`, `help cold storage`, `help opt-in` and `help documentation-cold` each resolve to the new `long-term-memory` topic (`closestTopics`);
+    - the MCP `help {topic: "long-term-memory"}` serves the same text;
+    - `help` with no topic lists it under "Search more".
   - [ ] **related_repos opt-in.** `federation.related_repos: opt-in` registers hewtd related repos as `default: false` sources. `true` (the default) and `false` behave as today.
 - [ ] Phase 3: Config, `default` and `locked` on sources, `related_repos: opt-in`, `cold_storage`
   - [ ] `FederationSource` gains `default: boolean` (true unless `default: false`), `locked: boolean` and optional `historical` metadata. Parse them in `loadFederation` (src/core/federation.ts), lenient as today: a bad value is dropped with a warning.
@@ -114,7 +118,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
   - [ ] **Opt-in notice at session start.** If `coldGenerations()` finds a cold root, the user must be told that long-term memory exists and is opt-in.
     - Implement it in a SessionStart hook, beside the skill-loop notice pattern (`hooks/skill-loop.js:40-60`). Import the dist module, never load the model, never compute checksums; target under 100 ms.
     - Output: `systemMessage` (shown to the user), plus one `additionalContext` line for Claude.
-    - Wording, roughly: "Long-term memory: N old docs generation(s) in .documentation-cold/ (2026-11-10, …). Not searched by default. To search them, ask 'search long-term memory for …' (or pass sources: ["long-term"] / --source long-term)."
+    - Wording, roughly: "Long-term memory: N old docs generation(s) in .documentation-cold/ (2026-11-10, …). Not searched by default. To search them, ask 'search long-term memory for …' (or pass sources: ["long-term"] / --source long-term). More: /help long-term-memory."
     - Problem wording: "… 2026-11-12 is on disk but not registered by hit-em-with-the-docs (or its checksum changed), so it is not searchable."
     - Frequency as in Phase 2. Skip under `SEMANTIC_MEMORY_REVIEWER=1`, like the other hooks.
   - [ ] `healthcheck` reports each generation's status from `coldGenerations()` (a warning for unregistered or mismatched ones). `get_stats` lists them (Phase 5).
@@ -156,6 +160,22 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - what is never searched by default;
     - how to rebuild a locked source;
     - the session-start opt-in notice and what each status means.
+  - [ ] **Plugin help** (`src/core/help/topics.ts`, the one source for CLI `help`, the MCP `help` tool and `/help`):
+    - **New topic** `long-term-memory`: title "Search long-term memory (old docs generations)", group "Search more", aliases `long-term`, `cold-storage`, `documentation-cold`, `legacy-docs`, `opt-in`, `historical`.
+      - The summary says it is opt-in and never in default search.
+      - Steps:
+        1. hit-em-with-the-docs rotates the old tree into `.documentation-cold/<date>/` and registers it;
+        2. the session-start notice says it exists;
+        3. ask "search long-term memory for …", or pass `sources: ["long-term"]`;
+        4. results carry `historical`;
+        5. `reindex --source <label>` rebuilds a locked source.
+      - Commands: `semantic-memory search --notes .documentation --source long-term "…"`, `search_hybrid {query, sources: ["long-term"]}`, `semantic-memory reindex --source cold-<date>`, `semantic-memory healthcheck`.
+      - Verify: results carry `source: cold-<date>` and `historical.generation`; a plain search shows none.
+      - `doc`: the new long-term-memory guide.
+    - **Update `federated-search`:** add steps for `default: false`, `locked: true`, `related_repos: opt-in` and searching an opt-in source with `sources`.
+    - **Update `add-index`:** for a rarely used frozen tree, point at long-term-memory instead of a second server.
+    - **Coverage:** `test/unit/help-coverage.test.ts` must pass with the new schema keys (`federation.sources[].default` and `locked`, `federation.cold_storage`, `related_repos: opt-in`), the new CLI flags (`search --source`, `reindex --source`) and the new tool parameter (`sources`), with no new exemptions.
+    - **Fill in `commands/help.md`'s example topics** if it lists any.
   - [ ] `.documentation/reference/mcp-tools-reference.md` (`sources` on three tools, `historical` on hits, `get_stats` sources) and `.documentation/reference/cli-reference.md` (`--source`, `reindex --source`).
   - [ ] KB gotcha facts:
     - owed from 1.28.0: matching an identifier token by token credits docs with the words scattered (`gate`/`release`/`sh`); `## Instead`: match the name literally (`Bm25Index.docContains`), with `test/unit/identifier-tier.test.ts` as the check;
