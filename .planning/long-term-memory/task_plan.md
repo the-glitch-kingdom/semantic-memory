@@ -123,10 +123,10 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - Frequency as in Phase 2. Skip under `SEMANTIC_MEMORY_REVIEWER=1`, like the other hooks.
   - [x] `healthcheck` reports each generation's status from `coldGenerations()` (a warning for unregistered or mismatched ones). `get_stats` lists them (Phase 5).
   - [x] A semantic-first or vault-first skill line: the user can say "search long-term memory for X". Add one line to `skills/semantic-first/SKILL.md` naming the `sources: ["long-term"]` parameter. No new skill.
-- [ ] Phase 8: Measure
-  - [ ] `npm run gate:release` (fresh, BAND=1) vs 1.28.0: every count identical, mcp vs cli 0 differ, p95 within band. Default search must not change at all. Run it once more with a `cold_storage` manifest pointing at a large cold copy configured (the gate's corpus duplicated as a generation): again identical, and no index built under `sources/`.
-  - [ ] Opt-in cost on a ~1,000-file cold tree (copy this repo's `.documentation` plus fixtures, or generate one): first-query build time, checksum time, warm p95 and RSS before/after opening. Record in notes.md.
-  - [ ] Long-term recall check: a small set of "what did we do about X" questions against the two fixture generations (train/held-out split as usual). Record @1/@3. Floors come from the measured numbers.
+- [x] Phase 8: Measure
+  - [x] `npm run gate:release` (fresh, BAND=1) vs 1.28.0: every count identical, mcp vs cli 0 differ, p95 within band. Default search must not change at all. Run it once more with a `cold_storage` manifest pointing at a large cold copy configured (the gate's corpus duplicated as a generation): again identical, and no index built under `sources/`.
+  - [x] Opt-in cost on a ~1,000-file cold tree (copy this repo's `.documentation` plus fixtures, or generate one): first-query build time, checksum time, warm p95 and RSS before/after opening. Record in notes.md.
+  - [x] Long-term recall check: a small set of "what did we do about X" questions against the two fixture generations (train/held-out split as usual). Record @1/@3. Floors come from the measured numbers.
 - [ ] Phase 9: Release prep
   - [ ] Bump all five version fields to 1.29.0, plus the lockfile.
   - [ ] Contract check: re-read hit-em-with-the-docs#97 and its `feat/cold-rotation-97` branch (read only). Confirm the cold root name, the generation folder pattern, the manifest fields and the checksum definition still match ours. If hewtd 3.2.0 has shipped, run one real `reconcile` rotation into a temp repo copy and check that semantic-memory registers, notifies and searches it. Record any mismatch under Errors Encountered and fix it on our side. If #97 is not settled, ship anyway: the fixtures pin the published contract. Say so in the changelog.
@@ -234,6 +234,8 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 
 ## Decisions Made
 
+- Phase 8: the cold-copy gate run is `COLD_COPY=1 BAND=1 bash scripts/gate-release.sh 1.28.0` (new option of scripts/eval-against-release.sh: the corpus copied `COLD_COPY_N` times, default 4, into one registered generation; the run fails if an index appears under `sources/`). Long-term recall is a committed eval, test/retrieval-eval/long-term-eval.test.ts, with floors in baseline.json `longTerm`; opt-in cost was measured with a scratch script and is recorded in notes.md only (timings are not gated).
+
 - Phase 6: rebuild flag is `search --source <label> --reindex` (rebuilds each named source, `long-term` expanded to its generations, then searches), plus MCP `reindex {source}`. No `reindex` CLI command. `--reindex` without `--source` is an error. Use this name wherever the plan says `reindex --source`.
 - Phase 6: `createServer` gained `skipStartIndex`; a sources-only search (no `primary`) never loads or builds the primary index (checked: no primary index appears).
 
@@ -277,7 +279,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 2 validation: `npm run eval` twice hit `real-corpus-eval` beforeAll "Hook timed out in 600000ms" (machine load average 16-35 from other sessions; the corpus and src are unchanged by this phase). The file passes alone (16 passed, 1 expected fail). Load flake, not a regression; the first run was left in the background by a tool timeout and its output cut before the failing name, so the second (verbose) run identified it.
 
 ## Status
-**Phase 8 next.** Phase 7 done (cold-notice hook, long-term prompt trigger, healthcheck). Phase 6 done (`search --source`, `--reindex`).
+**Phase 9 next.** Phase 8 done (gate identical to 1.28.0 with and without a 892-file cold generation; opt-in cost and long-term recall recorded in notes.md). Phase 7 done (cold-notice hook, long-term prompt trigger, healthcheck). Phase 6 done (`search --source`, `--reindex`).
 
 Previous: Phase 6 done.
 **Phase 6 next.** Phase 5 done (tools take `sources`, MCP `reindex {source}`, get_stats `sources`). Phase 4 done (lazy opt-in registry, locked, checksum, secrets, archive).

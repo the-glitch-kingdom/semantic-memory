@@ -1,0 +1,11 @@
+// Long-term memory golden set (#93 Phase 8): questions over the two fixture cold generations (test/fixtures/long-term). Our own questions; `expected` is (source, path) in the cold generation. The heldout file is never used to choose anything.
+{"id": "t01", "q": "Why did we stop planning to split the pelican ledger by region?", "expected": [{"source": "cold-2026-01-15", "path": "archive/pelican-sharding-plan.md"}]}
+{"id": "t02", "q": "What did we do when a hot cache key expired and every worker recomputed it?", "expected": [{"source": "cold-2026-01-15", "path": "operational/skerry-cache-stampede.md"}]}
+{"id": "t03", "q": "How long does the lease last for the coalescing worker?", "expected": [{"source": "cold-2026-01-15", "path": "operational/skerry-cache-stampede.md"}]}
+{"id": "t04", "q": "What was the record layout of the old fixed-width invoice file?", "expected": [{"source": "cold-2026-03-01-2", "path": "archive/marlin-invoice-format.md"}]}
+{"id": "t05", "q": "How did we move invoicing away from the nightly batch?", "expected": [{"source": "cold-2026-03-01-2", "path": "decisions/quillon-billing-migration.md"}]}
+{"id": "t06", "q": "What was the rollback plan for the billing move?", "expected": [{"source": "cold-2026-03-01-2", "path": "decisions/quillon-billing-migration.md"}]}
+{"id": "t07", "q": "Why did we reject longer TTLs for the edge cache?", "expected": [{"source": "cold-2026-01-15", "path": "operational/skerry-cache-stampede.md"}]}
+{"id": "t08", "q": "What replaced the marlin file format?", "expected": [{"source": "cold-2026-03-01-2", "path": "archive/marlin-invoice-format.md"}]}
+{"id": "t09", "q": "Which design did we pick instead of sharding the ledger?", "expected": [{"source": "cold-2026-01-15", "path": "archive/pelican-sharding-plan.md"}]}
+{"id": "t10", "q": "When did the old batch run and when was it retired?", "expected": [{"source": "cold-2026-03-01-2", "path": "decisions/quillon-billing-migration.md"}]}

@@ -59,3 +59,12 @@ No ranking change (the default path is untouched; `--source` reuses search_hybri
 
 ## Eval results: Phase 7
 No ranking change, no eval measured. cold-notice hook: 39 ms wall on a one-file cold tree (node start included).
+
+## Eval results: Phase 8
+**Gate, fresh `BAND=1 bash scripts/gate-release.sh 1.28.0` (no --cache): PASS.** local equals 1.28.0 on every count, both modes and both arms: no export hybrid @1 92/139, @3 115, sem@1 79, multi @1/3/8 20/28/31 of 41, cov@1/3/8 0.62/0.82/0.88, dom 32, negatives flagged 43/47, false flags 7; export hybrid @1 95/139, @3 116, multi 20/28/32, dom 23. mcp vs cli 0 of 186 differ in both modes; titled #1 139/139; p95 12-17 ms for both versions; local cold idx 37.9 s vs 34.8 s (noise).
+
+**Same gate with a large cold generation configured** (`COLD_COPY=1`, new in scripts/eval-against-release.sh: this corpus copied 4 times into `.documentation-cold/2026-01-01`, 892 files, registered in `.claude/hit-em-with-the-docs.json` with its real checksum): PASS, every count identical to the run without it and to 1.28.0 (same figures as above), mcp vs cli 0 of 186. The script fails the run if `<index>/sources/` exists after local's index and both eval arms; it did not (it prints "no index under sources/", twice, once per mode). 1.28.0 ignores the manifest.
+
+**Opt-in cost** (scratch script, in-process MCP client, 912-file cold generation = 4 copies of `.documentation`, 3.9 MB x4 markdown, loaded machine): coldChecksum 11 ms (first and second call); first `sources:["long-term"]` query, to the first hit: 48.1 s (embeds 912 files, model already loaded; the primary index was built); warm long-term p95 32 ms. Process RSS 1542 MB before opening, 1746 MB after (+204 MB for the index in memory). Default-search p95 10.0 ms before opening, 21.2 ms after (single run on a loaded machine; the gate's default p95 is unchanged at 12-17 ms with the generation configured but not opened). A default call never builds or loads the cold index.
+
+**Long-term recall** (test/retrieval-eval/long-term{,-heldout}.jsonl, 10 + 10 own questions over the two fixture generations, `sources: ["long-term"]`, with a third ~240-file generation of this repo's `.documentation` as distractors; test/retrieval-eval/long-term-eval.test.ts): train @1 10/10, @3 10/10; held-out @1 7/10, @3 9/10 (identical across two runs). Floors in baseline.json `longTerm`: train 10/10, held-out 7/9, one case of slack in the test. Nothing was tuned on either split; the held-out misses were not looked at to change anything.

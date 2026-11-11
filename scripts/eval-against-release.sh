@@ -81,6 +81,21 @@ for v in "${VERSIONS[@]}"; do
     rm -rf "$d/tree" "$d"/eval*.json "$d/index.sec" "$d/mcp.client"
     if [ $DOCS_ONLY = 1 ]; then mkdir "$d/tree" && cp -r "$REPO/.documentation" "$d/tree/"; else git clone -q --local "$REPO" "$d/tree"; fi
     for fx in "${FIXTURES[@]}"; do mkdir -p "$d/tree/.documentation/$fx" && cp "$REPO"/test/fixtures/$fx/*.md "$d/tree/.documentation/$fx/"; done
+    # COLD_COPY=1 (#93 Phase 8): register this corpus, copied COLD_COPY_N times (default 4), as one cold generation. A release without
+    # long-term support ignores it; local must answer exactly the same and build nothing under sources/.
+    if [ "${COLD_COPY:-0}" = 1 ]; then
+      node - "$d/tree" "$REPO" "${COLD_COPY_N:-4}" <<'E3'
+const fs = require("fs"), path = require("path"), [tree, repo, n] = process.argv.slice(2);
+const gen = path.join(tree, ".documentation-cold", "2026-01-01");
+for (let i = 0; i < Number(n); i++) fs.cpSync(path.join(tree, ".documentation"), path.join(gen, "copy" + i), { recursive: true, filter: (s) => !s.includes(".semantic-sidekick-index") });
+const cfgPath = path.join(tree, ".claude", "hit-em-with-the-docs.json");
+const cfg = fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, "utf8")) : {};
+import(path.join(repo, "dist/core/cold.js")).then(({ coldChecksum }) => {
+  cfg.cold_storage = [{ generation: "2026-01-01", path: ".documentation-cold/2026-01-01", source_commit: "0".repeat(40), rotated_at: "2026-01-01T00:00:00Z", checksum: coldChecksum(gen), secrets_findings: [], untracked_files: [] }];
+  fs.mkdirSync(path.dirname(cfgPath), { recursive: true }); fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+});
+E3
+    fi
     # the clone holds the committed tree: the sets under test come from the checkout, not the clone
     if [ $EXPORT = 1 ]; then (cd "$d/tree" && "$REPO/node_modules/.bin/hewtd" index >/dev/null 2>&1); fi
     t0=$(date +%s.%N)
@@ -100,6 +115,10 @@ for v in "${VERSIONS[@]}"; do
     shim="$T/git-shim"; mkdir -p "$shim"
     printf '#!/bin/sh\nfor a in "$@"; do [ "$a" = log ] && sleep 30 && break; done\nexec %s "$@"\n' "$(command -v git)" >"$shim/git"; chmod +x "$shim/git"
     (cd "$d/tree" && PATH="$shim:$PATH" into "$d/eval-mcp-slow.json" node "$REPO/dist/cli/index.js" eval --notes .documentation --via mcp --server "$pkg/dist/cli/index.js" --cwd . --set "${SETS[@]}" --dir "$d/eval-out" --json 2>"$d/eval-mcp-slow.err") || { echo "$v: slow-git eval failed:" >&2; tail -3 "$d/eval-mcp-slow.err" >&2; exit 1; }
+  fi
+  if [ "${COLD_COPY:-0}" = 1 ] && [ "$v" = local ]; then
+    if [ -e "$d/tree/.documentation/.semantic-sidekick-index/sources" ]; then echo "local: an index was built under sources/ with a cold generation configured" >&2; exit 1; fi
+    echo "cold copy: no index under sources/ ($(find "$d/tree/.documentation-cold" -type f | wc -l) cold files)" >&2
   fi
   [ -n "${CLIENT:-}" ] && [ "$v" != local ] && echo "$CLIENT" >"$d/mcp.client"
   label="$v$sfx"; [ "$cached" = 1 ] && label="$label (cached)"
