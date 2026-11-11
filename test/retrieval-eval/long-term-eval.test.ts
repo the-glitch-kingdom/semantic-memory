@@ -59,7 +59,7 @@ describe("long-term recall (fixture generations among distractors)", () => {
     process.stderr.write(`\nLong-term recall: ${Object.entries(results).map(([s, r]) => `${s} @1 ${r.at1} @3 ${r.at3} /${r.n}`).join(" | ")}\n\n`);
   }, 600_000);
 
-  afterAll(async () => { await client?.close(); await p?.cleanup(); });
+  afterAll(async () => { await client?.close(); await p?.cleanup(); }, 60_000);
 
   for (const split of ["train", "heldout"]) {
     it(`${split}: found@1 and @3 stay at or above the recorded floor`, () => {

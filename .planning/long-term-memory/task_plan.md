@@ -130,7 +130,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - [x] Phase 9: Release prep
   - [x] Bump all five version fields to 1.29.0, plus the lockfile.
   - [x] Contract check (done: hewtd 3.2.0 shipped; a real rotation into /tmp registered, notified and searched; checksum mismatch found and fixed, see Errors Encountered): re-read hit-em-with-the-docs#97 and its `feat/cold-rotation-97` branch (read only). Confirm the cold root name, the generation folder pattern, the manifest fields and the checksum definition still match ours. If hewtd 3.2.0 has shipped, run one real `reconcile` rotation into a temp repo copy and check that semantic-memory registers, notifies and searches it. Record any mismatch under Errors Encountered and fix it on our side. If #97 is not settled, ship anyway: the fixtures pin the published contract. Say so in the changelog.
-- [ ] Phase 10: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [x] Phase 10: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 11: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as plain `it`.
   - [ ] Edge cases:
@@ -280,7 +280,7 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 9: hewtd 3.2.0's `checksum` differs from ours: lines joined by `\n` with no trailing newline, symlinks as `relpath\0link:sha256(target)`, `checksum` covers only git-tracked files and a second `disk_checksum` covers all. With our Phase 4 definition every real rotated generation read `checksum-mismatch` and was skipped. Fixed on our side: `coldChecksum` now equals hewtd's `compute_tree_checksum`, new `coldMatches(dir, checksum, diskChecksum)` accepts the full tree against `disk_checksum` or the `git ls-files` subset against `checksum` (a fresh clone), `FederationSource.diskChecksum`. Shortcut: when only the tracked files match, an edited disk-only file is not caught. #97 had nothing to adopt; the Phase 2 note saying it must is obsolete.
 
 ## Status
-**Phase 10 next.** Phase 9 done (1.29.0 version fields; checksum aligned to hewtd 3.2.0 after a real rotation; the docs phase must document `disk_checksum` and the tracked-files rule).
+**Phase 11 next.** Phase 10 done (cleanup: no scratch, probe or dead code found; long-term-eval afterAll given a 60 s timeout). Phase 9 done (1.29.0 version fields; checksum aligned to hewtd 3.2.0 after a real rotation; the docs phase must document `disk_checksum` and the tracked-files rule).
 
 Previous: **Phase 9 next.** Phase 8 done (gate identical to 1.28.0 with and without a 892-file cold generation; opt-in cost and long-term recall recorded in notes.md). Phase 7 done (cold-notice hook, long-term prompt trigger, healthcheck). Phase 6 done (`search --source`, `--reindex`).
 
@@ -291,3 +291,4 @@ Previous: Phase 3 done (config parsing, `coldGenerations`).
 
 Previous: **Phase 3 next.** Phase 2 done: 31 `it.fails` acceptance cases (each confirmed failing as plain `it` for its stated reason) and 20 passing regression guards; see notes.md.
 - Phase 9 validation: lint, build, npm test (154 files) passed. In `npm run eval`, `long-term-eval` afterAll hit its 10 s hook timeout and `real-corpus-eval` beforeAll its 600 s (load average 20-30 from other sessions); both pass alone. Load flakes, not changes. The long-term-eval afterAll (cleanup of the read-only cold trees) has no explicit timeout and could be given one.
+- Phase 10 cleanup: grepped the branch diff for console/debugger/TODO/commented-out code and untracked files: none. Every new export in src/core/cold.ts, federation.ts and src/cli/search-sources.ts is used. `.planning/long-term-memory/` holds only task_plan.md and notes.md (no raw JSON). Only change: `long-term-eval` afterAll got an explicit 60 s timeout (it hit the 10 s default under load in Phase 9).
