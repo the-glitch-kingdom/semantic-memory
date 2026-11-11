@@ -141,8 +141,10 @@ export interface SearchTextOptions {
 
 /** Code facts about one doc: files changed after the doc was written or verified, file refs that no longer exist, and hewtd's verdict. */
 export interface Grounding {
-  source: "export" | "code-spans";
+  source: "export" | "export+live" | "code-spans";
   verdict?: string;
+  /** the export is older than the code and some refs were re-checked live */
+  stale?: true;
   code_drift: string[];
   dead_refs: string[];
 }

@@ -85,7 +85,7 @@ async function observe(vault: string, path: string, query: string) {
 }
 
 describe("a stale code-graph export (#95)", () => {
-  t("committed deletion of a cited file and edit of another: D lists the dead ref and the drift, no hewtd run", async () => {
+  it("committed deletion of a cited file and edit of another: D lists the dead ref and the drift, no hewtd run", async () => {
     const r = await repo();
     await rm(join(r.dir, X));
     await appendFile(join(r.dir, Y), "\n# changed after the export\n");
@@ -130,7 +130,7 @@ describe("a stale code-graph export (#95)", () => {
     expect(stats.codeGraph).toMatchObject({ export_commit: r.head, behind_head: 0, files_changed_since: 0 });
   }, 300_000);
 
-  t("an uncommitted deletion of a cited file is caught too (diff against the working tree)", async () => {
+  it("an uncommitted deletion of a cited file is caught too (diff against the working tree)", async () => {
     const r = await repo();
     await rm(join(r.dir, X));
     const o = await observe(r.vault, D, QUERY);
@@ -138,7 +138,7 @@ describe("a stale code-graph export (#95)", () => {
     expect(o.cli?.dead_refs).toEqual([X]);
   }, 300_000);
 
-  t("a dead ref in the export whose file now exists, untracked, is no longer dead", async () => {
+  it("a dead ref in the export whose file now exists, untracked, is no longer dead", async () => {
     const r = await repo();
     commit(r.dir, "unrelated, so the export is behind");
     await writeFile(join(r.dir, "backend/scripts/export_audit_log_old.py"), "def export_audit_log_old(): pass\n");

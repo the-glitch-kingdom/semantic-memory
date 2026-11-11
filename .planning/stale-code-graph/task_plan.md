@@ -34,19 +34,19 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
   - [x] **No `graph.json`** (fresh clone): grounding and `get_stats` are byte-identical to main.
   - [x] **Export at HEAD:** grounding byte-identical to main, so the release gate's export runs do not move.
   - [x] **Locked source:** a `long-term` search emits no `fewer than half of its doc keys` warning (capture stderr), and its results carry no grounding from the live tree.
-- [ ] Phase 3: Detect and patch per ref
-  - [ ] In `src/core/code-graph.ts`:
+- [x] Phase 3: Detect and patch per ref
+  - [x] In `src/core/code-graph.ts`:
     - read `source_commit` in `loadExport`;
     - in `loadCodeData`, when it differs from HEAD, get the changed set from ONE `git diff --name-only --no-renames <source_commit>` (working tree included);
     - on failure (unknown commit, shallow clone), treat every export file ref as changed.
-  - [ ] For each export ref whose file (`r.file ?? target`) is in the changed set, or that is `resolved: false`:
+  - [x] For each export ref whose file (`r.file ?? target`) is in the changed set, or that is `resolved: false`:
     - set `resolved` from a live existence check under the git root (`existsSync`, the same root and normalisation `fallbackCode` uses);
     - set `changed` from `gitLastChanged` (one call for all changed files, reused).
     Mark the doc `source: "export+live"` and record the patched files.
     Refs to unchanged files keep the export's data. Symbols are unchanged (the export's symbol table stays as is; record it).
-  - [ ] `groundDocs` carries `stale: true` on a grounding when any of the doc's refs were patched. `Grounding` gains the optional field; `groundingBlock` passes it through.
-  - [ ] `CodeData` gains `export?: { commit, behind, changed }`; `behind` comes from `git rev-list --count <source_commit>..HEAD` (null when unknown). Keep spawns to these 2-3 per load; record the cost on this repo and on a large repo (the long-term ~900-file copy is fine).
-  - [ ] Unit tests in `test/unit/code-graph.test.ts`; Phase 2 grounding tests become plain `it`.
+  - [x] `groundDocs` carries `stale: true` on a grounding when any of the doc's refs were patched. `Grounding` gains the optional field; `groundingBlock` passes it through.
+  - [x] `CodeData` gains `export?: { commit, behind, changed }`; `behind` comes from `git rev-list --count <source_commit>..HEAD` (null when unknown). Keep spawns to these 2-3 per load; record the cost on this repo and on a large repo (the long-term ~900-file copy is fine).
+  - [x] Unit tests in `test/unit/code-graph.test.ts`; Phase 2 grounding tests become plain `it`.
 - [ ] Phase 4: Report
   - [ ] `get_stats.codeGraph` (src/mcp/tools/system.ts:34, from `codeLoad` in src/mcp/context.ts:267) gains `export_commit`, `behind_head` and `files_changed_since`, only when an export was loaded. Without one it is byte-identical to main.
   - [ ] `healthcheck`: a `code-graph-stale` warning when `behind_head > CODE_GRAPH_STALE_COMMITS` or unknown. It names the fix: run `npx hewtd index` (hit-em-with-the-docs' command; the finding only names it, never runs it).
@@ -97,10 +97,12 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - Version 1.30.0.
 - Item 4 is out (Key Question 1). The commit hook is hit-em-with-the-docs' own issue (user, 2026-11-11).
 
+- Phase 3: `CODE_GRAPH_STALE_COMMITS = 20` (exported from code-graph.ts, for Phase 4). A null `source_commit` has every file ref re-checked live, so those docs read `export+live`/`stale`; the real-export unit test now gives its export a real HEAD commit. A patched ref whose file is gone loses its `changed` date; a changed one with no commit in the 365-day window keeps the export's date. Symbol table is not re-derived. Spawns per load: `git ls-files` (existing), `git diff`, `git rev-list --count`, and `git log` only when a ref needs a date.
+
 ## Errors Encountered
 - Phase 2: `groundingBlock` hides the `verified` verdict, so the fixture export sets verdict `check` on D and E to make a doc without drift or dead refs still carry a grounding block.
 - Phase 2: the healthcheck test makes the export 60 commits behind, so Phase 3 must pick `CODE_GRAPH_STALE_COMMITS` below 60, and the finding's `check` must match /code[-_]?graph/ and name `npx hewtd index`.
 - Phase 2: a first `--source long-term` search only starts the cold index in the background ("skipped, still indexing"); the locked-source test retries up to 4 times until cold hits arrive.
 
 ## Status
-**Phase 3 next.** Phase 2 done: acceptance tests in test/integration/stale-code-graph.test.ts (9 `it.fails`, 3 plain guards).
+**Phase 4 next.** Phase 3 done: per-ref patching in src/core/code-graph.ts. Three Phase 2 cases are now plain `it`; six `it.fails` remain (get_stats x3, healthcheck, locked source) for Phases 4-5.

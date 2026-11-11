@@ -107,7 +107,7 @@ export function groundingBlock(g: Grounding | undefined) {
   const verdict = g.verdict && SHOWN_VERDICTS.has(g.verdict) ? g.verdict : undefined;
   if (!verdict && !g.code_drift.length && !g.dead_refs.length) return undefined;
   const more = Math.max(0, g.code_drift.length - GROUNDING_CAP) + Math.max(0, g.dead_refs.length - GROUNDING_CAP);
-  return { source: g.source, ...(verdict && { verdict }), code_drift: g.code_drift.slice(0, GROUNDING_CAP), dead_refs: g.dead_refs.slice(0, GROUNDING_CAP), ...(more && { more }) };
+  return { source: g.source, ...(g.stale && { stale: true }), ...(verdict && { verdict }), code_drift: g.code_drift.slice(0, GROUNDING_CAP), dead_refs: g.dead_refs.slice(0, GROUNDING_CAP), ...(more && { more }) };
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

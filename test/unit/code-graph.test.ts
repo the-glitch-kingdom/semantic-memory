@@ -197,7 +197,7 @@ describe("loadCodeData", () => {
     mkdirSync(join(root, ".hewtd"), { recursive: true });
     writeFileSync(join(root, ".hewtd", "graph.json"), JSON.stringify({ version: 1, source_commit: null, docs: { "a.md": doc({ refs: [{ kind: "file", target: "src/a.py", resolved: true }] }) }, symbols: {} }));
     const d = (await loadCodeData(join(root, ".documentation"), [{ path: "a.md", codeRefs: ["nope_sym"] }, { path: "b.md", codeRefs: ["src/a.py", "nope_sym"] }]))!;
-    expect(d.docs.get("a.md")!.source).toBe("export");
+    expect(d.docs.get("a.md")!.source).toBe("export+live"); // source_commit null: every ref is checked live;
     expect(d.docs.get("b.md")!.source).toBe("code-spans");
     expect(d.symbols.get("nope_sym")!.citedBy).toEqual(["b.md"]); // a.md is covered by the export, whose refs win
   });
@@ -309,5 +309,54 @@ describe("entityCard and splitUndocumented", () => {
     const spelled: any = { files: ["src/auto-fill.ts", "lock/AutoFill.lock"], symbols: new Map(), docs: new Map() };
     expect(splitUndocumented(["autofill", "auto_fill"], spelled).undocumented.map((u) => u.entity)).toEqual(["autofill", "auto_fill"]);
     expect(splitUndocumented(["x_y"], null)).toEqual({ missing: ["x_y"], undocumented: [] });
+  });
+});
+
+describe("loadCodeData: a stale export is patched per ref (#95)", () => {
+  const git = (...a: string[]) => execFileSync("git", ["-C", tmp, "-c", "user.email=t@e.invalid", "-c", "user.name=t", ...a], { stdio: "pipe" }).toString().trim();
+  const commit = (m: string) => { git("add", "-A", "--", ".", ":!.hewtd"); git("commit", "-q", "--allow-empty", "-m", m); };
+  const setup = (sourceCommit: (head: string) => string | null) => {
+    git("init", "-q");
+    put("a.py", "1\n"); put("b.py", "1\n"); put("c.py", "1\n"); put(".documentation/d.md", "# d\n");
+    commit("one");
+    const refs = ["a.py", "b.py", "c.py", "../outside.py"].map((t) => ({ kind: "file", target: t, resolved: true, code_changed: "2026-01-01" }));
+    exportOf({ version: 1, source_commit: sourceCommit(git("rev-parse", "HEAD")), docs: { "d.md": doc({ refs }) }, symbols: {} });
+  };
+  const load2 = async () => (await loadCodeData(join(tmp, ".documentation"), [{ path: "d.md" }]))!;
+  const byT = (c: Awaited<ReturnType<typeof load2>>) => Object.fromEntries(c.docs.get("d.md")!.refs.map((r) => [r.target, r]));
+
+  it("an export at HEAD is untouched", async () => {
+    setup((h) => h);
+    const c = await load2();
+    expect(c.docs.get("d.md")!.source).toBe("export");
+    expect(c.export).toEqual({ commit: expect.any(String), behind: 0, changed: 0 });
+  });
+
+  it("re-checks only changed files; a rename is a delete plus an add; a .. ref is never checked", async () => {
+    setup((h) => h);
+    rmSync(join(tmp, "a.py"));
+    put("a2.py", "1\n"); // a renamed a.py
+    put("b.py", "2\n");
+    commit("two");
+    const c = await load2();
+    const r = byT(c);
+    expect(c.docs.get("d.md")).toMatchObject({ source: "export+live", patched: ["a.py", "b.py"] });
+    expect(r["a.py"].resolved).toBe(false);
+    expect(r["b.py"]).toMatchObject({ resolved: true });
+    expect(r["b.py"].changed).toBeGreaterThan(Date.parse("2026-01-01"));
+    expect(r["c.py"]).toMatchObject({ resolved: true, changed: Date.parse("2026-01-01") }); // unchanged: the export's data
+    expect(r["../outside.py"].resolved).toBe(true); // not in the diff, and never looked up outside the repo
+    expect(c.export).toMatchObject({ behind: 1, changed: 3 });
+  });
+
+  it("an unknown commit checks every file ref live, skips ones that escape the repo, and reports behind as unknown", async () => {
+    setup(() => "0".repeat(40));
+    rmSync(join(tmp, "c.py"));
+    const c = await load2();
+    const r = byT(c);
+    expect(r["c.py"].resolved).toBe(false);
+    expect(r["a.py"].resolved).toBe(true);
+    expect(r["../outside.py"].resolved).toBe(true);
+    expect(c.export).toMatchObject({ behind: null, changed: null });
   });
 });

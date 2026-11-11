@@ -271,7 +271,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     try {
       const code = await loadCodeData(notesPath, docs);
       groundDocs(docs, code);
-      codeLoad = { source: !code ? "none" : [...code.docs.values()].some((d) => d.source === "export") ? "export" : "fallback", loadMs: Date.now() - t0 };
+      codeLoad = { source: !code ? "none" : [...code.docs.values()].some((d) => d.source !== "code-spans") ? "export" : "fallback", loadMs: Date.now() - t0 };
       return code;
     } catch (e: any) {
       codeLoad = { source: "none", loadMs: Date.now() - t0 };
