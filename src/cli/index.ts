@@ -409,9 +409,18 @@ program
   .option("--text-only", "Skip embedder — keyword-only search (fast path, no model init)")
   .option("--json", "Emit raw JSON (default)", true)
   .option("--paths", "Print one vault-relative doc path per line instead of JSON (for hit-em-with-the-docs reconcile.search_command)")
+  .option("--source <label>", "Search this source instead of the default set (repeatable): an opt-in source label, 'long-term' (every old docs generation) or 'primary'. Hits carry source and historical", (v: string, prev: string[] = []) => [...prev, v])
+  .option("--reindex", "With --source: rebuild the named source's index first, then search (the explicit rebuild of a locked source)")
   .action(async (query: string, opts) => {
     const { runSearch, pathsOutput } = await import("./search.js");
     try {
+      if (opts.reindex && !opts.source) throw new Error("--reindex needs --source <label>");
+      if (opts.source) {
+        const { runSourceSearch } = await import("./search-sources.js");
+        const hits = await runSourceSearch({ notes: opts.notes, query, limit: opts.limit, sources: opts.source, reindex: opts.reindex });
+        process.stdout.write(opts.paths ? pathsOutput(hits as any) : JSON.stringify(hits, null, 2) + "\n");
+        process.exit(0);
+      }
       const hits = await runSearch({
         notes: opts.notes,
         query,

@@ -52,3 +52,7 @@ No ranking change for default queries (open() path untouched apart from reading 
 ## Eval results: Phase 5
 
 No ranking change for default calls (no `sources`): federated-search, federation-notes, federation-sources and the Phase 2 default guards pass unchanged; `npm run eval` 24 files passed. The tool-surface golden snapshot was updated for the new `sources` and `reindex.source` parameters. Opt-in paths are covered by long-term-optin.test.ts (all `it.fails` flipped to plain tests).
+
+## Eval results: Phase 6
+
+No ranking change (the default path is untouched; `--source` reuses search_hybrid). First-use cost on the fixture (`--source long-term`, two cold generations, built outside the folders): 1.7 s including model load and index build; warm 0.65 s; `--reindex` 0.72 s. No eval measured.

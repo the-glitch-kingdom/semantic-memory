@@ -99,12 +99,12 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
   - [x] `read_note {source}` resolves opt-in labels through `openOptIn`.
   - [x] Telemetry logs opt-in hits as `label:path`, as federation does today. `get_stats` lists sources with `default`, `locked`, state and, for cold sources, the generation.
   - [x] Tool descriptions: one sentence each on `sources` and "long-term"; no other description churn.
-- [ ] Phase 6: CLI `search --source`
-  - [ ] `--source <label>`, repeatable, including `long-term` and `primary`, with the same semantics as the tool. It resolves through `loadFederation(--notes)` and reads or builds the index at `sourceIndexPath(<primary index>, source)`, never inside the source folder.
-    - Locked: never rebuilds unless asked.
-    - First use with no index: build it (the CLI is synchronous; no "Indexing in progress"). Measure that cost on the fixture and record it.
-  - [ ] The explicit human rebuild for a locked source. There is NO `reindex` CLI command today: a rebuild is `serve --reindex`, and MCP has a `reindex` tool. Pick the smallest consistent surface: `search --source <label> --reindex` (rebuild that source's index, then search), plus MCP `reindex {source}`. Record the choice, and use that name everywhere `reindex --source` appears in this plan.
-  - [ ] Output adds `source` and `historical` on hits; with no `--source`, output is byte-identical (Phase 2).
+- [x] Phase 6: CLI `search --source`
+  - [x] `--source <label>`, repeatable, including `long-term` and `primary`, with the same semantics as the tool. It resolves through `loadFederation(--notes)` and reads or builds the index at `sourceIndexPath(<primary index>, source)`, never inside the source folder.
+    - [x] Locked: never rebuilds unless asked.
+    - [x] First use with no index: build it (the CLI is synchronous; no "Indexing in progress"). Measure that cost on the fixture and record it.
+  - [x] The explicit human rebuild for a locked source. There is NO `reindex` CLI command today: a rebuild is `serve --reindex`, and MCP has a `reindex` tool. Pick the smallest consistent surface: `search --source <label> --reindex` (rebuild that source's index, then search), plus MCP `reindex {source}`. Record the choice, and use that name everywhere `reindex --source` appears in this plan.
+  - [x] Output adds `source` and `historical` on hits; with no `--source`, output is byte-identical (Phase 2).
 - [ ] Phase 7: Prompt hook, "search long-term memory"
   - [ ] `hooks/vault-context.js`: a narrow rule set recognises an explicit long-term request:
     - "search/check/look in long-term memory";
@@ -234,6 +234,9 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 
 ## Decisions Made
 
+- Phase 6: rebuild flag is `search --source <label> --reindex` (rebuilds each named source, `long-term` expanded to its generations, then searches), plus MCP `reindex {source}`. No `reindex` CLI command. `--reindex` without `--source` is an error. Use this name wherever the plan says `reindex --source`.
+- Phase 6: `createServer` gained `skipStartIndex`; a sources-only search (no `primary`) never loads or builds the primary index (checked: no primary index appears).
+
 - Phase 5: one `plan()` in search.ts resolves `sources` for all three tools. Absent: default set (only search_hybrid opens default federated sources, as before). `primary` in the list adds the default set; without it only the named sources. Unknown label, `[]` and no-answerable-source each get a plain-text message. `search_text` has no score, so it lists this vault first, then each source in the order given. `historical` is added after the merge from the source handle. MCP `reindex {source}` is the explicit rebuild; it re-records the locked baseline.
 - Version 1.29.0.
 - The search side only (#93 rescoped 2026-11-11). Rotation is hit-em-with-the-docs#97.
@@ -258,6 +261,8 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 
 ## Errors Encountered
 
+- Phase 6: none. `--source` runs the MCP `search_hybrid` in-process (src/cli/search-sources.ts), so its hits are the tool's shape (extra fields, `source`, `historical`), not the plain CLI shape. It waits (polls 1 s, up to 10 min) for a building source.
+
 - Phase 5: long-term-optin/default tests called `search_text` with `query`; the tool's argument is `pattern`, so they errored (and the default guard compared two errors). Fixed the tests; the guard's mtime strip now also reaches inside a tool's JSON text. The tool-surface golden snapshot changed on purpose (new `sources` params, `reindex.source`) and was updated.
 
 - Phase 4: the integration `it.fails` cases in long-term-optin.test.ts all send `sources` to a tool, which Phase 5 adds; so they stay `it.fails` and the Phase 4 behaviour is proved by test/unit/registry-optin.test.ts against the registry directly.
@@ -269,6 +274,9 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 2 validation: `npm run eval` twice hit `real-corpus-eval` beforeAll "Hook timed out in 600000ms" (machine load average 16-35 from other sessions; the corpus and src are unchanged by this phase). The file passes alone (16 passed, 1 expected fail). Load flake, not a regression; the first run was left in the background by a tool timeout and its output cut before the failing name, so the second (verbose) run identified it.
 
 ## Status
+**Phase 7 next.** Phase 6 done (`search --source`, `--reindex`).
+
+Previous: Phase 6 done.
 **Phase 6 next.** Phase 5 done (tools take `sources`, MCP `reindex {source}`, get_stats `sources`). Phase 4 done (lazy opt-in registry, locked, checksum, secrets, archive).
 
 Previous: Phase 3 done (config parsing, `coldGenerations`).

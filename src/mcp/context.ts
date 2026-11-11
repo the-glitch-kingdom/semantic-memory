@@ -39,6 +39,8 @@ export interface ServerOptions {
   pooling?: "mean" | "cls";
   queryPrompt?: string;
   readOnly?: boolean;
+  /** createServer: do not load or build the index at start (the CLI's sources-only search). */
+  skipStartIndex?: boolean;
   /**
    * A locked source (a cold generation, a frozen folder): the cached index is served as loaded and `ensureFresh` never
    * reconciles; its `archive/` is searchable (the 0.3 multiplier stays). A changed folder is the registry's checksum check, not reconcile.
