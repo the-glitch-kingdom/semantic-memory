@@ -79,14 +79,14 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
   - [x] Security: a ref target with `..` that escapes the git root is never checked outside it (resolved stays null).
   - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.29.0). Gate PASS; real-corpus-eval floor (search_semantic answer@1 10 < 11) still fails, same as clean main, not lowered.
   - [x] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions).
-- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/architecture/code-graph.md`: staleness detection, per-ref live patching, `export+live`, `stale`, and locked sources skipping the graph.
-  - [ ] `.documentation/reference/mcp-tools-reference.md`: `get_stats.codeGraph` fields and `grounding.stale`/`source`.
-  - [ ] `.documentation/troubleshooting/troubleshooting.md`: the `code-graph-stale` healthcheck finding and its fix (`npx hewtd index`).
-  - [ ] Plugin help (`src/core/help/topics.ts`): the `code-graph` topic says the export can go stale, what `stale: true` means and how to refresh. `test/unit/help-coverage.test.ts` and `test/unit/cli-help.test.ts` pass. Any `--help` text this touches stays accurate.
-  - [ ] KB gotcha fact: an export keyed to a commit silently describes an older tree after the next commit. `## Instead`: compare its commit with HEAD and patch the changed refs live.
-  - [ ] `CHANGELOG.md` 1.30.0 and `.documentation/changelog/v1-30-0-stale-code-graph.md`.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+- [x] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/architecture/code-graph.md`: staleness detection, per-ref live patching, `export+live`, `stale`, and locked sources skipping the graph.
+  - [x] `.documentation/reference/mcp-tools-reference.md`: `get_stats.codeGraph` fields and `grounding.stale`/`source`.
+  - [x] `.documentation/troubleshooting/troubleshooting.md`: the `code-graph-stale` healthcheck finding and its fix (`npx hewtd index`).
+  - [x] Plugin help (`src/core/help/topics.ts`): the `code-graph` topic says the export can go stale, what `stale: true` means and how to refresh. `test/unit/help-coverage.test.ts` and `test/unit/cli-help.test.ts` pass. Any `--help` text this touches stays accurate.
+  - [x] KB gotcha fact: an export keyed to a commit silently describes an older tree after the next commit. `## Instead`: compare its commit with HEAD and patch the changed refs live.
+  - [x] `CHANGELOG.md` 1.30.0 and `.documentation/changelog/v1-30-0-stale-code-graph.md`.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Should a search refresh the export (issue item 4)? No. hewtd has no graph-only export, and `hewtd index` writes INDEX/REGISTRY files. A search must not write tracked files. The commit-time refresh is hit-em-with-the-docs' own issue.
@@ -106,7 +106,7 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - Phase 2: a first `--source long-term` search only starts the cold index in the background ("skipped, still indexing"); the locked-source test retries up to 4 times until cold hits arrive.
 
 ## Status
-**Phase 10 next.** Phase 9 done (validation, review, gate PASS). Phase 8 done (cleanup: no scratch files, probe logging, commented-out code or unused exports found; lint passes). Earlier: Phase 7 done (1.30.0 in package.json, package-lock.json, plugin.json, both marketplace.json fields, AGENTS.md). Earlier: Phase 6 done (gate PASS, +19 ms stale patch, by-hand check ok).
+**COMPLETE (all phases ticked).** Phase 10 done (docs, help topic, KB fact, changelog, hewtd maintain --quick; AGENTS.md regenerated, only the timestamp differed so left unchanged). Earlier: Phase 10 was next. Phase 9 done (validation, review, gate PASS). Phase 8 done (cleanup: no scratch files, probe logging, commented-out code or unused exports found; lint passes). Earlier: Phase 7 done (1.30.0 in package.json, package-lock.json, plugin.json, both marketplace.json fields, AGENTS.md). Earlier: Phase 6 done (gate PASS, +19 ms stale patch, by-hand check ok).
 
 Earlier: **Phase 6 next.** Phase 5 done: `loadCode` in src/mcp/context.ts returns null for `locked` (decision: a frozen generation's refs would be graded against today's tree; non-locked opt-in sources keep their own export, since a sibling repo's export is valid). Locked-source test is plain `it`, stderr proves no `fewer than half` warning. Earlier: **Phase 5 next.** Phase 4 done: get_stats.codeGraph fields, `code-graph-stale` healthcheck finding (warn above 20 commits or unknown commit; ok otherwise), reload-on-commit test; the get_stats and healthcheck it.fails are plain `it` now. Only the locked-source case stays it.fails (Phase 5).
 

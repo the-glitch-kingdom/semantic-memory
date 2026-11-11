@@ -2,6 +2,20 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.30.0] - 2026-11-11 — stale code graph
+
+Issue #95. Details: `.documentation/changelog/v1-30-0-stale-code-graph.md`.
+
+### Fixed
+
+- A hewtd `graph.json` older than HEAD no longer reports deleted or edited cited files as live: refs to files changed since the export's `source_commit` (working tree included) are re-checked on disk. Affected docs read `grounding.source: "export+live"` and `stale: true`. Cost on 300 changed files: about +19 ms per code load. Default ranking counts are identical to 1.29.0 (`gate:release`).
+- Locked sources (cold generations) no longer get grounding from today's code graph.
+
+### Added
+
+- `get_stats.codeGraph`: `export_commit`, `behind_head`, `files_changed_since`.
+- Healthcheck finding `code-graph-stale` (more than 20 commits behind, or an unknown commit): run `npx hewtd index`.
+
 ## [1.29.0] - 2026-11-11 — long-term memory
 
 Issue #93 (search side; rotation is hit-em-with-the-docs 3.2.0). Details: `.documentation/changelog/v1-29-0-long-term-memory.md`.
