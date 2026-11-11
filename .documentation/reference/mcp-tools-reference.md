@@ -256,6 +256,8 @@ Since v1.9.0 these follow typed edges: `types` (any of `link`, `wikilink`, `rela
 
 **v1.16.0:** `search_hybrid` / `search_semantic` items may carry `grounding` (`code_drift`, `dead_refs`), result #1 an `entity` card, and identifier queries `undocumented: [{entity, path}]`. `backlinks` / `forwardlinks` accept a file path or symbol name and return `cites_code` / `defined_in` edges by default. See [code-graph](../architecture/code-graph.md).
 
+**v1.30.0:** `get_stats.codeGraph` gains `export_commit`, `behind_head` (commits between the export and HEAD; null when its commit is unknown) and `files_changed_since`, present only when an export was loaded. `grounding.source` can be `export+live` and `grounding.stale` is `true` when the export is older than the tree and a cited ref changed or was re-checked live. Locked sources report `codeGraph.source: none`.
+
 ### `backlinks` — `{ path, limit?=50, types?, include_excluded?=false }` — notes that link TO this one (markdown links, wikilinks, `related_docs`, cites). v1.9.1: notes under `path_class.exclude` are skipped unless `include_excluded` is true or `types` asks for `supersedes`.
 ### `forwardlinks` — `{ path, limit?=50, types?, include_excluded?=false }` — notes this one links to; same exclusion rule as `backlinks`.
 ### `graph_path` — `{ from, to, types?, direction?='any' }` — shortest path over the link-type edges. v1.9.1: `direction` is `out`, `in` or `any` (it only followed out-edges); archived notes do not bridge live ones unless `supersedes` is asked for.

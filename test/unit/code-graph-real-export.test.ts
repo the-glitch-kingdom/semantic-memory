@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, posix } from "node:path";
 import { groundDocs, loadCodeData } from "../../src/core/code-graph.js";
@@ -20,8 +20,11 @@ describe("the real hewtd export, end to end", () => {
       const keys = Object.keys(real.docs);
       for (const k of keys) { mkdirSync(dirname(join(root, ".documentation", k)), { recursive: true }); writeFileSync(join(root, ".documentation", k), "x"); }
       mkdirSync(join(root, ".hewtd"));
-      copyFileSync(REAL, join(root, ".hewtd", "graph.json"));
       execFileSync("git", ["-C", root, "init", "-q"]);
+      execFileSync("git", ["-C", root, "-c", "user.email=t@e.invalid", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "x"]);
+      // an export at HEAD is used as written (a null source_commit would have every ref re-checked against this empty tree)
+      real.source_commit = execFileSync("git", ["-C", root, "rev-parse", "HEAD"]).toString().trim();
+      writeFileSync(join(root, ".hewtd", "graph.json"), JSON.stringify(real));
 
       const docs = keys.map((path) => ({ path, title: path, content: "", frontmatter: {}, wikilinks: [], tags: [], headers: [], chunks: [], mtime: "" }) as IndexedDocument);
       const code = (await loadCodeData(join(root, ".documentation"), docs))!;

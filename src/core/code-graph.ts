@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, posix, relative, sep } from "node:path";
+import { dirname, isAbsolute, join, posix, relative, sep } from "node:path";
 import { promisify } from "node:util";
 import { normalizeVerifiedDate } from "./decay.js";
 import { identifiers } from "./identifiers.js";
@@ -20,8 +20,10 @@ export interface CodeRef {
   changed?: number;
 }
 export interface DocCode {
-  source: "export" | "code-spans";
+  source: "export" | "export+live" | "code-spans";
   verdict?: string;
+  /** export+live only: the refs' files re-checked against the live tree because they changed since the export */
+  patched?: string[];
   bodyChanged?: number;
   lastVerified?: number;
   refs: CodeRef[];
@@ -32,7 +34,11 @@ export interface DocCode {
 }
 export interface SymbolInfo { file?: string; fileKind?: "definition" | "reference"; citedBy: string[] }
 /** `files`: tracked repo files (from git), for locating an identifier no doc cites */
-export interface CodeData { docs: Map<string, DocCode>; symbols: Map<string, SymbolInfo>; files?: string[] }
+export interface CodeData {
+  docs: Map<string, DocCode>; symbols: Map<string, SymbolInfo>; files?: string[];
+  /** the loaded export's commit (null: made outside git), commits it is behind HEAD, files changed since it (both null when git cannot tell) */
+  export?: { commit: string | null; behind: number | null; changed: number | null };
+}
 
 const warned = new Set<string>();
 const warnOnce = (msg: string) => {
@@ -106,7 +112,7 @@ export function loadExport(gitRoot: string, vaultDir: string, vaultPaths: Set<st
     const p = posix.normalize(relative(vaultDir, join(gitRoot, root, key)).split(sep).join("/"));
     return vaultPaths.has(p) ? p : undefined;
   };
-  const out: CodeData = { docs: new Map(), symbols: new Map() };
+  const out: CodeData = { docs: new Map(), symbols: new Map(), export: { commit: str(g.source_commit) ?? null, behind: 0, changed: 0 } };
 
   const docs = isObj(g.docs) ? Object.entries(g.docs) : [];
   const mapped = docs.map(([k, v]) => [toVault(k), v] as const);
@@ -251,6 +257,56 @@ export async function fallbackCode(gitRoot: string, vaultDir: string, docs: { pa
   return out;
 }
 
+/** A healthcheck warns when the export is more than this many commits behind HEAD (hewtd's incremental export costs ~1-2 s, so a few dozen commits is already worth a refresh). */
+export const CODE_GRAPH_STALE_COMMITS = 20;
+
+/** Files differing from `commit` in the working tree (committed, staged and unstaged), from ONE `git diff`; null when git cannot tell. */
+async function changedSince(root: string, commit: string): Promise<Set<string> | null> {
+  try {
+    const { stdout } = await run("git", ["-C", root, "-c", "core.quotepath=off", "diff", "--name-only", "--no-renames", "-z", commit, "--"], { maxBuffer: 1 << 28, timeout: 60_000 });
+    return new Set(stdout.split("\0").filter(Boolean));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * An export is a snapshot of `source_commit`: re-checks the file refs of files changed since it (all of them when git does not know the
+ * commit) and every ref it recorded dead, against the live tree. Other refs keep the export's data, so an export at HEAD is untouched.
+ * shortcut: the symbol table is not re-derived; refresh the export with `npx hewtd index` for that.
+ */
+async function patchStale(root: string, exp: CodeData): Promise<void> {
+  const info = exp.export!;
+  const commit = info.commit && /^[0-9a-f]{4,64}$/i.test(info.commit) ? info.commit : null; // never an option
+  const changed = commit ? await changedSince(root, commit) : null;
+  info.changed = changed ? changed.size : null;
+  if (commit) {
+    try { info.behind = Number((await run("git", ["-C", root, "rev-list", "--count", `${commit}..HEAD`], { timeout: 60_000 })).stdout.trim()); } catch { info.behind = null; }
+    if (!Number.isFinite(info.behind)) info.behind = null;
+  } else info.behind = null;
+
+  const fileOf = (r: CodeRef) => (r.kind === "file" ? clean(r.file ?? r.target) : undefined);
+  const dirty = (r: CodeRef) => { const f = fileOf(r); return !!f && (!changed || changed.has(f) || r.resolved === false); };
+  const todo = [...exp.docs.values()].flatMap((d) => d.refs.filter(dirty));
+  if (!todo.length) return;
+  const dates = await gitLastChanged(root, [...new Set(todo.map(fileOf).filter((f): f is string => !!f && (!changed || changed.has(f))))]);
+  for (const d of exp.docs.values()) {
+    const patched: string[] = [];
+    for (const r of d.refs) {
+      if (!dirty(r)) continue;
+      const f = fileOf(r)!;
+      if (f === ".." || f.startsWith("../") || isAbsolute(f)) continue; // never check outside the repo
+      const was = r.resolved;
+      r.resolved = existsSync(join(root, f));
+      if (!changed || changed.has(f)) {
+        r.changed = r.resolved ? dates.get(f) ?? r.changed : undefined;
+        patched.push(f);
+      } else if (was !== r.resolved) patched.push(f);
+    }
+    if (patched.length) { d.source = "export+live"; d.patched = [...new Set(patched)]; }
+  }
+}
+
 /**
  * Code data for a vault: the export's docs where it covers them, the span/link fallback for the rest. Null outside a git repo, so the
  * graph stays doc-only. `docs` are the vault's indexed documents (path relative to `vaultDir`).
@@ -262,6 +318,7 @@ export async function loadCodeData(vaultDir: string, docs: { path: string; codeR
   const rest = await fallbackCode(root, vaultDir, exp ? docs.filter((d) => !exp.docs.has(d.path)) : docs);
   if (!exp) return Object.assign(rest, { files: await gitFiles(root) });
   exp.files = await gitFiles(root);
+  await patchStale(root, exp);
   for (const [p, d] of rest.docs) exp.docs.set(p, d);
   for (const [n, s] of rest.symbols) {
     const e = exp.symbols.get(n);
@@ -290,7 +347,7 @@ export function groundDocs(docs: { path: string; frontmatter?: Record<string, un
       const drift = isNaN(from) ? [] : refs.filter((r) => r.changed !== undefined && r.changed > from).map((r) => r.file ?? r.target);
       const dead = refs.filter((r) => r.kind === "file" && r.resolved === false).map((r) => r.target);
       const verdict = c.verdict && c.verdict !== "unreviewed" ? c.verdict : undefined;
-      if (drift.length || dead.length || verdict) g = { source: c.source, ...(verdict && { verdict }), code_drift: dedupe(drift), dead_refs: dedupe(dead) };
+      if (drift.length || dead.length || verdict) g = { source: c.source, ...(verdict && { verdict }), code_drift: dedupe(drift), dead_refs: dedupe(dead), ...(c.patched && { stale: true as const }) };
     }
     if (JSON.stringify(g) !== JSON.stringify(d.grounding)) {
       changed = true;

@@ -3,7 +3,7 @@ title: Troubleshooting Documentation Index
 tier: reference
 domains: [troubleshooting]
 status: active
-last_updated: '2026-11-10'
+last_updated: '2026-11-11'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of troubleshooting documentation
@@ -26,7 +26,7 @@ purpose: Complete listing of troubleshooting documentation
 
 | Document | Status | Updated | Words | Purpose |
 |----------|--------|---------|-------|---------|
-| [Troubleshooting](troubleshooting.md) | active | 2026-10-28 | 5,373 | Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command. |
+| [Troubleshooting](troubleshooting.md) | active | 2026-10-28 | 5,448 | Symptom / cause / fix across all 5 layers + v1.x additions (sessions, AGENTS.md, drift, state migration). Each entry has a symptom, a likely cause, and a specific diagnostic command. |
 
 ## Keywords
 
@@ -38,4 +38,4 @@ This domain covers: troubleshooting, troubleshoot, debug, debugging, issue, issu
 
 ---
 
-*Last updated: 2026-11-10*
+*Last updated: 2026-11-11*

@@ -130,6 +130,13 @@ load_priority: 9
 - **Cause:** the registry CDN serves the tarball a few minutes after `npm publish` succeeds (about 5 minutes for 1.6.0).
 - **Fix:** wait and retry; don't republish. See [release-process.md](../deployment/release-process.md).
 
+## v1.30.0 code graph issues (issue #95)
+
+### Healthcheck warns `code-graph-stale`, or results show `grounding.stale: true` / `source: "export+live"`
+- **Cause:** `.hewtd/graph.json` was written at an older commit than HEAD. Cited files changed since, so those docs are re-checked live; the export's other data is old.
+- **Check:** `get_stats` `codeGraph.behind_head` and `files_changed_since`.
+- **Fix:** `npx hewtd index` (writes the export at HEAD; semantic-memory never does). Then the finding clears and `stale` goes away. See [code-graph](../architecture/code-graph.md).
+
 ## v1.1+ session issues
 
 ### `session_finish` refuses with "no verification commands recorded"
