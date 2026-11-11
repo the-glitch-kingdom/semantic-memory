@@ -176,6 +176,36 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - **Update `add-index`:** for a rarely used frozen tree, point at long-term-memory instead of a second server.
     - **Coverage:** `test/unit/help-coverage.test.ts` must pass with the new schema keys (`federation.sources[].default` and `locked`, `federation.cold_storage`, `related_repos: opt-in`), the new CLI flags (`search --source`, `reindex --source`) and the new tool parameter (`sources`), with no new exemptions.
     - **Fill in `commands/help.md`'s example topics** if it lists any.
+  - [ ] **Bring the help up to date with 1.21-1.28** (audit 2026-11-11; the user asked that help cover every new feature). Each change lands in `src/core/help/topics.ts`; the coverage test is the check.
+    - **`getting-started`:** new installs get `.mcp.json` entries `semantic-memory` (vault) and `semantic-memory-docs` (docs, read-only); `semantic-vault` and `semantic-sidekick` still work (1.26).
+    - **New topic `tune-ranking`** ("Tune ranking", group "Measure and improve"; aliases `ranking`, `rerank`, `reranker`, `path_class`, `usage_boost`, `coverage_weight`, `link_prior`, `clause_weight`, `identifier-tier`). It covers:
+      - the `ranking:` block and its measured defaults (coverage and link prior off, `clause_weight` 0 and why);
+      - the opt-in reranker;
+      - path classes (`archive/` at 0.3 and excluded);
+      - the usage boost;
+      - the identifier tier (1.28; docs holding the query's identifier rank first);
+      - "measure before and after with eval".
+      `doc`: `.documentation/operational/retrieval-tuning-guide.md`.
+      Remove the `ranking`, `rerank`, `path_class`, `usage_boost` and `results` "ranking internals" exemptions from `test/unit/help-coverage.test.ts`. Keep only those the topic genuinely does not cover, each with its reason.
+    - **New topic `stable-results`** ("Why results are stable (or differ)", group "Search more"; aliases `reproducible`, `limit`, `same-order`, `determinism`). It covers:
+      - limits 1-8 return the first k of limit 8 (1.27);
+      - two builds of the same files rank identically (exact search below 100,000 chunks);
+      - decay scores are fixed for the UTC day (1.27.1);
+      - what does change a ranking: an edit, a new code-graph load, a new day, usage citations.
+    - **New topic `index-readiness`** ("Index readiness and stale answers", group "Getting going"; aliases `indexing`, `indexing-in-progress`, `stale`, `wait-for-ready`, `warm-up`). It covers:
+      - "Indexing in progress" until a cold build has finished, including the code graph (1.28);
+      - a warm start answers at once, marked stale until it is reconciled (`_meta.stale` and the trailing note);
+      - `serve --wait-for-ready` for scripts and evals;
+      - `get_stats` / `serve --stats` show the state.
+    - **`eval`:** mention `cov@1/3/8` and `dominance` (1.24) in the steps or verify, and `--via mcp --settle` (already there).
+    - **`query-routing`:** the label still never changes ranking. Add one sentence: a query naming an identifier present in the docs ranks the docs that hold it first, whatever the label (1.28), with a pointer to `tune-ranking`.
+    - **`doc` links:** point `section-results`, `query-routing` and `weak-matches` at a current guide or reference section where one exists (`mcp-tools-reference.md` anchors), instead of a changelog page. Check every anchor resolves.
+    - **Tests:**
+      - `help-topics.test.ts` resolves each new topic by id and by two of its aliases;
+      - `help-coverage.test.ts` passes with the narrowed exemptions;
+      - a test that every topic's `doc` path exists (add it if missing);
+      - `semantic-memory help` (no topic) lists every topic under its group;
+      - the MCP `help` tool and `/help` (`commands/help.md`) serve the same text (existing tests).
   - [ ] `.documentation/reference/mcp-tools-reference.md` (`sources` on three tools, `historical` on hits, `get_stats` sources) and `.documentation/reference/cli-reference.md` (`--source`, `reindex --source`).
   - [ ] KB gotcha facts:
     - owed from 1.28.0: matching an identifier token by token credits docs with the words scattered (`gate`/`release`/`sh`); `## Instead`: match the name literally (`Bm25Index.docContains`), with `test/unit/identifier-tier.test.ts` as the check;
