@@ -72,6 +72,15 @@ describe("cold_storage in .claude/hit-em-with-the-docs.json", () => {
     expect(f.warnings.length).toBe(4);
   });
 
+  it("secrets_findings entries with `..`, an absolute path or a :line suffix never escape; a duplicate generation date registers once", async () => {
+    await mkdir(join(p.root, ".documentation-cold", "2026-02-02"), { recursive: true });
+    const e = { generation: "2026-02-02", path: ".documentation-cold/2026-02-02", source_commit: "x", rotated_at: "y", checksum: "z", secrets_findings: ["../../etc/passwd", "/etc/passwd", "a/b.md:12", "ok.md"] };
+    await hewtd({ cold_storage: [e, e] });
+    const f = loadFederation(p.docs);
+    expect(f.sources.map((s) => s.label)).toEqual(["cold-2026-02-02"]);
+    expect((f.sources[0] as any).secrets).toEqual(["a/b.md", "ok.md"]);
+  });
+
   it("`primary` and `long-term` are reserved: a configured source using either is dropped with a warning", async () => {
     await mkdir(join(p.root, "x"));
     await schema("  related_repos: false\n  sources:\n    - {label: primary, path: ../x}\n    - {label: long-term, path: ../x}\n    - {label: fine, path: ../x}\n");

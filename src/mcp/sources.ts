@@ -105,10 +105,12 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
     const mtime = mtimeOf(s.path);
     const why = unreadable(s.path);
     if (why) return { skip: `${why}: ${s.path}`, mtime, builtHere: false };
-    // shortcut: hashed once per process and again only when the folder's own mtime moves; an in-place edit of a locked file is not seen until restart
-    const sum = s.locked ? coldChecksum(s.path) : undefined;
-    if (s.checksum && !coldMatches(s.path, s.checksum, s.diskChecksum)) return { skip: "checksum does not match the manifest, the folder changed after it was registered", mtime, builtHere: false };
+    // a cold generation without a checksum cannot be verified, so it is not searched (coldGenerations reports it the same way)
+    if (s.historical && !s.checksum && !s.diskChecksum) return { skip: "the manifest has no checksum for it", mtime, builtHere: false };
     try {
+      // shortcut: hashed once per process and again only when the folder's own mtime moves; an in-place edit of a locked file is not seen until restart
+      const sum = s.locked ? coldChecksum(s.path) : undefined;
+      if (s.checksum && !coldMatches(s.path, s.checksum, s.diskChecksum)) return { skip: "checksum does not match the manifest, the folder changed after it was registered", mtime, builtHere: false };
       const indexPath = sourceIndexPath(primary.indexPath, s);
       const ctx = await buildContext(s.path, { readOnly: true, indexPath, embedder: primary.embedder, telemetry: false, locked: s.locked, skipFiles: s.secrets });
       ctx.reranker = null;
@@ -166,10 +168,10 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
           const recordFile = join(h.ctx.indexPath, RECORD);
           const m = mtimeOf(s.path);
           if (m !== e.mtime) { // the folder moved since it was verified
-            e.mtime = m;
             const now = coldChecksum(s.path);
+            // e.mtime moves only on a pass, so a failing folder is re-checked (and refused) on every call
             if (s.checksum && !coldMatches(s.path, s.checksum, s.diskChecksum)) note = "skipped, checksum does not match the manifest, the folder changed after it was registered";
-            else e.sum = now;
+            else { e.mtime = m; e.sum = now; }
           }
           if (!note && s.locked && !s.checksum && e.sum) {
             let recorded: string | undefined;

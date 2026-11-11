@@ -389,7 +389,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       }
     }
 
-    const plan = await reconcile(notesPath, rebuild ? {} : manifest, options.skipFiles);
+    const plan = await reconcile(notesPath, rebuild ? {} : manifest, options.skipFiles, options.locked);
     if (!plan.changed && !rebuild) {
       // the tree is unchanged but the code may not be: a new export or a commit moves the stamp
       if (codeStamp() !== lastCodeStamp) {

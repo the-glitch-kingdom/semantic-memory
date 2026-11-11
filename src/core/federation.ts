@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, posix, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 export interface FederationSource {
@@ -95,7 +95,7 @@ function secretPaths(findings: unknown): string[] {
   const out = new Set<string>();
   for (const f of findings) {
     if (typeof f !== "string") continue;
-    const rel = f.replace(/:\d+$/, "").replaceAll("\\", "/");
+    const rel = posix.normalize(f.replace(/(:\d+)+$/, "").replaceAll("\\", "/"));
     if (rel && !isAbsolute(rel) && !rel.split("/").includes("..")) out.add(rel);
   }
   return [...out];

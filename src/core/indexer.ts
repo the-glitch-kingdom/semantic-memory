@@ -5,7 +5,7 @@ import matter from "./matter.js";
 import { glob } from "glob";
 import { readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, join, relative, posix } from "node:path";
+import { basename, join, relative, posix, sep } from "node:path";
 import type { IndexedDocument } from "./types.js";
 import { buildFields, loadIndexFields, type IndexFields } from "./fields.js";
 import { createHash } from "node:crypto";
@@ -34,8 +34,11 @@ export const IGNORE_GLOBS = ["**/node_modules/**"];
 // symlinked content. glob does cycle detection via visited inodes so
 // circular symlinks are handled safely.
 // Sorted: glob's order depends on I/O timing, and HNSW results depend on insertion order.
-export async function listMarkdown(notesPath: string, skip: string[] = []): Promise<string[]> {
-  const files = (await glob("**/*.md", { cwd: notesPath, follow: true, ignore: IGNORE_GLOBS })).sort();
+// `noLinks` (a cold generation): symlinks are neither followed nor listed, so a link cannot pull files from outside the frozen tree into the index.
+export async function listMarkdown(notesPath: string, skip: string[] = [], noLinks = false): Promise<string[]> {
+  const files = (noLinks
+    ? (await glob("**/*.md", { cwd: notesPath, follow: false, ignore: IGNORE_GLOBS, withFileTypes: true })).filter((p) => !p.isSymbolicLink()).map((p) => p.relative().split(sep).join("/"))
+    : await glob("**/*.md", { cwd: notesPath, follow: true, ignore: IGNORE_GLOBS })).sort();
   return skip.length ? files.filter((f) => !skip.includes(f)) : files; // exact paths, not globs: a bracket in a name must not widen the skip
 }
 
@@ -65,10 +68,10 @@ function docSummary(title: string, purpose: unknown, headers: string[], plainTex
   return [title, typeof purpose === "string" ? purpose : "", headers.slice(0, 40).join(" | "), first?.slice(0, 500)].filter(Boolean).join("\n");
 }
 
-/** The path-class config a source indexes with: the 0.3 archive multiplier stays, the archive exclude goes when `keepArchive`. */
+/** The path-class config a source indexes with: the 0.3 archive multiplier stays, only the archive exclude goes when `keepArchive`. */
 export const sourcePathClass = (notesPath: string, rules: SourceRules): PathClassConfig => {
   const cfg = loadPathClassConfig(notesPath);
-  return rules.keepArchive ? { ...cfg, exclude: [] } : cfg;
+  return rules.keepArchive ? { ...cfg, exclude: cfg.exclude.filter((g) => !/archive/.test(g)) } : cfg;
 };
 
 export class Indexer {
@@ -85,7 +88,7 @@ export class Indexer {
   }
 
   async indexAll(): Promise<IndexedDocument[]> {
-    const files = await listMarkdown(this.notesPath, this.rules.skip);
+    const files = await listMarkdown(this.notesPath, this.rules.skip, this.rules.keepArchive);
     // One unreadable file must not take the whole corpus down with it
     const docs = await Promise.all(
       files.map((file) =>

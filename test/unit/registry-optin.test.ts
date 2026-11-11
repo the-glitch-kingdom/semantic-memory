@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { cp, writeFile, readdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { cp, writeFile, readdir, symlink } from "node:fs/promises";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildContext, type ServerContext } from "../../src/mcp/context.js";
 import { createSourceRegistry, type SourceHandle } from "../../src/mcp/sources.js";
+import { coldChecksum } from "../../src/core/cold.js";
 import { FIXTURES, GEN_A, GEN_B, FAKE_SECRET, allFileText, lockTree, makeProject, unlockTree, type Project } from "../long-term-fixture.js";
 
 // Phase 4 of #93: opt-in sources are built only by openOptIn; locked ones never reconcile; checksum, secrets, archive.
@@ -99,5 +100,59 @@ describe("a locked source never reconciles", () => {
     const again = await reg.openOptIn(["frozen"]);
     expect(again.ready).toHaveLength(1);
     expect(again.notes[0]).toMatch(/changed/);
+  }, 200_000);
+});
+
+describe("a symlink in a cold tree", () => {
+  let p: Project;
+  let primary: ServerContext;
+  beforeAll(async () => {
+    p = await makeProject({ lock: false });
+    // a link out of the generation: the checksum hashes it as `link:` only, so the index must not follow it either
+    const gen = join(p.coldRoot, GEN_A);
+    await writeFile(join(p.root, "outside.md"), "# Outside\n\nZanzibar outside-the-generation marker text.\n");
+    await symlink(join(p.root, "outside.md"), join(gen, "linked.md"));
+    await symlink(p.legacy, join(gen, "linkdir"));
+    const cfgPath = join(p.root, ".claude", "hit-em-with-the-docs.json");
+    const cfg = JSON.parse(readFileSync(cfgPath, "utf-8"));
+    cfg.cold_storage.find((c: any) => c.generation === GEN_A).checksum = coldChecksum(gen);
+    writeFileSync(cfgPath, JSON.stringify(cfg));
+    primary = await buildContext(p.docs, { telemetry: false });
+  }, 120_000);
+  afterAll(() => p.cleanup());
+
+  it("is neither followed nor indexed", async () => {
+    const reg = createSourceRegistry(primary);
+    const r = await until(reg, [`cold-${GEN_A}`], 1);
+    const got = paths(r.ready[0]!);
+    expect(got.length).toBeGreaterThan(0);
+    expect(got.some((f) => f.startsWith("linkdir/") || f === "linked.md")).toBe(false);
+  }, 200_000);
+});
+
+describe("verification holds on every call", () => {
+  let p: Project;
+  let primary: ServerContext;
+  beforeAll(async () => {
+    p = await makeProject({ lock: false });
+    const cfgPath = join(p.root, ".claude", "hit-em-with-the-docs.json");
+    const cfg = JSON.parse(readFileSync(cfgPath, "utf-8"));
+    delete cfg.cold_storage.find((c: any) => c.generation === GEN_B).checksum; // an unverifiable generation
+    writeFileSync(cfgPath, JSON.stringify(cfg));
+    primary = await buildContext(p.docs, { telemetry: false });
+  }, 120_000);
+  afterAll(() => p.cleanup());
+
+  it("a generation without a checksum is never searched; one edited after it verified is refused on every later call", async () => {
+    const reg = createSourceRegistry(primary);
+    const first = await until(reg, ["long-term"], 1);
+    expect(first.ready.map((h) => h.label)).toEqual([`cold-${GEN_A}`]);
+    expect(first.notes.join()).toMatch(/has no checksum/);
+    await writeFile(join(p.coldRoot, GEN_A, "added.md"), "# Added\n\nlate edit\n"); // moves the folder's mtime
+    for (let i = 0; i < 3; i++) {
+      const r = await reg.openOptIn([`cold-${GEN_A}`]);
+      expect(r.ready).toEqual([]);
+      expect(r.notes.join()).toMatch(/checksum does not match/);
+    }
   }, 200_000);
 });

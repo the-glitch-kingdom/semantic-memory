@@ -72,3 +72,7 @@ No ranking change, no eval measured. cold-notice hook: 39 ms wall on a one-file 
 ## Eval results: Phase 9
 
 No ranking change, no eval measured. Contract check against hewtd 3.2.0 (read only): cold root `.documentation-cold/`, folder `<YYYY-MM-DD>`, manifest fields `generation, path, source_commit, rotated_at, checksum, disk_checksum, secrets_findings, untracked_files, scanner_allowlists` match; `untracked_files` are repo-relative (unused by us). Checksum differed (see plan, Errors Encountered) and was fixed. A real `--stage` and `--promote --confirm` in a temp repo gave a manifest that `coldGenerations` read as `registered`, `hooks/cold-notice.js` announced, and `search --source long-term` answered with `source: cold-<date>` and `historical`.
+
+## Eval results: Phase 11
+Fresh `BAND=1 bash scripts/gate-release.sh 1.28.0` (no --cache) PASS after the review fixes: local equals 1.28.0 on every count in both modes and arms (no export hybrid @1 92, multi 20/28/31 of 41, negatives 43/47, false flags 7; export hybrid @1 95, multi 20/28/32); mcp vs cli differ on 0 of 186 in both modes. p95 14 ms (cli and mcp), one local-export mcp reading of 29 ms on a loaded machine, inside the gate band. `npm test` 155 files and `npm run eval` 25 files pass, no load flakes.
+
