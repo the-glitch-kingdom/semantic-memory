@@ -124,3 +124,14 @@ Floors: baseline.json `newSets` (whole-answer hybrid @1/@3 11/12 train, 10/11 he
 - Independent `claude -p` review of src/scripts diff. Confirmed + fixed: fullIndex awaited the code load on warm forced rebuilds too (reindex tool), contradicting the comment; now `if (coldBuilding) await lastCodeLoad` (src/mcp/context.ts). Rejected: reranker (opt-in, off by default) can reorder the tier's output; the tier runs before it by plan, CLI has no reranker; documented, not changed. Review also confirmed clause_weight 0 is a no-op and code-load failure is caught in loadCode (index still ready).
 - Full lint, build, npm test, npm run eval: exit 0 after the fix. `BAND=1 npm run gate:release` fresh: PASS.
 - Edge cases covered by the Phase 2-6 tests (identifier tier unit tests, rank.test clause splitting, cold-build-ready); no new ones added.
+
+## Orchestrator review after Phase 10
+- The by-hand `.documentation` repro was still failing. The tier counted a doc as holding `gate-release.sh` when it had "gate", "release" and "sh" anywhere, so `changelog/v1-7-0-…` rose to #3.
+  - Fix: a literal match (`Bm25Index.docContains`): body text or path, case-insensitive, `-` and `_` alike, a short extension dropped from a name-shaped stem. Presence also accepts another spelling (`hasJoined`).
+  - Tests: test/unit/identifier-tier.test.ts, three new cases.
+- On our own docs the case stays unfixed by design. The docs whose body names `gate-release.sh` (release-process aside) are outside the 24-candidate pool, and the two changelogs at #2 and #4 name it only in frontmatter. A wider pool is #87.
+- Re-validated: lint, build, `npm test` (1173 passed), `npm run eval` (224 passed, 6 expected fail).
+- `BAND=1 gate-release.sh 1.27.1`, fresh: PASS.
+  - No export: hyb@1 92/92, @3 115/115, multi 20/28/31, dominance 32 vs 33.
+  - Export: hyb@1 95/95, dominance 23 vs 25.
+  - mcp vs cli: 0 of 186 differ.

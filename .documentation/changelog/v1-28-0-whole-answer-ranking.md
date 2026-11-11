@@ -41,7 +41,7 @@ Cause: on a cold build the code graph loaded after the docs and fed grounding in
 
 ## #91 part 1: identifier tier
 
-`identifierTier()` (`src/core/identifiers.ts`) stable-sorts by the number of corpus-present query identifiers a candidate holds, after fusion and filters, before the optional reranker; MCP and CLI. See the [tuning guide](../operational/retrieval-tuning-guide.md).
+`identifierTier()` (`src/core/identifiers.ts`) stable-sorts by the number of corpus-present query identifiers a candidate holds literally in its body or path (`-` and `_` alike, a short extension dropped from a name-shaped stem), after fusion and filters, before the optional reranker; MCP and CLI. See the [tuning guide](../operational/retrieval-tuning-guide.md).
 
 ## #91 part 2: clause coverage, shipped off
 

@@ -118,6 +118,7 @@ Three fixes, released together as 1.28.0 (minor: ranking changes).
 - Phase 5: `clause_weight` swept on train only; ships 0 (off). Code, config key (`ranking.clause_weight`), unit tests and the multi-clause fixture test (`it.fails`) stay.
 
 ## Errors Encountered
+- Orchestrator review: the tier matched identifier tokens one by one, so scattered words counted; switched to a literal match and re-gated (PASS). See notes.md "Orchestrator review after Phase 10".
 - Phase 5: w=1 passed the train rule (no @1 drop on any train set, dominance unchanged, fixture flips) but failed the held-out gate vs 1.27.1: no export hybrid @1 72 vs 73, multi @1 9 vs 10; export hybrid @1 76 vs 78 (beyond BAND 1). Not re-tuned on held-out; shipped off. Also on train at w>=0.5 real-corpus hybrid @3 fell 26 to 24.
 - Phase 2: the whole-answer rows leave little headroom on main (11/12 and 10/12 @1; hub docs hold both answers) and the identifier rows are 8/8 @1 already, so the eval counts alone cannot show the gains. Phase 4 reports "top-3 all identifier docs" (0/8 and 0/8 on main) and Phase 5 relies on the `multi-clause` fixture. Rows left as written.
 

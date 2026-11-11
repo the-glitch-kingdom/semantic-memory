@@ -144,6 +144,13 @@ export class Bm25Index {
     return this.docTerms.get(docPath)?.has(term) ?? false;
   }
 
+  /** True when the doc's chunk text or path holds `name` literally: case-insensitive, `-` and `_` alike. */
+  docContains(docPath: string, name: string): boolean {
+    const norm = (s: string) => s.toLowerCase().replace(/_/g, "-");
+    const n = norm(name);
+    return norm(docPath).includes(n) || (this.byDoc.get(docPath) ?? []).some((c) => norm(c.text).includes(n));
+  }
+
   /** idf-weighted share of the query's distinct indexed terms that appear anywhere in the doc (0 when the query has none). */
   cover(docPath: string, query: string): number {
     const have = this.docTerms.get(docPath);

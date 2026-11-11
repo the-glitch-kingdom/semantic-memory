@@ -31,3 +31,18 @@ describe("identifierTier", () => {
     expect(paths(identifierTier([{ path: "y.md" }, { path: "x.md" }], "check_widgets.py", all))).toEqual(["y.md", "x.md"]);
   });
 });
+
+describe("identifierTier holds a name literally", () => {
+  it("a kebab name's words scattered through a doc do not count", () => {
+    const b = index({ "a.md": "the release gate passes, see the sh script", "b.md": "run gate-release.sh before tagging" });
+    expect(paths(identifierTier([{ path: "a.md" }, { path: "b.md" }], "What does gate-release.sh check?", b))).toEqual(["b.md", "a.md"]);
+  });
+  it("the stem without its extension counts, and `-`/`_` are alike", () => {
+    const b = index({ "a.md": "exit codes", "b.md": "the check-widgets script exits 2", "c.md": "build_all" });
+    expect(paths(identifierTier([{ path: "a.md" }, { path: "b.md" }], "check_widgets.py exit codes", b))).toEqual(["b.md", "a.md"]);
+  });
+  it("a bare file name keeps its extension", () => {
+    const b = index({ "a.md": "the index of results", "b.md": "edit index.ts" });
+    expect(paths(identifierTier([{ path: "a.md" }, { path: "b.md" }], "what does `index.ts` export", b))).toEqual(["b.md", "a.md"]);
+  });
+});

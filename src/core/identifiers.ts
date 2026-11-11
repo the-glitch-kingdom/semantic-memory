@@ -71,17 +71,25 @@ export function passingTerms(query: string, index: Bm25Index, paths: string, top
   });
 }
 
+/** A name's last path segment, less a short file extension when the stem is still name-shaped (`gate-release.sh` -> `gate-release`, `check_widgets.py` -> `check_widgets`; `index.ts` stays). */
+const stemOf = (id: string): string => {
+  const seg = id.slice(id.lastIndexOf("/") + 1);
+  const stem = seg.replace(/\.[A-Za-z0-9]{1,4}$/, "");
+  return stem !== seg && /[-_.]|[a-z][A-Z]/.test(stem) ? stem : seg;
+};
+
 /**
  * #91 part 1: stable partition of fused candidates by how many of the query's identifiers they hold, most first.
- * Only identifiers present in the corpus count (every token of the name has df > 0), so a name in no doc, or a query
- * without one, changes nothing. A doc holds a name when it has every token anywhere (chunks, fields, path words).
+ * Only identifiers present in the corpus count (every token of the name has df > 0, or another spelling of it does), so a name in no doc, or a query
+ * without one, changes nothing. A doc holds a name when its text or path has it literally (`Bm25Index.docContains`):
+ * matching its tokens one by one credited any doc with "gate", "release" and "sh" for `gate-release.sh`.
  * shortcut: identifiers outside the candidate pool are not pulled in; upgrade with a wider pool (#87).
  */
 export function identifierTier<T extends { path: string }>(results: T[], query: string, index: Bm25Index, known?: (term: string) => boolean): T[] {
   const present = identifiers(query, known)
-    .map((id) => tokenize(id.slice(id.lastIndexOf("/") + 1)))
-    .filter((toks) => toks.length > 0 && toks.every((t) => index.has(t)));
+    .map(stemOf)
+    .filter((name) => tokenize(name).length > 0 && tokenize(name).every((t) => index.has(t) || index.hasJoined(t.replace(/_/g, ""))));
   if (!present.length) return results;
-  const held = (r: T) => present.filter((toks) => toks.every((t) => index.docHas(r.path, t))).length;
+  const held = (r: T) => present.filter((name) => index.docContains(r.path, name)).length;
   return results.map((r) => ({ r, n: held(r) })).sort((a, b) => b.n - a.n).map((x) => x.r);
 }
