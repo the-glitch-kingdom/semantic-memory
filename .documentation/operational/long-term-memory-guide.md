@@ -54,7 +54,7 @@ Each registered generation becomes an opt-in, locked source labelled `cold-<gene
 
 Every hit carries `source: "cold-<date>"` and `historical: {generation, source_commit, rotated_at}`. A plain search carries neither. An unknown label, `sources: []` and "no source can answer" each get a plain-text message, never a silent fallback to the default set.
 
-The first query builds the generation's index under `<index>/sources/` and answers "Indexing in progress" until it is ready; a ~900-file generation took about 48 s, then answers in ~30 ms (p95). Nothing is built or loaded by ordinary traffic.
+The first query builds the generation's index under `<index>/sources/` and answers "Indexing in progress" until it is ready; a ~900-file generation took about 48 s, then answers in ~30 ms (p95). Nothing is built or loaded by ordinary traffic. From a prompt, the hook waits up to 10 s (`SEMANTIC_MEMORY_LONG_TERM_WAIT_MS`). If the index is not ready by then, it starts the build in the background (one at a time, marker `.claude/.semantic-memory/long-term-build.json`) and tells Claude long-term memory is being indexed, instead of holding the prompt for the whole build.
 
 ## What is never searched by default
 

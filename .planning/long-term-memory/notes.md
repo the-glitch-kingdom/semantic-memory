@@ -80,3 +80,9 @@ Fresh `BAND=1 bash scripts/gate-release.sh 1.28.0` (no --cache) PASS after the r
 ## Eval results: Phase 12
 
 Docs, help and `--help` only; the one src behaviour change is the wording of the locked-source `changed` note. No ranking change, nothing measured. `npm test` (156 files) passed except a load-flake stdin-eof test that passes alone; `npm run eval` (25 files) passed after the docs.
+
+## Orchestrator review after Phase 12
+- The prompt hook ran the first `--source long-term` search inline with a 60 s cap. On a ~900-file generation (about 48 s to build), the user's prompt was held for most of a minute. A timed-out CLI is killed, so the build restarted on every prompt.
+  - Fix (`hooks/vault-context.js`): wait `SEMANTIC_MEMORY_LONG_TERM_WAIT_MS` (default 10 s). After that, start one detached build (marker `.claude/.semantic-memory/long-term-build.json`, retried after 10 min) and inject a note that long-term memory is being indexed.
+  - Test: `test/integration/long-term-hook.test.ts`, "a first long-term prompt never waits for the whole cold build".
+- Re-validated: lint, build, `npm test` (156 files, 1262 passed), `npm run eval` (25 files, 226 passed, 6 expected fail). The hook is not on the ranking path; the Phase 11 fresh gate stands.

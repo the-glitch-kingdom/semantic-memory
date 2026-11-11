@@ -12,7 +12,7 @@ Issue #93 (search side; rotation is hit-em-with-the-docs 3.2.0). Details: `.docu
 - hit-em-with-the-docs `cold_storage` generations become locked opt-in sources `cold-<date>`, label `long-term` for all. Checked against the manifest checksum (`checksum` over tracked files or `disk_checksum`, hewtd's definition); `secrets_findings` files are not indexed or readable.
 - `sources` on `search_hybrid`, `search_semantic` and `search_text`; hits carry `source` and `historical`. MCP `reindex {source}`, `get_stats` `sources`, `read_note` on opt-in labels.
 - CLI `search --source <label>` (repeatable) and `--reindex`.
-- SessionStart cold-generation notice, a prompt trigger for "search long-term memory", a `cold-generations` healthcheck finding.
+- SessionStart cold-generation notice, a prompt trigger for "search long-term memory" (it waits up to 10 s; a first build that takes longer runs in the background while Claude is told long-term memory is being indexed), a `cold-generations` healthcheck finding.
 - Help topics `long-term-memory`, `tune-ranking`, `stable-results`, `index-readiness`; `test/unit/cli-help.test.ts`; the long-term recall eval and `COLD_COPY=1` for `eval-against-release.sh`.
 
 ### Changed
