@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { entityCard, knownToCode, splitUndocumented, groundDocs, loadExport, loadCodeData, fallbackCode, gitLastChanged } from "../../src/core/code-graph.js";
@@ -358,5 +358,71 @@ describe("loadCodeData: a stale export is patched per ref (#95)", () => {
     expect(r["a.py"].resolved).toBe(true);
     expect(r["../outside.py"].resolved).toBe(true);
     expect(c.export).toMatchObject({ behind: null, changed: null });
+  });
+});
+
+describe("loadCodeData: stale-export edge cases (#95)", () => {
+  const git = (...a: string[]) => execFileSync("git", ["-C", tmp, "-c", "user.email=t@e.invalid", "-c", "user.name=t", ...a], { stdio: "pipe" }).toString().trim();
+  const commit = (m: string) => { git("add", "-A", "--", ".", ":!.hewtd"); git("commit", "-q", "--allow-empty", "-m", m); };
+  const base = (refs: object[], sourceCommit?: (h: string) => string) => {
+    git("init", "-q", "-b", "main");
+    put("a.py", "1\n"); put("src/x.py", "1\n"); put("other.py", "1\n"); put(".documentation/d.md", "# d\n");
+    commit("one");
+    exportOf({ version: 1, source_commit: (sourceCommit ?? ((h) => h))(git("rev-parse", "HEAD")), docs: { "d.md": doc({ refs }) }, symbols: {} });
+  };
+  const f = (target: string, file = target) => ({ kind: "file", target, file, resolved: true, code_changed: "2026-01-01" });
+  const load2 = async () => (await loadCodeData(join(tmp, ".documentation"), [{ path: "d.md" }]))!;
+  const refs = (c: Awaited<ReturnType<typeof load2>>) => Object.fromEntries(c.docs.get("d.md")!.refs.map((r) => [r.target, r]));
+
+  it("a :line or #L suffix still reaches the changed file; a directory ref and a gitignored ref are not misreported", async () => {
+    base([f("src/x.py:10", "src/x.py"), f("src/x.py#L5", "src/x.py"), f("src/"), f("build/out.py")]);
+    rmSync(join(tmp, "src/x.py"));
+    put(".gitignore", "build/\n");
+    commit("two");
+    const r = refs(await load2());
+    expect(r["src/x.py:10"].resolved).toBe(false);
+    expect(r["src/x.py#L5"].resolved).toBe(false);
+    expect(r["src/"].resolved).toBe(true); // x.py changed under it, but the ref is the unchanged directory path
+    expect(r["build/out.py"].resolved).toBe(true); // not in the diff
+  });
+
+  it("a changed file no doc cites leaves the doc on the export; a symlinked ref to a changed target is re-checked", async () => {
+    base([f("link.py")]);
+    symlinkSync("other.py", join(tmp, "link.py"));
+    commit("two"); // link.py is new, other.py untouched
+    rmSync(join(tmp, "other.py"));
+    commit("three");
+    const c = await load2();
+    expect(c.docs.get("d.md")!.source).toBe("export+live"); // link.py is in the diff
+    expect(refs(c)["link.py"].resolved).toBe(false); // a dangling symlink does not exist
+  });
+
+  it("an uncited change keeps source export", async () => {
+    base([f("a.py")]);
+    put("other.py", "2\n");
+    commit("two");
+    expect((await load2()).docs.get("d.md")!.source).toBe("export");
+  });
+
+  it("behind_head counts both sides of a merge; a detached HEAD works; a commit ahead of HEAD (after a reset) is 0 behind", async () => {
+    base([f("a.py")]);
+    const start = git("rev-parse", "HEAD");
+    git("checkout", "-q", "-b", "side"); put("s.py", "1\n"); commit("side");
+    git("checkout", "-q", "main"); put("m.py", "1\n"); commit("main");
+    git("merge", "-q", "--no-ff", "-m", "merge", "side");
+    expect((await load2()).export).toMatchObject({ behind: 3, changed: 2 });
+    git("checkout", "-q", "--detach");
+    expect((await load2()).export).toMatchObject({ behind: 3 });
+    const head = git("rev-parse", "HEAD");
+    exportOf({ version: 1, source_commit: head, docs: { "d.md": doc({ refs: [f("a.py")] }) }, symbols: {} });
+    git("reset", "-q", "--hard", start);
+    expect((await load2()).export).toMatchObject({ behind: 0, changed: 2 });
+  });
+
+  it("an export from another repo (its commit is unknown here) falls back to live checks without throwing", async () => {
+    base([f("a.py"), f("gone.py")], () => "f".repeat(40));
+    const c = await load2();
+    expect(c.export).toMatchObject({ behind: null, changed: null });
+    expect(refs(c)["gone.py"].resolved).toBe(false);
   });
 });

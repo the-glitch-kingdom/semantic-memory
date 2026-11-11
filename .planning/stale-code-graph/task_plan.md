@@ -63,9 +63,9 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields to 1.30.0, plus the lockfile.
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Every Phase 2 test passes as plain `it`.
-  - [ ] Edge cases:
+- [x] Phase 9: Validate success through comprehensive testing (MANDATORY)
+  - [x] Every Phase 2 test passes as plain `it`.
+  - [x] Edge cases:
     - a renamed file (`--no-renames`: the old path is deleted, the new one added);
     - a ref with a `:line` or `#L` suffix to a changed file;
     - a ref to a directory;
@@ -76,9 +76,9 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
     - `behind_head` across a merge commit;
     - a detached HEAD;
     - an export whose `source_commit` is ahead of HEAD (after a reset).
-  - [ ] Security: a ref target with `..` that escapes the git root is never checked outside it (resolved stays null).
-  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.29.0).
-  - [ ] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions).
+  - [x] Security: a ref target with `..` that escapes the git root is never checked outside it (resolved stays null).
+  - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.29.0). Gate PASS; real-corpus-eval floor (search_semantic answer@1 10 < 11) still fails, same as clean main, not lowered.
+  - [x] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions).
 - [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/architecture/code-graph.md`: staleness detection, per-ref live patching, `export+live`, `stale`, and locked sources skipping the graph.
   - [ ] `.documentation/reference/mcp-tools-reference.md`: `get_stats.codeGraph` fields and `grounding.stale`/`source`.
@@ -106,7 +106,7 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - Phase 2: a first `--source long-term` search only starts the cold index in the background ("skipped, still indexing"); the locked-source test retries up to 4 times until cold hits arrive.
 
 ## Status
-**Phase 9 next.** Phase 8 done (cleanup: no scratch files, probe logging, commented-out code or unused exports found; lint passes). Earlier: Phase 7 done (1.30.0 in package.json, package-lock.json, plugin.json, both marketplace.json fields, AGENTS.md). Earlier: Phase 6 done (gate PASS, +19 ms stale patch, by-hand check ok).
+**Phase 10 next.** Phase 9 done (validation, review, gate PASS). Phase 8 done (cleanup: no scratch files, probe logging, commented-out code or unused exports found; lint passes). Earlier: Phase 7 done (1.30.0 in package.json, package-lock.json, plugin.json, both marketplace.json fields, AGENTS.md). Earlier: Phase 6 done (gate PASS, +19 ms stale patch, by-hand check ok).
 
 Earlier: **Phase 6 next.** Phase 5 done: `loadCode` in src/mcp/context.ts returns null for `locked` (decision: a frozen generation's refs would be graded against today's tree; non-locked opt-in sources keep their own export, since a sibling repo's export is valid). Locked-source test is plain `it`, stderr proves no `fewer than half` warning. Earlier: **Phase 5 next.** Phase 4 done: get_stats.codeGraph fields, `code-graph-stale` healthcheck finding (warn above 20 commits or unknown commit; ok otherwise), reload-on-commit test; the get_stats and healthcheck it.fails are plain `it` now. Only the locked-source case stays it.fails (Phase 5).
 

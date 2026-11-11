@@ -295,7 +295,7 @@ async function patchStale(root: string, exp: CodeData): Promise<void> {
     for (const r of d.refs) {
       if (!dirty(r)) continue;
       const f = fileOf(r)!;
-      if (f.startsWith("..") || isAbsolute(f)) continue; // never check outside the repo
+      if (f === ".." || f.startsWith("../") || isAbsolute(f)) continue; // never check outside the repo
       const was = r.resolved;
       r.resolved = existsSync(join(root, f));
       if (!changed || changed.has(f)) {
@@ -303,7 +303,7 @@ async function patchStale(root: string, exp: CodeData): Promise<void> {
         patched.push(f);
       } else if (was !== r.resolved) patched.push(f);
     }
-    if (patched.length) { d.source = "export+live"; d.patched = patched; }
+    if (patched.length) { d.source = "export+live"; d.patched = [...new Set(patched)]; }
   }
 }
 
