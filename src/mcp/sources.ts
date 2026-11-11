@@ -47,7 +47,8 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
     const fed = loadFederation(primary.notesPath);
     for (const w of fed.warnings) process.stderr.write(`${w}\n`);
     const out: SourceHandle[] = [];
-    for (const s of fed.sources) {
+    // opt-in sources stay closed until Phase 4's openOptIn; building one here would put it in every search
+    for (const s of fed.sources.filter((x) => x.default)) {
       const why = unreadable(s.path);
       if (why) {
         skipped.set(s.label, `${why}: ${s.path}`);

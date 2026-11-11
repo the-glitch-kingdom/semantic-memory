@@ -90,8 +90,8 @@ describe("opt-in sources, locked sources and cold generations over MCP", () => {
   });
 
   describe("locked and read-only", () => {
-    // holds today (every source is read-only and indexed under sourceIndexPath), so a regression guard
-    it("a locked source in a read-only folder indexes without writing into it; its index lives under sourceIndexPath", async () => {
+    // Phase 3 honours `default: false`, so the frozen source is no longer opened until Phase 4's openOptIn; it.fails until then
+    it.fails("a locked source in a read-only folder indexes without writing into it; its index lives under sourceIndexPath", async () => {
       await ask("search_hybrid", { query: "gateway", sources: ["frozen"] });
       expect((await readdir(frozen())).includes(".semantic-sidekick-index")).toBe(false);
       expect((await readdir(join(p.index, "sources"))).some((d) => d.startsWith("frozen-"))).toBe(true);

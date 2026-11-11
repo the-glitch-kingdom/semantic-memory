@@ -24,11 +24,11 @@ describe("cold generation checksum definition", () => {
     }
   });
 
-  it.fails("coldChecksum in src/core/cold.ts computes the same value", async () => {
+  it("coldChecksum in src/core/cold.ts computes the same value", async () => {
     const d = await mkdtemp(join(tmpdir(), "ck-"));
     try {
       await writeFile(join(d, "x.md"), "ex");
-      const { coldChecksum } = await import("../../src/core/cold.js" as string);
+      const { coldChecksum } = await import("../../src/core/cold.js");
       expect(coldChecksum(d)).toBe(checksumOf(d));
     } finally {
       await rm(d, { recursive: true, force: true });

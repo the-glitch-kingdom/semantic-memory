@@ -22,7 +22,7 @@ describe("related_repos: opt-in", () => {
     return "sibling";
   };
 
-  it.fails("registers hewtd related repos as `default: false` sources", async () => {
+  it("registers hewtd related repos as `default: false` sources", async () => {
     const name = await withSibling("opt-in");
     expect(loadFederation(p.docs).sources).toEqual([expect.objectContaining({ label: name, default: false })]);
   });
@@ -36,7 +36,7 @@ describe("related_repos: opt-in", () => {
 });
 
 describe("cold_storage in .claude/hit-em-with-the-docs.json", () => {
-  it.fails("each valid entry becomes an opt-in, locked source `cold-<generation>` with historical metadata, checksum and secrets", async () => {
+  it("each valid entry becomes an opt-in, locked source `cold-<generation>` with historical metadata, checksum and secrets", async () => {
     const cp2 = await makeProject();
     try {
       const f = loadFederation(cp2.docs);
@@ -55,7 +55,7 @@ describe("cold_storage in .claude/hit-em-with-the-docs.json", () => {
     }
   });
 
-  it.fails("a malformed entry, a traversal path and a reserved label are warnings, never a throw", async () => {
+  it("a malformed entry, a traversal path and a reserved label are warnings, never a throw", async () => {
     const bad = (generation: unknown, path: unknown) => ({ generation, path, source_commit: "x", rotated_at: "y", checksum: "z", secrets_findings: [] });
     await mkdir(join(p.root, ".documentation-cold", "2026-02-02"), { recursive: true });
     await hewtd({
@@ -72,7 +72,7 @@ describe("cold_storage in .claude/hit-em-with-the-docs.json", () => {
     expect(f.warnings.length).toBe(4);
   });
 
-  it.fails("`primary` and `long-term` are reserved: a configured source using either is dropped with a warning", async () => {
+  it("`primary` and `long-term` are reserved: a configured source using either is dropped with a warning", async () => {
     await mkdir(join(p.root, "x"));
     await schema("  related_repos: false\n  sources:\n    - {label: primary, path: ../x}\n    - {label: long-term, path: ../x}\n    - {label: fine, path: ../x}\n");
     const f = loadFederation(p.docs);
@@ -92,7 +92,7 @@ describe("cold_storage in .claude/hit-em-with-the-docs.json", () => {
 });
 
 describe("default and locked on a configured source", () => {
-  it.fails("`default` is true unless `default: false`, `locked` is false unless `locked: true`; a bad value is dropped with a warning", async () => {
+  it("`default` is true unless `default: false`, `locked` is false unless `locked: true`; a bad value is dropped with a warning", async () => {
     await mkdir(join(p.root, "a"));
     await mkdir(join(p.root, "b"));
     await mkdir(join(p.root, "c"));
@@ -104,5 +104,40 @@ describe("default and locked on a configured source", () => {
     expect(f.sources.find((s) => s.label === "b")).toMatchObject({ default: false, locked: true });
     expect(f.sources.some((s) => s.label === "c")).toBe(false);
     expect(f.warnings.length).toBe(1);
+  });
+});
+
+describe("coldGenerations", () => {
+  const statuses = async (o: Parameters<typeof makeProject>[0], notes = false) => {
+    const pr = await makeProject(o);
+    try {
+      const { coldGenerations } = await import("../../src/core/cold.js");
+      return coldGenerations(pr.root, notes ? pr.docs : undefined);
+    } finally {
+      await pr.cleanup();
+    }
+  };
+  it("registered generations", async () => {
+    const s = await statuses({});
+    expect(s.generations.map((g) => [g.generation, g.status])).toEqual([[GEN_A, "registered"], [GEN_B, "registered"]]);
+  });
+  it("checksum-mismatch, unregistered, disabled", async () => {
+    expect((await statuses({ badChecksum: GEN_B })).generations.map((g) => g.status)).toEqual(["registered", "checksum-mismatch"]);
+    expect((await statuses({ manifest: false })).generations.map((g) => g.status)).toEqual(["unregistered", "unregistered"]);
+    expect((await statuses({ federation: "  related_repos: false\n  cold_storage: false\n" }, true)).generations.map((g) => g.status)).toEqual(["disabled", "disabled"]);
+  });
+  it("missing-path, and a cold root inside the docs root is refused", async () => {
+    const pr = await makeProject();
+    try {
+      const { coldGenerations } = await import("../../src/core/cold.js");
+      const { rm } = await import("node:fs/promises");
+      const { unlockTree } = await import("../long-term-fixture.js");
+      unlockTree(pr.coldRoot);
+      await rm(join(pr.coldRoot, GEN_A), { recursive: true });
+      expect(coldGenerations(pr.root).generations.find((g) => g.generation === GEN_A)?.status).toBe("missing-path");
+    } finally {
+      await pr.cleanup();
+    }
+    expect((await statuses({ coldRoot: ".documentation/cold" })).problem).toBe("inside-docs");
   });
 });

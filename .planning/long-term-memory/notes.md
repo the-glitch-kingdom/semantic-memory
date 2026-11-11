@@ -42,3 +42,6 @@
 No ranking or search change; tests and fixtures only. New files: 5 integration, 2 unit and a help block, 31 `it.fails` cases across them (confirmed failing as plain `it`: `Cannot find module hooks/cold-notice.js`, `unknown option '--source'`, `Cannot find src/core/cold.js`, `sources` ignored so default hits come back, no `source`/`historical` fields, no cold index under `<index>/sources/`, no `long-term-memory` topic). The notice hook can only see a checksum mismatch if `coldGenerations()` compares something cheap; the plan says it never hashes. Phase 3 must decide how (e.g. compare the manifest checksum with one recorded at registration, or hash only on the first notice and cache by folder mtime); the test only needs the message.
 
 The `hewtd-config.json` fixture pins the #97 contract (comment 2026-11-11): `cold_storage[]` entries `{generation, path, source_commit, rotated_at, checksum, secrets_findings, untracked_files}`; `checksum` is ours (sha256 over sorted `relpath\0sha256(file)\n`, regular files, no symlinks), hand-pinned in `test/unit/long-term-checksum.test.ts`. #97 must adopt the same definition.
+
+## Eval results: Phase 3
+No ranking change; config parsing only. No eval run (src/core/federation.ts is read at server start, not on the search path).

@@ -58,22 +58,22 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - the MCP `help {topic: "long-term-memory"}` serves the same text;
     - `help` with no topic lists it under "Search more".
   - [x] **related_repos opt-in.** `federation.related_repos: opt-in` registers hewtd related repos as `default: false` sources. `true` (the default) and `false` behave as today.
-- [ ] Phase 3: Config, `default` and `locked` on sources, `related_repos: opt-in`, `cold_storage`
-  - [ ] `FederationSource` gains `default: boolean` (true unless `default: false`), `locked: boolean` and optional `historical` metadata. Parse them in `loadFederation` (src/core/federation.ts), lenient as today: a bad value is dropped with a warning.
-  - [ ] `federation.related_repos`: `true` | `false` | `"opt-in"`.
-  - [ ] Read `cold_storage` from `.claude/hit-em-with-the-docs.json`, next to `relatedRepos()`:
+- [x] Phase 3: Config, `default` and `locked` on sources, `related_repos: opt-in`, `cold_storage`
+  - [x] `FederationSource` gains `default: boolean` (true unless `default: false`), `locked: boolean` and optional `historical` metadata. Parse them in `loadFederation` (src/core/federation.ts), lenient as today: a bad value is dropped with a warning.
+  - [x] `federation.related_repos`: `true` | `false` | `"opt-in"`.
+  - [x] Read `cold_storage` from `.claude/hit-em-with-the-docs.json`, next to `relatedRepos()`:
     - Each valid entry becomes `{label: "cold-<generation>", path, default: false, locked: true, historical: {generation, source_commit, rotated_at}, checksum, secrets: [paths]}`.
     - Validate `generation` against the label regex and resolve `path` relative to the project root.
     - A malformed entry is a warning, never a throw.
     - Reserve the labels `primary` and `long-term`; a configured source using either is dropped with a warning.
-  - [ ] `federation.cold_storage: false` opts out of reading the manifest, mirroring `related_repos`.
-  - [ ] **Cold root** (hit-em-with-the-docs#97, comment 2026-11-11, shipping in hewtd 3.2.0):
+  - [x] `federation.cold_storage: false` opts out of reading the manifest, mirroring `related_repos`.
+  - [x] **Cold root** (hit-em-with-the-docs#97, comment 2026-11-11, shipping in hewtd 3.2.0):
     - `.documentation-cold/` at the repo root by default, or `reconcile.cold_root` (repo-relative, outside the docs root) from `.claude/hit-em-with-the-docs.json`;
     - one generation per folder, `<YYYY-MM-DD>` with an optional `-N` suffix;
     - the outgoing tree's ledger is at `.documentation-cold/.generations/<gen>/ledger.json`, never indexed;
     - manifest entries also carry `untracked_files` (gitignored files kept on disk). Parse it, index those files like any other (they are in the generation and covered by #97's secrets lane), and record the decision.
     One function, `coldGenerations(projectRoot)`, lists the generations on disk and joins them with the manifest: `registered | unregistered | checksum-mismatch | disabled | missing-path`. The notice, `get_stats` and `healthcheck` all use it. It is cheap (readdir plus JSON, no hashing), so the session hook stays fast.
-  - [ ] Unit tests in `test/unit/federation.test.ts`.
+  - [x] Unit tests in `test/unit/federation.test.ts`.
 - [ ] Phase 4: Registry, opt-in sources stay closed until asked; locked sources never reconcile
   - [ ] `src/mcp/sources.ts`: `open()` returns only `default` sources, so the default path is unchanged. A new `openOptIn(labels)` builds a context lazily, only for named opt-in labels (`long-term` expands to every cold generation). Default traffic never builds or loads an opt-in context.
   - [ ] Locked contexts:
@@ -242,11 +242,20 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - The fake credential is assembled in `test/long-term-fixture.ts` (`FAKE_SECRET`) and written into the fixture copy at test time; the committed fixture holds only `__FAKE_SECRET__`. Tests never put it in a query: the tools echo a query's unknown identifiers back in `missing_terms`.
 - Tests that hold today are plain `it` regression guards, not `it.fails`: `search_semantic`/`search_text`/`read_note` default equality, CLI default equality, a locked source in a `chmod -R a-w` folder indexing under `sourceIndexPath`, a plain search never surfacing a cold generation, `cold_storage: false`, `related_repos: true|false`, and the prompt-hook negatives.
 
+- Phase 3: `coldGenerations(projectRoot, notesPath?)` lives in new `src/core/cold.ts` with `coldChecksum` (pulled forward from Phase 4: checksum-mismatch needs it). It returns `{root, problem?, generations[{generation, path, status}]}`; `problem` is `outside-repo` | `inside-docs` for an unusable cold root. It DOES hash registered generations: the cold-notice test needs a real mismatch and a manifest-only comparison cannot see one. No cache yet (shortcut noted in the code); Phase 7 adds an mtime cache if the hook is slow. `disabled` needs `notesPath` (reads `federation.cold_storage`).
+- Phase 3: manifest parsing is `readColdManifest` in federation.ts (shared by `loadFederation` and `coldGenerations`). Paths are checked lexically and by realpath to stay inside the repo; an absolute path is refused. `loadFederation` skips (with a warning) a generation whose folder is missing. `secrets_findings` lose their `:line` and any absolute or `..` entry. `untracked_files` is not parsed: those files sit inside the generation folder, so they are indexed like any other and need no field. Reserved labels `primary`/`long-term` are dropped for every source kind. A bad `default`/`locked` value drops the source with a warning; a bad `related_repos` value warns and means true.
+- Phase 3: src/mcp/sources.ts `start()` now builds only `default` sources (one filter line), else the cold generations would join every search once the manifest is read. That closes opt-in sources until Phase 4 adds `openOptIn`, so the "locked source indexes without writing into it" guard in long-term-optin.test.ts became `it.fails` until Phase 4 (it passed only because `default` was ignored).
+- Phase 3: the 7 `it.fails` in long-term-federation.test.ts and the `coldChecksum` one became plain `it`; `coldGenerations` tests added there; federation.test.ts expectations gained `default: true, locked: false`.
+
 ## Errors Encountered
+
+- Phase 3: real-corpus-eval beforeAll timed out again inside the full `npm run eval` (machine load); it passes alone (16 passed, 1 expected fail).
 - Phase 2: the first draft of the secrets test put the fake secret in a query; `missing_terms` echoed it back, so the test failed for the wrong reason. Queries now describe the file instead.
 - Phase 2: "a locked source indexes without writing into it" and `cold_storage: false` already passed (an `it.fails` flipped to unexpected-pass), so they became plain `it` guards.
 - Phase 2: the abstention/default tests passed by timing while the opt-in source was still building (federated only once ready). `long-term-default.test.ts` now waits up to 20 s for that build in `beforeAll`, so it fails on every run today; once `default: false` is honoured the wait just times out (20 s, once).
 - Phase 2 validation: `npm run eval` twice hit `real-corpus-eval` beforeAll "Hook timed out in 600000ms" (machine load average 16-35 from other sessions; the corpus and src are unchanged by this phase). The file passes alone (16 passed, 1 expected fail). Load flake, not a regression; the first run was left in the background by a tool timeout and its output cut before the failing name, so the second (verbose) run identified it.
 
 ## Status
-**Phase 3 next.** Phase 2 done: 31 `it.fails` acceptance cases (each confirmed failing as plain `it` for its stated reason) and 20 passing regression guards; see notes.md.
+**Phase 4 next.** Phase 3 done (config parsing, `coldGenerations`).
+
+Previous: **Phase 3 next.** Phase 2 done: 31 `it.fails` acceptance cases (each confirmed failing as plain `it` for its stated reason) and 20 passing regression guards; see notes.md.
