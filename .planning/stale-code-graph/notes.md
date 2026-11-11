@@ -56,3 +56,8 @@ By hand: hewtd 3.3.1 (sibling repo's built dist, read-only; the installed node_m
 
 ## Eval results: Phase 10
 Docs only plus one help-topic step; no ranking change. lint, build, npm test pass (one stdin-eof load flake, passes alone). npm run eval: 24 of 25 files pass; real-corpus-eval fails the same 2 floor tests (search_semantic answer@1 10 < 11) that earlier phases saw on clean main. Floor not lowered; re-baseline decision left to the owner.
+
+## Release review (orchestrator)
+
+- real-corpus-eval held-out `search_semantic` @1 was 10 < floor 11, the same on clean main (1.29.0) and the branch (both runs: semantic 10/21/24, hybrid 18/25/26 of 27). The cause is corpus drift: the docs 1.29.0 added to `.documentation` cost the dense-only arm one paraphrase question. Floors re-set per baseline.json's rule (1 below the best run): split and all @1 9, paraphrase @1 3. Hybrid is unchanged.
+- Own review of the src diff: no change needed. Known limits (documented): uncommitted edits give stale without a drift date; a running server reloads on commit or graph.json change only; a null source_commit re-checks every file ref.
