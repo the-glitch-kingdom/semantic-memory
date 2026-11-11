@@ -56,10 +56,10 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
   - [x] `buildContext` with `locked: true` never calls `loadCodeData`: no export, no span fallback, no grounding. A frozen generation's refs point at code that has moved on, and grounding it against today's tree would mark its history dead. Record the decision.
   - [x] Opt-in sources that are not locked keep today's behaviour (a sibling repo's own export is valid). Record it.
   - [x] Phase 2 locked-source tests pass as plain `it`.
-- [ ] Phase 6: Measure
-  - [ ] Fresh `BAND=1 bash scripts/gate-release.sh 1.29.0`: every count identical (the gate's exports are at HEAD).
-  - [ ] Code-load cost with a stale export (100 commits behind, a few hundred changed files) on a ~1,000-file repo: before and after, in ms. Record it in notes.md.
-  - [ ] By hand on a real stale export: build one with hewtd 3.3.0 (read only, its built dist, in a temp copy of this repo), commit a deletion of a cited file, and check `dead_refs` and `get_stats`.
+- [x] Phase 6: Measure
+  - [x] Fresh `BAND=1 bash scripts/gate-release.sh 1.29.0`: every count identical (the gate's exports are at HEAD). PASS, see notes.
+  - [x] Code-load cost with a stale export (100 commits behind, a few hundred changed files) on a ~1,000-file repo: before and after, in ms. Record it in notes.md. 3 -> 22 ms (+19), see notes.
+  - [x] By hand on a real stale export: build one with hewtd 3.3.0 (read only, its built dist, in a temp copy of this repo), commit a deletion of a cited file, and check `dead_refs` and `get_stats`.
 - [ ] Phase 7: Release prep
   - [ ] Bump all five version fields to 1.30.0, plus the lockfile.
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -106,6 +106,8 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - Phase 2: a first `--source long-term` search only starts the cold index in the background ("skipped, still indexing"); the locked-source test retries up to 4 times until cold hits arrive.
 
 ## Status
-**Phase 6 next.** Phase 5 done: `loadCode` in src/mcp/context.ts returns null for `locked` (decision: a frozen generation's refs would be graded against today's tree; non-locked opt-in sources keep their own export, since a sibling repo's export is valid). Locked-source test is plain `it`, stderr proves no `fewer than half` warning. Earlier: **Phase 5 next.** Phase 4 done: get_stats.codeGraph fields, `code-graph-stale` healthcheck finding (warn above 20 commits or unknown commit; ok otherwise), reload-on-commit test; the get_stats and healthcheck it.fails are plain `it` now. Only the locked-source case stays it.fails (Phase 5).
+**Phase 7 next.** Phase 6 done (gate PASS, +19 ms stale patch, by-hand check ok).
+
+Earlier: **Phase 6 next.** Phase 5 done: `loadCode` in src/mcp/context.ts returns null for `locked` (decision: a frozen generation's refs would be graded against today's tree; non-locked opt-in sources keep their own export, since a sibling repo's export is valid). Locked-source test is plain `it`, stderr proves no `fewer than half` warning. Earlier: **Phase 5 next.** Phase 4 done: get_stats.codeGraph fields, `code-graph-stale` healthcheck finding (warn above 20 commits or unknown commit; ok otherwise), reload-on-commit test; the get_stats and healthcheck it.fails are plain `it` now. Only the locked-source case stays it.fails (Phase 5).
 
 Previous: Phase 3 done: per-ref patching in src/core/code-graph.ts. Three Phase 2 cases are now plain `it`; six `it.fails` remain (get_stats x3, healthcheck, locked source) for Phases 4-5.

@@ -33,3 +33,17 @@ Validation: lint, build, npm test (157 files, 1277 passed) green; eval 24 of 25,
 
 ## Eval results: Phase 5
 No ranking change (locked sources only lose grounding). Locked-source test captures dist CLI stderr: no `fewer than half` warning, no grounding on cold hits. The test now unlocks the read-only generations in cleanup (makeProject().cleanup()).
+
+## Eval results: Phase 6
+
+Fresh `BAND=1 bash scripts/gate-release.sh 1.29.0` (local 1.29.0 vs published 1.29.0, no --cache), PASS, exit 0.
+Every count identical, local vs 1.29.0, on cli and mcp, no export and export:
+- no export: hybrid@1 91/139, hyb@3 115, sem@1 79, multi@1/3/8 20/28/31 of 41, cov@3 0.817, dominance 31, negatives flagged 43/47, false flags 7.
+- export: hybrid@1 94/139, hyb@3 115, sem@1 81, multi@1/3/8 20/28/32, cov@3 0.817, dominance 23, negatives 43/47, false flags 7.
+- mcp vs cli: 0 of 186 questions differ; titled #1 139/139. p95 13-27 ms (cli 14-22), local cold idx 36-37 s, first mcp answer 1.26 s (slow git 0.98 s).
+The gate's exports are at HEAD, so the patch step sees no change; this confirms ranking is untouched.
+
+Code-load cost, stale export (synthetic repo: 1,000 files, 100 docs x 10 refs, export 100 commits behind, 300 files changed), `loadCodeData`, median of 7:
+- main (no patch): 3 ms. This branch: 22 ms (+19 ms: one `git diff --name-only`, one `rev-list --count`, one `git log` for dates, existsSync on touched refs). Bundled src with esbuild in /tmp; not measured on a repo larger than this.
+
+By hand: hewtd 3.3.1 (sibling repo's built dist, read-only; the installed node_modules copy is 2.21.0) ran `index` in a temp clone of this branch, graph.json v1, source_commit = HEAD. Committed a deletion of src/core/claude-run.ts (cited by architecture/architecture-layers.md). After reindex, the dist CLI search shows that doc `{"source":"export+live","stale":true,... dead_refs include "src/core/claude-run.ts"}`; docs with no patched refs stay source "export". MCP get_stats codeGraph: `export_commit` = the export commit, `behind_head` 1, `files_changed_since` 3 (the deletion plus two tracked files the reindex/index rewrote; not 1, expected).
