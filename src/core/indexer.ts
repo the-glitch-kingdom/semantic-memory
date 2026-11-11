@@ -34,8 +34,15 @@ export const IGNORE_GLOBS = ["**/node_modules/**"];
 // symlinked content. glob does cycle detection via visited inodes so
 // circular symlinks are handled safely.
 // Sorted: glob's order depends on I/O timing, and HNSW results depend on insertion order.
-export async function listMarkdown(notesPath: string): Promise<string[]> {
-  return (await glob("**/*.md", { cwd: notesPath, follow: true, ignore: IGNORE_GLOBS })).sort();
+export async function listMarkdown(notesPath: string, skip: string[] = []): Promise<string[]> {
+  const files = (await glob("**/*.md", { cwd: notesPath, follow: true, ignore: IGNORE_GLOBS })).sort();
+  return skip.length ? files.filter((f) => !skip.includes(f)) : files; // exact paths, not globs: a bracket in a name must not widen the skip
+}
+
+/** How a locked or cold source differs from a live one: whole files left out (secrets), and `archive/` kept (the generation is history). */
+export interface SourceRules {
+  skip?: string[];
+  keepArchive?: boolean;
 }
 
 // Invalid YAML (e.g. an unquoted colon in a value) keeps the body searchable with empty frontmatter
@@ -58,21 +65,27 @@ function docSummary(title: string, purpose: unknown, headers: string[], plainTex
   return [title, typeof purpose === "string" ? purpose : "", headers.slice(0, 40).join(" | "), first?.slice(0, 500)].filter(Boolean).join("\n");
 }
 
+/** The path-class config a source indexes with: the 0.3 archive multiplier stays, the archive exclude goes when `keepArchive`. */
+export const sourcePathClass = (notesPath: string, rules: SourceRules): PathClassConfig => {
+  const cfg = loadPathClassConfig(notesPath);
+  return rules.keepArchive ? { ...cfg, exclude: [] } : cfg;
+};
+
 export class Indexer {
   private notesPath: string;
   private processor: any;
   private pathClass: PathClassConfig;
   private fields: IndexFields;
 
-  constructor(notesPath: string) {
+  constructor(notesPath: string, private rules: SourceRules = {}) {
     this.notesPath = notesPath;
-    this.pathClass = loadPathClassConfig(notesPath);
+    this.pathClass = sourcePathClass(notesPath, rules);
     this.fields = loadIndexFields(notesPath);
     this.processor = unified().use(remarkParse).use(remarkWikiLink);
   }
 
   async indexAll(): Promise<IndexedDocument[]> {
-    const files = await listMarkdown(this.notesPath);
+    const files = await listMarkdown(this.notesPath, this.rules.skip);
     // One unreadable file must not take the whole corpus down with it
     const docs = await Promise.all(
       files.map((file) =>

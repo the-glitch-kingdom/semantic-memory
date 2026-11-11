@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { cp, mkdtemp, readFile } from "node:fs/promises";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -12,7 +12,7 @@ import { FIXTURES, makeProject, sameJson, type Project } from "../long-term-fixt
 import { SNAP_QUERIES } from "./single-source-queries.js";
 
 // #93 acceptance, "default output unchanged": an opt-in source (`default: false`) and a cold_storage manifest are
-// configured, and every default answer must equal a run with neither. `it.fails` = not implemented yet (Phase 3-6).
+// configured, and every default answer must equal a run with neither.
 
 const CLI = join(import.meta.dirname, "..", "..", "dist", "cli", "index.js");
 const strip = (t: string) => JSON.parse(t, (k, v) => (k === "mtime" ? undefined : v)); // the copies' own file times
@@ -41,19 +41,14 @@ describe("default traffic with an opt-in source and a cold_storage manifest conf
     baseDir = await mkdtemp(join(tmpdir(), "lt-base-"));
     await cp(join(FIXTURES, "docs-vault"), baseDir, { recursive: true });
     [configured, baseline] = await Promise.all([connect(p.docs), connect(baseDir)]);
-    // Today the opt-in source is federated once its background build finishes (its first answers skip it), so let it finish:
-    // the tests below then fail on every run, not only on a fast one. Once `default: false` is honoured it never builds; this just times out.
-    await configured.callTool({ name: "search_hybrid", arguments: { query: "gateway" } });
-    const built = () => { try { return readdirSync(join(p.index, "sources"), { recursive: true }).some((f) => String(f).endsWith("manifest.json")); } catch { return false; } };
-    for (let t = Date.now() + 20_000; !built() && Date.now() < t; ) await new Promise((ok) => setTimeout(ok, 300));
+    await configured.callTool({ name: "search_hybrid", arguments: { query: "gateway" } }); // warm the first answer
   }, 240_000);
   afterAll(async () => {
     await Promise.all([configured.close(), baseline.close()]);
     await Promise.all([p.cleanup(), cleanupTempDir(baseDir)]);
   });
 
-  // the opt-in source is ignored today (its `default` key is not read), so it is federated and every hit gains `source`
-  it.fails("search_hybrid answers exactly as v1.18.0 did (the snapshot): same fields, order, one content block, no source label", async () => {
+  it("search_hybrid answers exactly as v1.18.0 did (the snapshot): same fields, order, one content block, no source label", async () => {
     const snap = JSON.parse(await readFile(join(FIXTURES, "federation", "single-source-snapshot.json"), "utf-8"));
     expect(snap.length).toBe(SNAP_QUERIES.length);
     for (const { args, content, _meta } of snap) {
@@ -66,7 +61,7 @@ describe("default traffic with an opt-in source and a cold_storage manifest conf
     }
   });
 
-  it.fails("abstention flags and absence of source labels equal a run with nothing configured", async () => {
+  it("abstention flags and absence of source labels equal a run with nothing configured", async () => {
     for (const query of ["what is the weather on mars", "What does the nonexistent_function_xyz helper return?", "What is the default value of TIDEWATCH_FLUSH_MS?"]) {
       const a = await call(configured, "search_hybrid", { query, limit: 5 });
       const b = await call(baseline, "search_hybrid", { query, limit: 5 });
@@ -88,7 +83,7 @@ describe("default traffic with an opt-in source and a cold_storage manifest conf
     }
   });
 
-  it.fails("never builds or loads the opt-in source's index on default traffic: nothing under <primary index>/sources/", async () => {
+  it("never builds or loads the opt-in source's index on default traffic: nothing under <primary index>/sources/", async () => {
     await call(configured, "search_hybrid", { query: "what is the single entry point for client requests" });
     await call(configured, "search_text", { query: "gateway" });
     expect(existsSync(join(p.index, "sources"))).toBe(false);

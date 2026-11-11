@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { normalize } from "node:path";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { appendEvent, wasRecentlySearched } from "../../core/telemetry.js";
@@ -13,8 +14,11 @@ export function registerReadTools(server: McpServer, ctx: ServerContext): void {
     async ({ path, source, section }) => {
       let crud = ctx.crud;
       if (source && source !== PRIMARY_LABEL) {
-        const hit = (await registryFor(ctx).open()).ready.find((h) => h.label === source);
+        const reg = registryFor(ctx);
+        const hit = (await reg.open()).ready.find((h) => h.label === source) ?? (await reg.openOptIn([source])).ready[0];
         if (!hit) return ctx.textResponse(`Unknown or unavailable source "${source}". Use the label a search result carries.`);
+        // a file the rotation's secrets scan flagged is never served, even though it is on disk
+        if (hit.secrets?.includes(normalize(path))) return ctx.textResponse(`"${path}" in source "${source}" was flagged by a secrets scan and is not served.`);
         crud = hit.ctx.crud;
       }
       const content = await crud.read(path);

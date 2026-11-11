@@ -45,3 +45,6 @@ The `hewtd-config.json` fixture pins the #97 contract (comment 2026-11-11): `col
 
 ## Eval results: Phase 3
 No ranking change; config parsing only. No eval run (src/core/federation.ts is read at server start, not on the search path).
+
+## Eval results: Phase 4
+No ranking change for default queries (open() path untouched apart from reading the federation lazily); no eval measured. `coldChecksum` on a 1,000-file tree (20 dirs, 7.9 MB of markdown): about 20 ms per call warm, under 65 ms for three calls including the first. Well under the 2 s line, so no mandatory cache; the once-per-process plus folder-mtime check is kept for repeated queries.

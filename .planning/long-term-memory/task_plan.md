@@ -74,20 +74,20 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
     - manifest entries also carry `untracked_files` (gitignored files kept on disk). Parse it, index those files like any other (they are in the generation and covered by #97's secrets lane), and record the decision.
     One function, `coldGenerations(projectRoot)`, lists the generations on disk and joins them with the manifest: `registered | unregistered | checksum-mismatch | disabled | missing-path`. The notice, `get_stats` and `healthcheck` all use it. It is cheap (readdir plus JSON, no hashing), so the session hook stays fast.
   - [x] Unit tests in `test/unit/federation.test.ts`.
-- [ ] Phase 4: Registry, opt-in sources stay closed until asked; locked sources never reconcile
-  - [ ] `src/mcp/sources.ts`: `open()` returns only `default` sources, so the default path is unchanged. A new `openOptIn(labels)` builds a context lazily, only for named opt-in labels (`long-term` expands to every cold generation). Default traffic never builds or loads an opt-in context.
-  - [ ] Locked contexts:
+- [x] Phase 4: Registry, opt-in sources stay closed until asked; locked sources never reconcile
+  - [x] `src/mcp/sources.ts`: `open()` returns only `default` sources, so the default path is unchanged. A new `openOptIn(labels)` builds a context lazily, only for named opt-in labels (`long-term` expands to every cold generation). Default traffic never builds or loads an opt-in context.
+  - [x] Locked contexts:
     - load the cached index or build once;
     - never run `ensureFresh` or `reconcileNow` afterwards;
     - a changed folder is detected by the checksum check (below), not by reconcile.
     Add a `locked` option to `buildContext` (src/mcp/context.ts) that makes `ensureFresh` a no-op once an index exists. Keep `readOnly: true`.
-  - [ ] **Checksum.**
+  - [x] **Checksum.**
     - Before indexing, and on load, compute the generation's checksum and compare it with the manifest's.
     - On a mismatch, skip that source with the existing one-line `[federation: source "<label>" skipped, …]` note.
     - The checksum algorithm is NOT specified in hit-em-with-the-docs#97. Implement one documented function (`coldChecksum(dir)`: sha256 over sorted `relpath\0sha256(file)\n` lines, every regular file, symlinks not followed), and record in notes.md that #97 must use the same definition. Test it against a hand-computed value.
     - Cost on a 1,000-file tree: measure. If it exceeds about 2 s, verify once per process, and on later loads only if the folder's mtime changed.
-  - [ ] **Secrets.** Files named in `secrets_findings` (the path part of `path:line`) are excluded before parsing: never embedded, indexed or returned, and `read_note` on them refuses. Exclude whole files, not lines (a line number can shift; a missed redaction would embed a secret). Record the decision.
-  - [ ] **archive/ inside a cold generation is searchable** (the whole generation is history). Locked and cold sources do not apply the default `**/archive/**` exclude; the 0.3 multiplier stays. Decide on the fixture, record it, and test it.
+  - [x] **Secrets.** Files named in `secrets_findings` (the path part of `path:line`) are excluded before parsing: never embedded, indexed or returned, and `read_note` on them refuses. Exclude whole files, not lines (a line number can shift; a missed redaction would embed a secret). Record the decision.
+  - [x] **archive/ inside a cold generation is searchable** (the whole generation is history). Locked and cold sources do not apply the default `**/archive/**` exclude; the 0.3 multiplier stays. Decide on the fixture, record it, and test it.
 - [ ] Phase 5: Tools take `sources`
   - [ ] `search_hybrid`, `search_semantic` and `search_text` take an optional `sources: string[]`.
     - Absent: exactly today's behaviour (default sources only).
@@ -247,7 +247,16 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 3: src/mcp/sources.ts `start()` now builds only `default` sources (one filter line), else the cold generations would join every search once the manifest is read. That closes opt-in sources until Phase 4 adds `openOptIn`, so the "locked source indexes without writing into it" guard in long-term-optin.test.ts became `it.fails` until Phase 4 (it passed only because `default` was ignored).
 - Phase 3: the 7 `it.fails` in long-term-federation.test.ts and the `coldChecksum` one became plain `it`; `coldGenerations` tests added there; federation.test.ts expectations gained `default: true, locked: false`.
 
+- Phase 4: `SourceRegistry.openOptIn(labels)` returns `{ready, notes, unknown}`; `long-term` expands to every source with `historical`; `primary` and default labels are ignored (open() has them). Opt-in handles are built on first ask, in a separate map from `open()`, so default traffic cannot reach them (unit test: no dir under `<index>/sources/`).
+- Phase 4: locked is a `buildContext` option `locked` (plus `skipFiles`). `ensureFresh` returns at once; a cached index loads as `ready` (never `stale`); an older-parser cached index is rebuilt, not served. The registry never calls `reconcileNow` on a locked source.
+- Phase 4: change detection. Cold: the manifest checksum is compared before building and again when the folder's own mtime moves; a mismatch skips the source with `[federation: source "x" skipped, checksum does not match the manifest, ...]`. Locked without a manifest checksum (`frozen`): the checksum of the folder at build time is recorded in `<index>/locked.json`; a later difference keeps the old index answering with `[federation: source "x" changed since it was indexed, ...]`. Shortcut: hashed once per process, re-hashed only when the folder's mtime moves, so an in-place edit of a locked file is seen at the next restart. Measured: coldChecksum on 1,000 files (7.9 MB) takes about 20 ms warm (under 65 ms for three runs including the first), far under the 2 s line, so the mtime cache is a nicety, not a need.
+- Phase 4: secrets are excluded by exact relative path (not glob, so a bracket in a name cannot widen the skip) in `listMarkdown`, hence in indexAll and reconcile; the skip list is part of the parser key, so a changed list re-parses. `read_note {source}` refuses a flagged path (normalized). Whole files, never lines.
+- Phase 4: archive/ in a locked source is searchable: `sourcePathClass` empties `path_class.exclude` for `locked` sources; the `**/archive/**` 0.3 multiplier stays. Decided on the fixture (cold-a/archive/pelican-sharding-plan.md is indexed); applies to every locked source, cold or not.
+- Phase 4: `read_note {source}` already resolves opt-in labels through openOptIn (Phase 5 item, done here because the secrets refusal sits on that path).
+
 ## Errors Encountered
+
+- Phase 4: the integration `it.fails` cases in long-term-optin.test.ts all send `sources` to a tool, which Phase 5 adds; so they stay `it.fails` and the Phase 4 behaviour is proved by test/unit/registry-optin.test.ts against the registry directly.
 
 - Phase 3: real-corpus-eval beforeAll timed out again inside the full `npm run eval` (machine load); it passes alone (16 passed, 1 expected fail).
 - Phase 2: the first draft of the secrets test put the fake secret in a query; `missing_terms` echoed it back, so the test failed for the wrong reason. Queries now describe the file instead.
@@ -256,6 +265,8 @@ Tests use fixtures in exactly that shape; no hewtd install is needed. The `check
 - Phase 2 validation: `npm run eval` twice hit `real-corpus-eval` beforeAll "Hook timed out in 600000ms" (machine load average 16-35 from other sessions; the corpus and src are unchanged by this phase). The file passes alone (16 passed, 1 expected fail). Load flake, not a regression; the first run was left in the background by a tool timeout and its output cut before the failing name, so the second (verbose) run identified it.
 
 ## Status
-**Phase 4 next.** Phase 3 done (config parsing, `coldGenerations`).
+**Phase 5 next.** Phase 4 done (lazy opt-in registry, locked, checksum, secrets, archive).
+
+Previous: Phase 3 done (config parsing, `coldGenerations`).
 
 Previous: **Phase 3 next.** Phase 2 done: 31 `it.fails` acceptance cases (each confirmed failing as plain `it` for its stated reason) and 20 passing regression guards; see notes.md.

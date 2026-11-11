@@ -30,8 +30,8 @@ export const sha256 = (data: string | Buffer): string => createHash("sha256").up
  * stat changed but same bytes (touch, git checkout) -> manifest only; bytes changed or new -> parse.
  * An unreadable file keeps its previous entry, so it is retried next time and never fatal.
  */
-export async function reconcile(notesPath: string, prev: Manifest): Promise<ReconcilePlan> {
-  const files = await listMarkdown(notesPath);
+export async function reconcile(notesPath: string, prev: Manifest, skip: string[] = []): Promise<ReconcilePlan> {
+  const files = await listMarkdown(notesPath, skip);
   const manifest: Manifest = {};
   const parse: string[] = [];
   let changed = false;
