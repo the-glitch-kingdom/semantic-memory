@@ -8,6 +8,16 @@ Old docs generations ("cold" trees, produced by hit-em-with-the-docs#97's rotati
 
 This is the **search side only**. Rotation, staging, the confirmation gate, undo and the secrets scan of the outgoing tree belong to hit-em-with-the-docs#97, not to this repo. Release as 1.29.0 (minor: new config keys, tool parameters and CLI flag; default search byte-identical).
 
+## Dependency: hit-em-with-the-docs#97 (built in that repo, in another session)
+Nothing in this plan touches the hit-em-with-the-docs repo. The rotation, staging, confirmation gate, undo, secrets scan and manifest writing are all #97's. We build against the contract #97 published (comment 2026-11-11T03:29):
+- cold root `.documentation-cold/` or `reconcile.cold_root` (repo-relative, outside the docs root);
+- generations `<YYYY-MM-DD>[-N]/`, read-only;
+- ledger at `.generations/<gen>/ledger.json`;
+- `cold_storage` entries `{generation, path, source_commit, rotated_at, checksum, secrets_findings, untracked_files}` in `.claude/hit-em-with-the-docs.json`;
+- planned for hewtd 3.2.0.
+
+Tests use fixtures in exactly that shape; no hewtd install is needed. The `checksum` definition is ours until #97 confirms it (Key Question 2).
+
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
 - [ ] Phase 2: Acceptance as failing tests first (`it.fails` until fixed); fixtures
@@ -115,6 +125,7 @@ This is the **search side only**. Rotation, staging, the confirmation gate, undo
   - [ ] Long-term recall check: a small set of "what did we do about X" questions against the two fixture generations (train/held-out split as usual). Record @1/@3. Floors come from the measured numbers.
 - [ ] Phase 9: Release prep
   - [ ] Bump all five version fields to 1.29.0, plus the lockfile.
+  - [ ] Contract check: re-read hit-em-with-the-docs#97 and its `feat/cold-rotation-97` branch (read only). Confirm the cold root name, the generation folder pattern, the manifest fields and the checksum definition still match ours. If hewtd 3.2.0 has shipped, run one real `reconcile` rotation into a temp repo copy and check that semantic-memory registers, notifies and searches it. Record any mismatch under Errors Encountered and fix it on our side. If #97 is not settled, ship anyway: the fixtures pin the published contract. Say so in the changelog.
 - [ ] Phase 10: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 11: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as plain `it`.
