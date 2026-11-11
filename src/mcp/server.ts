@@ -81,7 +81,7 @@ export async function createServer(notesPath: string, options: ServerOptions = {
     const cached = await ctx.tryLoadCachedIndex();
     if (!cached || options.forceReindex) await ctx.fullIndex();
     else await ctx.reconcileNow();
-  } else {
+  } else if (!options.skipStartIndex) {
     ctx.tryLoadCachedIndex()
       .then((cached) => (cached ? ctx.reconcileNow() : ctx.backgroundIndex()))
       .catch((err) => {

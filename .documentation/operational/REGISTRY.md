@@ -3,7 +3,7 @@ title: Operational Registry
 tier: reference
 domains: [operational]
 status: active
-last_updated: '2026-11-10'
+last_updated: '2026-11-11'
 version: '1.0.0'
 generated: true
 purpose: Quick reference for operational documentation
@@ -17,7 +17,7 @@ purpose: Quick reference for operational documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 19 |
+| Documents | 20 |
 | Category | features |
 | Load Priority | 6/10 |
 
@@ -36,17 +36,17 @@ purpose: Quick reference for operational documentation
 
 ## Recently Updated
 
+- [Federation guide](federation-guide.md) - 2026-11-11
+- [Long-term memory guide](long-term-memory-guide.md) - 2026-11-11
 - [Confidence Decay — Operating Guide](decay-guide.md) - 2026-11-10
-- [Federation guide](federation-guide.md) - 2026-11-08
 - [Retrieval Eval Guide](retrieval-eval-guide.md) - 2026-11-07
 - [Retrieval Tuning Guide](retrieval-tuning-guide.md) - 2026-11-07
-- [Search gaps - reading gaps and handing it to hewtd](search-gaps-guide.md) - 2026-11-07
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 19 |
+| active | 20 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
@@ -62,4 +62,4 @@ purpose: Quick reference for operational documentation
 
 ---
 
-*Last updated: 2026-11-10*
+*Last updated: 2026-11-11*

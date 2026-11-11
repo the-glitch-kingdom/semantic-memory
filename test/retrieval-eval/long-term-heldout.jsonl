@@ -1,0 +1,11 @@
+// Long-term memory golden set (#93 Phase 8): questions over the two fixture cold generations (test/fixtures/long-term). Our own questions; `expected` is (source, path) in the cold generation. The heldout file is never used to choose anything.
+{"id": "h01", "q": "Did we ever consider partitioning the pelican ledger across regions?", "expected": [{"source": "cold-2026-01-15", "path": "archive/pelican-sharding-plan.md"}]}
+{"id": "h02", "q": "What happens to a worker that does not win the lease?", "expected": [{"source": "cold-2026-01-15", "path": "operational/skerry-cache-stampede.md"}]}
+{"id": "h03", "q": "Why were stale prices a concern with the cache?", "expected": [{"source": "cold-2026-01-15", "path": "operational/skerry-cache-stampede.md"}]}
+{"id": "h04", "q": "What did the trailing line of the retired invoice file contain?", "expected": [{"source": "cold-2026-03-01-2", "path": "archive/marlin-invoice-format.md"}]}
+{"id": "h05", "q": "How many columns were in each record of the old invoice file?", "expected": [{"source": "cold-2026-03-01-2", "path": "archive/marlin-invoice-format.md"}]}
+{"id": "h06", "q": "Are invoices issued when a usage event closes?", "expected": [{"source": "cold-2026-03-01-2", "path": "decisions/quillon-billing-migration.md"}]}
+{"id": "h07", "q": "How long did parallel running last before the batch was retired?", "expected": [{"source": "cold-2026-03-01-2", "path": "decisions/quillon-billing-migration.md"}]}
+{"id": "h08", "q": "What was the main workload that drove the ledger decision?", "expected": [{"source": "cold-2026-01-15", "path": "archive/pelican-sharding-plan.md"}]}
+{"id": "h09", "q": "How do we replay usage events into the old importer?", "expected": [{"source": "cold-2026-03-01-2", "path": "decisions/quillon-billing-migration.md"}]}
+{"id": "h10", "q": "How long can the previous value be served during a cache stampede?", "expected": [{"source": "cold-2026-01-15", "path": "operational/skerry-cache-stampede.md"}]}

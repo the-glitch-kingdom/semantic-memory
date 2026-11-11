@@ -3,7 +3,7 @@ title: Operational Documentation Index
 tier: reference
 domains: [operational]
 status: active
-last_updated: '2026-11-10'
+last_updated: '2026-11-11'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of operational documentation
@@ -15,7 +15,7 @@ purpose: Complete listing of operational documentation
 
 ## Overview
 
-- **Total Documents:** 19
+- **Total Documents:** 20
 - **Domain:** `operational/`
 - **Category:** features
 - **Load Priority:** 6/10
@@ -32,9 +32,10 @@ purpose: Complete listing of operational documentation
 | [Entity Dossiers — Operating Guide](dossiers-guide.md) | active | 2026-07-11 | 1,114 | How to operate v1.5.0 entity dossiers day to day — create them, accrete incidents and current state in place, understand two-hop retrieval, feed the lexicon via aliases, seed from babel-fish, and troubleshoot resolution misses. |
 | [Drift detection — SessionStart auto-check + /healthcheck deep audit](drift-detection.md) | active | 2026-10-28 | 1,595 | Operational guide to drift detection. The fast-tier auto-check that fires on every SessionStart, the manual /healthcheck deep audit, what each finding means, and how to fix them. |
 | [Failure-time fact lookup — enabling it, writing findable facts, measuring it](failure-lookup-guide.md) | active | 2026-10-25 | 775 | How to turn on the opt-in PostToolUseFailure fact lookup, what it injects and when, how to write gotcha facts it can find (symptoms with the literal error), how it coexists with other failure hooks, and how to measure it on your own failures with eval-failures. |
-| [Federation guide](federation-guide.md) | active | 2026-11-08 | 387 | How to search other vaults and sibling docs trees from one search_hybrid call, what it costs, and its limits. |
+| [Federation guide](federation-guide.md) | active | 2026-11-11 | 387 | How to search other vaults and sibling docs trees from one search_hybrid call, what it costs, and its limits. |
 | [Jev mode — closed-set decisions through jev-loop](jev-mode.md) | active | 2026-10-25 | 728 | What jev mode does, what it needs, what is sent to TypeSafe and how, what it costs, the measured judge agreement and failure-hook results, the skill-loop questions it answers, and how to turn it off. |
 | [Lexicon & Query Expansion — Operating Guide](lexicon-guide.md) | active | 2026-07-10 | 988 | How to operate the v1.4.0 human-to-LLM bridge day to day — add and inspect lexicon aliases, resolve alias_conflicts, capture verbatim symptoms, and understand Tier-1/Tier-2 query expansion. |
+| [Long-term memory guide](long-term-memory-guide.md) | active | 2026-11-11 | 723 | How to search old docs generations (long-term memory) on request, what is never searched by default, how to rebuild a frozen generation, and what the session-start notice means. |
 | [Modes Guide](modes-guide.md) | active | 2026-10-28 | 1,113 | vault-first / research / outage-silence entry signals, behavior, misroute recovery |
 | [Retrieval Eval Guide](retrieval-eval-guide.md) | active | 2026-11-07 | 448 | How to measure retrieval on your own vault with semantic-memory eval - question sets, generated questions, floors, the noise band, all versus clean. |
 | [Retrieval Tuning Guide](retrieval-tuning-guide.md) | active | 2026-11-07 | 606 | How search_hybrid ranks, how frontmatter fields are indexed, what confidence and no_strong_match mean, which knobs exist (index_fields, ranking, path_class.exclude, graph.exclude_hubs, rerank), what lost, and how to run and extend the retrieval eval. |
@@ -61,4 +62,4 @@ This domain covers: operational, guide, operate, sessions, dossier
 
 ---
 
-*Last updated: 2026-11-10*
+*Last updated: 2026-11-11*

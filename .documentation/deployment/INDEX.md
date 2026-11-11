@@ -3,7 +3,7 @@ title: Deployment Documentation Index
 tier: reference
 domains: [deployment]
 status: active
-last_updated: '2026-11-10'
+last_updated: '2026-11-11'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of deployment documentation
@@ -40,4 +40,4 @@ This domain covers: deployment, publish, release, tarball, offline
 
 ---
 
-*Last updated: 2026-11-10*
+*Last updated: 2026-11-11*

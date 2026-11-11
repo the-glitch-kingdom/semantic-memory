@@ -1,4 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { realpathSync } from "node:fs";
+import { isAbsolute, join, normalize, relative, sep } from "node:path";
 import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { appendEvent, wasRecentlySearched } from "../../core/telemetry.js";
@@ -12,9 +14,20 @@ export function registerReadTools(server: McpServer, ctx: ServerContext): void {
     { path: z.string(), source: z.string().optional().describe("Source label from a federated search result; omit for this vault."), section: z.string().optional().describe("Heading name or #anchor — return only that section (heading through the next same-or-higher heading).") },
     async ({ path, source, section }) => {
       let crud = ctx.crud;
+      if (source === "long-term") return ctx.textResponse(`"long-term" is a search target, not one folder. Read with the label a long-term hit carries (cold-<date>).`);
       if (source && source !== PRIMARY_LABEL) {
-        const hit = (await registryFor(ctx).open()).ready.find((h) => h.label === source);
+        const reg = registryFor(ctx);
+        const hit = (await reg.open()).ready.find((h) => h.label === source) ?? (await reg.openOptIn([source])).ready[0];
         if (!hit) return ctx.textResponse(`Unknown or unavailable source "${source}". Use the label a search result carries.`);
+        // a file the rotation's secrets scan flagged is never served, even though it is on disk
+        if (hit.secrets?.includes(normalize(path))) return ctx.textResponse(`"${path}" in source "${source}" was flagged by a secrets scan and is not served.`);
+        if (hit.locked) { // a link inside a frozen tree must not reach a flagged file or a file outside the tree
+          try {
+            const root = realpathSync(hit.path);
+            const real = relative(root, realpathSync(join(root, path)));
+            if (real.startsWith("..") || isAbsolute(real) || hit.secrets?.includes(real.split(sep).join("/"))) return ctx.textResponse(`"${path}" in source "${source}" is not served.`);
+          } catch { /* a missing file falls through to crud.read's own error */ }
+        }
         crud = hit.ctx.crud;
       }
       const content = await crud.read(path);

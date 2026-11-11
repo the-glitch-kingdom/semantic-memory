@@ -190,15 +190,16 @@ const TOOL_HELP: Record<string, { description: string; args: string; examples: s
   // Search
   search_semantic: {
     description: "Vector similarity search — find notes by meaning, not just keywords",
-    args: '{ "query": "string", "limit?": 10 }',
+    args: '{ "query": "string", "limit?": 10, "sources?": ["string"] }',
     examples: [
       '{ "query": "microservices architecture", "limit": 5 }',
+      '{ "query": "what did we do about X", "sources": ["long-term"] }',
       '{ "query": "how to deploy to production" }',
     ],
   },
   search_text: {
     description: "Full-text keyword or regex search with optional filters",
-    args: '{ "pattern": "string", "regex?": false, "caseSensitive?": false, "pathGlob?": "string", "tagFilter?": ["string"], "limit?": 20 }',
+    args: '{ "pattern": "string", "regex?": false, "caseSensitive?": false, "pathGlob?": "string", "tagFilter?": ["string"], "limit?": 20, "sources?": ["string"] }',
     examples: [
       '{ "pattern": "RabbitMQ" }',
       '{ "pattern": "OAuth\\\\d", "regex": true }',
@@ -215,16 +216,17 @@ const TOOL_HELP: Record<string, { description: string; args: string; examples: s
   },
   search_hybrid: {
     description: "Combined semantic + lexical search — vector and BM25 scores fused, re-ranked by load_priority",
-    args: '{ "query": "string", "limit?": 10 }',
+    args: '{ "query": "string", "limit?": 10, "sources?": ["string"] }',
     examples: [
       '{ "query": "event driven architecture", "limit": 5 }',
+      '{ "query": "old rollout plan", "sources": ["primary", "long-term"] }',
     ],
   },
 
   // Read
   read_note: {
-    description: "Read the full content of a specific note by path",
-    args: '{ "path": "string" }',
+    description: "Read the full content of a specific note by path (source: an opt-in or federated source label)",
+    args: '{ "path": "string", "source?": "string" }',
     examples: [
       '{ "path": "project-overview.md" }',
       '{ "path": "notes/meeting-2024-01-15.md" }',
@@ -336,9 +338,9 @@ const TOOL_HELP: Record<string, { description: string; args: string; examples: s
     examples: ["{}"],
   },
   reindex: {
-    description: "Force a full reindex of the vault",
-    args: "{}",
-    examples: ["{}"],
+    description: "Force a full reindex of the vault, or of one source (the explicit rebuild of a locked source)",
+    args: '{ "source?": "string" }',
+    examples: ["{}", '{ "source": "cold-2026-11-11" }'],
   },
 };
 
@@ -391,8 +393,8 @@ function printToolDetail(name: string) {
 program
   .name("semantic-memory")
   .description(
-    "Unified memory-layer MCP server for Claude Code (rebrand of semantic-sidekick at v1.0.0).\n" +
-    "The `semantic-sidekick` command is preserved as an alias.\n\n" +
+    "Unified memory-layer MCP server for Claude Code: search a markdown docs vault by meaning and by text.\n" +
+    "The legacy `semantic-sidekick` command is an alias. Run `semantic-memory help` for task-shaped help.\n\n" +
     "  Start MCP server:  semantic-memory --notes ./vault\n" +
     "  Show vault stats:  semantic-memory --notes ./vault --stats\n" +
     "  Force reindex:     semantic-memory --notes ./vault --reindex\n" +
@@ -404,14 +406,23 @@ program
 program
   .command("search <query>")
   .description("Run a vault search and print top hits as JSON (used by activation hooks)")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
-  .option("--limit <n>", "Max results", (v) => parseInt(v, 10), 8)
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
+  .option("--limit <n>", "Max results (the MCP search_hybrid tool defaults to 10)", (v) => parseInt(v, 10), 8)
   .option("--text-only", "Skip embedder — keyword-only search (fast path, no model init)")
-  .option("--json", "Emit raw JSON (default)", true)
+  .option("--json", "Accepted for scripts; output is JSON already (use --paths for plain paths)")
   .option("--paths", "Print one vault-relative doc path per line instead of JSON (for hit-em-with-the-docs reconcile.search_command)")
+  .option("--source <label>", "Search this source instead of the default set (repeatable): an opt-in source label, 'long-term' (every old docs generation) or 'primary'. Hits carry source and historical", (v: string, prev: string[] = []) => [...prev, v])
+  .option("--reindex", "With --source: rebuild the named source's index first, then search (the explicit rebuild of a locked source)")
   .action(async (query: string, opts) => {
     const { runSearch, pathsOutput } = await import("./search.js");
     try {
+      if (opts.reindex && !opts.source) throw new Error("--reindex needs --source <label>");
+      if (opts.source) {
+        const { runSourceSearch } = await import("./search-sources.js");
+        const hits = await runSourceSearch({ notes: opts.notes, query, limit: opts.limit, sources: opts.source, reindex: opts.reindex });
+        process.stdout.write(opts.paths ? pathsOutput(hits as any) : JSON.stringify(hits, null, 2) + "\n");
+        process.exit(0);
+      }
       const hits = await runSearch({
         notes: opts.notes,
         query,
@@ -428,7 +439,7 @@ program
 
 program
   .command("eval-failures")
-  .description("Replay failed tool calls through search and measure how often the top hit answers them (v1.6 failure lookup)")
+  .description("Replay failed tool calls through search and measure how often the top hit answers them")
   .requiredOption("--cases <file>", "JSONL of {id, notes, error, command}")
   .requiredOption("--judgments <file>", "JSONL of {case, path, relevant}")
   .option("--limit <n>", "Hits per search", (v) => parseInt(v, 10), 5)
@@ -517,7 +528,7 @@ program
 program
   .command("lint")
   .description("Lint the vault against vault.schema.yml (schema violations + missing provenance + stale)")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .option("--rule <name>", "Limit output to one rule: schema_violations | missing_provenance | stale")
   .option("--json", "Emit JSON instead of the human-readable report")
   .option("--strict", "Exit non-zero on warnings too (default: exit non-zero only on errors)")
@@ -540,7 +551,7 @@ program
 program
   .command("log-event")
   .description("Append a structured event to the vault's log.md (used by hooks and CI scripts — same shape as the vault server's log_event tool)")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .requiredOption("--kind <name>", "Event category: ingest, synthesis, error, mode_change, etc.")
   .requiredOption("--summary <text>", "One-line human summary")
   .option("--payload <json>", "Structured payload as JSON string")
@@ -572,7 +583,7 @@ program
 program
   .command("log-query")
   .description("Read structured log entries from log.md — filters by kind, date range, limit")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .option("--kind <name>", "Filter by kind (ingest, synthesis, error, mode_change, etc.)")
   .option("--after <iso>", "ISO timestamp — only entries on or after")
   .option("--before <iso>", "ISO timestamp — only entries on or before")
@@ -596,7 +607,7 @@ program
 program
   .command("install-schema")
   .description("Bootstrap vault.schema.yml in the vault root with the default schema")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .option("--force", "Overwrite existing schema file")
   .action(async (opts) => {
     const { installDefaultSchema } = await import("../core/schema.js");
@@ -629,7 +640,7 @@ program
 program
   .command("serve", { isDefault: true })
   .description("Start the MCP server (default command)")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .option("--reindex", "Force full reindex and exit")
   .option("--stats", "Show vault statistics and exit")
   .option("--wait-for-ready", "Block startup until index is fully built before serving (default: index in background; tools return 'Indexing in progress' until ready)")
@@ -922,8 +933,8 @@ skillsCmd
   .command("targets")
   .description("Preview where skill bundles would be installed for one or more agents.")
   .option("--agent <name...>", "One or more agents (default: all). Repeatable.", undefined as any)
-  .option("--scope <scope>", "global or local (default: local)", "local")
-  .option("--project <path>", "Project root for local-scope paths (default: cwd)", process.cwd())
+  .option("--scope <scope>", "global or local", "local")
+  .option("--project <path>", "Project root for local-scope paths", process.cwd())
   .action((opts) => {
     const scope = parseScope(opts.scope);
     const agents: AgentName[] = (opts.agent && opts.agent.length > 0 ? opts.agent : SKILL_BUNDLER_AGENTS).map(parseAgent);
@@ -935,8 +946,8 @@ skillsCmd
   .command("install")
   .description("Install skill bundles into an agent's skill directory. Non-destructive by default; --force to overwrite.")
   .requiredOption("--agent <name>", "Agent runtime (claude, codex, copilot, pi)")
-  .option("--scope <scope>", "global or local (default: local)", "local")
-  .option("--project <path>", "Project root for local-scope paths (default: cwd)", process.cwd())
+  .option("--scope <scope>", "global or local", "local")
+  .option("--project <path>", "Project root for local-scope paths", process.cwd())
   .option("--only <names...>", "Restrict to specific skill names (default: all shipped)")
   .option("--force", "Overwrite even if drift is detected against an existing manifest", false)
   .action(async (opts) => {
@@ -970,8 +981,8 @@ skillsCmd
   .command("uninstall")
   .description("Remove skill bundles tracked by the semantic-memory manifest. User-written skills outside the manifest are left untouched.")
   .requiredOption("--agent <name>", "Agent runtime (claude, codex, copilot, pi)")
-  .option("--scope <scope>", "global or local (default: local)", "local")
-  .option("--project <path>", "Project root for local-scope paths (default: cwd)", process.cwd())
+  .option("--scope <scope>", "global or local", "local")
+  .option("--project <path>", "Project root for local-scope paths", process.cwd())
   .action(async (opts) => {
     const agent = parseAgent(opts.agent);
     const scope = parseScope(opts.scope);
@@ -1006,7 +1017,7 @@ program
     "When both old and new paths exist, prefer the new path and delete the old one.",
     false,
   )
-  .option("--project <path>", "Project root (default: cwd)", process.cwd())
+  .option("--project <path>", "Project root", process.cwd())
   .action((opts) => {
     const result = migrateState({
       projectRoot: opts.project,
@@ -1027,7 +1038,7 @@ program
 program
   .command("decay-config")
   .description("Print the active confidence-decay config (shipped defaults + any vault.schema.yml override).")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .action(async (opts) => {
     const { loadDecayConfig, DEFAULT_DECAY_CONFIG } = await import("../core/decay.js");
     const cfg = loadDecayConfig(resolve(opts.notes));
@@ -1039,7 +1050,7 @@ program
 program
   .command("decay-trace <notePath>")
   .description("Show the decay calculation for one note: type, last_verified, age, half-life, evergreen, multiplier.")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .action(async (notePath: string, opts) => {
     const { loadDecayConfig, computeDecay, normalizeVerifiedDate } = await import("../core/decay.js");
     const matter = (await import("../core/matter.js")).default;
@@ -1083,7 +1094,7 @@ const lexiconCmd = program.command("lexicon").description("Manage the learned hu
 lexiconCmd
   .command("list")
   .description("List all aliases in the lexicon.")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .action(async (opts) => {
     const { loadLexiconCache } = await import("../core/lexicon.js");
     console.log(JSON.stringify(await loadLexiconCache(resolve(opts.notes)), null, 2));
@@ -1093,7 +1104,7 @@ lexiconCmd
 lexiconCmd
   .command("compile")
   .description("Rebuild the derived lexicon cache from the lexicon/ notes.")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .action(async (opts) => {
     const { compileLexicon } = await import("../core/lexicon.js");
     const entries = await compileLexicon(resolve(opts.notes));
@@ -1104,7 +1115,7 @@ lexiconCmd
 lexiconCmd
   .command("add <canonical> <phrases...>")
   .description("Upsert an alias: a canonical target and the human phrases that refer to it.")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .option("--authored", "Mark as human-authored (default: learned)")
   .action(async (canonical: string, phrases: string[], opts) => {
     const { addAlias } = await import("../core/lexicon.js");
@@ -1120,7 +1131,7 @@ const dossierCmd = program.command("dossier").description("Manage entity dossier
 dossierCmd
   .command("init <entity>")
   .description("Scaffold a dossier for an entity (no-op if one already exists). Optionally seed aliases and provenance.")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .option("--alias <phrase...>", "Human phrase(s) for this entity — fed to the lexicon compiler")
   .option("--seeded-from <ref>", "Provenance of the scaffold (e.g. a babel-fish project-map entry)")
   .action(async (entity: string, opts) => {
@@ -1133,7 +1144,7 @@ dossierCmd
 dossierCmd
   .command("list")
   .description("List all dossiers with their entity, aliases, and current state.")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .action(async (opts) => {
     const { listDossiers } = await import("../core/dossier.js");
     console.log(JSON.stringify(await listDossiers(resolve(opts.notes)), null, 2));
@@ -1147,7 +1158,7 @@ const profileCmd = program.command("profile").description("Manage the speaker pr
 profileCmd
   .command("init")
   .description("Scaffold profile/speaker.md with the fixed sections (no-op if it exists).")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .action(async (opts) => {
     const { initSpeakerProfile } = await import("../core/profile.js");
     const r = await initSpeakerProfile(resolve(opts.notes));
@@ -1158,7 +1169,7 @@ profileCmd
 profileCmd
   .command("show")
   .description("Print the speaker profile's injection head (the capped, placeholder-stripped view).")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .action(async (opts) => {
     const { readSpeakerProfile } = await import("../core/profile.js");
     const p = await readSpeakerProfile(resolve(opts.notes));
@@ -1171,7 +1182,7 @@ profileCmd
 program
   .command("selection-stats")
   .description("Summarize the local selection log: searches, selections, most-cited notes, and retrieved-but-never-cited notes.")
-  .requiredOption("--notes <path>", "Path to markdown notes directory")
+  .requiredOption("--notes <path>", "Markdown notes folder (required), e.g. .documentation")
   .option("--json", "Emit raw JSON instead of a human summary")
   .action(async (opts) => {
     const { computeSelectionStats, selectionLogPath } = await import("../core/telemetry.js");
@@ -1196,7 +1207,7 @@ program
 
 skillsCmd
   .command("lint")
-  .description("Lint the skill loop's learned skills this repo loads (v1.7): format, description, evidence, sections, cites, applies_to, secrets, name clashes.")
+  .description("Lint the skill loop's learned skills this repo loads: format, description, evidence, sections, cites, applies_to, secrets, name clashes.")
   .option("--root <dir>", "Repo root (default: cwd)")
   .option("--json", "JSON output")
   .action(async (opts) => {

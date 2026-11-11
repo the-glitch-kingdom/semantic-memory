@@ -3,7 +3,7 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 import { groundDocs, loadCodeData, type CodeData } from "../core/code-graph.js";
 import { repoRoot } from "../core/skill-evidence.js";
-import { Indexer } from "../core/indexer.js";
+import { Indexer, sourcePathClass } from "../core/indexer.js";
 import { Embedder } from "../core/embedder.js";
 import { Reranker, loadRerankConfig } from "../core/reranker.js";
 import { GraphBuilder, loadExcludeHubs } from "../core/graph.js";
@@ -17,7 +17,7 @@ import { FrontmatterManager, TagManager } from "../core/frontmatter.js";
 import { SessionManager, deriveSessionDir } from "../core/session.js";
 import { decayForDoc, groundingBlock, loadDecayConfig, normalizeVerifiedDate, type DecayBlock, type DecayConfig } from "../core/decay.js";
 import { gitBlobId, gitBodyDates, gitCommitDates } from "../core/git-dates.js";
-import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, isSearchableDoc, loadPathClassConfig, type PathClassConfig } from "../core/path-class.js";
+import { pathClassMultiplier, filterPathClass as filterPathClassBy, isExcludedPath, isSearchableDoc, type PathClassConfig } from "../core/path-class.js";
 import { computeUsageBoost, loadUsageBoostConfig, loadCitationCounts, type UsageBoostConfig } from "../core/usage-boost.js";
 import { reconcile, sha256, type Manifest } from "../core/reconcile.js";
 import { commitIndex, filesMatchMeta, ignoreGlobsHash, metaMtime, parserInputs, parserMatches, readMeta } from "../core/index-store.js";
@@ -39,6 +39,15 @@ export interface ServerOptions {
   pooling?: "mean" | "cls";
   queryPrompt?: string;
   readOnly?: boolean;
+  /** createServer: do not load or build the index at start (the CLI's sources-only search). */
+  skipStartIndex?: boolean;
+  /**
+   * A locked source (a cold generation, a frozen folder): the cached index is served as loaded and `ensureFresh` never
+   * reconciles; its `archive/` is searchable (the 0.3 multiplier stays). A changed folder is the registry's checksum check, not reconcile.
+   */
+  locked?: boolean;
+  /** Paths (relative to the source) left out of the index whole: files a secrets scan flagged. */
+  skipFiles?: string[];
   /** Where the index lives. Default `<notes>/.semantic-sidekick-index`; a federation source's goes under the primary's. */
   indexPath?: string;
   /** Use this embedder instead of making one (federation sources share the primary's model and pooling). */
@@ -157,7 +166,8 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
   const indexPath = options.indexPath ?? join(notesPath, ".semantic-sidekick-index");
   await mkdir(indexPath, { recursive: true });
 
-  const indexer = new Indexer(notesPath);
+  const rules = { skip: options.skipFiles, keepArchive: options.locked };
+  const indexer = new Indexer(notesPath, rules);
   const fields = loadIndexFields(notesPath);
   const embedder =
     options.embedder ??
@@ -312,7 +322,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     for (let attempt = 0; attempt < 2; attempt++) {
       const meta = await readMeta(indexPath);
       if (!meta) return false;
-      const older = !parserMatches(meta, parserInputs(getPathClassConfig(), fields));
+      const older = !parserMatches(meta, parserKey());
       if (older && !allowOlder) return false;
       if (meta.model !== embedder.getModel() || meta.dimensions !== embedder.getDimensions() || (meta.pooling ?? "mean") !== embedder.getPooling() || (meta.queryPrompt ?? "") !== embedder.getQueryPrompt()) {
         process.stderr.write(`Model, pooling or query prompt changed (${meta.model} → ${embedder.getModel()}, ${meta.pooling ?? "mean"} → ${embedder.getPooling()}), forcing reindex\n`);
@@ -353,6 +363,11 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       await embedder.init();
       lastMetaMtime = await metaMtime(indexPath);
       if (!(await loadFromDisk(true))) return false;
+      if (options.locked) {
+        if (upgrading) { upgrading = false; return false; } // an older parser's index is rebuilt, never served from a source nothing reconciles
+        indexState = "ready";
+        return true;
+      }
       stale = true; // served now, checked against the tree by the first reconcile
       indexState = "stale";
       return true;
@@ -374,7 +389,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
       }
     }
 
-    const plan = await reconcile(notesPath, rebuild ? {} : manifest);
+    const plan = await reconcile(notesPath, rebuild ? {} : manifest, options.skipFiles, options.locked);
     if (!plan.changed && !rebuild) {
       // the tree is unchanged but the code may not be: a new export or a commit moves the stamp
       if (codeStamp() !== lastCodeStamp) {
@@ -535,7 +550,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
         pooling: embedder.getPooling(),
         queryPrompt: embedder.getQueryPrompt(),
         totalChunks: docs.reduce((n, d) => n + docChunks(d).length, 0),
-        ignoreGlobs: ignoreGlobsHash(parserInputs(getPathClassConfig(), fields)),
+        ignoreGlobs: ignoreGlobsHash(parserKey()),
         bm25SelfTop: selfTop(),
       },
       async (stage) => {
@@ -612,6 +627,7 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
 
   /** Called before every tool. Throttled; a call arriving mid-reconcile awaits it; the first one after a warm load does not wait. */
   async function ensureFresh(): Promise<void> {
+    if (options.locked) return;
     if (indexState === "loading" || indexState === "empty" || fullIndexing > 0) return;
     if (reconcileInFlight) return stale ? undefined : reconcileInFlight;
     if (Date.now() - lastReconcileAt < throttleMs) return;
@@ -667,9 +683,12 @@ export async function buildContext(notesPath: string, options: ServerOptions = {
     return { ...r, score: r.score * multiplier, ...(block && { decay: block }), ...(grounding && { grounding }) };
   }
 
+  /** Everything that decides which files are indexed, skipped secret files included, so a changed list re-parses. */
+  const parserKey = () => [...parserInputs(getPathClassConfig(), fields), ...(options.skipFiles ?? []).map((f) => `skip:${f}`)];
+
   let pathClassConfig: PathClassConfig | null = null;
   function getPathClassConfig(): PathClassConfig {
-    if (!pathClassConfig) pathClassConfig = loadPathClassConfig(notesPath);
+    if (!pathClassConfig) pathClassConfig = sourcePathClass(notesPath, rules);
     return pathClassConfig;
   }
 

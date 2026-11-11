@@ -28,8 +28,8 @@ describe("loadFederation", () => {
     await schema("federation:\n  sources:\n    - path: ../../other\n    - {label: x, path: ../../other2, weight: 0.5}\n");
     const f = loadFederation(vault);
     expect(f.sources).toEqual([
-      { label: "other", path: join(root, "other"), weight: 1 },
-      { label: "x", path: join(root, "other2"), weight: 0.5 },
+      { label: "other", path: join(root, "other"), weight: 1, default: true, locked: false },
+      { label: "x", path: join(root, "other2"), weight: 0.5, default: true, locked: false },
     ]);
   });
 
@@ -79,8 +79,8 @@ describe("loadFederation", () => {
       await hewtd({ reconcile: { related_repos: [{ name: "a", path: "a" }, { name: "b", path: "b" }, { name: "c", path: "c" }] } });
       const f = loadFederation(vault);
       expect(f.sources).toEqual([
-        { label: "a", path: join(root, "a", "docs"), weight: 1 },
-        { label: "b", path: join(root, "b", ".documentation"), weight: 1 },
+        { label: "a", path: join(root, "a", "docs"), weight: 1, default: true, locked: false },
+        { label: "b", path: join(root, "b", ".documentation"), weight: 1, default: true, locked: false },
       ]);
       expect(f.warnings).toHaveLength(1);
     });
@@ -90,7 +90,7 @@ describe("loadFederation", () => {
       await mkdir(join(root, "d", ".claude"), { recursive: true });
       await writeFile(join(root, "d", ".claude", "hit-em-with-the-docs.json"), JSON.stringify({ docs_path: "guides" }));
       await hewtd({ reconcile: { related_repos: [{ name: "d", path: "d" }] } });
-      expect(loadFederation(vault).sources).toEqual([{ label: "d", path: join(root, "d", "guides"), weight: 1 }]);
+      expect(loadFederation(vault).sources).toEqual([{ label: "d", path: join(root, "d", "guides"), weight: 1, default: true, locked: false }]);
     });
 
     it("is off with related_repos: false, and ignores a malformed hewtd config", async () => {

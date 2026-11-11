@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { lintVault } from "./lint.js";
 import { deriveProjectRoot } from "./session.js";
+import { coldGenerations } from "./cold.js";
 
 export type Tier = "fast" | "slow" | "all";
 export type Severity = "ok" | "warn" | "error";
@@ -121,6 +122,7 @@ async function runFastTier(opts: HealthcheckOptions): Promise<DriftFinding[]> {
     checkAgentsContract(opts.projectRoot),
     checkLegacyStateFiles(opts.projectRoot),
     checkUsageLogIgnored(opts.projectRoot),
+    checkColdGenerations(opts.projectRoot),
     ...(await skillManifestChecks(opts.projectRoot)),
   ];
   const results = await Promise.all(checks.map((p) => p.catch((err) => failOpenWarn(err))));
@@ -148,6 +150,22 @@ async function runSlowTier(opts: HealthcheckOptions): Promise<DriftFinding[]> {
     }
   }
   return findings;
+}
+
+/** Long-term memory: a warning for every cold generation that is not searchable (unregistered, checksum mismatch, ...). */
+async function checkColdGenerations(projectRoot: string): Promise<DriftFinding | null> {
+  const docs = join(projectRoot, ".documentation");
+  const { problem, generations } = coldGenerations(projectRoot, existsSync(docs) ? docs : undefined);
+  const bad = generations.filter((g) => g.status !== "registered");
+  if (problem) return { check: "cold-generations", severity: "warn", summary: `cold root is ${problem === "inside-docs" ? "inside the docs root" : "outside the repo"}: long-term memory is ignored` };
+  if (!generations.length) return null;
+  if (!bad.length) return { check: "cold-generations", severity: "ok", summary: `${generations.length} long-term generation(s) registered` };
+  return {
+    check: "cold-generations",
+    severity: "warn",
+    summary: `long-term generations not searchable: ${bad.map((g) => `${g.generation} (${g.status})`).join(", ")}`,
+    detail: "Register them with hit-em-with-the-docs reconcile, or restore the folder so its checksum matches the manifest.",
+  };
 }
 
 function failOpenWarn(err: unknown): DriftFinding {

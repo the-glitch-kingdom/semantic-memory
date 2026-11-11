@@ -8,6 +8,7 @@ export default defineConfig({
     "core/redact": "src/core/redact.ts",
     "core/failure-query": "src/core/failure-query.ts",
     "core/features": "src/core/features.ts",
+    "core/cold": "src/core/cold.ts",
     "core/jev": "src/core/jev.ts",
     "core/skill-evidence": "src/core/skill-evidence.ts",
     "core/skill-queue": "src/core/skill-queue.ts",

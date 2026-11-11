@@ -10,7 +10,7 @@
 //
 // Fails open: any error logs to stderr and emits an empty additionalContext.
 
-import { spawnSync, execFile } from "node:child_process";
+import { spawn, spawnSync, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, basename, dirname } from "node:path";
@@ -1131,6 +1131,60 @@ async function handleFailure(projectRoot, sources, cliBin, input, sessionId, sta
 // injects noise (161 + 49 such searches in real transcripts, up to 0.57-score hits).
 export const isNonHumanPrompt = (prompt) => /^\s*<(task-notification|agent-message)[\s>]/.test(prompt);
 
+// The only prompts that search long-term memory (old docs generations): an explicit request. One list, no model call.
+// Deliberately narrow: "long-term plan", "long term support", "back in the day", "back in 2025 we shipped" must not match.
+export const LONG_TERM_RULES = [
+  /\b(?:search|check|look)\b[^.?!\n]{0,30}\blong[- ]term memory\b/i,
+  /\bin (?:the )?long[- ]term memory\b/i,
+  /\bwhat did we\b[^.?!\n]{0,30}\bback in (?:19|20)\d\d\b/i,
+  /\bback in (?:19|20)\d\d,?\s+(?:what|how|why)\b/i,
+  /\b(?:in|check|search|look (?:in|at|through)) the (?:old|cold) docs\b/i,
+  /\bhistorically,? what did we\b/i,
+];
+export const isLongTermRequest = (prompt) => LONG_TERM_RULES.some((r) => r.test(prompt));
+
+// A first long-term search builds the cold index: about 48 s on a 900-file generation, too long to hold the prompt, and a
+// timed-out CLI is killed, so the build would restart on every prompt. Past this wait the build goes on in the background.
+const LONG_TERM_WAIT_MS = Number(process.env.SEMANTIC_MEMORY_LONG_TERM_WAIT_MS) || 10_000;
+const LONG_TERM_BUILD_MS = 10 * 60_000; // one background build at a time; a stale marker (crashed build) is retried after this
+
+export const LONG_TERM_INDEXING_NOTE = [
+  `<vault-context source="long-term">`,
+  `Long-term memory (old docs generations) is being indexed for its first search; that can take a minute on a large tree. Tell the user, and ask again shortly, or call search_hybrid with sources: ["long-term"] (it answers "Indexing in progress" until ready).`,
+  `</vault-context>`,
+].join("\n");
+
+/** Start one detached long-term index build; false when one started in the last 10 minutes (it is still running, or failed). */
+function startLongTermBuild(projectRoot, cliBin, notes) {
+  const marker = join(projectRoot, ".claude", ".semantic-memory", "long-term-build.json");
+  try {
+    if (Date.now() - JSON.parse(readFileSync(marker, "utf-8")).at < LONG_TERM_BUILD_MS) return false;
+  } catch {
+    /* no marker, or unreadable: start one */
+  }
+  try {
+    mkdirSync(dirname(marker), { recursive: true });
+    writeFileSync(marker, JSON.stringify({ at: Date.now() }));
+    spawn("node", [cliBin, "search", "--notes", notes, "--source", "long-term", "--limit", "1", "long-term memory"], { detached: true, stdio: "ignore" }).unref();
+    return true;
+  } catch (e) {
+    debug(`long-term build spawn failed: ${e.message}`);
+    return false;
+  }
+}
+
+export function formatLongTermBlock(query, hits) {
+  hits = (hits || []).filter((h) => h.historical);
+  if (!hits.length || Math.max(...hits.map((h) => h.score ?? 0)) < INJECT_MIN_SCORE) return "";
+  const lines = [`<vault-context source="long-term" query="${escapeAttr(query)}">`, `Historical: these old docs generations describe past behaviour, not current. Say so when you cite them.`, ""];
+  for (const h of hits.slice(0, 3)) {
+    lines.push(`- \`${h.path}\` (generation ${h.historical.generation}${typeof h.score === "number" ? `, score: ${h.score.toFixed(2)}` : ""})`);
+    if (h.snippet) lines.push(`  > ${h.snippet.replace(/\s+/g, " ").slice(0, 240)}`);
+  }
+  lines.push(`</vault-context>`);
+  return lines.join("\n");
+}
+
 async function handlePrompt(projectRoot, sources, cliBin, input) {
   const prompt = typeof input.prompt === "string" ? input.prompt : "";
   if (!prompt || prompt.length < 8 || isNonHumanPrompt(prompt)) {
@@ -1152,6 +1206,22 @@ async function handlePrompt(projectRoot, sources, cliBin, input) {
     debug(`fingerprint ${fp} recently fired — suppressing`);
     emit("UserPromptSubmit", "");
     return;
+  }
+  if (isLongTermRequest(prompt)) {
+    const notes = sources.find((x) => x.readOnly)?.path ?? sources[0]?.path;
+    const args = ["--notes", notes, "--source", "long-term", "--limit", "8", prompt];
+    const hits = notes ? await runSearchCli(cliBin, args, LONG_TERM_WAIT_MS) : null;
+    const block = Array.isArray(hits) ? formatLongTermBlock(prompt.slice(0, 120), hits) : "";
+    if (block) {
+      state.recent = [fp, ...recent].slice(0, 10);
+      saveFingerprints(projectRoot, state);
+      emit("UserPromptSubmit", block); // the default block is skipped for this prompt
+      return;
+    }
+    if (notes && hits === null && startLongTermBuild(projectRoot, cliBin, notes)) {
+      emit("UserPromptSubmit", LONG_TERM_INDEXING_NOTE);
+      return;
+    }
   }
   // Tier-1 lexicon expansion: search with the alias-expanded query, but keep the
   // original prompt for display in the block.

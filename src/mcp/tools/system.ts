@@ -5,6 +5,7 @@ import { fieldCoverage } from "../../core/fields.js";
 import { docChunks } from "../../core/vector.js";
 import { renderHelp } from "../../core/help/topics.js";
 import { z } from "zod";
+import { registryFor } from "../sources.js";
 
 export function registerSystemTools(server: McpServer, ctx: ServerContext): void {
   server.tool(
@@ -34,15 +35,17 @@ export function registerSystemTools(server: McpServer, ctx: ServerContext): void
         indexState,
         indexProgress: indexState === "indexing" ? indexProgress : undefined,
       };
-      return ctx.textResponse(JSON.stringify(stats, null, 2));
+      const rows = await registryFor(ctx).list();
+      return ctx.textResponse(JSON.stringify(rows.length ? { ...stats, sources: rows } : stats, null, 2));
     }
   );
 
   server.tool(
     "reindex",
-    "Force a full reindex of the vault",
-    {},
-    async () => {
+    "Force a full reindex of the vault, or of one federated source (`source`: the explicit rebuild of a locked source)",
+    { source: z.string().optional().describe("Source label to rebuild instead of this vault") },
+    async ({ source }) => {
+      if (source && source !== "primary") return ctx.textResponse(await registryFor(ctx).reindex(source));
       if (ctx.isIndexingInFlight()) return ctx.textResponse("Reindex already in progress. " + ctx.indexingMessage());
       await ctx.fullIndex();
       const documents = ctx.getDocuments();

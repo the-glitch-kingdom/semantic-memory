@@ -25,12 +25,10 @@ const EXEMPT_TOOL_GROUPS: Record<string, string> = {
   metadata: "vault upkeep", graph: "graph tools list themselves", contract: "agent contract, has /contract", session: "session paging, own guide",
   system: "plumbing (help itself is named)",
 };
-const EXEMPT_TOOLS: Record<string, string> = { search_semantic: "search_hybrid is the entry point", search_text: "search_hybrid is the entry point", search_graph: "search_hybrid is the entry point" };
+const EXEMPT_TOOLS: Record<string, string> = { search_graph: "search_hybrid is the entry point" };
 const EXEMPT_KEYS: Record<string, string> = {
   version: "file format", provenance_fields: "advanced schema", status_enum: "advanced schema", confidence_enum: "advanced schema",
-  severity_enum: "advanced schema", types: "advanced schema", lint: "advanced schema", path_class: "ranking internals", results: "ranking internals",
-  graph: "ranking internals", index_fields: "ranking internals", ranking: "ranking internals", rerank: "ranking internals",
-  usage_boost: "ranking internals", tools: "advanced schema", telemetry: "advanced schema",
+  severity_enum: "advanced schema", types: "advanced schema", lint: "advanced schema", graph: "ranking internals", index_fields: "ranking internals", tools: "advanced schema", telemetry: "advanced schema",
 };
 
 let cliCommands: string[];

@@ -196,11 +196,19 @@ telemetry:
 # Federated search (v1.19). Off until a source is listed: search_hybrid then also searches the docs tree of
 # each source (read-only; the index is built under this vault index dir) and labels results with "source".
 # path is relative to this vault; weight scales that source (default 1). When hit-em-with-the-docs has
-# reconcile.related_repos configured, those sibling repos docs trees join too; related_repos: false opts out.
+# reconcile.related_repos configured, those sibling repos docs trees join too; related_repos: false opts out
+# (related_repos: opt-in adds them as default: false sources). default: false makes a source opt-in: searched only
+# when a call names it (sources: [label], CLI --source). locked: true indexes it once and never reconciles it.
+# cold_storage: false ignores hit-em-with-the-docs' old docs generations (long-term memory).
 # federation:
 #   sources:
 #     - label: platform-docs
 #       path: ../platform/.documentation
 #       weight: 1
+#     - label: legacy
+#       path: ../frozen-docs
+#       default: false
+#       locked: true
 #   related_repos: true
+#   cold_storage: true
 `;

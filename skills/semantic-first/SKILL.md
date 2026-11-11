@@ -19,6 +19,7 @@ When unsure whether a question is prose or a symbol lookup, search first: one ca
 3. Multi-part question (a config, a script and a check): search each part, or read down to result 8. Answer only when every part is covered.
 4. End-to-end question: follow `forwardlinks` / `backlinks` from the best note.
 5. Answer with the files you used. If the answer is not there, say so; do not guess or switch to the web without saying.
+6. Old docs generations (long-term memory) are never searched by default. When the user asks to "search long-term memory for X", call `search_hybrid` with `sources: ["long-term"]`; those hits carry `historical` and describe past behaviour, not current.
 
 ## Read the signals on each result
 

@@ -18,7 +18,7 @@ function load(file: string, promptsFile: string) {
 const out = (json: boolean | undefined, data: unknown, text: () => string) => console.log(json ? JSON.stringify(data, null, 2) : text());
 
 export function registerSkillEvalCommands(program: Command): void {
-  const ev = program.command("skill-eval").description("Evaluate a learned skill: does it trigger, does it help, can its description be better (v1.7)");
+  const ev = program.command("skill-eval").description("Evaluate a learned skill: does it trigger, does it help, can its description be better");
   const repoRoot = process.cwd();
   const fail = (e: unknown) => {
     console.error(`✗ ${(e as Error).message}`);
