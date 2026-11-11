@@ -15,7 +15,8 @@ import { SNAP_QUERIES } from "./single-source-queries.js";
 // configured, and every default answer must equal a run with neither.
 
 const CLI = join(import.meta.dirname, "..", "..", "dist", "cli", "index.js");
-const strip = (t: string) => JSON.parse(t, (k, v) => (k === "mtime" ? undefined : v)); // the copies' own file times
+// the copies' own file times, also inside a tool's JSON text
+const strip = (t: string): unknown => JSON.parse(t, (k, v) => (k === "mtime" ? undefined : k === "text" && /^[[{]/.test(v) ? strip(v) : v));
 
 async function connect(dir: string): Promise<Client> {
   const server = await createServer(dir, { waitForReady: true });
@@ -74,7 +75,7 @@ describe("default traffic with an opt-in source and a cold_storage manifest conf
   it("search_semantic, search_text and read_note without `source` equal a run with nothing configured", async () => {
     for (const [name, args] of [
       ["search_semantic", { query: "How do I roll back a faulty release?", limit: 5 }],
-      ["search_text", { query: "TIDEWATCH_FLUSH_MS", limit: 5 }],
+      ["search_text", { pattern: "TIDEWATCH_FLUSH_MS", limit: 5 }],
       ["read_note", { path: "architecture/ingest-pipeline.md" }],
     ] as const) {
       const a = await call(configured, name, args);
@@ -85,7 +86,7 @@ describe("default traffic with an opt-in source and a cold_storage manifest conf
 
   it("never builds or loads the opt-in source's index on default traffic: nothing under <primary index>/sources/", async () => {
     await call(configured, "search_hybrid", { query: "what is the single entry point for client requests" });
-    await call(configured, "search_text", { query: "gateway" });
+    await call(configured, "search_text", { pattern: "gateway" });
     expect(existsSync(join(p.index, "sources"))).toBe(false);
   });
 

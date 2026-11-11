@@ -21,6 +21,10 @@ export interface SourceRegistry {
    * nothing is registered under. `notes` are one line each, for a source that is skipped, still indexing or changed.
    */
   openOptIn(labels: string[]): Promise<{ ready: SourceHandle[]; notes: string[]; unknown: string[] }>;
+  /** One row per configured source for get_stats; never opens a source. */
+  list(): Promise<{ label: string; default: boolean; locked: boolean; state: string; generation?: string }[]>;
+  /** The explicit human rebuild of one source (a changed locked source included); returns a one-line result. */
+  reindex(label: string): Promise<string>;
 }
 
 interface OptIn {
@@ -119,6 +123,28 @@ export function createSourceRegistry(primary: ServerContext): SourceRegistry {
   }
 
   return {
+    async list() {
+      const started = handles ? await handles : [];
+      return Promise.all(federation().sources.map(async (s) => {
+        const h = started.find((x) => x.label === s.label) ?? (await optIn.get(s.label))?.handle;
+        const state = h ? h.ctx.getIndexState() : skipped.has(s.label) || (await optIn.get(s.label))?.skip ? "skipped" : "not opened";
+        return { label: s.label, default: s.default, locked: s.locked, state, ...(s.historical && { generation: s.historical.generation }) };
+      }));
+    },
+    async reindex(label) {
+      const s = federation().sources.find((x) => x.label === label);
+      if (!s) return `Unknown source "${label}".`;
+      const h = s.default ? (await this.open()).ready.find((x) => x.label === label) : (await this.openOptIn([label])).ready[0];
+      if (!h) return `Source "${label}" cannot be rebuilt now (skipped or still indexing).`;
+      await h.ctx.fullIndex();
+      const e = await optIn.get(label);
+      if (e && s.locked) { // the rebuilt tree is the new baseline for the "changed since it was indexed" check
+        e.sum = coldChecksum(s.path);
+        e.mtime = mtimeOf(s.path);
+        if (!s.checksum) writeFileSync(join(h.ctx.indexPath, RECORD), JSON.stringify({ checksum: e.sum }));
+      }
+      return `Reindexed source "${label}": ${h.ctx.getDocuments().length} notes`;
+    },
     async openOptIn(labels) {
       const all = federation().sources;
       const unknown: string[] = [];

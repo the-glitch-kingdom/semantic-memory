@@ -13,7 +13,7 @@ import { sectionFields } from "../../core/section-fields.js";
 import { excerpt, isWeak, standaloneConfidence, withConfidence, NO_STRONG_MATCH_BELOW, RELATED_MIN_CONFIDENCE } from "../../core/confidence.js";
 import type { SearchResult } from "../../core/types.js";
 import { mergeSources, type SourceRun } from "../../core/federation-merge.js";
-import { PRIMARY_LABEL, registryFor } from "../sources.js";
+import { PRIMARY_LABEL, registryFor, type SourceHandle } from "../sources.js";
 import { appendEvent, recordSearchForCorrelation } from "../../core/telemetry.js";
 
 /**
@@ -88,6 +88,68 @@ function shape(ctx: ServerContext, ranked: SearchResult[], query: string, limit:
   });
 }
 
+interface SemanticArgs {
+  query: string;
+  limit: number;
+  modifiedAfter?: string;
+  modifiedBefore?: string;
+  status?: string;
+  tier?: string;
+  domain?: string;
+  full: boolean;
+  granularity: Granularity;
+}
+
+/** One context's vector search: boosts, filters, then the page. `ranked` is before fold, `items` after. */
+async function semanticRun(ctx: ServerContext, vectorIndex: NonNullable<ReturnType<ServerContext["getVectorIndex"]>>, queryEmbed: Float32Array, a: SemanticArgs) {
+  const { query, limit, modifiedAfter, modifiedBefore, status, tier, domain } = a;
+  await ctx.refreshUsageBoost();
+  let results = vectorIndex.search(queryEmbed, candidatePool(limit));
+  results = results.map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))));
+  results.sort((a, b) => b.score - a.score);
+  results = ctx.filterPathClass(results);
+  results = ctx.applyDateFilter(results, modifiedAfter, modifiedBefore);
+  const docByPath = ctx.getDocByPath();
+  if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
+  if (tier) results = results.filter((r) => docByPath.get(r.path)?.tier === tier);
+  if (domain) results = results.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
+  return { ranked: results, items: shape(ctx, results, query, limit, a.full, null, a.granularity) }; // no lexical arm here: the cosine alone decides
+}
+
+interface TextArgs {
+  pattern: string;
+  regex: boolean;
+  caseSensitive: boolean;
+  pathGlob?: string;
+  tagFilter?: string[];
+  limit: number;
+  modifiedAfter?: string;
+  modifiedBefore?: string;
+  status?: string;
+  tier?: string;
+  domain?: string;
+}
+
+function textRun(ctx: ServerContext, { modifiedAfter, modifiedBefore, status, tier, domain, ...opts }: TextArgs) {
+  let results = ctx.textSearch.search(opts);
+  if (!opts.pathGlob) results = ctx.filterPathClass(results); // an explicit pathGlob can still reach the archive
+  results = ctx.applyDateFilter(results, modifiedAfter, modifiedBefore);
+  const docByPath = ctx.getDocByPath();
+  if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
+  if (tier) results = results.filter((r) => docByPath.get(r.path)?.tier === tier);
+  if (domain) results = results.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
+  return results.map((r) => ctx.enrichResult(r));
+}
+
+/** Every hit from a cold generation says which one it is from. */
+const withHistorical = (items: any[], handles: SourceHandle[]) =>
+  items.map((r) => {
+    const historical = handles.find((h) => h.label === r.source)?.historical;
+    return historical ? { ...r, historical } : r;
+  });
+
+const sourcesArg = z.array(z.string()).optional().describe("Which sources to search. Omit for this vault and its default sources. \"primary\" is this vault; name an opt-in source or \"long-term\" (every old docs generation) to add it; without \"primary\" only the named ones are searched.");
+
 const GRAPH_SEARCH_SEEDS = 5;
 const RELATED_MAX = 3;
 const edgeTypes = z.array(z.enum(["link", "wikilink", "related", "cites", "same-incident", "supersedes", "tag"])).optional().describe("Edge types to follow (default link, wikilink, related, cites, same-incident)");
@@ -153,9 +215,32 @@ function respond(res: { content: { type: "text"; text: string }[] }, notes: stri
 
 export function registerSearchTools(server: McpServer, ctx: ServerContext): void {
   const sources = registryFor(ctx);
+
+  /**
+   * Which sources a call searches. No `sources`: today's default set. Named: `primary` is this vault, any other label is
+   * opened on demand (opt-in) or taken from the default set. `reply` is set when the call cannot be answered at all.
+   */
+  async function plan(named: string[] | undefined, primaryReady: boolean, openDefault = false) {
+    const out = { includePrimary: true, handles: [] as SourceHandle[], notes: [] as string[], reply: undefined as undefined | ReturnType<typeof respond> };
+    if (!named && !primaryReady) return { ...out, reply: ctx.textResponse(ctx.indexingMessage()) };
+    if (!named && !openDefault) return out; // search_semantic and search_text never federated the default set
+    const dflt = await sources.open();
+    if (!named) return { ...out, handles: dflt.ready, notes: dflt.notes };
+    out.includePrimary = named.includes(PRIMARY_LABEL);
+    const opt = await sources.openOptIn(named);
+    out.handles = [...dflt.ready.filter((h) => out.includePrimary || named.includes(h.label)), ...opt.ready];
+    out.notes = [...dflt.notes, ...opt.notes];
+    const say = (m: string) => respond(ctx.textResponse(m), out.notes);
+    if (opt.unknown.length) out.reply = say(`Unknown source ${opt.unknown.map((l) => `"${l}"`).join(", ")}. Use "primary", "long-term", or a source label from get_stats.`);
+    else if (out.includePrimary && !primaryReady) out.reply = say(ctx.indexingMessage());
+    else if (!out.includePrimary && out.handles.length === 0) {
+      out.reply = say(out.notes.some((n) => /still indexing/.test(n)) ? "Indexing in progress for the named source(s); ask again shortly." : named.length ? "None of the named sources can answer (long-term memory has no registered generation, or the source is skipped)." : "`sources` is empty: name at least one source, or omit it for the default set.");
+    }
+    return out;
+  }
   server.tool(
     "search_semantic",
-    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. `full: true` returns whole chunks and frontmatter fields. Each result also carries its best section: `section` (heading trail), `anchor` (heading anchor, hewtd's rules) and `code` (up to 3 code refs in the section); `granularity: \"doc\"` leaves them out.",
+    "Vector similarity search — find notes similar to a query by meaning. Scores are boosted by load_priority and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Set decay.enabled:false in vault.schema.yml to disable. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. `full: true` returns whole chunks and frontmatter fields. Each result also carries its best section: `section` (heading trail), `anchor` (heading anchor, hewtd's rules) and `code` (up to 3 code refs in the section); `granularity: \"doc\"` leaves them out. Pass `sources` to add an opt-in source or `\"long-term\"` (old docs generations, never searched by default); results then carry `source`, and `historical` for old generations.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -166,32 +251,34 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       domain: z.string().optional().describe("Filter by frontmatter domain (e.g. 'api', 'security')"),
       full: fullArg,
       granularity: granularityArg,
+      sources: sourcesArg,
     },
-    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity }) => {
+    async ({ sources: named, ...a }) => {
       const vectorIndex = ctx.getVectorIndex();
-      if (!vectorIndex) {
-        return ctx.textResponse(ctx.indexingMessage());
+      const p = await plan(named, !!vectorIndex);
+      if (p.reply) return p.reply;
+      const queryEmbed = await ctx.embedder.embedQuery(a.query);
+      if (!named) {
+        const enriched = (await semanticRun(ctx, vectorIndex!, queryEmbed, a)).items;
+        await logSearch(ctx, "search_semantic", a.query, enriched);
+        return ctx.textResponse(JSON.stringify(enriched, null, 2));
       }
-      const queryEmbed = await ctx.embedder.embedQuery(query);
-      await ctx.refreshUsageBoost();
-      let results = vectorIndex.search(queryEmbed, candidatePool(limit));
-      results = results.map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))));
-      results.sort((a, b) => b.score - a.score);
-      results = ctx.filterPathClass(results);
-      results = ctx.applyDateFilter(results, modifiedAfter, modifiedBefore);
-      const docByPath = ctx.getDocByPath();
-      if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
-      if (tier) results = results.filter((r) => docByPath.get(r.path)?.tier === tier);
-      if (domain) results = results.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
-      const enriched = shape(ctx, results, query, limit, full, null, granularity); // no lexical arm here: the cosine alone decides
-      await logSearch(ctx, "search_semantic", query, enriched);
-      return ctx.textResponse(JSON.stringify(enriched, null, 2));
+      await Promise.all(p.handles.map((h) => h.ctx.ensureFresh()));
+      const runs: SourceRun[] = [];
+      if (p.includePrimary) runs.push({ label: PRIMARY_LABEL, weight: 1, bm25Min: null, ...(await semanticRun(ctx, vectorIndex!, queryEmbed, a)) });
+      for (const h of p.handles) {
+        const vi = h.ctx.getVectorIndex();
+        if (vi) runs.push({ label: h.label, weight: h.weight, bm25Min: null, ...(await semanticRun(h.ctx, vi, queryEmbed, a)) });
+      }
+      const items = withHistorical(mergeSources(runs, a.limit), p.handles);
+      await logSearch(ctx, "search_semantic", a.query, items.map((r) => (r.source !== PRIMARY_LABEL ? { ...r, path: `${r.source}:${r.path}` } : r)));
+      return respond(ctx.textResponse(JSON.stringify(items, null, 2)), p.notes);
     }
   );
 
   server.tool(
     "search_text",
-    "Full-text keyword or regex search across all notes with optional filters",
+    "Full-text keyword or regex search across all notes with optional filters. Pass `sources` to add an opt-in source or `\"long-term\"` (old docs generations, never searched by default); results then carry `source`, and `historical` for old generations.",
     {
       pattern: z.string(),
       regex: z.boolean().optional().default(false),
@@ -204,19 +291,21 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       status: z.string().optional().describe("Filter by frontmatter status"),
       tier: z.string().optional().describe("Filter by frontmatter tier"),
       domain: z.string().optional().describe("Filter by frontmatter domain"),
+      sources: sourcesArg,
     },
-    async ({ modifiedAfter, modifiedBefore, status, tier, domain, ...opts }) => {
+    async ({ sources: named, ...opts }) => {
       const documents = ctx.getDocuments();
-      if (documents.length === 0 && ctx.getIndexState() !== "ready") return ctx.textResponse(ctx.indexingMessage());
-      let results = ctx.textSearch.search(opts);
-      if (!opts.pathGlob) results = ctx.filterPathClass(results); // an explicit pathGlob can still reach the archive
-      results = ctx.applyDateFilter(results, modifiedAfter, modifiedBefore);
-      const docByPath = ctx.getDocByPath();
-      if (status) results = results.filter((r) => docByPath.get(r.path)?.status === status);
-      if (tier) results = results.filter((r) => docByPath.get(r.path)?.tier === tier);
-      if (domain) results = results.filter((r) => docByPath.get(r.path)?.domains?.includes(domain));
-      const enriched = results.map((r) => ctx.enrichResult(r));
-      return ctx.textResponse(JSON.stringify(enriched, null, 2));
+      const primaryReady = documents.length > 0 || ctx.getIndexState() === "ready";
+      const p = await plan(named, primaryReady);
+      if (p.reply) return p.reply;
+      if (!named) return ctx.textResponse(JSON.stringify(textRun(ctx, opts), null, 2));
+      await Promise.all(p.handles.map((h) => h.ctx.ensureFresh()));
+      // no score to interleave by: this vault first, then each source in the order given
+      const items = [
+        ...(p.includePrimary ? textRun(ctx, opts).map((r) => ({ ...r, source: PRIMARY_LABEL })) : []),
+        ...p.handles.flatMap((h) => textRun(h.ctx, opts).map((r) => ({ ...r, source: h.label }))),
+      ].slice(0, opts.limit);
+      return respond(ctx.textResponse(JSON.stringify(withHistorical(items, p.handles), null, 2)), p.notes);
     }
   );
 
@@ -241,7 +330,7 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
 
   const hybridTool = server.tool(
     "search_hybrid",
-    "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). `full: true` returns whole chunks and frontmatter fields. Each result also carries its best section: `section` (heading trail), `anchor` (heading anchor, hewtd's rules) and `code` (up to 3 code refs in the section); `granularity: \"doc\"` leaves them out. With `federation.sources` configured, one search covers this vault and every source; when two or more answer, each result carries `source` (pass it to read_note) and skipped or stale sources are named in a trailing text block.",
+    "Combined semantic + lexical search — vector and BM25 scores fused per document (0.7 cosine + 0.3 scaled BM25), re-ranked by load_priority, and down-weighted by confidence decay (time since last_verified); decayed results carry a `decay` block. Results carry `confidence` (0-1) and a ~600-char excerpt; when the match is weak (low cosine and no strong lexical hit) every result has `no_strong_match: true`: a weak match, verify before citing it. A query naming an identifier (snake_case, camelCase, a path, a dotted name) that no indexed doc contains also sets it, with `missing_terms: [...]` (not in the docs or the code) or `undocumented: [{entity, path}]` (in the code, in no doc). A query naming a symbol or file the docs cite gets an `entity` card on result #1: its path (\"defined in\" or \"found in\") and the docs citing it. For a broad or end-to-end question (how does X work, overview of Y, several steps) read the excerpts of the top 3 results, not just #1, and search each step separately (how is it deployed, how is it verified, how is it rolled back). `full: true` returns whole chunks and frontmatter fields. Each result also carries its best section: `section` (heading trail), `anchor` (heading anchor, hewtd's rules) and `code` (up to 3 code refs in the section); `granularity: \"doc\"` leaves them out. With `federation.sources` configured, one search covers this vault and every source; when two or more answer, each result carries `source` (pass it to read_note) and skipped or stale sources are named in a trailing text block. Pass `sources` to add an opt-in source or `\"long-term\"` (old docs generations, never searched by default); results then carry `source`, and `historical` for old generations.",
     {
       query: z.string(),
       limit: z.coerce.number().optional().default(10),
@@ -253,18 +342,18 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       full: fullArg,
       granularity: granularityArg,
       mode: z.enum(["auto", "identifier", "fact", "flow"]).optional().default("auto").describe("Query type: auto classifies the query; the other values override it. Reported as query_type on result #1; ranking is the same."),
+      sources: sourcesArg,
     },
-    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity, mode }) => {
+    async ({ query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity, mode, sources: named }) => {
       const vectorIndex = ctx.getVectorIndex();
-      if (!vectorIndex) {
-        return ctx.textResponse(ctx.indexingMessage());
-      }
+      const p = await plan(named, !!vectorIndex, true);
+      if (p.reply) return p.reply;
 
       const queryEmbed = await ctx.embedder.embedQuery(query);
       const args: HybridArgs = { query, limit, modifiedAfter, modifiedBefore, status, tier, domain, full, granularity, queryType: mode === "auto" ? classifyQuery(query, knownToCode(ctx.getCode())) : mode };
-      const { ready, notes } = await sources.open();
-      if (ready.length === 0) {
-        const { items } = (await hybridSearch(ctx, vectorIndex, queryEmbed, args))!;
+      const { handles: ready, notes } = p;
+      if (!named && ready.length === 0) {
+        const { items } = (await hybridSearch(ctx, vectorIndex!, queryEmbed, args))!;
         await logSearch(ctx, "search_hybrid", query, items);
         return respond(ctx.textResponse(JSON.stringify(items, null, 2)), notes);
       }
@@ -272,13 +361,13 @@ export function registerSearchTools(server: McpServer, ctx: ServerContext): void
       // Federated: one query embedding, each source ranked by its own pipeline, then merged. A source that is not ready
       // is skipped (reported in `notes`), so the primary alone answers exactly as it does without federation.
       await Promise.all(ready.map((h) => h.ctx.ensureFresh()));
-      const runs: SourceRun[] = [{ label: PRIMARY_LABEL, weight: 1, bm25Min: ctx.bm25Min(), ...(await hybridSearch(ctx, vectorIndex, queryEmbed, args))! }];
+      const runs: SourceRun[] = p.includePrimary ? [{ label: PRIMARY_LABEL, weight: 1, bm25Min: ctx.bm25Min(), ...(await hybridSearch(ctx, vectorIndex!, queryEmbed, args))! }] : [];
       for (const h of ready) {
         const vi = h.ctx.getVectorIndex();
         const run = vi && (await hybridSearch(h.ctx, vi, queryEmbed, args));
         if (run) runs.push({ label: h.label, weight: h.weight, bm25Min: h.ctx.bm25Min(), ...run });
       }
-      const items = mergeSources(runs, limit);
+      const items = withHistorical(mergeSources(runs, limit), ready);
       const staleNotes = ready.filter((h) => h.ctx.isStale()).map((h) => `[federation: source "${h.label}" is stale, an older index is answering while it refreshes]`);
       await logSearch(ctx, "search_hybrid", query, items.map((r) => (r.source && r.source !== PRIMARY_LABEL ? { ...r, path: `${r.source}:${r.path}` } : r)));
       return respond(ctx.textResponse(JSON.stringify(items, null, 2)), [...notes, ...staleNotes], staleNotes.length > 0);

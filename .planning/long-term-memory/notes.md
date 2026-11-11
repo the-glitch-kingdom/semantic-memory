@@ -48,3 +48,7 @@ No ranking change; config parsing only. No eval run (src/core/federation.ts is r
 
 ## Eval results: Phase 4
 No ranking change for default queries (open() path untouched apart from reading the federation lazily); no eval measured. `coldChecksum` on a 1,000-file tree (20 dirs, 7.9 MB of markdown): about 20 ms per call warm, under 65 ms for three calls including the first. Well under the 2 s line, so no mandatory cache; the once-per-process plus folder-mtime check is kept for repeated queries.
+
+## Eval results: Phase 5
+
+No ranking change for default calls (no `sources`): federated-search, federation-notes, federation-sources and the Phase 2 default guards pass unchanged; `npm run eval` 24 files passed. The tool-surface golden snapshot was updated for the new `sources` and `reindex.source` parameters. Opt-in paths are covered by long-term-optin.test.ts (all `it.fails` flipped to plain tests).
