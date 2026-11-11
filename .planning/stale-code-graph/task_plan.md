@@ -19,21 +19,21 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
-  - [ ] Fixture: a temp git repo built from `test/fixtures/code-graph-vault` (as `test/integration/code-load-order.test.ts:65` does, with `gitHistory`/`stampDates`). A `.hewtd/graph.json` in the hewtd v1 shape, with `source_commit` = the current HEAD, where doc D cites `backend/x.py` (resolved: true) and `backend/y.py` (with a `code_changed` date). Use the real export shape the existing `test/unit/graph-export-fixtures.test.ts` and `code-graph-real-export.test.ts` already pin.
-  - [ ] Then commit:
+- [x] Phase 2: Acceptance as failing tests first (`it.fails` until fixed); all in `test/integration/stale-code-graph.test.ts`
+  - [x] Fixture: a temp git repo built from `test/fixtures/code-graph-vault` (as `test/integration/code-load-order.test.ts:65` does, with `gitHistory`/`stampDates`). A `.hewtd/graph.json` in the hewtd v1 shape, with `source_commit` = the current HEAD, where doc D cites `backend/x.py` (resolved: true) and `backend/y.py` (with a `code_changed` date). Use the real export shape the existing `test/unit/graph-export-fixtures.test.ts` and `code-graph-real-export.test.ts` already pin.
+  - [x] Then commit:
     - a deletion of `backend/x.py`: a search returning D lists `backend/x.py` in `dead_refs`, with no hewtd run;
     - an edit of `backend/y.py`: D shows `backend/y.py` in `code_drift` (when D's body is older than the edit).
     Both through MCP `search_hybrid` and CLI `search`.
-  - [ ] Those results carry `grounding.stale: true` and `grounding.source: "export+live"`. A doc citing only unchanged files keeps `source: "export"` and no `stale`.
-  - [ ] `get_stats.codeGraph` reports `export_commit`, `behind_head` (commits) and `files_changed_since`, all 0 at HEAD.
-  - [ ] `healthcheck` reports a finding when the export is more than `CODE_GRAPH_STALE_COMMITS` behind (constant, pick in Phase 3; record why), and none at HEAD.
-  - [ ] An uncommitted (dirty) deletion of a cited file is also caught: `git diff <source_commit>` compares against the working tree.
-  - [ ] A dead ref in the export whose file now exists (also untracked) is no longer dead.
-  - [ ] `source_commit` unknown to git (rebase, shallow clone, another repo) or `null`: every file ref of the export is checked live, `behind_head` is reported as unknown, and nothing throws.
-  - [ ] **No `graph.json`** (fresh clone): grounding and `get_stats` are byte-identical to main.
-  - [ ] **Export at HEAD:** grounding byte-identical to main, so the release gate's export runs do not move.
-  - [ ] **Locked source:** a `long-term` search emits no `fewer than half of its doc keys` warning (capture stderr), and its results carry no grounding from the live tree.
+  - [x] Those results carry `grounding.stale: true` and `grounding.source: "export+live"`. A doc citing only unchanged files keeps `source: "export"` and no `stale`.
+  - [x] `get_stats.codeGraph` reports `export_commit`, `behind_head` (commits) and `files_changed_since`, all 0 at HEAD.
+  - [x] `healthcheck` reports a finding when the export is more than `CODE_GRAPH_STALE_COMMITS` behind (constant, pick in Phase 3; record why), and none at HEAD.
+  - [x] An uncommitted (dirty) deletion of a cited file is also caught: `git diff <source_commit>` compares against the working tree.
+  - [x] A dead ref in the export whose file now exists (also untracked) is no longer dead.
+  - [x] `source_commit` unknown to git (rebase, shallow clone, another repo) or `null`: every file ref of the export is checked live, `behind_head` is reported as unknown, and nothing throws.
+  - [x] **No `graph.json`** (fresh clone): grounding and `get_stats` are byte-identical to main.
+  - [x] **Export at HEAD:** grounding byte-identical to main, so the release gate's export runs do not move.
+  - [x] **Locked source:** a `long-term` search emits no `fewer than half of its doc keys` warning (capture stderr), and its results carry no grounding from the live tree.
 - [ ] Phase 3: Detect and patch per ref
   - [ ] In `src/core/code-graph.ts`:
     - read `source_commit` in `loadExport`;
@@ -98,6 +98,9 @@ Release as 1.30.0 (minor: new `get_stats` and grounding fields).
 - Item 4 is out (Key Question 1). The commit hook is hit-em-with-the-docs' own issue (user, 2026-11-11).
 
 ## Errors Encountered
+- Phase 2: `groundingBlock` hides the `verified` verdict, so the fixture export sets verdict `check` on D and E to make a doc without drift or dead refs still carry a grounding block.
+- Phase 2: the healthcheck test makes the export 60 commits behind, so Phase 3 must pick `CODE_GRAPH_STALE_COMMITS` below 60, and the finding's `check` must match /code[-_]?graph/ and name `npx hewtd index`.
+- Phase 2: a first `--source long-term` search only starts the cold index in the background ("skipped, still indexing"); the locked-source test retries up to 4 times until cold hits arrive.
 
 ## Status
-**Phase 2 next.** Phase 1: verified on main (1.29.0); see notes.md.
+**Phase 3 next.** Phase 2 done: acceptance tests in test/integration/stale-code-graph.test.ts (9 `it.fails`, 3 plain guards).
