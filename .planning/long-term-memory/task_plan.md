@@ -38,6 +38,11 @@ This is the **search side only**. Rotation, staging, the confirmation gate, undo
   - [ ] **CLI parity.**
     - `semantic-memory search --notes <primary> --source legacy "..."`, repeatable, plus `--source long-term`.
     - It resolves the label through the primary's federation config and uses `sourceIndexPath`, so it never writes into the source folder.
+  - [ ] **Opt-in notice** (`test/integration/cold-notice.test.ts`, hook run as a process with a temp project root).
+    - With `.documentation-cold/2026-11-10/` present (or the folder named by `reconcile.cold_root`), the SessionStart hook prints a user-visible `systemMessage`. It says long-term memory exists, names the generations, says they are NOT searched by default, and says how to opt in ("search long-term memory for …", `sources: ["long-term"]`, `--source long-term`). It also adds one `additionalContext` line so Claude knows the same.
+    - Without the folder: no message, and the output is byte-identical to today.
+    - A generation folder on disk that is not in the `cold_storage` manifest, a checksum mismatch, or `federation.cold_storage: false` gets a message saying that generation is NOT searchable and why. An unregistered generation is never indexed (no secrets record exists for it).
+    - Frequency: the full `systemMessage` once per new generation, recorded in `.claude/.semantic-memory/cold-notified.json`. The one `additionalContext` line on every `startup`/`resume`, never on `clear`/`compact`. A problem message on every startup until it is fixed.
   - [ ] **related_repos opt-in.** `federation.related_repos: opt-in` registers hewtd related repos as `default: false` sources. `true` (the default) and `false` behave as today.
 - [ ] Phase 3: Config, `default` and `locked` on sources, `related_repos: opt-in`, `cold_storage`
   - [ ] `FederationSource` gains `default: boolean` (true unless `default: false`), `locked: boolean` and optional `historical` metadata. Parse them in `loadFederation` (src/core/federation.ts), lenient as today: a bad value is dropped with a warning.
@@ -48,6 +53,12 @@ This is the **search side only**. Rotation, staging, the confirmation gate, undo
     - A malformed entry is a warning, never a throw.
     - Reserve the labels `primary` and `long-term`; a configured source using either is dropped with a warning.
   - [ ] `federation.cold_storage: false` opts out of reading the manifest, mirroring `related_repos`.
+  - [ ] **Cold root** (hit-em-with-the-docs#97, comment 2026-11-11, shipping in hewtd 3.2.0):
+    - `.documentation-cold/` at the repo root by default, or `reconcile.cold_root` (repo-relative, outside the docs root) from `.claude/hit-em-with-the-docs.json`;
+    - one generation per folder, `<YYYY-MM-DD>` with an optional `-N` suffix;
+    - the outgoing tree's ledger is at `.documentation-cold/.generations/<gen>/ledger.json`, never indexed;
+    - manifest entries also carry `untracked_files` (gitignored files kept on disk). Parse it, index those files like any other (they are in the generation and covered by #97's secrets lane), and record the decision.
+    One function, `coldGenerations(projectRoot)`, lists the generations on disk and joins them with the manifest: `registered | unregistered | checksum-mismatch | disabled | missing-path`. The notice, `get_stats` and `healthcheck` all use it. It is cheap (readdir plus JSON, no hashing), so the session hook stays fast.
   - [ ] Unit tests in `test/unit/federation.test.ts`.
 - [ ] Phase 4: Registry, opt-in sources stay closed until asked; locked sources never reconcile
   - [ ] `src/mcp/sources.ts`: `open()` returns only `default` sources, so the default path is unchanged. A new `openOptIn(labels)` builds a context lazily, only for named opt-in labels (`long-term` expands to every cold generation). Default traffic never builds or loads an opt-in context.
@@ -90,6 +101,13 @@ This is the **search side only**. Rotation, staging, the confirmation gate, undo
     - "historically, what did we".
     On a match, run the CLI with `--source long-term` and inject a block labelled historical (`<vault-context source="long-term" …>` plus one line: past behaviour, not current; each hit with its generation date). Skip the default block for that prompt.
   - [ ] Negatives that must NOT trigger, as tests: "long-term plan", "long term support", "back in the day", "go back in the file", "memory leak in long-running", "back in 2025 we shipped" without a question shape. Keep the rule list in one place, as a module-level constant with a comment. No Jev or LLM call in the hook path.
+  - [ ] **Opt-in notice at session start.** If `coldGenerations()` finds a cold root, the user must be told that long-term memory exists and is opt-in.
+    - Implement it in a SessionStart hook, beside the skill-loop notice pattern (`hooks/skill-loop.js:40-60`). Import the dist module, never load the model, never compute checksums; target under 100 ms.
+    - Output: `systemMessage` (shown to the user), plus one `additionalContext` line for Claude.
+    - Wording, roughly: "Long-term memory: N old docs generation(s) in .documentation-cold/ (2026-11-10, …). Not searched by default. To search them, ask 'search long-term memory for …' (or pass sources: ["long-term"] / --source long-term)."
+    - Problem wording: "… 2026-11-12 is on disk but not registered by hit-em-with-the-docs (or its checksum changed), so it is not searchable."
+    - Frequency as in Phase 2. Skip under `SEMANTIC_MEMORY_REVIEWER=1`, like the other hooks.
+  - [ ] `healthcheck` reports each generation's status from `coldGenerations()` (a warning for unregistered or mismatched ones). `get_stats` lists them (Phase 5).
   - [ ] A semantic-first or vault-first skill line: the user can say "search long-term memory for X". Add one line to `skills/semantic-first/SKILL.md` naming the `sources: ["long-term"]` parameter. No new skill.
 - [ ] Phase 8: Measure
   - [ ] `npm run gate:release` (fresh, BAND=1) vs 1.28.0: every count identical, mcp vs cli 0 differ, p95 within band. Default search must not change at all. Run it once more with a `cold_storage` manifest pointing at a large cold copy configured (the gate's corpus duplicated as a generation): again identical, and no index built under `sources/`.
@@ -111,7 +129,11 @@ This is the **search side only**. Rotation, staging, the confirmation gate, undo
     - an opt-in label that is still indexing;
     - `read_note` on a secrets-flagged file;
     - a symlink in a cold tree pointing outside it (not followed, not indexed);
-    - `chmod a-w` on both the folder and its files.
+    - `chmod a-w` on both the folder and its files;
+    - a `-2` same-day generation;
+    - a `reconcile.cold_root` pointing inside the docs root (refuse, with a notice);
+    - the notice when the hewtd config is missing but `.documentation-cold/` exists (unregistered, not searchable);
+    - an unreadable `cold-notified.json` (notice shown again, never a crash).
   - [ ] Security: a path in `cold_storage` or `secrets_findings` cannot escape (`..` traversal, absolute paths in `secrets_findings`). The fake secret value is absent from every file under the index dir and from every tool output.
   - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh).
   - [ ] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions).
@@ -121,7 +143,8 @@ This is the **search side only**. Rotation, staging, the confirmation gate, undo
     - what long-term memory is, and how it is fed by hit-em-with-the-docs#97's rotation;
     - how to search it (tool `sources`, CLI `--source`, the prompt phrases);
     - what is never searched by default;
-    - how to rebuild a locked source.
+    - how to rebuild a locked source;
+    - the session-start opt-in notice and what each status means.
   - [ ] `.documentation/reference/mcp-tools-reference.md` (`sources` on three tools, `historical` on hits, `get_stats` sources) and `.documentation/reference/cli-reference.md` (`--source`, `reindex --source`).
   - [ ] KB gotcha facts:
     - owed from 1.28.0: matching an identifier token by token credits docs with the words scattered (`gate`/`release`/`sh`); `## Instead`: match the name literally (`Bm25Index.docContains`), with `test/unit/identifier-tier.test.ts` as the check;

@@ -29,3 +29,11 @@
 
 ### hit-em-with-the-docs side (read only, never modified)
 - `/reconcile` is hewtd 3.1.8 `commands/reconcile.md`. Its only external hook is `reconcile.search_command` (an argv template). The confirmation gate and rotation are #97's.
+
+### Cold root name (hit-em-with-the-docs#97, comment 2026-11-11T03:29)
+- The cold root is `.documentation-cold/` at the repo root, configurable as `reconcile.cold_root` (repo-relative, outside the docs root), and committed to git.
+- One generation per rotation: `.documentation-cold/<YYYY-MM-DD>/` (`-2`, `-3` on a same-day collision), a byte-for-byte copy of the outgoing tree, read-only. Gitignored files stay on disk and are listed in the manifest as `untracked_files`.
+- The outgoing tree's ledger is `.documentation-cold/.generations/<gen>/ledger.json`.
+- Staging is `reconcile --stage <dir>`, under `.hewtd/`. It ships in hewtd 3.2.0 (`feat/cold-rotation-97`), and the names may still change: #97 says it will confirm.
+- User requirement (2026-11-11): when that folder exists, the user is told long-term memory is opt-in. That is the session-start notice (task_plan Phase 7).
+- Precedent: `hooks/skill-loop.js:40-60` prints the skill-loop notice as SessionStart `additionalContext`. For the user to see it, use `systemMessage` too.
