@@ -6,7 +6,7 @@ import { facetIssue, type ArmMetrics, type FacetCase } from "./metrics.js";
 import type { Targets } from "./targets.js";
 
 /** hit-em-with-the-docs 3.4 `vault.audit_window_days` default: a doc is verified when its `last_verified` is this recent (or its grounding verdict is `verified`). */
-export const VERIFIED_WINDOW_DAYS = 90;
+const VERIFIED_WINDOW_DAYS = 90;
 /** Per result path, what the response carried for the top-3 grounding metrics: its review verdict and dead file refs. */
 export type Ground = Record<string, { verdict?: string; dead: number }>;
 

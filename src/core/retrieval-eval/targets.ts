@@ -74,7 +74,7 @@ held-out set before such a pass, and flip the old one to \`"blind": false\`.
 - A change of 1/n (one question) is noise. Do not celebrate or revert on it.
 `;
 
-export const INIT_FILES: Record<string, string> = {
+const INIT_FILES: Record<string, string> = {
   [TARGETS_FILE]: JSON.stringify(DEFAULT_TARGETS, null, 2) + "\n",
   "questions.template.jsonl.example": TEMPLATE,
   "BLIND-SETS.md": GUIDE,
