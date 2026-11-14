@@ -30,6 +30,11 @@ export interface SynthesizeNoteInput {
    * (e.g. "proposals/research", "proposals/outage").
    */
   proposal_subdir?: string;
+  /**
+   * Names of notes that exist in the vault (see `loadKnownNames`). When given, only related
+   * entries that resolve are linked; the rest are listed as plain code text. Omitted: every entry is linked.
+   */
+  knownNames?: Set<string>;
 }
 
 export interface SynthesizePreview {
@@ -80,7 +85,7 @@ export function buildSynthesizeChangeSet(input: SynthesizeNoteInput): Synthesize
     ...(input.extra_frontmatter ?? {}),
   };
 
-  const body = buildBody(title, input.answer, input.related_notes ?? []);
+  const body = buildBody(title, input.answer, input.related_notes ?? [], input.knownNames);
 
   const create: PatchCreate = { path, content: body, frontmatter };
   const changeset: ChangeSet = { creates: [create] };
@@ -101,12 +106,15 @@ function slugForTopic(topic: string): string {
     .slice(0, 60) || "untitled";
 }
 
-function buildBody(title: string, answer: string, relatedNotes: string[]): string {
+function buildBody(title: string, answer: string, relatedNotes: string[], knownNames?: Set<string>): string {
   let body = `# ${title}\n\n${answer.trim()}\n`;
 
   if (relatedNotes.length > 0) {
-    body = autoWikilink(body, relatedNotes);
-    const links = relatedNotes.map((r) => `- [[${wikilinkName(r)}]]`).join("\n");
+    const resolves = (r: string) => !knownNames || knownNames.has(wikilinkName(r));
+    body = autoWikilink(body, relatedNotes.filter(resolves));
+    const links = relatedNotes
+      .map((r) => (resolves(r) ? `- [[${wikilinkName(r)}]]` : `- \`${wikilinkName(r)}\``))
+      .join("\n");
     body += `\n## Related\n\n${links}\n`;
   }
 
@@ -118,8 +126,8 @@ function buildBody(title: string, answer: string, relatedNotes: string[]): strin
  * with a [[wikilink]]. Conservative — only replaces whole-word matches outside code blocks.
  */
 function autoWikilink(body: string, relatedNotes: string[]): string {
-  // Skip content inside fenced code blocks
-  const parts = body.split(/(```[\s\S]*?```)/g);
+  // Skip fenced code blocks, inline code spans and markdown link targets `](...)`
+  const parts = body.split(/(```[\s\S]*?```|`[^`\n]+`|\]\([^)\n]*\))/g);
   return parts
     .map((part, i) => {
       if (i % 2 === 1) return part; // code block
@@ -128,7 +136,8 @@ function autoWikilink(body: string, relatedNotes: string[]): string {
         const name = wikilinkName(r);
         if (/[\[\]]/.test(out) && out.includes(`[[${name}]]`)) continue; // already linked
         const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const re = new RegExp(`\\b${escaped}\\b`, "i");
+        // not \b: it fires inside paths and hyphenated names (`-`, `/`, `.` are boundaries)
+        const re = new RegExp(`(?<![\\w./\\\\-])${escaped}(?![\\w/\\\\-]|\\.\\w)`, "i");
         out = out.replace(re, `[[${name}]]`);
       }
       return out;

@@ -14,7 +14,9 @@ purpose: Preview the multi-corpus configuration file that semantic-memory will r
 
 # `corpora.json` schema (preview)
 
-> **Status: planned for 2.0.0b.** This file documents the design of `corpora.json` so consumers and downstream plugins (persistent-planning, babel-fish) can plan against it. The implementation lands in the next release. v1.0.0 (this release) preserves the legacy single-vault behavior unchanged.
+> **Superseded, never implemented.** Federation (`federation.sources`) replaced this design; see the [federation guide](../.documentation/operational/federation-guide.md) to search extra corpora. babel-fish writes `.claude/project-map/sections/`, not `.babel-fish/`.
+
+> **Original status (never shipped): planned for 2.0.0b.** This file documents the design of `corpora.json` so consumers and downstream plugins (persistent-planning, babel-fish) can plan against it. The implementation lands in the next release. v1.0.0 (this release) preserves the legacy single-vault behavior unchanged.
 
 `corpora.json` is the configuration file that tells semantic-memory which corpora to index and how. It lives at `<project-root>/.semantic/corpora.json` and is auto-bootstrapped on first run by the **smart-middle activation** heuristic.
 
