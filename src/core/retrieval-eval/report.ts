@@ -51,7 +51,7 @@ const measures = (m: ArmMetrics, s: ReturnType<typeof top3Shares>, p95: number):
 const MAX_METRICS = new Set(["false_flags", "p95_ms"]);
 const round = (v: number | null) => (v === null ? null : +v.toFixed(4));
 
-/** Met is judged on the blind subset only; with no blind case every cell is `not validated`. A null target or an unmeasured value is not judged. */
+/** Met is judged on the blind subset only (so the noise step is 1 over its answerable cases); with no blind case every cell is `not validated`. A null target or an unmeasured value is not judged. */
 export function judgeTargets(targets: Targets, all: ArmMetrics, allShares: ReturnType<typeof top3Shares>, blind: { m: ArmMetrics; shares: ReturnType<typeof top3Shares>; n: number } | null | undefined): TargetsReport {
   const p95 = all.latencyMs.p95; // replayed arms carry no latency of their own, so p95 is the run's
   const a = measures(all, allShares, p95), b = blind ? measures(blind.m, blind.shares, p95) : null;
@@ -60,7 +60,7 @@ export function judgeTargets(targets: Targets, all: ArmMetrics, allShares: Retur
     const met = !b ? "not validated" : target === null || v === null ? null : MAX_METRICS.has(metric) ? v <= target : v >= target;
     return { metric, value: round(a[metric] ?? null), valueBlind: round(v), target, met };
   });
-  return { rows, validated: !!blind, blindCases: blind?.n ?? 0, noise: all.tiers.all ? 1 / all.tiers.all.n : null };
+  return { rows, validated: !!blind, blindCases: blind?.n ?? 0, noise: (blind ? blind.m : all).tiers.all ? 1 / (blind ? blind.m : all).tiers.all.n : null };
 }
 
 /** Labels each answerable hybrid miss: coverage (a facet no doc has), ranking (the docs have it, search did not put it first), grounding (answered, but on an unverified or dead-ref doc). */

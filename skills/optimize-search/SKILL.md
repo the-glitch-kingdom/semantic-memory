@@ -13,7 +13,7 @@ One loop: measure, diagnose, route each miss to the tool that fixes it, re-measu
 - Never tune on held-out questions. Choose settings and docs fixes from the train split and the misses only; report held-out as measured.
 - Never apply `/reconcile` proposals without the user's acceptance (its own rule).
 - Never hand-edit INDEX.md or REGISTRY.md; use `npx hewtd maintain --quick`.
-- Ignore changes smaller than 1/n (n = cases in the set): one case is noise.
+- Ignore changes of 1/n or less (n = cases in the set): one case is noise.
 
 ## The loop
 
@@ -23,7 +23,7 @@ One loop: measure, diagnose, route each miss to the tool that fixes it, re-measu
 4. **Route each label.**
    - coverage: `semantic-memory eval --notes <docs> --dir .claude/.semantic-memory/eval --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (proposes docs and phrases, applied only on acceptance), or write the doc. Real-usage gaps come from `semantic-memory gaps --json`.
    - grounding: `/reconcile --changed`, or `/reconcile --next 10`.
-   - ranking: the settings in `.documentation/operational/retrieval-tuning-guide.md`, measured on the train split only; or file an issue with an anonymised repro (`{id, tier, q, facets}` JSONL).
+   - ranking: the settings in `semantic-memory help tune-ranking`, measured on the train split only; or file an issue with an anonymised repro (`{id, tier, q, facets}` JSONL).
    - docs-wide health: the Targets in `npx hewtd audit`.
 5. **Re-measure.** Write a fresh held-out blind set before the docs fix. Compare with the previous run. Run `semantic-memory eval --notes <docs> --dir .claude/.semantic-memory/eval --baseline` only when the change holds.
 6. **Record.** Save the round's numbers and decisions as a vault note with `synthesize_note` (dry-run first).

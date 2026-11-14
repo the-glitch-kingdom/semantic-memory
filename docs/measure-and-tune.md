@@ -70,7 +70,7 @@ Two rules follow:
    - ranking: the settings in `semantic-memory help tune-ranking`, chosen on your train split only; or report it (section 6).
    - docs-wide health: `npx hewtd audit`.
    Never hand-edit `INDEX.md` or `REGISTRY.md`; `npx hewtd maintain --quick` regenerates them.
-5. Re-measure on a fresh blind set, with a cold build, and compare with the recorded run. Ignore changes under `1/n`.
+5. Re-measure on a fresh blind set, with a cold build, and compare with the recorded run. Ignore changes of `1/n` or less.
 6. Hold the gain: `semantic-memory eval --notes .documentation --dir .claude/.semantic-memory/eval --baseline` once the change holds, and `semantic-memory eval --notes .documentation --dir .claude/.semantic-memory/eval --check` afterwards to fail on a regression.
 
 Never choose a setting, a threshold or a docs fix from the held-out questions. Choose from the train split and the misses, and report held-out as measured.

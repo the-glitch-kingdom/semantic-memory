@@ -183,9 +183,9 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 - [x] Phase 8: Release prep
   - [x] Bump all five version fields to 1.31.0, plus the lockfile.
 - [x] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY) (done: no scratch files, probe logging or commented-out code found; un-exported two module-private constants)
-- [ ] Phase 10: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Every Phase 2 test passes as plain `it`.
-  - [ ] Edge cases:
+- [x] Phase 10: Validate success through comprehensive testing (MANDATORY)
+  - [x] Every Phase 2 test passes as plain `it`.
+  - [x] Edge cases:
     - a set with 0 answerable cases (noise line, no division by zero);
     - all cases blind;
     - a mix of blind and non-blind in one file;
@@ -196,10 +196,10 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     - a case with `expected` but no facets (diagnosis falls back to the expected docs: no expected doc exists → coverage);
     - `--gaps-out` with no coverage misses (writes an empty `gaps.v1`);
     - Windows line endings in a set.
-  - [ ] Failure paths: unwritable eval dir on `eval init`; a malformed `targets.json`; an unreadable set file.
-  - [ ] `npm pack --dry-run` lists `skills/optimize-search/` and `docs/measure-and-tune.md`.
-  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1).
-  - [ ] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions). Fix what it confirms; record rejections.
+  - [x] Failure paths: unwritable eval dir on `eval init`; a malformed `targets.json`; an unreadable set file.
+  - [x] `npm pack --dry-run` lists `skills/optimize-search/` and `docs/measure-and-tune.md`.
+  - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1).
+  - [x] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions). Fix what it confirms; record rejections.
 - [ ] Phase 11: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/operational/retrieval-eval-guide.md`:
     - targets (file, defaults, reasons, editing);
@@ -242,7 +242,8 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 - Phase 4: a metric the blind subset has no case for (e.g. negatives) has `valueBlind` null and `met` null, shown as `-`, not judged; the Phase 2 test was changed to expect that. `--no-oracle` drops the diagnosis section and key (the gaps file still works with it). Diagnosis cases also carry `q`.
 - Phase 6: the `optimize-search` help topic did not exist, so it was added (topics.ts) with `doc: docs/measure-and-tune.md`. The `eval` topic keeps its reference doc in `doc:` (one path per topic) and gains a step naming the guide. The worked example gives #96's numbers only. The guide's section 6 says where to file (the semantic-memory GitHub repository) without naming an org.
 ## Errors Encountered
+- Phase 10 review (claude -p, no tools, given the diff): confirmed and fixed: noise line used all-case n while met is judged on blind (now 1/blind answerable n); a run with no question sets wrote targets.json before failing (loadSets now first); SKILL.md pointed at a repo-internal doc (now `help tune-ranking`); "under 1/n" wording contradicted "one question is not a signal" (now "1/n or less"). Rejected: blind coverage misses entering baseline counts (intended, only sets marked blind), per-facet coverage (by design), grep `!== 0` (outcomes are 0 on miss), docs not in pack (npm pack lists both), targets.test.ts imports (globals on, passes), range check on targets (speculative), gaps --root (defaults to cwd), --no-oracle still computes (cost unmeasurable, Phase 7). `mean-payload=NaNB` on an empty run predates #96.
 (none yet)
 
 ## Status
-**Phase 10 next** (validate). Phase 9 done (cleanup). Phase 8 done (versions at 1.31.0). Phases 1-7 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**Phase 11 next** (docs). Phase 10 done (validate). Phase 9 done (cleanup). Phase 8 done (versions at 1.31.0). Phases 1-7 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.

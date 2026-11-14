@@ -74,3 +74,8 @@ Guide walked on this repo (corpus 60b3399, cold reindex 7s, local build 1.30.1):
 - `--gaps-out` wrote gaps.v1 with 3 entries; `hewtd reconcile --gaps <file> --json` accepted it (3 questions, no errors) on both the repo's installed 2.21.0 and 3.4.1. 3.4.1 is published as `@theglitchking/hit-em-with-the-docs`, not `hewtd` (use `npx -p <pkg>@3.4.1 hewtd`). `hewtd audit` Targets section exists only in 3.4.1 (2.21.0 prints none), as the guide says. npx runs relinked `.claude/skills/documentation-lifecycle`; reverted with git checkout. `hewtd maintain --quick` modified changelog/INDEX.md (stale already); reverted, belongs to the docs phase.
 - `--baseline` then `--check` on the eval dir: pass. `gaps`, `usage-set`, `help tune-ranking` exist as the guide says.
 - Run time: oracle 2.97/3.48/2.93s vs `--no-oracle` 4.22/2.74/3.01s on 96 cases (embedder warm, index built): no measurable difference here; the oracle is a grep over ~130 docs.
+
+## Eval results: Phase 10
+- Full validation: lint, build, npm test 1337 passed (1 skipped), npm run eval 259 passed, 6 expected fail (14 new edge tests in test/retrieval-eval/operating-targets-edges.test.ts).
+- `BAND=1 bash scripts/gate-release.sh 1.30.1` fresh: PASS. Hybrid @1 91/139 (94 with export), multi @1/3/8 20/28/31 (32 export), negatives 43/47, false flags 7, mcp vs cli 0 of 186 differ; identical to 1.30.1. p95 13-15ms.
+- npm pack --dry-run lists docs/measure-and-tune.md and skills/optimize-search/{SKILL.md,evals/evals.json}.

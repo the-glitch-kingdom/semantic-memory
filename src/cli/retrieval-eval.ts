@@ -36,13 +36,14 @@ export function registerEvalCommand(program: Command): void {
         if (opts.baseline && opts.check) throw new Error("--baseline and --check are separate runs");
         if (opts.via && opts.via !== "mcp") throw new Error("--via takes `mcp`");
         const dir = evalDir(opts.notes, opts.dir);
+        const cases = loadSets(opts.notes, opts.set, opts.dir); // before any file is written: a run with no sets leaves no targets.json behind
         if (!existsSync(join(dir, TARGETS_FILE))) {
           console.error(`wrote default targets: ${writeDefaults(dir, { only: [TARGETS_FILE] }).written[0]}`);
         }
         const { targets, unknown } = loadTargets(dir); // a malformed file stops the run before the slow part
         if (unknown.length) console.error(`${join(dir, TARGETS_FILE)}: ignoring unknown targets: ${unknown.join(", ")}`);
         const via = opts.via && { cli: opts.server ?? process.argv[1], cwd: opts.cwd ?? process.cwd(), waitForReady: !!opts.waitForReady, settle: !!opts.settle };
-        const report = await runSuite(opts.notes, loadSets(opts.notes, opts.set, opts.dir), via, targets);
+        const report = await runSuite(opts.notes, cases, via, targets);
         const version = (createRequire(import.meta.url)("../../package.json") as { version: string }).version;
         if (opts.gapsOut) {
           const today = new Date().toISOString().slice(0, 10);
