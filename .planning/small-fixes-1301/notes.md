@@ -39,3 +39,6 @@ Docs-only change (banner in docs/corpora-json.md and docs/smart-middle-activatio
 
 ## Eval results: Phase 7
 Version bump only (package.json, both marketplace.json fields, plugin.json, AGENTS.md frontmatter, package-lock.json root) to 1.30.1. No ranking change.
+
+## Eval results: Phase 8
+Cleanup only. Scanned the branch diff for console/debugger/TODO/commented-out code and untracked files: none. Removed the redundant `head.startsWith("# ")` in `isGeneratedFile` (the regex already anchors on `# `).
