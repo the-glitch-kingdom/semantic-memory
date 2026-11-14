@@ -93,16 +93,17 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     - a docs fix driven by a set's misses makes that set non-blind, so write a fresh held-out set first;
     - measure on a full cold index build, and record the corpus commit, version and config;
     - treat a 1/n change as noise.
-- [ ] Phase 4: Report and diagnosis
-  - [ ] Compute the metrics from what `runSuite` already has.
+- [x] Phase 4: Report and diagnosis
+  - [x] Compute the metrics from what `runSuite` already has.
     - **#1 + related:** hybrid's `relatedPerTop` is a ratio, not a coverage. Define "#1 + related answers it" as the case's facets all matching the top result plus its `related` docs. Add it in `runFacetEval` from `ArmResponse.related`, and record the definition.
+      - Done: `tiers.all.expandedAt1 / n` already existed (top hit plus its `related` docs cover every facet); the Targets table reuses it.
     - **Top-3 verified:** a top-3 doc counts as verified when its frontmatter `last_verified` is within the staleness window hit-em-with-the-docs 3.4 uses (read its definition, read-only; record it), or its grounding verdict is `verify`/`verified`.
     - **Top-3 no missing refs:** the result's `grounding.dead_refs` is empty.
     - **p95** is the hybrid arm's.
-  - [ ] **Diagnosis** as in Phase 2. The corpus-wide facet check reuses `findStale`'s facet matching, not a second implementation. Count grep @1/@3 as the "grep oracle" line, as #96's worked example does.
-  - [ ] `formatSuite` gains a Targets section and a Diagnosis section. Both are added *after* today's lines, which stay byte-identical, so the gate scripts and any parsers are unaffected. `--json` adds `targets` and `diagnosis` keys.
-  - [ ] `--gaps-out <file>` (coverage misses → `gaps.v1`, with the question as `query` and no `used_doc`). `--no-oracle`.
-  - [ ] `eval generate` writes `blind: false` (`src/core/retrieval-eval/generate.ts` `writeGenerated`).
+  - [x] **Diagnosis** as in Phase 2. The corpus-wide facet check reuses `findStale`'s facet matching, not a second implementation. Count grep @1/@3 as the "grep oracle" line, as #96's worked example does.
+  - [x] `formatSuite` gains a Targets section and a Diagnosis section. Both are added *after* today's lines, which stay byte-identical, so the gate scripts and any parsers are unaffected. `--json` adds `targets` and `diagnosis` keys.
+  - [x] `--gaps-out <file>` (coverage misses → `gaps.v1`, with the question as `query` and no `used_doc`). `--no-oracle`.
+  - [x] `eval generate` writes `blind: false` (`src/core/retrieval-eval/generate.ts` `writeGenerated`).
 - [ ] Phase 5: The `optimize-search` skill
   - [ ] `skills/optimize-search/SKILL.md`. Its description triggers on: improving or tuning search quality on these docs; "why does search miss X"; raising eval numbers; meeting targets; running the eval and acting on it; after a `/reconcile` pass, re-measuring. It is not for a single search question (that's semantic-first) and not for a plain docs edit.
   - [ ] The body is the procedure, one loop:
@@ -235,8 +236,11 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 
 - Phase 3: `eval` loads `targets.json` (writing the defaults, one stderr line, when missing) before the slow part, so a malformed file fails fast; unknown keys warn on stderr. `eval init` takes `--notes` or `--dir`. `loadSets` already ignored `.example` (it reads `*.jsonl`), so no change there; `normalizeCase` already keeps `blind` via its rest spread. The `BLIND-SETS.md` text lives in `targets.ts` (`INIT_FILES`); Phase 6's guide is separate.
 
+- Phase 4: "verified" = a `verified` grounding verdict (hewtd's graph.v1 enum has no `verify`) or `last_verified` within 90 days (hewtd 3.4.0 `vault.audit_window_days` default, read-only). Top-3 verified / no missing refs are shares of the top-3 slots over the answerable cases (the blind subset for the blind column). p95 is the hybrid arm's, the same in both columns (replayed arms carry no latency).
+- Phase 4: a blind case whose facet no doc matches stays live (counts as an unanswered case, labelled `coverage`); `facetIssue` (metrics.ts) is the one facet check `findStale` and the diagnosis share. Grounding labels only cases answered at @1 (a non-@1 case is coverage or ranking first). No abstention label: negatives are in the Targets table (negatives flagged, false flags).
+- Phase 4: a metric the blind subset has no case for (e.g. negatives) has `valueBlind` null and `met` null, shown as `-`, not judged; the Phase 2 test was changed to expect that. `--no-oracle` drops the diagnosis section and key (the gaps file still works with it). Diagnosis cases also carry `q`.
 ## Errors Encountered
 (none yet)
 
 ## Status
-**Phase 4 next** (report and diagnosis). Phases 1-3 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**Phase 5 next** (the `optimize-search` skill). Phases 1-4 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.

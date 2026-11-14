@@ -42,3 +42,9 @@
 ## Eval results: Phase 3 (no ranking change)
 
 - `src/core/retrieval-eval/targets.ts` (defaults, `loadTargets`, `writeDefaults`, template, guide), `FacetCase.blind`, `eval init`, defaults written by `eval`. Turned into plain `it`: init x2, defaults line, malformed targets.json (operating-targets.test.ts: 9 pass, 10 expected fail left for Phase 4+). New `test/unit/targets.test.ts`.
+
+## Eval results: Phase 4 (no ranking change)
+
+- `src/core/retrieval-eval/report.ts` (Targets judging, diagnosis, section text), `facetIssue` in metrics.ts shared with `findStale`, `grounding` on `ArmResponse`, `eval --no-oracle` / `--gaps-out`, `writeGenerated` blind:false. All 19 tests in operating-targets.test.ts are plain `it` now; new `test/unit/eval-report.test.ts` covers verified window, diagnosis labels (coverage, ranking with grep, grounding), target judging and the sections.
+- No ranking numbers moved: today's report lines are unchanged and the sections are appended. Full validation numbers are below if the run completed.
+- Full validation: lint and build green; `npm test` 1328 passed, 8 expected fail, 1 flake (stdin-eof SIGTERM, passed alone); `npm run eval` 245 passed, 6 expected fail (the remaining Phase 5-6 it.fails).

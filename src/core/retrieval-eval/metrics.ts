@@ -148,6 +148,8 @@ export interface ArmResponse {
   readingPath?: string[];
   /** the `decay` block of each result that carried one, by path (`source` is the age source: last_verified / git / mtime / penalty / fresh) */
   decay?: Record<string, { multiplier: number; source?: string }>;
+  /** the `grounding` block of each result that carried one, by path: review verdict and the count of dead file refs */
+  grounding?: Record<string, { verdict?: string; dead: number }>;
 }
 export type ArmFn = (q: string, limit: number) => Promise<ArmResponse>;
 
@@ -180,6 +182,16 @@ export interface ArmMetrics {
   cov: { facet: Record<number, number>; docs: Record<number, number> };
   /** The most top-3 slots any one doc takes on cases it does not answer (it matches none of the case's facets; negatives included): the broad doc that crowds out the right ones. */
   dominance: { path: string; slots: number } | null;
+}
+
+/** The first thing wrong with a case's facets against the docs: a bad regex, or a facet no doc matches (`unmatched`). Negatives have no facets to check. */
+export function facetIssue(c: FacetCase, docs: Map<string, string>): { why: string; unmatched: boolean } | undefined {
+  for (const f of c.tier === "negative" ? [] : c.facets ?? []) {
+    let re: RegExp;
+    try { re = new RegExp(f, "i"); } catch { return { why: `bad facet regex: ${f}`, unmatched: false }; }
+    if (![...docs.values()].some((t) => re.test(t))) return { why: `no doc matches facet: ${f}`, unmatched: true };
+  }
+  return undefined;
 }
 
 /** Rank (1-based) at which the facets are first all covered by live (non-archive) results, or null. */

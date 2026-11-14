@@ -93,7 +93,7 @@ describe("eval report: targets", () => {
     expect((r.stdout + r.stderr).split("\n").filter((l) => l.includes("targets.json"))).toHaveLength(1);
   });
 
-  it.fails("prints a Targets table (metric, value all, value blind, target, met) and the noise threshold; --json carries it as `targets`", () => {
+  it("prints a Targets table (metric, value all, value blind, target, met) and the noise threshold; --json carries it as `targets`", () => {
     const d = join(dir, "ev-table");
     const text = run(d, sets.plain).stdout;
     expect(text).toMatch(/Targets/);
@@ -108,7 +108,7 @@ describe("eval report: targets", () => {
     expect(out.targets.noise).toBeCloseTo(1 / out.arms.search_hybrid.all.tiers.all.n, 6);
   });
 
-  it.fails("an edited targets.json value changes the met column", async () => {
+  it("an edited targets.json value changes the met column", async () => {
     const d = join(dir, "ev-edit");
     expect(run(d, sets.blind).status).toBe(0); // writes the defaults
     const edit = async (v: number) => {
@@ -131,7 +131,7 @@ describe("eval report: targets", () => {
     expect(readFileSync(join(d, "targets.json"), "utf-8")).toBe("{not json");
   });
 
-  it.fails("no blind case: every met cell reads `not validated` and a loud line says why", () => {
+  it("no blind case: every met cell reads `not validated` and a loud line says why", () => {
     const d = join(dir, "ev-nb");
     const text = run(d, sets.plain).stdout;
     expect(text).toContain("not validated: no blind set (mark a set blind: true, see BLIND-SETS.md)");
@@ -140,16 +140,16 @@ describe("eval report: targets", () => {
     for (const row of out.targets.rows) expect(row.met, row.metric).toBe("not validated");
   });
 
-  it.fails("with blind cases met is judged on the blind subset", () => {
+  it("with blind cases met is judged on the blind subset (a metric the blind set has no case for is shown, not judged)", () => {
     const out = json(join(dir, "ev-b"), sets.blind);
     expect(out.targets.validated).toBe(true);
-    for (const row of out.targets.rows) expect(typeof row.met, row.metric).toBe("boolean");
+    for (const row of out.targets.rows) expect(typeof row.met, row.metric).toBe(row.valueBlind === null ? "object" : "boolean");
     expect(JSON.stringify(out.targets.rows)).not.toContain("not validated");
   });
 });
 
 describe("eval report: diagnosis", () => {
-  it.fails("labels every miss (id, label, why) and counts per label; a blind case whose facet matches no doc is a coverage miss, not stale", () => {
+  it("labels every miss (id, label, why) and counts per label; a blind case whose facet matches no doc is a coverage miss, not stale", () => {
     const out = json(join(dir, "ev-diag"), sets.blind);
     const labels = ["coverage", "ranking", "grounding"];
     for (const c of out.diagnosis.cases) {
@@ -163,7 +163,7 @@ describe("eval report: diagnosis", () => {
     expect(readFileSync(join(dir, "blind.jsonl"), "utf-8")).toContain("cov-blind"); // the set itself is not rewritten
   });
 
-  it.fails("a ranking miss says whether the grep arm answered it at 8", () => {
+  it("a ranking miss says whether the grep arm answered it at 8", () => {
     const out = json(join(dir, "ev-diag2"), sets.blind);
     for (const c of out.diagnosis.cases.filter((x: any) => x.label === "ranking")) expect(typeof c.grepAt8).toBe("boolean");
     expect(out.diagnosis.grep).toHaveProperty("at1");
@@ -178,7 +178,7 @@ describe("eval report: diagnosis", () => {
     expect(run(d, sets.plain).stdout).toMatch(/12 questions, 1 stale \(skipped\)\nsettings: .*\n {2}stale stale-nb: /);
   });
 
-  it.fails("--no-oracle gives no diagnosis section", () => {
+  it("--no-oracle gives no diagnosis section", () => {
     const d = join(dir, "ev-noor");
     const off = json(d, sets.blind, "--no-oracle");
     expect(off.diagnosis).toBeUndefined();
@@ -186,7 +186,7 @@ describe("eval report: diagnosis", () => {
     expect(run(d, sets.blind).stdout).toMatch(/Diagnosis/);
   });
 
-  it.fails("--gaps-out writes the coverage misses as gaps.v1 (the shape toGapsV1 emits), question as query, no used_doc", () => {
+  it("--gaps-out writes the coverage misses as gaps.v1 (the shape toGapsV1 emits), question as query, no used_doc", () => {
     const f = join(dir, "gaps-out.json");
     const out = json(join(dir, "ev-gaps"), sets.blind, "--gaps-out", f);
     expect(existsSync(f)).toBe(true);
@@ -206,14 +206,14 @@ describe("eval report: diagnosis", () => {
 describe("eval generate", () => {
   const rules = (evalDir: string) => ({ ...process.env, SEMANTIC_MEMORY_CLAUDE_BIN: FAKE, FAKE_CLAUDE_RULES: evalDir, SEMANTIC_MEMORY_CLAUDE_SLOTS_DIR: join(evalDir, "..", "slots") });
 
-  it.fails("writeGenerated writes blind: false on every row", async () => {
+  it("writeGenerated writes blind: false on every row", async () => {
     const f = join(dir, "gen-out", "generated.jsonl");
     writeGenerated(f, [{ id: "g1", tier: "exact", q: "q", facets: ["x"] } as any, { id: "g2", tier: "negative", q: "q2" } as any]);
     const rows = (await readFile(f, "utf-8")).split("\n").filter(Boolean).map((l) => JSON.parse(l));
     expect(rows.map((r) => r.blind)).toEqual([false, false]);
   });
 
-  it.fails("the summary says the generated set is not blind", async () => {
+  it("the summary says the generated set is not blind", async () => {
     const d = join(dir, "gen-cli");
     await mkdir(join(d, "docs"), { recursive: true });
     await writeFile(join(d, "docs", "a.md"), "# Alpha\nThe harbor.dlq queue receives dead letters.\n");
