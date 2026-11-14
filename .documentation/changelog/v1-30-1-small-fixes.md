@@ -44,4 +44,4 @@ Issues #36, #35, #34, #27, #28. Fact: [js-regex-word-boundary-matches-inside-pat
 
 ## Limits
 
-A bare `(name)` inside a markdown link URL can still be auto-linked (path forms are protected). The search graph still resolves wikilinks by basename only.
+Markdown link targets `](...)` are never auto-linked. The search graph still resolves wikilinks by basename only.

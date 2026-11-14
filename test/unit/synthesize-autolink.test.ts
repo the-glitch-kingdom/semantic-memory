@@ -79,6 +79,12 @@ describe("synthesize autoWikilink (#36)", () => {
       expect(out).not.toContain("[[auth]]");
     });
 
+    it("leaves a bare name used as a markdown link target unlinked", () => {
+      const out = body("See [the runbook](auth) now.", ["auth"]).split("\n## Related")[0];
+      expect(out).toContain("[the runbook](auth)");
+      expect(out).not.toContain("[[auth]]");
+    });
+
     it("resolves a related entry given as a path", () => {
       const out = body("Uses auth here.", ["decisions/auth.md"], new Set(["auth"]));
       expect(out).toContain("- [[auth]]");

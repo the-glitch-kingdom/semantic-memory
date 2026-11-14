@@ -126,8 +126,8 @@ function buildBody(title: string, answer: string, relatedNotes: string[], knownN
  * with a [[wikilink]]. Conservative — only replaces whole-word matches outside code blocks.
  */
 function autoWikilink(body: string, relatedNotes: string[]): string {
-  // Skip content inside fenced code blocks and inline code spans
-  const parts = body.split(/(```[\s\S]*?```|`[^`\n]+`)/g);
+  // Skip fenced code blocks, inline code spans and markdown link targets `](...)`
+  const parts = body.split(/(```[\s\S]*?```|`[^`\n]+`|\]\([^)\n]*\))/g);
   return parts
     .map((part, i) => {
       if (i % 2 === 1) return part; // code block
