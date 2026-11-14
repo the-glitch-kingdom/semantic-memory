@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { join, basename } from "node:path";
+import { join, basename, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { lintVault } from "./lint.js";
@@ -236,15 +236,39 @@ async function checkMcpJsonEntry(projectRoot: string): Promise<DriftFinding | nu
 // Events the plugin registers through its own hooks/hooks.json (resolved via
 // CLAUDE_PLUGIN_ROOT). On a plugin-style install these live in the plugin, not
 // the project's .claude/settings.json, so they must count as registered.
-function pluginRegisteredHookEvents(): string[] {
+function pluginRegisteredHookEvents(projectRoot: string): string[] {
+  const events = new Set<string>();
+  for (const root of pluginRoots(projectRoot)) {
+    try {
+      const hooksPath = join(root, "hooks", "hooks.json");
+      if (!existsSync(hooksPath)) continue;
+      const hooks = JSON.parse(readFileSync(hooksPath, "utf-8"))?.hooks ?? {};
+      for (const e of Object.keys(hooks)) if (Array.isArray(hooks[e]) && hooks[e].length > 0) events.add(e);
+    } catch {
+      /* unreadable hooks.json: skip this root */
+    }
+  }
+  return [...events];
+}
+
+// CLAUDE_PLUGIN_ROOT when set; otherwise the installPath of each semantic-memory entry in
+// <claude config dir>/plugins/installed_plugins.json that applies to this project (#34).
+function pluginRoots(projectRoot: string): string[] {
+  const env = process.env.CLAUDE_PLUGIN_ROOT;
+  if (env) return [env];
   try {
-    const root = process.env.CLAUDE_PLUGIN_ROOT;
-    if (!root) return [];
-    const hooksPath = join(root, "hooks", "hooks.json");
-    if (!existsSync(hooksPath)) return [];
-    const data = JSON.parse(readFileSync(hooksPath, "utf-8"));
-    const hooks = data?.hooks ?? {};
-    return Object.keys(hooks).filter((e) => Array.isArray(hooks[e]) && hooks[e].length > 0);
+    const file = join(process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"), "plugins", "installed_plugins.json");
+    if (!existsSync(file)) return [];
+    const plugins = JSON.parse(readFileSync(file, "utf-8"))?.plugins ?? {};
+    const roots: string[] = [];
+    for (const [key, entries] of Object.entries<any>(plugins)) {
+      if (!key.startsWith("semantic-memory@") || !Array.isArray(entries)) continue;
+      for (const e of entries) {
+        const applies = e?.scope === "user" || ((e?.scope === "project" || e?.scope === "local") && typeof e.projectPath === "string" && resolve(e.projectPath) === resolve(projectRoot));
+        if (applies && typeof e.installPath === "string") roots.push(e.installPath);
+      }
+    }
+    return roots;
   } catch {
     return [];
   }
@@ -257,7 +281,7 @@ async function checkHookRegistration(projectRoot: string): Promise<DriftFinding 
     const data = JSON.parse(await readFile(settings, "utf-8"));
     const hooks = data?.hooks ?? {};
     const required = ["SessionStart", "UserPromptSubmit", "Stop"];
-    const pluginEvents = pluginRegisteredHookEvents();
+    const pluginEvents = pluginRegisteredHookEvents(projectRoot);
     const missing: string[] = [];
     for (const event of required) {
       const arr = hooks[event];
@@ -292,7 +316,7 @@ async function checkHookRegistration(projectRoot: string): Promise<DriftFinding 
 async function checkHookDoubleRegistration(projectRoot: string): Promise<DriftFinding | null> {
   const settings = join(projectRoot, ".claude", "settings.json");
   if (!existsSync(settings)) return null;
-  const pluginEvents = pluginRegisteredHookEvents();
+  const pluginEvents = pluginRegisteredHookEvents(projectRoot);
   if (pluginEvents.length === 0) return null; // not a plugin install / no plugin hooks to collide with
   try {
     const data = JSON.parse(await readFile(settings, "utf-8"));

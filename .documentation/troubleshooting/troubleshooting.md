@@ -343,8 +343,16 @@ The rest of this document is the original v0.x troubleshooting matrix. All entri
 - **Fix:** `SKIP_VAULT_LINT=1 git commit ...` — documented in `scripts/pre-commit-lint.sh`.
 
 ### Broken-link lint flags legitimate links
-- **Cause:** target note name has a different basename than the `[[wikilink]]` text.
+- **Cause:** target note name has a different basename than the `[[wikilink]]` text. Since 1.30.1 a link also resolves by frontmatter `id` / `incident_id` and by the folder slug of an incident folder (`incidents/<slug>/narrative.md`), so `[[<slug>]]` is not reported.
 - **Fix:** rename the link to match, or rename the target file to match.
+
+### Lint reports schema errors on `INDEX.md` or `log.md` (before 1.30.1)
+- **Cause:** the plugin's generated files carry no frontmatter and were linted as notes.
+- **Fix:** upgrade to 1.30.1. Generated files are recognised by their banner and skip schema checks. A hand-written `INDEX.md` without the banner is still linted.
+
+### `hook_registration` warns "missing hook events" on a plugin install (before 1.30.1)
+- **Cause:** the plugin was found only through `CLAUDE_PLUGIN_ROOT`, which is unset when healthcheck runs from a terminal.
+- **Fix:** upgrade to 1.30.1. Without `CLAUDE_PLUGIN_ROOT`, healthcheck reads `installed_plugins.json` under `CLAUDE_CONFIG_DIR` or `~/.claude`: `semantic-memory@*` entries at user scope, or project/local scope for this project, and their `hooks/hooks.json`.
 
 ---
 

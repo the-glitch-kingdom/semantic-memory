@@ -3,7 +3,7 @@ title: Changelog Registry
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-11-11'
+last_updated: '2026-11-14'
 version: '1.0.0'
 generated: true
 purpose: Quick reference for changelog documentation
@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 45 |
+| Documents | 46 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -36,17 +36,17 @@ purpose: Quick reference for changelog documentation
 
 ## Recently Updated
 
+- [v1.30.1 - small fixes](v1-30-1-small-fixes.md) - 2026-11-14
 - [v1.29.0 - long-term memory](v1-29-0-long-term-memory.md) - 2026-11-11
 - [v1.30.0 - stale code graph](v1-30-0-stale-code-graph.md) - 2026-11-11
 - [v1.27.1 - decay day clock](v1-27-1-decay-day-clock.md) - 2026-11-10
 - [v1.28.0 - whole-answer ranking](v1-28-0-whole-answer-ranking.md) - 2026-11-10
-- [v1.22.0 - MCP metadata gap and long sections](v1-22-0-mcp-metadata-gap-long-sections.md) - 2026-11-09
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 45 |
+| active | 46 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |
@@ -62,4 +62,4 @@ purpose: Quick reference for changelog documentation
 
 ---
 
-*Last updated: 2026-11-11*
+*Last updated: 2026-11-14*

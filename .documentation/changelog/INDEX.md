@@ -3,7 +3,7 @@ title: Changelog Documentation Index
 tier: reference
 domains: [changelog]
 status: active
-last_updated: '2026-11-11'
+last_updated: '2026-11-14'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of changelog documentation
@@ -15,7 +15,7 @@ purpose: Complete listing of changelog documentation
 
 ## Overview
 
-- **Total Documents:** 45
+- **Total Documents:** 46
 - **Domain:** `changelog/`
 - **Category:** development
 - **Load Priority:** 5/10
@@ -59,6 +59,7 @@ purpose: Complete listing of changelog documentation
 | [v1.3.1 — selection-logging telemetry](v1-3-1-telemetry.md) | active | 2026-07-10 | 653 | What v1.3.1 added — local, opt-out selection-logging telemetry that observes retrieval and citation, a decay_candidates lint that cross-references it against decay state, and a selection-stats CLI. Precursor to v1.4 usage-feedback ranking. |
 | [v1.3 — confidence decay (age-aware retrieval ranking)](v1-3-confidence-decay.md) | active | 2026-07-10 | 753 | What v1.3.0 added — smooth, type-aware confidence decay that down-weights stale notes in search ranking, verify_note to reset the clock, evergreen opt-out, and decay CLI introspection. |
 | [v1.30.0 - stale code graph](v1-30-0-stale-code-graph.md) | active | 2026-11-11 | 192 | What v1.30.0 changed so a hewtd graph export older than HEAD no longer misreports cited code, and the measurements behind it. |
+| [v1.30.1 - small fixes](v1-30-1-small-fixes.md) | active | 2026-11-14 | 217 | What v1.30.1 fixed (synthesize auto-links, lint on generated files and incident ids, healthcheck plugin lookup) and the measurements behind it. |
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](v1-4-0-resident-bridge.md) | active | 2026-07-10 | 961 | What v1.4.0 added — a golden eval harness, archive path-class down-weighting, injection hygiene for the vault-context block, a learned human-to-artifact lexicon with propose-and-confirm capture, verbatim symptom capture, two-tier query expansion, and a token-frugal tool surface. Tool count 41→42 (manage_lexicon). |
 | [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](v1-5-0-expert-character.md) | active | 2026-07-11 | 2,127 | What v1.5.0 added — entity dossiers with two-hop retrieval and lexicon-alias fold-in, usage-feedback ranking that consumes the v1.3.1 selection log plus a decoys lint, Stop/SessionStart session paging (digest-as-proposal), and a speaker profile learned via correction cues. Tool count 42→44 (manage_dossier, manage_profile). |
 | [v1.5.2 — docs index freshness (issue](v1-5-2-docs-index-freshness.md) | active | 2026-10-24 | 521 | What v1.5.2 fixed: stale cached index rebuilt at startup, watcher working under chokidar 5, one bad doc no longer failing the whole index, hooks searching every semantic-* notes path, capture-pending kept per session, and the dependency audit. |
@@ -84,4 +85,4 @@ This domain covers: changelog, release, version, shipped
 
 ---
 
-*Last updated: 2026-11-11*
+*Last updated: 2026-11-14*
