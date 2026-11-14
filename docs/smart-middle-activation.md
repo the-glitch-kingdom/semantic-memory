@@ -14,6 +14,8 @@ purpose: Document the first-run heuristic semantic-memory uses to auto-detect wh
 
 # Smart-middle activation
 
+> **Superseded, never implemented.** Federation (`federation.sources`) replaced this design; see the [federation guide](../.documentation/operational/federation-guide.md) to search extra corpora. babel-fish writes `.claude/project-map/sections/`, not `.babel-fish/`.
+
 > **Status: planned for 2.0.0b.** This document describes the auto-detection heuristic that runs the first time `semantic-memory` is invoked in a project (i.e., when `<project-root>/.semantic/corpora.json` doesn't exist). The implementation lands with the multi-corpus refactor.
 
 ## The three approaches considered

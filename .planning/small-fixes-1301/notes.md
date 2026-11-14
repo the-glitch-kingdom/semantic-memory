@@ -27,3 +27,7 @@ No ranking change (lint/synthesize only). #36 (4) and #27 (3) cases pass as plai
 
 No ranking change (lint/healthcheck only). #35 (1) and #34 (2) it.fails now plain it; 11 tests pass in the two files. Generated = index-regen or log banner at file start (CRLF tolerated); such files skip schema validation and noLastVerified, broken-link checks still run. #34 also feeds checkHookDoubleRegistration (same pluginRegisteredHookEvents), which is correct for user-scope installs.
 Also: test/unit/healthcheck.test.ts and healthcheck-double-hook.test.ts now stub CLAUDE_CONFIG_DIR, because the real ~/.claude installed_plugins.json made the fallback hide expected warnings.
+
+## Eval results: Phase 5
+
+Docs-only change (banner in docs/corpora-json.md and docs/smart-middle-activation.md); no measurements.
