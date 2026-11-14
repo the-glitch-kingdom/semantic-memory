@@ -19,3 +19,6 @@
 
 ## Eval results: Phase 2
 Tests only, no ranking change. As plain `it`, the 10 bug cases fail on: inline-code and prefix/path links, non-note related entry wrapped (#36); generated INDEX.md/log.md schema errors (#35); folder slug / `id` / `incident_id` links reported broken (#27); `hook_registration` warn with a user- or project-scope installed_plugins.json entry (#34). 12 guards pass today. #34 tests stub HOME, CLAUDE_CONFIG_DIR and CLAUDE_PLUGIN_ROOT under a temp dir.
+
+## Eval results: Phase 3
+No ranking change (lint/synthesize only). #36 (4) and #27 (3) cases pass as plain `it`; #35 and #34 it.fails remain for Phase 4.

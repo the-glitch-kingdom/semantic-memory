@@ -93,18 +93,16 @@ export async function lintVault(
 
   const findings: LintFinding[] = [];
   // Build known-note set first, to make broken-link detection O(1) per link.
-  const knownNames = new Set<string>();
   const rawByPath = new Map<string, string>();
   for (const rel of files) {
     try {
-      const raw = await readFile(join(notesPath, rel), "utf-8");
-      rawByPath.set(rel, raw);
-      // Wikilink names match on basename-without-ext (obsidian-style)
-      knownNames.add(basename(rel).replace(/\.md$/, ""));
+      rawByPath.set(rel, await readFile(join(notesPath, rel), "utf-8"));
     } catch {
       /* skip */
     }
   }
+  // A narrowed pathGlob must still resolve links against the whole vault.
+  const knownNames = await loadKnownNames(notesPath, opts.pathGlob ? undefined : rawByPath);
 
   // Code-symbol drift is opt-in and only meaningful against a real code repo.
   const codeRoot = opts.checkCodeSymbols
@@ -183,6 +181,43 @@ export async function lintVault(
     byRule,
     counts: { errors, warnings, filesLinted: files.length, noLastVerified },
   };
+}
+
+/**
+ * Names a [[wikilink]] can resolve to: basename without .md, frontmatter `id` / `incident_id`
+ * (strings only), and the folder slug of a folder-form note (`<slug>/narrative.md` or `index.md`).
+ */
+export function addKnownNames(names: Set<string>, rel: string, raw: string): void {
+  const base = basename(rel).replace(/\.md$/, "");
+  names.add(base);
+  if (/^(narrative|index)$/i.test(base) && dirname(rel) !== ".") names.add(basename(dirname(rel)));
+  try {
+    const data = matter(raw).data;
+    for (const k of ["id", "incident_id"]) if (typeof data[k] === "string" && data[k]) names.add(data[k]);
+  } catch {
+    /* unreadable frontmatter: basename still counts */
+  }
+}
+
+/** Known wikilink names for a whole vault; pass already-read files to skip the re-read. */
+export async function loadKnownNames(notesPath: string, rawByPath?: Map<string, string>): Promise<Set<string>> {
+  const names = new Set<string>();
+  if (!rawByPath) {
+    rawByPath = new Map();
+    const all = await glob("**/*.md", {
+      cwd: notesPath,
+      ignore: ["node_modules/**", ".semantic-sidekick-index/**"],
+    });
+    for (const rel of all) {
+      try {
+        rawByPath.set(rel, await readFile(join(notesPath, rel), "utf-8"));
+      } catch {
+        /* skip */
+      }
+    }
+  }
+  for (const [rel, raw] of rawByPath) addKnownNames(names, rel, raw);
+  return names;
 }
 
 function findBrokenLinks(

@@ -50,19 +50,19 @@ describe("#27 wikilinks resolve folder-form incidents", () => {
     return r.byRule.broken_links.some((f) => f.message.includes(slug));
   };
 
-  it.fails("resolves by incident folder slug (narrative.md)", async () => {
+  it("resolves by incident folder slug (narrative.md)", async () => {
     await seed("incidents/2026-07-09-slug/narrative.md", note());
     await links("2026-07-09-slug");
     expect(await broken("2026-07-09-slug")).toBe(false);
   });
 
-  it.fails("resolves by frontmatter id", async () => {
+  it("resolves by frontmatter id", async () => {
     await seed("incidents/x/narrative.md", note("id: 2026-07-09-slug\n"));
     await links("2026-07-09-slug");
     expect(await broken("2026-07-09-slug")).toBe(false);
   });
 
-  it.fails("resolves by frontmatter incident_id", async () => {
+  it("resolves by frontmatter incident_id", async () => {
     await seed("incidents/x/facts.md", note("incident_id: 2026-07-09-slug\n"));
     await links("2026-07-09-slug");
     expect(await broken("2026-07-09-slug")).toBe(false);

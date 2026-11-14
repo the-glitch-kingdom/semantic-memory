@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { ServerContext } from "../context.js";
 import { applyPatch, type ChangeSet } from "../../core/patch.js";
 import { buildSynthesizeChangeSet, buildPromoteChangeSet } from "../../core/synthesize.js";
+import { loadKnownNames } from "../../core/lint.js";
 import { buildIngestChangeSet } from "../../core/ingest.js";
 import { installDefaultSchema } from "../../core/schema.js";
 import { logEvent } from "../../core/log.js";
@@ -134,6 +135,7 @@ export function registerPatchTools(server: McpServer, ctx: ServerContext): void 
         symptoms: args.symptoms,
         proposal: args.proposal,
         proposal_subdir: args.proposal_subdir,
+        knownNames: await loadKnownNames(ctx.notesPath),
       });
       const result = await applyPatch(ctx.notesPath, preview.changeset, {
         dryRun: args.dry_run,

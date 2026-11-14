@@ -14,26 +14,26 @@ function body(answer: string, related: string[], knownNames?: Set<string>): stri
 }
 
 describe("synthesize autoWikilink (#36)", () => {
-  describe("bugs (it.fails until Phase 3)", () => {
-    it.fails("leaves a related note named in an inline code span unlinked", () => {
+  describe("bugs", () => {
+    it("leaves a related note named in an inline code span unlinked", () => {
       const out = body("Edit `.claude/rules/operational-runbook.md` first.", ["operational-runbook"]);
       expect(out).toContain("`.claude/rules/operational-runbook.md`");
-      expect(out).not.toMatch(/`[^`]*\[\[/);
+      expect(out.split("\n## Related")[0]).not.toContain("[[");
     });
 
-    it.fails("does not link a name that is a prefix of a longer filename", () => {
+    it("does not link a name that is a prefix of a longer filename", () => {
       const out = body("See keycloak-custom-image-workflow.md for the steps.", ["keycloak-custom-image"]);
       expect(out).toContain("keycloak-custom-image-workflow.md");
       expect(out.split("\n## Related")[0]).not.toContain("[[keycloak-custom-image]]");
     });
 
-    it.fails("does not link a name that is the tail of a path", () => {
+    it("does not link a name that is the tail of a path", () => {
       const out = body("Docs live in devops/keycloak-custom-image.md today.", ["keycloak-custom-image"]);
       expect(out.split("\n## Related")[0]).toContain("devops/keycloak-custom-image.md");
       expect(out.split("\n## Related")[0]).not.toContain("[[");
     });
 
-    it.fails("never wraps a related entry that is not a vault note, in the body or under Related", () => {
+    it("never wraps a related entry that is not a vault note, in the body or under Related", () => {
       const out = body("Rules are in operational-runbook.", ["operational-runbook", "auth-migration"], new Set(["auth-migration"]));
       expect(out).not.toContain("[[operational-runbook]]");
       expect(out).toContain("`operational-runbook`"); // listed as code text
