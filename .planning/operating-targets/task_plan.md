@@ -131,13 +131,13 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     - check that `scripts/link-skills.js` / the plugin runtime links it like the other four (by hand in a temp install);
     - the AGENTS.md contract, if it lists skills.
   - [x] **Trigger eval:** `skills/optimize-search/evals/evals.json` in the semantic-first shape, about 10 should-trigger and 10 should-not prompts (a plain search question, a docs edit, `/reconcile` on its own). Run it with the existing `skill-eval` trigger tooling, capped at about 60 runs. Record the precision and recall. Tune the description at most twice, on the train prompts only.
-- [ ] Phase 6: Shipped measure-and-tune guide (user, 2026-11-14)
-  - [ ] `docs/measure-and-tune.md`. `docs/` is in `package.json` `files`, so it ships in the npm package; `.documentation/` doesn't. Write it for users, not maintainers.
+- [x] Phase 6: Shipped measure-and-tune guide (user, 2026-11-14)
+  - [x] `docs/measure-and-tune.md`. `docs/` is in `package.json` `files`, so it ships in the npm package; `.documentation/` doesn't. Write it for users, not maintainers.
     - **Sanitised:**
       - numbers only from real trees, with no project names, paths, people or private repos;
       - examples use a generic `.documentation/` tree;
       - nothing copied from this repo's own docs that names the maintainer's projects.
-  - [ ] Contents, as one loop across both tools:
+  - [x] Contents, as one loop across both tools:
     1. **Setup:**
        - semantic-memory and hit-em-with-the-docs installed (versions that have these features: semantic-memory 1.31.0+, hit-em-with-the-docs 3.4.0+ for audit Targets and 3.x for `/reconcile --gaps`);
        - a full cold index build;
@@ -162,12 +162,12 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
        - `eval --baseline` / `--check` to hold the gains.
     5. **A worked example**, #96's numbers only: the non-blind set went 0.64 → 0.91 @1 while the blind set went 0.27 → 0.30; the grep oracle showed most blind misses were coverage. The lesson: without a blind set and the oracle you declare victory too early.
     6. **Reporting a ranking problem:** the anonymised repro (a few docs plus `{id, tier, q, facets}` JSONL) and where to file it.
-  - [ ] Linked from:
+  - [x] Linked from:
     - the `optimize-search` skill (which says "follow docs/measure-and-tune.md");
     - the help topics `eval` and `optimize-search` (`doc:` field);
     - `README.md` (one line under help/eval);
     - `.documentation/operational/retrieval-eval-guide.md`.
-  - [ ] Test (unit, with the Phase 2 skill test):
+  - [x] Test (unit, with the Phase 2 skill test):
     - the guide exists under a path `package.json` `files` covers (`npm pack --dry-run --json` lists it);
     - every `semantic-memory …`, `/reconcile …` and `hewtd …` command it names exists (the same check as the skill);
     - it holds no absolute home paths or repo-private names (a deny-list regex for `/home/`, `~/workspace`, the maintainer's org and project names).
@@ -240,8 +240,9 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 - Phase 4: "verified" = a `verified` grounding verdict (hewtd's graph.v1 enum has no `verify`) or `last_verified` within 90 days (hewtd 3.4.0 `vault.audit_window_days` default, read-only). Top-3 verified / no missing refs are shares of the top-3 slots over the answerable cases (the blind subset for the blind column). p95 is the hybrid arm's, the same in both columns (replayed arms carry no latency).
 - Phase 4: a blind case whose facet no doc matches stays live (counts as an unanswered case, labelled `coverage`); `facetIssue` (metrics.ts) is the one facet check `findStale` and the diagnosis share. Grounding labels only cases answered at @1 (a non-@1 case is coverage or ranking first). No abstention label: negatives are in the Targets table (negatives flagged, false flags).
 - Phase 4: a metric the blind subset has no case for (e.g. negatives) has `valueBlind` null and `met` null, shown as `-`, not judged; the Phase 2 test was changed to expect that. `--no-oracle` drops the diagnosis section and key (the gaps file still works with it). Diagnosis cases also carry `q`.
+- Phase 6: the `optimize-search` help topic did not exist, so it was added (topics.ts) with `doc: docs/measure-and-tune.md`. The `eval` topic keeps its reference doc in `doc:` (one path per topic) and gains a step naming the guide. The worked example gives #96's numbers only. The guide's section 6 says where to file (the semantic-memory GitHub repository) without naming an org.
 ## Errors Encountered
 (none yet)
 
 ## Status
-**Phase 6 next** (the shipped measure-and-tune guide). Phases 1-5 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**Phase 7 next** (measure). Phases 1-6 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.

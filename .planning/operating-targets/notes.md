@@ -56,3 +56,8 @@
 - Link check: a temp install ran `scripts/link-skills.js`; 5 skills linked, including `optimize-search`.
 - `test/unit/optimize-search.test.ts` skill cases (5) are plain `it` now; 3 guide cases remain `it.fails` for Phase 6.
 - Full validation: lint, build green; npm test 1334 passed, 3 expected fail (Phase 6 guide cases), 1 skipped; npm run eval 245 passed, 6 expected fail.
+
+## Eval results: Phase 6 (no ranking change, docs and help only)
+
+- `docs/measure-and-tune.md` (ships via `files: docs`), new help topic `optimize-search`, links from the skill, `eval` topic, README and the eval guide. The 3 guide `it.fails` in `test/unit/optimize-search.test.ts` are plain `it`.
+- Full validation: lint, build green; npm test 1337 passed, 1 skipped; npm run eval 245 passed, 6 expected fail (unchanged, not guide cases).

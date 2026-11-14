@@ -1,5 +1,5 @@
 // #96 Phase 2: acceptance for the shipped `optimize-search` skill and docs/measure-and-tune.md, written before either exists.
-// `it.fails` cases become plain `it` in Phase 5 (skill) and Phase 6 (guide).
+// Skill and guide cases are plain `it` (Phases 5-6).
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -68,7 +68,7 @@ describe("optimize-search skill (#96)", () => {
 });
 
 describe("docs/measure-and-tune.md (#96)", () => {
-  it.fails("exists and ships in the npm package", () => {
+  it("exists and ships in the npm package", () => {
     expect(existsSync(GUIDE)).toBe(true);
     const r = spawnSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], { cwd: root, encoding: "utf-8" });
     expect(r.status, r.stderr).toBe(0);
@@ -76,11 +76,11 @@ describe("docs/measure-and-tune.md (#96)", () => {
     expect(paths).toContain("docs/measure-and-tune.md");
   }, 60_000);
 
-  it.fails("every command it names exists", () => {
+  it("every command it names exists", () => {
     checkCommands(read(GUIDE));
   });
 
-  it.fails("holds no absolute home paths or repo-private names", () => {
+  it("holds no absolute home paths or repo-private names", () => {
     const t = read(GUIDE);
     expect(t.length).toBeGreaterThan(0); // an empty file would pass the deny-list vacuously
     expect(t).not.toMatch(/\/home\/|~\/workspace|\/Users\/|the-glitch-kingdom|theglitchking|kentro|reinvestorhub|tmarlette/i);

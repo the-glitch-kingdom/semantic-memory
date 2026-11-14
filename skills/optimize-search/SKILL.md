@@ -5,7 +5,7 @@ description: Improve or tune search quality on the project's docs by running the
 
 # optimize-search
 
-One loop: measure, diagnose, route each miss to the tool that fixes it, re-measure. The full guide is `docs/measure-and-tune.md` in the package. `/reconcile` (hit-em-with-the-docs) edits the docs; this skill decides what to edit and proves it helped.
+One loop: measure, diagnose, route each miss to the tool that fixes it, re-measure. Follow `docs/measure-and-tune.md` (the full guide, shipped in the package). `/reconcile` (hit-em-with-the-docs) edits the docs; this skill decides what to edit and proves it helped.
 
 ## Hard rules
 

@@ -87,6 +87,8 @@ A `--read-only` server (the docs folder) exposes 21: search, read, graph, system
 
 `semantic-memory help`, the MCP tool `help` and `/help` answer how-do-I questions (add an index, federated search, eval, decay and more). `semantic-memory help <topic>` shows one.
 
+To measure search on your docs against operating targets and fix what it misses, follow [the measure-and-tune guide](docs/measure-and-tune.md) (`semantic-memory help optimize-search`; the `optimize-search` skill runs the same loop).
+
 ## Federated search (v1.19+)
 
 `federation.sources` in `vault.schema.yml` (and hit-em-with-the-docs `related_repos`, on by default when its config exists) lets one `search_hybrid` search sibling docs trees too. See [the federation guide](.documentation/operational/federation-guide.md).

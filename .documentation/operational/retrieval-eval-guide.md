@@ -31,6 +31,8 @@ backlinks: []
 
 One caveat: if the notes changed since the last index, opening the server reconciles them and updates the index for the changed files only.
 
+To validate operating targets on a blind set and fix what the eval misses, follow [the measure-and-tune guide](../../docs/measure-and-tune.md).
+
 ## Run it
 
 ```bash
