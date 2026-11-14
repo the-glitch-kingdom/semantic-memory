@@ -38,13 +38,13 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
-  - [ ] `eval init --notes <dir>` writes `targets.json`, `questions.template.jsonl.example` and `BLIND-SETS.md` into the eval dir.
+- [x] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
+  - [x] `eval init --notes <dir>` writes `targets.json`, `questions.template.jsonl.example` and `BLIND-SETS.md` into the eval dir.
     - Each target has `value` and `why`.
     - A second run leaves edited files untouched and says so; `--force` rewrites.
     - The template isn't picked up as a question set: `loadSets` reads `*.jsonl`, so the template has a non-`.jsonl` extension. Assert that `loadSets` ignores it.
-  - [ ] `eval` with no `targets.json` writes the defaults and prints one line saying where.
-  - [ ] `eval` prints a **Targets** table: metric, value (all), value (blind), target, met. The metrics and default targets are the issue's:
+  - [x] `eval` with no `targets.json` writes the defaults and prints one line saying where.
+  - [x] `eval` prints a **Targets** table: metric, value (all), value (blind), target, met. The metrics and default targets are the issue's:
 
     | metric | target |
     |---|---|
@@ -59,22 +59,22 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     | p95 | ≤ 100 ms |
 
     It also prints `noise: 1/n = …` for the answerable count. The same data appears under `--json` as `targets`.
-  - [ ] An edited `targets.json` value changes the met column. A malformed file fails with a clear error naming the file, and never silently uses the defaults.
-  - [ ] **No blind case measured:** every met cell reads `not validated` and a loud line says `not validated: no blind set (mark a set blind: true, see BLIND-SETS.md)`. **With blind cases:** met is judged on the blind subset.
-  - [ ] **Per-miss diagnosis**, for each answerable case of the hybrid arm:
+  - [x] An edited `targets.json` value changes the met column. A malformed file fails with a clear error naming the file, and never silently uses the defaults.
+  - [x] **No blind case measured:** every met cell reads `not validated` and a loud line says `not validated: no blind set (mark a set blind: true, see BLIND-SETS.md)`. **With blind cases:** met is judged on the blind subset.
+  - [x] **Per-miss diagnosis**, for each answerable case of the hybrid arm:
     - not answered @1, and some facet matches no doc in the corpus → `coverage`;
     - not answered @1, every facet matches some doc → `ranking`, with whether the grep arm answered it @8;
     - answered @3, but an answering top-3 doc is unverified or cites a missing ref → `grounding`.
     The labels are shown per case (id, label, one-line why), and counted per label.
-  - [ ] **Blind coverage misses are counted, not skipped.** Today `findStale` skips a case whose facet matches no doc, and so drops exactly the coverage misses. For `blind: true` cases they count as misses labelled `coverage`. For non-blind cases the `stale` behaviour is unchanged (byte-identical report lines).
-  - [ ] `--no-oracle` gives no diagnosis section.
-  - [ ] `eval --gaps-out <file>` writes the coverage misses as `gaps.v1` (`toGapsV1`, `src/core/usage-log.ts:195`), so `hewtd reconcile --gaps <file>` reads them. Assert the shape against `toGapsV1`'s output.
-  - [ ] `eval generate` writes `blind: false` on every row, and its summary says the set isn't blind.
-  - [ ] Guards (plain `it`, pass today):
+  - [x] **Blind coverage misses are counted, not skipped.** Today `findStale` skips a case whose facet matches no doc, and so drops exactly the coverage misses. For `blind: true` cases they count as misses labelled `coverage`. For non-blind cases the `stale` behaviour is unchanged (byte-identical report lines).
+  - [x] `--no-oracle` gives no diagnosis section.
+  - [x] `eval --gaps-out <file>` writes the coverage misses as `gaps.v1` (`toGapsV1`, `src/core/usage-log.ts:195`), so `hewtd reconcile --gaps <file>` reads them. Assert the shape against `toGapsV1`'s output.
+  - [x] `eval generate` writes `blind: false` on every row, and its summary says the set isn't blind.
+  - [x] Guards (plain `it`, pass today):
     - `eval --json` keeps every existing field;
     - `eval --baseline` / `--check` behave as today;
     - `scripts/gate-release.sh` and `scripts/eval-against-release.sh` still parse the report (run them, or the parts that read the JSON).
-  - [ ] The `optimize-search` skill (unit, next to `test/unit/skill-surfaces.test.ts`):
+  - [x] The `optimize-search` skill (unit, next to `test/unit/skill-surfaces.test.ts`):
     - `skills/optimize-search/SKILL.md` exists with frontmatter `name` and `description`;
     - it is listed in `package.json` `files`;
     - the surfaces test's shipped-skill list includes it;
@@ -227,6 +227,7 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 4. How should coverage misses reach hit-em-with-the-docs? As `gaps.v1`, which `/reconcile --gaps` already reads (hewtd 3.4.1). hewtd's own "retrieval-eval coverage import" is listed as deferred on its side.
 
 ## Decisions Made
+- Phase 2 contract shapes (tests pin them; Phases 3-4 build to them): `targets.json` is a flat object `{<metric>: {value, why}}` with keys `hybrid_at1, hybrid_at3, exact_at1, paraphrase_at1, related_at1, verified_top3, no_missing_refs_top3, negatives_flagged, false_flags, p95_ms`. `--json` gains `targets: {rows: [{metric, value, valueBlind, target, met}], validated, noise}` (`met` is `"not validated"` without a blind case) and `diagnosis: {cases: [{id, label, why, grepAt8?}], counts: {coverage, ranking, grounding}, grep: {at1, at3}}`. `eval init` accepts `--dir` and `--force`. Change them in the tests if Phase 3-4 finds a better shape.
 - Version 1.31.0. Runs after 1.30.1 (Plan A, `small-fixes-1301`) ships; merge main into this branch first (don't rebase), and archive `small-fixes-1301` here.
 - Scope decisions: see Goal (user, 2026-11-14).
 - The skill is named `optimize-search` and ships in semantic-memory; it drives hit-em-with-the-docs' `/reconcile` and `audit` without changing them.
@@ -236,4 +237,4 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 (none yet)
 
 ## Status
-**Phase 2 next** (after Plan A ships and main is merged in). Phase 1 done: see notes.md.
+**Phase 3 next** (targets file and `eval init`). Phases 1-2 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.

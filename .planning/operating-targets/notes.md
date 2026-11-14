@@ -30,3 +30,11 @@
 
 ## Skill request (user, 2026-11-14)
 "can we also plan a skill to accompany /reconcile so that we maintain our standards and process / procedures for optimizations?" → `optimize-search`, Phase 5.
+
+## Eval results: Phase 2 (acceptance tests, no src change)
+
+- `test/retrieval-eval/operating-targets.test.ts`: 19 tests. 14 `it.fails` (init x2, defaults line, Targets table, edited met, malformed file, not validated, blind judged, diagnosis labels + blind coverage, ranking grep flag, `--no-oracle`, `--gaps-out`, `writeGenerated` blind:false, generate summary). 5 plain guards, pass today (loadSets ignores `.example`, non-blind stale unchanged, `--json` fields, `--baseline`/`--check` + first report lines, gate scripts read only kept fields).
+- `test/unit/optimize-search.test.ts`: 8 `it.fails` (SKILL.md frontmatter, `package.json` files, surfaces list, commands exist, hard rules, guide ships in `npm pack`, guide commands, guide deny-list).
+- Each `it.fails` was also run as plain `it` and fails for the stated reason: `error: too many arguments for 'eval'` (no `eval init`), `unknown option '--no-oracle'` / `'--gaps-out'`, no `targets`/`diagnosis` keys, `blind` undefined on generated rows, no "not blind" in the summary, SKILL.md and the guide missing.
+- The fixture sets are 12 `golden-docs` rows (plain) and 8 rows marked blind plus one blind case with an unmatched facet; hybrid is 12/12 on the plain set, so Phase 4's diagnosis test relies on the coverage case only, not on a constructed ranking or grounding miss.
+- Not covered yet (Phase 3-4 add real cases): grounding miss labels (needs a doc fixture with a dead ref), `--via mcp` parity, the Phase 10 edge-case list.
