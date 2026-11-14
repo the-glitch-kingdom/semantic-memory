@@ -20,15 +20,15 @@ Release as **1.30.1** (patch: fixes only, no new options).
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
-  - [ ] #36 (unit, `test/unit/synthesize*.test.ts`, next to the existing synthesize tests):
+- [x] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
+  - [x] #36 (unit, `test/unit/synthesize*.test.ts`, next to the existing synthesize tests):
     - a related note named in inline code (`` `.claude/rules/operational-runbook.md` ``) stays unlinked;
     - a name that is a prefix of a longer path or filename (`keycloak-custom-image` in `keycloak-custom-image-workflow.md`, `devops/keycloak-custom-image.md`) stays unlinked;
     - a related entry that is not a vault note is never wrapped in `[[ ]]`, in the body or under `## Related`;
     - guards (plain `it`, pass today): a bare title in prose is still linked once, including next to sentence punctuation (`see keycloak-custom-image.`); fenced code stays untouched; a name with spaces (`Auth Migration`) is still linked.
-  - [ ] #35 (unit, lint): a vault with a generated `research/INDEX.md` and root `log.md` (the exact headers from index-regen.ts and log.ts, no frontmatter) gives no `schema_violations`. Guard: a hand-written frontmatter-less `notes/foo.md` still gets them, and so does a file named `INDEX.md` that lacks the generated banner.
-  - [ ] #34 (unit, healthcheck): with `CLAUDE_PLUGIN_ROOT` unset, a temp HOME whose `.claude/plugins/installed_plugins.json` lists `semantic-memory@<marketplace>` (version 2 shape: `{version: 2, plugins: {"semantic-memory@m": [{scope, installPath, version, projectPath?}]}}`), and whose `installPath/hooks/hooks.json` registers the three events, gives `hook_registration` ok. Guards: no entry → today's warning; a `scope: "project"` entry for another `projectPath` doesn't count.
-  - [ ] #27 (unit, lint): `[[2026-07-09-slug]]` resolves when `incidents/2026-07-09-slug/narrative.md` exists (folder slug), and when any note has frontmatter `id: 2026-07-09-slug` or `incident_id: …`. Guard: a truly missing target is still reported.
+  - [x] #35 (unit, lint): a vault with a generated `research/INDEX.md` and root `log.md` (the exact headers from index-regen.ts and log.ts, no frontmatter) gives no `schema_violations`. Guard: a hand-written frontmatter-less `notes/foo.md` still gets them, and so does a file named `INDEX.md` that lacks the generated banner.
+  - [x] #34 (unit, healthcheck): with `CLAUDE_PLUGIN_ROOT` unset, a temp HOME whose `.claude/plugins/installed_plugins.json` lists `semantic-memory@<marketplace>` (version 2 shape: `{version: 2, plugins: {"semantic-memory@m": [{scope, installPath, version, projectPath?}]}}`), and whose `installPath/hooks/hooks.json` registers the three events, gives `hook_registration` ok. Guards: no entry → today's warning; a `scope: "project"` entry for another `projectPath` doesn't count.
+  - [x] #27 (unit, lint): `[[2026-07-09-slug]]` resolves when `incidents/2026-07-09-slug/narrative.md` exists (folder slug), and when any note has frontmatter `id: 2026-07-09-slug` or `incident_id: …`. Guard: a truly missing target is still reported.
 - [ ] Phase 3: Fix #36 and #27 (shared resolver)
   - [ ] One name-resolution helper in `src/core/lint.ts`, exported. Its set of known names is the basenames, plus frontmatter `id` and `incident_id`, plus the folder slug of a folder whose canonical entry is `narrative.md` or `index.md`. `findBrokenLinks` uses it.
   - [ ] `autoWikilink` (`src/core/synthesize.ts:120`):
@@ -83,4 +83,4 @@ Release as **1.30.1** (patch: fixes only, no new options).
 (none yet)
 
 ## Status
-**Phase 2 next.** Phase 1 done: all four bugs confirmed on 1.30.0 code (#35 reproduced by running lintVault). See notes.md.
+**Phase 3 next** (fix #36 and #27). Phase 2 done: acceptance tests in `test/unit/synthesize-autolink.test.ts` (`knownNames` is the Phase 3 input name), `test/unit/lint-generated-and-ids.test.ts` (#35, #27) and `test/unit/healthcheck-plugin-install.test.ts` (#34). 10 `it.fails` (each confirmed failing as plain `it` for the stated reason), 12 passing guards. Phase 3/4 flip the matching `it.fails` to `it`.
