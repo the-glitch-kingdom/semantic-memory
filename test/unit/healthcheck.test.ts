@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { existsSync } from "node:fs";
@@ -13,8 +13,10 @@ describe("runHealthcheck — fast tier", () => {
   let dir: string;
   beforeEach(async () => {
     dir = await seedProject();
+    vi.stubEnv("CLAUDE_CONFIG_DIR", join(dir, "no-claude-config")); // keep the real installed_plugins.json out (#34)
   });
   afterEach(async () => {
+    vi.unstubAllEnvs();
     await rm(dir, { recursive: true, force: true });
   });
 

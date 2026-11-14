@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,8 +19,10 @@ describe("healthcheck: hook double-registration", () => {
     pluginDir = await mkdtemp(join(tmpdir(), "hc-plugin-"));
     await mkdir(join(pluginDir, "hooks"), { recursive: true });
     await mkdir(join(projectDir, ".claude"), { recursive: true });
+    vi.stubEnv("CLAUDE_CONFIG_DIR", join(projectDir, "no-claude-config")); // keep the real installed_plugins.json out (#34)
   });
   afterEach(async () => {
+    vi.unstubAllEnvs();
     if (orig === undefined) delete process.env.CLAUDE_PLUGIN_ROOT;
     else process.env.CLAUDE_PLUGIN_ROOT = orig;
     await rm(projectDir, { recursive: true, force: true });

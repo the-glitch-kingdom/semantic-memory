@@ -22,3 +22,8 @@ Tests only, no ranking change. As plain `it`, the 10 bug cases fail on: inline-c
 
 ## Eval results: Phase 3
 No ranking change (lint/synthesize only). #36 (4) and #27 (3) cases pass as plain `it`; #35 and #34 it.fails remain for Phase 4.
+
+## Eval results: Phase 4
+
+No ranking change (lint/healthcheck only). #35 (1) and #34 (2) it.fails now plain it; 11 tests pass in the two files. Generated = index-regen or log banner at file start (CRLF tolerated); such files skip schema validation and noLastVerified, broken-link checks still run. #34 also feeds checkHookDoubleRegistration (same pluginRegisteredHookEvents), which is correct for user-scope installs.
+Also: test/unit/healthcheck.test.ts and healthcheck-double-hook.test.ts now stub CLAUDE_CONFIG_DIR, because the real ~/.claude installed_plugins.json made the fallback hide expected warnings.

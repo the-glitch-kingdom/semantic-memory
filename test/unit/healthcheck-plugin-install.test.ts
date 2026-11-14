@@ -43,12 +43,12 @@ const hookFinding = async () =>
   filterToDrift(await runHealthcheck({ projectRoot: project, tier: "fast", force: true })).find((d) => d.check === "hook_registration");
 
 describe("hook_registration with a plugin install and no CLAUDE_PLUGIN_ROOT (#34)", () => {
-  it.fails("user-scope entry whose hooks.json registers the three events is ok", async () => {
+  it("user-scope entry whose hooks.json registers the three events is ok", async () => {
     await installPlugin({ scope: "user" });
     expect(await hookFinding()).toBeUndefined(); // ok findings are filtered out of drift
   });
 
-  it.fails("project-scope entry for this project counts", async () => {
+  it("project-scope entry for this project counts", async () => {
     await installPlugin({ scope: "project", projectPath: project });
     expect(await hookFinding()).toBeUndefined();
   });

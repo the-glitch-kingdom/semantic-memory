@@ -23,7 +23,7 @@ afterEach(async () => {
 });
 
 describe("#35 generated files skip schema validation", () => {
-  it.fails("a generated folder INDEX.md and root log.md give no schema_violations", async () => {
+  it("a generated folder INDEX.md and root log.md give no schema_violations", async () => {
     await seed("research/INDEX.md", INDEX_HEADER);
     await seed("log.md", LOG_HEADER);
     const r = await lintVault(dir);
