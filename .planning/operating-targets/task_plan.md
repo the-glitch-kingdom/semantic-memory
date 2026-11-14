@@ -171,15 +171,15 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     - the guide exists under a path `package.json` `files` covers (`npm pack --dry-run --json` lists it);
     - every `semantic-memory …`, `/reconcile …` and `hewtd …` command it names exists (the same check as the skill);
     - it holds no absolute home paths or repo-private names (a deny-list regex for `/home/`, `~/workspace`, the maintainer's org and project names).
-- [ ] Phase 7: Measure
-  - [ ] Fresh `BAND=1 bash scripts/gate-release.sh <previous release>`: every count identical (no ranking change; the report additions sit after the gated lines).
-  - [ ] By hand on this repo's `.documentation`:
+- [x] Phase 7: Measure
+  - [x] Fresh `BAND=1 bash scripts/gate-release.sh <previous release>`: every count identical (no ranking change; the report additions sit after the gated lines). Done: PASS, all counts equal to 1.30.1, cli and mcp, plain and export.
+  - [x] By hand on this repo's `.documentation`:
     - `eval init`, then `eval` with the shipped sets (no blind set) shows `not validated`;
     - mark a small hand-written blind set and re-run: met is judged, and every miss is labelled;
     - `--gaps-out` output is accepted by `npx hewtd reconcile --gaps <file> --json` (hewtd 3.4.1, read-only use; never modify the hewtd repo).
     Record the numbers.
-  - [ ] Follow `docs/measure-and-tune.md` end to end on this repo, exactly as written. Fix every step that doesn't work as the guide says.
-  - [ ] Eval run time with the oracle versus without it (`--no-oracle`), on this repo.
+  - [x] Follow `docs/measure-and-tune.md` end to end on this repo, exactly as written. Fix every step that doesn't work as the guide says.
+  - [x] Eval run time with the oracle versus without it (`--no-oracle`), on this repo.
 - [ ] Phase 8: Release prep
   - [ ] Bump all five version fields to 1.31.0, plus the lockfile.
 - [ ] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -245,4 +245,4 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 (none yet)
 
 ## Status
-**Phase 7 next** (measure). Phases 1-6 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**Phase 8 next** (release prep). Phase 7 done: see notes.md. Phases 1-6 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
