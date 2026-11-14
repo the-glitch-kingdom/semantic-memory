@@ -79,15 +79,15 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     - it is listed in `package.json` `files`;
     - the surfaces test's shipped-skill list includes it;
     - every command it names exists: `semantic-memory eval`, `eval init`, `eval --gaps-out`, `gaps --json`, `/reconcile …`, `npx hewtd audit`.
-- [ ] Phase 3: Targets file and `eval init`
-  - [ ] `src/core/retrieval-eval/targets.ts`:
+- [x] Phase 3: Targets file and `eval init`
+  - [x] `src/core/retrieval-eval/targets.ts`:
     - default targets with reasons, from the table above (reasons from #96's table);
     - `loadTargets(dir)`: read, validate, merge over the defaults for missing keys, refuse a malformed file;
     - `writeDefaults(dir, {force})`;
     - the template and the guide text.
-  - [ ] `FacetCase` gains `blind?: boolean` (`src/core/retrieval-eval/metrics.ts:119`). `normalizeCase` keeps it; `loadSets` ignores `*.example`.
-  - [ ] The `eval init` subcommand in `src/cli/retrieval-eval.ts`; `eval` writes the defaults when missing.
-  - [ ] `BLIND-SETS.md`, the guide, covers:
+  - [x] `FacetCase` gains `blind?: boolean` (`src/core/retrieval-eval/metrics.ts:119`). `normalizeCase` keeps it; `loadSets` ignores `*.example`.
+  - [x] The `eval init` subcommand in `src/cli/retrieval-eval.ts`; `eval` writes the defaults when missing.
+  - [x] `BLIND-SETS.md`, the guide, covers:
     - writing blind questions from code, git history, issues and real queries, never from the docs;
     - the leakage check: grep each question's distinctive terms in `CLAUDE.md`, `AGENTS.md` and `.claude/rules/`, and rewrite any that came from them;
     - a docs fix driven by a set's misses makes that set non-blind, so write a fresh held-out set first;
@@ -233,8 +233,10 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 - The skill is named `optimize-search` and ships in semantic-memory; it drives hit-em-with-the-docs' `/reconcile` and `audit` without changing them.
 - A shipped, sanitised user guide, `docs/measure-and-tune.md` (Phase 6, user 2026-11-14): the two `.documentation` guides don't ship in the npm package and are organised by release, not as a loop.
 
+- Phase 3: `eval` loads `targets.json` (writing the defaults, one stderr line, when missing) before the slow part, so a malformed file fails fast; unknown keys warn on stderr. `eval init` takes `--notes` or `--dir`. `loadSets` already ignored `.example` (it reads `*.jsonl`), so no change there; `normalizeCase` already keeps `blind` via its rest spread. The `BLIND-SETS.md` text lives in `targets.ts` (`INIT_FILES`); Phase 6's guide is separate.
+
 ## Errors Encountered
 (none yet)
 
 ## Status
-**Phase 3 next** (targets file and `eval init`). Phases 1-2 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**Phase 4 next** (report and diagnosis). Phases 1-3 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.

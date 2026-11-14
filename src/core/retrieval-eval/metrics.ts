@@ -130,6 +130,8 @@ export interface FacetCase {
   split?: "tune" | "heldout";
   /** What a negative asks for: a term no doc contains, or a topic the corpus does not cover. */
   negative_kind?: "identifier" | "topic";
+  /** Written from outside the docs (see BLIND-SETS.md); targets are judged on blind cases only. */
+  blind?: boolean;
 }
 
 export interface ArmResponse {

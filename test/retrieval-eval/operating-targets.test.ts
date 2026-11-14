@@ -48,7 +48,7 @@ afterAll(async () => dir && (await rm(dir, { recursive: true, force: true })));
 describe("eval init", () => {
   const init = (evalDir: string, ...a: string[]) => spawnSync("node", [CLI, "eval", "init", "--notes", dir, "--dir", evalDir, ...a], { encoding: "utf-8" });
 
-  it.fails("writes targets.json (each target has value and why), the template and BLIND-SETS.md", () => {
+  it("writes targets.json (each target has value and why), the template and BLIND-SETS.md", () => {
     const d = join(dir, "init-a");
     const r = init(d);
     expect(r.status, r.stderr).toBe(0);
@@ -62,7 +62,7 @@ describe("eval init", () => {
     }
   });
 
-  it.fails("a second run leaves edited files untouched and says so; --force rewrites", async () => {
+  it("a second run leaves edited files untouched and says so; --force rewrites", async () => {
     const d = join(dir, "init-b");
     expect(init(d).status).toBe(0);
     await writeFile(join(d, "targets.json"), '{"hybrid_at1":{"value":0.5,"why":"mine"}}');
@@ -74,7 +74,7 @@ describe("eval init", () => {
     expect(readFileSync(join(d, "targets.json"), "utf-8")).not.toContain("mine");
   });
 
-  // Guard: the template must not be read as a question set; `.example` is not `.jsonl`. Passes today, pins the rule for Phase 3.
+  // Guard: the template must not be read as a question set; `.example` is not `.jsonl`.
   it("loadSets ignores a questions.template.jsonl.example next to the sets", async () => {
     const d = join(dir, "init-c");
     await mkdir(d, { recursive: true });
@@ -85,7 +85,7 @@ describe("eval init", () => {
 });
 
 describe("eval report: targets", () => {
-  it.fails("with no targets.json it writes the defaults and prints one line saying where", () => {
+  it("with no targets.json it writes the defaults and prints one line saying where", () => {
     const d = join(dir, "ev-defaults");
     const r = run(d, sets.plain);
     expect(r.status, r.stderr).toBe(0);
@@ -121,7 +121,7 @@ describe("eval report: targets", () => {
     expect(await edit(1.01)).toBe(false);
   });
 
-  it.fails("a malformed targets.json fails naming the file, and never falls back to the defaults", async () => {
+  it("a malformed targets.json fails naming the file, and never falls back to the defaults", async () => {
     const d = join(dir, "ev-bad");
     await mkdir(d, { recursive: true });
     await writeFile(join(d, "targets.json"), "{not json");

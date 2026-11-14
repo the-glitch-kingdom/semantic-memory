@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { generateCases, writeGenerated } from "../core/retrieval-eval/generate.js";
+import { loadTargets, writeDefaults, TARGETS_FILE } from "../core/retrieval-eval/targets.js";
 import { evalDir, loadSets, runSuite, formatSuite, baselinePath, writeBaseline, checkBaseline, type Baseline } from "../core/retrieval-eval/suite.js";
 
 export function registerEvalCommand(program: Command): void {
@@ -31,6 +32,12 @@ export function registerEvalCommand(program: Command): void {
         // --baseline would overwrite the floor before --check read it, so the check could never fail
         if (opts.baseline && opts.check) throw new Error("--baseline and --check are separate runs");
         if (opts.via && opts.via !== "mcp") throw new Error("--via takes `mcp`");
+        const dir = evalDir(opts.notes, opts.dir);
+        if (!existsSync(join(dir, TARGETS_FILE))) {
+          console.error(`wrote default targets: ${writeDefaults(dir, { only: [TARGETS_FILE] }).written[0]}`);
+        }
+        const { unknown } = loadTargets(dir); // a malformed file stops the run before the slow part
+        if (unknown.length) console.error(`${join(dir, TARGETS_FILE)}: ignoring unknown targets: ${unknown.join(", ")}`);
         const via = opts.via && { cli: opts.server ?? process.argv[1], cwd: opts.cwd ?? process.cwd(), waitForReady: !!opts.waitForReady, settle: !!opts.settle };
         const report = await runSuite(opts.notes, loadSets(opts.notes, opts.set, opts.dir), via);
         console.log(opts.json ? JSON.stringify(report, null, 2) : formatSuite(report));
@@ -48,6 +55,25 @@ export function registerEvalCommand(program: Command): void {
         process.exit(0);
       } catch (err: any) {
         console.error(`eval failed: ${err.message}`);
+        process.exit(1);
+      }
+    });
+
+  evalCmd
+    .command("init")
+    .description("Write targets.json, a question template and BLIND-SETS.md (how to write a blind set) into the eval dir; existing files are left alone")
+    .option("--notes <path>", "Markdown notes folder, e.g. .documentation (locates the default eval dir)")
+    .option("--dir <path>", "Eval dir (default <project>/.claude/.semantic-memory/eval)")
+    .option("--force", "Rewrite files that already exist")
+    .action((opts) => {
+      try {
+        if (!opts.notes && !opts.dir) throw new Error("required: --notes <path> or --dir <path>");
+        const { written, kept } = writeDefaults(evalDir(opts.notes ?? ".", opts.dir), { force: !!opts.force });
+        for (const f of written) console.log(`wrote ${f}`);
+        for (const f of kept) console.log(`${f} already exists, left untouched (--force rewrites)`);
+        process.exit(0);
+      } catch (err: any) {
+        console.error(`eval init failed: ${err.message}`);
         process.exit(1);
       }
     });

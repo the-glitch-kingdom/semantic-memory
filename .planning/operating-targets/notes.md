@@ -38,3 +38,7 @@
 - Each `it.fails` was also run as plain `it` and fails for the stated reason: `error: too many arguments for 'eval'` (no `eval init`), `unknown option '--no-oracle'` / `'--gaps-out'`, no `targets`/`diagnosis` keys, `blind` undefined on generated rows, no "not blind" in the summary, SKILL.md and the guide missing.
 - The fixture sets are 12 `golden-docs` rows (plain) and 8 rows marked blind plus one blind case with an unmatched facet; hybrid is 12/12 on the plain set, so Phase 4's diagnosis test relies on the coverage case only, not on a constructed ranking or grounding miss.
 - Not covered yet (Phase 3-4 add real cases): grounding miss labels (needs a doc fixture with a dead ref), `--via mcp` parity, the Phase 10 edge-case list.
+
+## Eval results: Phase 3 (no ranking change)
+
+- `src/core/retrieval-eval/targets.ts` (defaults, `loadTargets`, `writeDefaults`, template, guide), `FacetCase.blind`, `eval init`, defaults written by `eval`. Turned into plain `it`: init x2, defaults line, malformed targets.json (operating-targets.test.ts: 9 pass, 10 expected fail left for Phase 4+). New `test/unit/targets.test.ts`.
