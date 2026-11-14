@@ -180,8 +180,8 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     Record the numbers.
   - [x] Follow `docs/measure-and-tune.md` end to end on this repo, exactly as written. Fix every step that doesn't work as the guide says.
   - [x] Eval run time with the oracle versus without it (`--no-oracle`), on this repo.
-- [ ] Phase 8: Release prep
-  - [ ] Bump all five version fields to 1.31.0, plus the lockfile.
+- [x] Phase 8: Release prep
+  - [x] Bump all five version fields to 1.31.0, plus the lockfile.
 - [ ] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 10: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as plain `it`.
@@ -245,4 +245,4 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 (none yet)
 
 ## Status
-**Phase 8 next** (release prep). Phase 7 done: see notes.md. Phases 1-6 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**Phase 9 next** (cleanup). Phase 8 done (versions at 1.31.0). Phases 1-7 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
