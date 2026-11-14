@@ -18,7 +18,9 @@
    - ranking → tune or file an issue.
    Then re-measure, under the method rules (blind set, leakage, fresh held-out set after a docs fix, 1/n noise, cold build). It accompanies `/reconcile` (user, 2026-11-14) so the standards and procedures for optimization stay the same every time.
 
-Release as **1.31.0** (minor: new subcommand, new eval output, new skill).
+4. **Guide.** A shipped, sanitised user guide, `docs/measure-and-tune.md`. It covers the same loop for people, across semantic-memory and hit-em-with-the-docs, with the target metrics.
+
+Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new guide).
 
 ### Scope decisions (user, 2026-11-14)
 - **The grep oracle is always on.** The diagnosis is the point; `--no-oracle` skips it.
@@ -128,18 +130,59 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill).
     - check that `scripts/link-skills.js` / the plugin runtime links it like the other four (by hand in a temp install);
     - the AGENTS.md contract, if it lists skills.
   - [ ] **Trigger eval:** `skills/optimize-search/evals/evals.json` in the semantic-first shape, about 10 should-trigger and 10 should-not prompts (a plain search question, a docs edit, `/reconcile` on its own). Run it with the existing `skill-eval` trigger tooling, capped at about 60 runs. Record the precision and recall. Tune the description at most twice, on the train prompts only.
-- [ ] Phase 6: Measure
+- [ ] Phase 6: Shipped measure-and-tune guide (user, 2026-11-14)
+  - [ ] `docs/measure-and-tune.md`. `docs/` is in `package.json` `files`, so it ships in the npm package; `.documentation/` doesn't. Write it for users, not maintainers.
+    - **Sanitised:**
+      - numbers only from real trees, with no project names, paths, people or private repos;
+      - examples use a generic `.documentation/` tree;
+      - nothing copied from this repo's own docs that names the maintainer's projects.
+  - [ ] Contents, as one loop across both tools:
+    1. **Setup:**
+       - semantic-memory and hit-em-with-the-docs installed (versions that have these features: semantic-memory 1.31.0+, hit-em-with-the-docs 3.4.0+ for audit Targets and 3.x for `/reconcile --gaps`);
+       - a full cold index build;
+       - record the corpus commit, plugin version and config for every run.
+    2. **The targets:** every metric, its default, why it matters (from `targets.json`'s reasons), and how to edit the file. The docs-side targets in `npx hewtd audit`, and which tool owns which metric.
+    3. **Question sets:**
+       - the four tiers (keyword, paraphrase, multi, negative) and the `{id, tier, q, facets, blind}` format;
+       - how to write a blind set;
+       - the leakage check against CLAUDE.md, AGENTS.md and rules;
+       - why fixing a set's misses makes it non-blind;
+       - why `eval generate` output isn't blind.
+    4. **The loop:**
+       - `eval init`, then `semantic-memory eval`;
+       - read the Targets table, "not validated" and the noise line;
+       - read the diagnosis;
+       - route each label:
+         - coverage → `eval --gaps-out`, then `/reconcile --gaps`, or write the doc;
+         - grounding → `/reconcile --changed` or `--next N`;
+         - ranking → the tuning knobs (link the help topic `tune-ranking`), on the train split only, or an issue;
+         - docs health → `npx hewtd audit`;
+       - re-measure, ignoring changes under 1/n;
+       - `eval --baseline` / `--check` to hold the gains.
+    5. **A worked example**, #96's numbers only: the non-blind set went 0.64 → 0.91 @1 while the blind set went 0.27 → 0.30; the grep oracle showed most blind misses were coverage. The lesson: without a blind set and the oracle you declare victory too early.
+    6. **Reporting a ranking problem:** the anonymised repro (a few docs plus `{id, tier, q, facets}` JSONL) and where to file it.
+  - [ ] Linked from:
+    - the `optimize-search` skill (which says "follow docs/measure-and-tune.md");
+    - the help topics `eval` and `optimize-search` (`doc:` field);
+    - `README.md` (one line under help/eval);
+    - `.documentation/operational/retrieval-eval-guide.md`.
+  - [ ] Test (unit, with the Phase 2 skill test):
+    - the guide exists under a path `package.json` `files` covers (`npm pack --dry-run --json` lists it);
+    - every `semantic-memory …`, `/reconcile …` and `hewtd …` command it names exists (the same check as the skill);
+    - it holds no absolute home paths or repo-private names (a deny-list regex for `/home/`, `~/workspace`, the maintainer's org and project names).
+- [ ] Phase 7: Measure
   - [ ] Fresh `BAND=1 bash scripts/gate-release.sh <previous release>`: every count identical (no ranking change; the report additions sit after the gated lines).
   - [ ] By hand on this repo's `.documentation`:
     - `eval init`, then `eval` with the shipped sets (no blind set) shows `not validated`;
     - mark a small hand-written blind set and re-run: met is judged, and every miss is labelled;
     - `--gaps-out` output is accepted by `npx hewtd reconcile --gaps <file> --json` (hewtd 3.4.1, read-only use; never modify the hewtd repo).
     Record the numbers.
+  - [ ] Follow `docs/measure-and-tune.md` end to end on this repo, exactly as written. Fix every step that doesn't work as the guide says.
   - [ ] Eval run time with the oracle versus without it (`--no-oracle`), on this repo.
-- [ ] Phase 7: Release prep
+- [ ] Phase 8: Release prep
   - [ ] Bump all five version fields to 1.31.0, plus the lockfile.
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
+- [ ] Phase 9: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [ ] Phase 10: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as plain `it`.
   - [ ] Edge cases:
     - a set with 0 answerable cases (noise line, no division by zero);
@@ -153,9 +196,10 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill).
     - `--gaps-out` with no coverage misses (writes an empty `gaps.v1`);
     - Windows line endings in a set.
   - [ ] Failure paths: unwritable eval dir on `eval init`; a malformed `targets.json`; an unreadable set file.
+  - [ ] `npm pack --dry-run` lists `skills/optimize-search/` and `docs/measure-and-tune.md`.
   - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1).
   - [ ] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions). Fix what it confirms; record rejections.
-- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+- [ ] Phase 11: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/operational/retrieval-eval-guide.md`:
     - targets (file, defaults, reasons, editing);
     - blind sets and the leakage check;
@@ -171,7 +215,8 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill).
     - add an `optimize-search` topic (or alias) that points at the skill.
     `test/unit/help-coverage.test.ts` and `test/unit/cli-help.test.ts` pass. The `eval` and `eval init` `--help` text is accurate.
   - [ ] KB gotcha fact: a question set stops being blind once you fix the docs its misses land on. `## Instead`: write a fresh held-out blind set before any docs fix driven by an eval.
-  - [ ] `CHANGELOG.md` 1.31.0 and `.documentation/changelog/v1-31-0-operating-targets.md`.
+  - [ ] `docs/measure-and-tune.md` is re-read against the final CLI output; its examples match what 1.31.0 prints.
+  - [ ] `CHANGELOG.md` 1.31.0 (names the guide and the skill) and `.documentation/changelog/v1-31-0-operating-targets.md`.
   - [ ] AGENTS.md (`regenerate_contract`) if the skill list or tool surface it shows changed.
   - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
@@ -185,6 +230,7 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill).
 - Version 1.31.0. Runs after 1.30.1 (Plan A, `small-fixes-1301`) ships; merge main into this branch first (don't rebase), and archive `small-fixes-1301` here.
 - Scope decisions: see Goal (user, 2026-11-14).
 - The skill is named `optimize-search` and ships in semantic-memory; it drives hit-em-with-the-docs' `/reconcile` and `audit` without changing them.
+- A shipped, sanitised user guide, `docs/measure-and-tune.md` (Phase 6, user 2026-11-14): the two `.documentation` guides don't ship in the npm package and are organised by release, not as a loop.
 
 ## Errors Encountered
 (none yet)
