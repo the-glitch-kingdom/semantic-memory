@@ -15,6 +15,7 @@ Issue #96. Details: `.documentation/changelog/v1-31-0-operating-targets.md`.
 ### Changed
 
 - For sets marked `blind`, a case whose facet matches no doc is a coverage miss and counts in baseline floors. `eval generate` writes `blind: false`.
+- The default eval dir is `<repo root>/.claude/.semantic-memory/eval/` (gitignored), as `--help` says. It used to be derived from `--notes`, so `--notes .documentation` wrote into `.documentation/.claude/…`; an eval dir already there is still used.
 
 No ranking change: `gate:release` against 1.30.1 gives identical counts.
 

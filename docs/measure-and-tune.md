@@ -10,13 +10,13 @@ measure -> diagnose -> route each miss -> fix -> re-measure -> hold the gain
 
 - semantic-memory 1.31.0 or later (the Targets table, the diagnosis and `eval init`).
 - hit-em-with-the-docs 3.4.0 or later for the Targets section of `hewtd audit` (a project pinned to 2.x does not print it: check `npx hewtd --version` and update the package), and 3.x for `/reconcile --gaps`.
-- Pass `--dir .claude/.semantic-memory/eval` (gitignored) on every `eval` command below, as written. Without it the eval dir is derived from `--notes` and lands inside the notes folder (`.documentation/.claude/...`), which git does not ignore.
+- The eval dir defaults to `<repo root>/.claude/.semantic-memory/eval/`, which is gitignored. Pass `--dir <folder>` to keep sets and floors somewhere else, for example a committed folder to share them.
 - A full cold index build before you measure: `semantic-memory serve --reindex --notes .documentation`. An index built up by incremental edits can differ from a cold build.
 - For every run, write down the corpus commit (`git rev-parse HEAD`), the semantic-memory and hewtd versions, and the config (`semantic-memory eval` prints the settings it ran with). A number without these cannot be compared later.
 
 ## 2. The targets
 
-`semantic-memory eval init --notes .documentation --dir .claude/.semantic-memory/eval` writes `targets.json` into the eval dir. Edit the values; the eval reads the file on every run. A value of `null` means "shown, not judged". A file that is not valid JSON stops the run and names the file. Rates are 0 to 1; `p95_ms` is milliseconds.
+`semantic-memory eval init --notes .documentation` writes `targets.json` into the eval dir. Edit the values; the eval reads the file on every run. A value of `null` means "shown, not judged". A file that is not valid JSON stops the run and names the file. Rates are 0 to 1; `p95_ms` is milliseconds.
 
 | metric | default | why it matters |
 |---|---|---|
@@ -57,21 +57,21 @@ Two rules follow:
 
 ## 4. The loop
 
-1. `semantic-memory eval init --notes .documentation --dir .claude/.semantic-memory/eval` writes `targets.json`, `BLIND-SETS.md` and a question template. Existing files are left alone. The eval needs at least one `.jsonl` set in the eval dir (or `--set <file>`); with none it stops with `No question sets`. Copy the template to a `.jsonl` file and write your blind set (section 3), and for a floor add `semantic-memory eval generate --notes .documentation --dir .claude/.semantic-memory/eval` (not blind).
-2. `semantic-memory eval --notes .documentation --dir .claude/.semantic-memory/eval`. Read the Targets table. The `all` column covers every set; `blind` covers only blind cases, and `met` is judged on that column. A metric the blind set has no case for shows `-`. The noise line says `1/n`: a change of one question is not a signal, so do not celebrate or revert on it.
+1. `semantic-memory eval init --notes .documentation` writes `targets.json`, `BLIND-SETS.md` and a question template. Existing files are left alone. The eval needs at least one `.jsonl` set in the eval dir (or `--set <file>`); with none it stops with `No question sets`. Copy the template to a `.jsonl` file and write your blind set (section 3), and for a floor add `semantic-memory eval generate --notes .documentation` (not blind).
+2. `semantic-memory eval --notes .documentation`. Read the Targets table. The `all` column covers every set; `blind` covers only blind cases, and `met` is judged on that column. A metric the blind set has no case for shows `-`. The noise line says `1/n`: a change of one question is not a signal, so do not celebrate or revert on it.
 3. Read the Diagnosis section. Every miss gets one label, with a grep oracle result (`grep finds it at 8` or `grep misses it too`):
    - **coverage**: no doc answers it.
    - **grounding**: a doc answers it at #1, but the top docs are unverified or cite things that no longer exist.
    - **ranking**: a doc answers it but is not first.
    `--no-oracle` skips the grep oracle and the diagnosis when you only want the table.
 4. Route each label:
-   - coverage: `semantic-memory eval --notes .documentation --dir .claude/.semantic-memory/eval --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (it proposes docs and phrases; nothing is applied without your acceptance), or write the doc. Real-usage gaps come from `semantic-memory gaps --root . --json`.
+   - coverage: `semantic-memory eval --notes .documentation --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (it proposes docs and phrases; nothing is applied without your acceptance), or write the doc. Real-usage gaps come from `semantic-memory gaps --root . --json`.
    - grounding: `/reconcile --changed`, or `/reconcile --next 10`.
    - ranking: the settings in `semantic-memory help tune-ranking`, chosen on your train split only; or report it (section 6).
    - docs-wide health: `npx hewtd audit`.
    Never hand-edit `INDEX.md` or `REGISTRY.md`; `npx hewtd maintain --quick` regenerates them.
 5. Re-measure on a fresh blind set, with a cold build, and compare with the recorded run. Ignore changes of `1/n` or less.
-6. Hold the gain: `semantic-memory eval --notes .documentation --dir .claude/.semantic-memory/eval --baseline` once the change holds, and `semantic-memory eval --notes .documentation --dir .claude/.semantic-memory/eval --check` afterwards to fail on a regression.
+6. Hold the gain: `semantic-memory eval --notes .documentation --baseline` once the change holds, and `semantic-memory eval --notes .documentation --check` afterwards to fail on a regression.
 
 Never choose a setting, a threshold or a docs fix from the held-out questions. Choose from the train split and the misses, and report held-out as measured.
 
@@ -88,4 +88,4 @@ The non-blind set improved by 27 points because the pass fixed exactly its misse
 
 ## 6. Reporting a ranking problem
 
-If a ranking miss is not fixed by the settings, file an issue with an anonymised repro: a few docs that show the problem (names and content you are happy to share) and the questions as `{id, tier, q, facets}` JSONL, plus the Targets table and Diagnosis section from `semantic-memory eval --notes .documentation --dir .claude/.semantic-memory/eval --json`. Include the versions and the commit from step 1. File it on the semantic-memory GitHub repository.
+If a ranking miss is not fixed by the settings, file an issue with an anonymised repro: a few docs that show the problem (names and content you are happy to share) and the questions as `{id, tier, q, facets}` JSONL, plus the Targets table and Diagnosis section from `semantic-memory eval --notes .documentation --json`. Include the versions and the commit from step 1. File it on the semantic-memory GitHub repository.

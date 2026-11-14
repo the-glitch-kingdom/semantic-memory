@@ -58,7 +58,7 @@ Arms: `search_hybrid`, `search_semantic`, `search_text` and a `grep` baseline. `
 
 ## Question sets
 
-The eval dir is `<project>/.claude/.semantic-memory/eval/` (override with `--dir`). It is gitignored, so floors there are personal; point `--dir` at a committed folder to share them.
+The eval dir is `<repo root>/.claude/.semantic-memory/eval/` (override with `--dir`). Before 1.31.0 it was derived from `--notes`, so `--notes .documentation` used `.documentation/.claude/.semantic-memory/eval/`; an eval dir already there is still used, so existing floors stay put. It is gitignored, so floors there are personal; point `--dir` at a committed folder to share them.
 
 One JSON object per line: `{id, tier, q, facets}`. `facets` are regexes the answer must match; `negative: true` marks a question the vault does not answer (scored as a negative; a row with neither tier nor facets is refused naming its id); optional `expected` (doc paths, enables found@k and MRR), `split` and `negative_kind`. Tiers: exact, paraphrase, symptom, nofield, multi.
 
@@ -104,7 +104,7 @@ semantic-memory eval --notes <dir> --check [--band 1]
 Floors say "do not get worse". Targets say "good enough". The loop that ties them to doc fixes is [the measure-and-tune guide](../../docs/measure-and-tune.md); the `optimize-search` skill (`skills/optimize-search/SKILL.md`) walks Claude through it and drives hit-em-with-the-docs `/reconcile` and `audit` without changing them.
 
 ```bash
-semantic-memory eval init --notes <dir> --dir .claude/.semantic-memory/eval   # targets.json, BLIND-SETS.md, a question template
+semantic-memory eval init --notes <dir>   # targets.json, BLIND-SETS.md, a question template
 semantic-memory eval --notes <dir> --dir <eval dir> --gaps-out gaps.json     # coverage misses as gaps.v1
 semantic-memory eval --notes <dir> --dir <eval dir> --no-oracle              # skip the diagnosis and the grep oracle
 ```

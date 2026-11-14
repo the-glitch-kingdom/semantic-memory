@@ -4,12 +4,18 @@ import { dirname, join, resolve } from "node:path";
 import { listMarkdown } from "../indexer.js";
 import { loadDecayConfig } from "../decay.js";
 import { deriveSessionDir } from "../session.js";
+import { repoRoot } from "../skill-evidence.js";
 import { openEval, type EvalVia } from "./runner.js";
 import { facetIssue, formatArm, grepPattern, parseGolden, runFacetEval, type ArmFn, type ArmMetrics, type FacetCase } from "./metrics.js";
 import { diagnose, formatSections, judgeTargets, top3Shares, type Diagnosis, type Ground, type TargetsReport } from "./report.js";
 import type { Targets } from "./targets.js";
 
-export const evalDir = (notes: string, dir?: string) => (dir ? resolve(dir) : join(deriveSessionDir(notes), "eval"));
+/** `--dir`; else the eval dir the notes folder already has (the pre-1.31 default, kept so baselines stay put); else `<repo root>/.claude/.semantic-memory/eval`. */
+export const evalDir = (notes: string, dir?: string) => {
+  if (dir) return resolve(dir);
+  const legacy = join(deriveSessionDir(notes), "eval");
+  return existsSync(legacy) ? legacy : join(repoRoot(resolve(notes)), ".claude", ".semantic-memory", "eval");
+};
 
 /** `--set` files, or every `*.jsonl` in the eval dir. */
 export function loadSets(notes: string, sets: string[] | undefined, dir?: string): FacetCase[] {

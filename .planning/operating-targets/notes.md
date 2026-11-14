@@ -79,3 +79,8 @@ Guide walked on this repo (corpus 60b3399, cold reindex 7s, local build 1.30.1):
 - Full validation: lint, build, npm test 1337 passed (1 skipped), npm run eval 259 passed, 6 expected fail (14 new edge tests in test/retrieval-eval/operating-targets-edges.test.ts).
 - `BAND=1 bash scripts/gate-release.sh 1.30.1` fresh: PASS. Hybrid @1 91/139 (94 with export), multi @1/3/8 20/28/31 (32 export), negatives 43/47, false flags 7, mcp vs cli 0 of 186 differ; identical to 1.30.1. p95 13-15ms.
 - npm pack --dry-run lists docs/measure-and-tune.md and skills/optimize-search/{SKILL.md,evals/evals.json}.
+
+## Release review (orchestrator)
+- The default eval dir was derived from `--notes` (`deriveProjectRoot`), so `--notes .documentation` used `.documentation/.claude/.semantic-memory/eval/`. That's inside the docs tree and not gitignored, and `--help` documents it differently. Since 1.31.0's `eval` writes `targets.json` on its own, that got worse. `evalDir` now defaults to `<repo root>/.claude/.semantic-memory/eval`, and an existing old-location dir is still used. The guide, skill and help no longer need `--dir`. Test: `test/unit/eval-dir.test.ts`.
+- The skill pointed at `docs/measure-and-tune.md` as if it were in the user's repo; it now says the guide is in the installed package.
+- Validation after the fixes: `npm test` 164 files, 1340 passed; `npm run eval` 27 files, 259 passed, 6 expected fail.
