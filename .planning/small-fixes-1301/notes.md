@@ -31,3 +31,8 @@ Also: test/unit/healthcheck.test.ts and healthcheck-double-hook.test.ts now stub
 ## Eval results: Phase 5
 
 Docs-only change (banner in docs/corpora-json.md and docs/smart-middle-activation.md); no measurements.
+
+## Eval results: Phase 6
+- `BAND=1 bash scripts/gate-release.sh 1.30.0` (fresh, no --cache): PASS. local equals 1.30.0 on every count, plain and export: hyb@1 91/139 (export 94), hyb@3 116 (115), sem@1 79 (81), multi@1/3/8 20/28/31 of 41 (export 20/28/32), cov@3 0.82, dominance 31 (export 23), negatives flagged 43/47, false flags 7, mcp vs cli 0 of 186 differ, titled #1 139/139. p95 14ms, cold idx 38.9s (1.30.0: 39.4s).
+- Healthcheck by hand: `node dist/cli/index.js healthcheck` refuses here (needs ./node_modules local install; this repo is the package). Instead ran runHealthcheck (fast tier, force) from src via tsx with `env -u CLAUDE_PLUGIN_ROOT` and projectRoot = this repo: hook_registration ok "all 3 hook events registered" (found via installed_plugins.json user-scope install), hook_double_registration ok. No warning.
+- `lint --notes .documentation`: 3 errors, 176 warnings over 234 files. All 3 errors are schema_violations on archive/README.md and archive/scaffold-readme.md (missing title/status), not generated INDEX.md/log.md. No schema error on any generated INDEX/log.
