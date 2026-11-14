@@ -2,6 +2,20 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.30.1] - 2026-11-14 — small fixes
+
+Issues #36, #35, #34, #27, #28. Details: `.documentation/changelog/v1-30-1-small-fixes.md`.
+
+### Fixed
+
+- `synthesize_note` auto-links no longer touch inline code or paths, and link only `related_notes` that exist in the vault; others are listed as code text under `## Related` (#36).
+- `lint_vault` skips schema checks on generated `INDEX.md` and `log.md`, recognised by banner (#35).
+- Healthcheck `hook_registration` finds a plugin install through `installed_plugins.json` when `CLAUDE_PLUGIN_ROOT` is unset (#34).
+- `lint_vault` `broken_links` resolves `[[target]]` by frontmatter `id` / `incident_id` and incident folder slug (#27).
+- `docs/corpora-json.md` and `docs/smart-middle-activation.md` say they are superseded and were never implemented (#28).
+
+No ranking change: `gate:release` against 1.30.0 gives identical counts.
+
 ## [1.30.0] - 2026-11-11 — stale code graph
 
 Issue #95. Details: `.documentation/changelog/v1-30-0-stale-code-graph.md`.

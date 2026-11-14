@@ -48,3 +48,6 @@ Cleanup only. Scanned the branch diff for console/debugger/TODO/commented-out co
 - Full validation (lint, build, npm test, npm run eval) green: eval 25 files, 226 passed, 6 expected fail.
 - Edge-case tests added to the three Phase 2 files (regex chars, start/end, link URL, path entry, backslash, empty vault, heading/alias, narrative+facts, non-string id, CRLF, hand-added frontmatter, v1 shape, bad JSON, missing installPath, trailing-slash projectPath).
 - Independent review: 1 confirmed (fixed), 4 rejected or accepted (see plan, Errors Encountered).
+
+## Eval results: Phase 10
+Docs only, no ranking change. Help topics (healthcheck, federation etc.) say nothing about lint/synthesize details that changed, so no edit; help-coverage and cli-help pass. Also updated operational/drift-detection.md (hook_registration lookup). AGENTS.md regenerated from branch code: only last_generated changed. `hewtd maintain --quick`: 11 errors, 133 warnings repo-wide (pre-existing; none in the new files).
