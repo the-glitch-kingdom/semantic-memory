@@ -37,28 +37,28 @@ function checkCommands(text: string) {
 }
 
 describe("optimize-search skill (#96)", () => {
-  it.fails("skills/optimize-search/SKILL.md exists with frontmatter name and description", () => {
+  it("skills/optimize-search/SKILL.md exists with frontmatter name and description", () => {
     const m = read(SKILL).match(/^---\n([\s\S]*?)\n---\n/);
     expect(m, "frontmatter").not.toBeNull();
     expect(m![1]).toMatch(/^name: optimize-search$/m);
     expect(m![1]).toMatch(/^description: .{40,}/m);
   });
 
-  it.fails("package.json files lists skills/optimize-search", () => {
+  it("package.json files lists skills/optimize-search", () => {
     expect(pkg.files).toContain("skills/optimize-search");
   });
 
-  it.fails("skill-surfaces' scan sees it (the shipped-skill list includes it)", () => {
+  it("skill-surfaces' scan sees it (the shipped-skill list includes it)", () => {
     expect(existsSync(SKILL)).toBe(true);
     // skill-surfaces.test.ts asserts the four skills by name; Phase 5 adds this fifth to that list
     expect(readFileSync(join(root, "test/unit/skill-surfaces.test.ts"), "utf-8")).toContain("skills/optimize-search/SKILL.md");
   });
 
-  it.fails("every command it names exists, and it names the full set", () => {
+  it("every command it names exists, and it names the full set", () => {
     checkCommands(read(SKILL));
   });
 
-  it.fails("it carries the hard rules and points at the guide", () => {
+  it("it carries the hard rules and points at the guide", () => {
     const t = read(SKILL);
     expect(t).toContain("docs/measure-and-tune.md");
     expect(t).toMatch(/blind set/i);

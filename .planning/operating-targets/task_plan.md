@@ -104,9 +104,9 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
   - [x] `formatSuite` gains a Targets section and a Diagnosis section. Both are added *after* today's lines, which stay byte-identical, so the gate scripts and any parsers are unaffected. `--json` adds `targets` and `diagnosis` keys.
   - [x] `--gaps-out <file>` (coverage misses → `gaps.v1`, with the question as `query` and no `used_doc`). `--no-oracle`.
   - [x] `eval generate` writes `blind: false` (`src/core/retrieval-eval/generate.ts` `writeGenerated`).
-- [ ] Phase 5: The `optimize-search` skill
-  - [ ] `skills/optimize-search/SKILL.md`. Its description triggers on: improving or tuning search quality on these docs; "why does search miss X"; raising eval numbers; meeting targets; running the eval and acting on it; after a `/reconcile` pass, re-measuring. It is not for a single search question (that's semantic-first) and not for a plain docs edit.
-  - [ ] The body is the procedure, one loop:
+- [x] Phase 5: The `optimize-search` skill
+  - [x] `skills/optimize-search/SKILL.md`. Its description triggers on: improving or tuning search quality on these docs; "why does search miss X"; raising eval numbers; meeting targets; running the eval and acting on it; after a `/reconcile` pass, re-measuring. It is not for a single search question (that's semantic-first) and not for a plain docs edit.
+  - [x] The body is the procedure, one loop:
     1. **Prepare:** a blind set exists (`eval init`, `BLIND-SETS.md`), the leakage check is done, and the run is on a cold index build. Record the commit, version and config.
     2. **Measure:** `semantic-memory eval --notes <docs>`; read the Targets table and the noise line.
     3. **Diagnose:** read the per-miss labels.
@@ -120,17 +120,17 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
        - compare against the previous run and ignore changes under 1/n;
        - `eval --baseline` only when the change holds.
     6. **Record:** the round's numbers and decisions, as a vault note via `synthesize_note` (dry-run first).
-  - [ ] Hard rules in the skill:
+  - [x] Hard rules in the skill:
     - never call targets met without a blind set;
     - never tune on held-out questions;
     - never apply reconcile proposals without the user's acceptance (`/reconcile`'s own rule);
     - never hand-edit INDEX.md or REGISTRY.md.
-  - [ ] Ship it:
+  - [x] Ship it:
     - `package.json` `files`;
     - `test/unit/skill-surfaces.test.ts` shipped list;
     - check that `scripts/link-skills.js` / the plugin runtime links it like the other four (by hand in a temp install);
     - the AGENTS.md contract, if it lists skills.
-  - [ ] **Trigger eval:** `skills/optimize-search/evals/evals.json` in the semantic-first shape, about 10 should-trigger and 10 should-not prompts (a plain search question, a docs edit, `/reconcile` on its own). Run it with the existing `skill-eval` trigger tooling, capped at about 60 runs. Record the precision and recall. Tune the description at most twice, on the train prompts only.
+  - [x] **Trigger eval:** `skills/optimize-search/evals/evals.json` in the semantic-first shape, about 10 should-trigger and 10 should-not prompts (a plain search question, a docs edit, `/reconcile` on its own). Run it with the existing `skill-eval` trigger tooling, capped at about 60 runs. Record the precision and recall. Tune the description at most twice, on the train prompts only.
 - [ ] Phase 6: Shipped measure-and-tune guide (user, 2026-11-14)
   - [ ] `docs/measure-and-tune.md`. `docs/` is in `package.json` `files`, so it ships in the npm package; `.documentation/` doesn't. Write it for users, not maintainers.
     - **Sanitised:**
@@ -228,6 +228,7 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 4. How should coverage misses reach hit-em-with-the-docs? As `gaps.v1`, which `/reconcile --gaps` already reads (hewtd 3.4.1). hewtd's own "retrieval-eval coverage import" is listed as deferred on its side.
 
 ## Decisions Made
+- Phase 5: AGENTS.md lists modes, not skills, so the contract is unchanged. The trigger eval ran through a throwaway vitest file calling `runTrigger` with a temp repo root holding the other four skills as real copies (the repo's `.claude/skills` links dangle, and the `skill-eval trigger` CLI builds positives from provenance sessions, which a shipped skill has none of). `evals.json` carries `should_trigger` per prompt.
 - Phase 2 contract shapes (tests pin them; Phases 3-4 build to them): `targets.json` is a flat object `{<metric>: {value, why}}` with keys `hybrid_at1, hybrid_at3, exact_at1, paraphrase_at1, related_at1, verified_top3, no_missing_refs_top3, negatives_flagged, false_flags, p95_ms`. `--json` gains `targets: {rows: [{metric, value, valueBlind, target, met}], validated, noise}` (`met` is `"not validated"` without a blind case) and `diagnosis: {cases: [{id, label, why, grepAt8?}], counts: {coverage, ranking, grounding}, grep: {at1, at3}}`. `eval init` accepts `--dir` and `--force`. Change them in the tests if Phase 3-4 finds a better shape.
 - Version 1.31.0. Runs after 1.30.1 (Plan A, `small-fixes-1301`) ships; merge main into this branch first (don't rebase), and archive `small-fixes-1301` here.
 - Scope decisions: see Goal (user, 2026-11-14).
@@ -243,4 +244,4 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 (none yet)
 
 ## Status
-**Phase 5 next** (the `optimize-search` skill). Phases 1-4 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**Phase 6 next** (the shipped measure-and-tune guide). Phases 1-5 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.

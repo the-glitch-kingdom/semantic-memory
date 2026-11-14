@@ -1,0 +1,145 @@
+{
+  "skill_name": "optimize-search",
+  "evals": [
+    {
+      "id": 1,
+      "name": "trigger-1",
+      "should_trigger": true,
+      "prompt": "Why does search miss the deploy rollback doc? Can we figure out what's wrong with retrieval?",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 2,
+      "name": "trigger-2",
+      "should_trigger": true,
+      "prompt": "Run the retrieval eval and tell me what to fix to raise the numbers",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 3,
+      "name": "trigger-3",
+      "should_trigger": true,
+      "prompt": "We want to hit our operating targets for search. What's the process?",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 4,
+      "name": "trigger-4",
+      "should_trigger": true,
+      "prompt": "The eval's Targets table says not validated. What do I do next?",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 5,
+      "name": "trigger-5",
+      "should_trigger": true,
+      "prompt": "I just finished a /reconcile pass on the docs; re-measure search quality and tell me if it helped",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 6,
+      "name": "trigger-6",
+      "should_trigger": true,
+      "prompt": "Search keeps failing on paraphrased questions about our runbooks. Help me tune it.",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 7,
+      "name": "trigger-7",
+      "should_trigger": true,
+      "prompt": "Diagnose the misses from the last eval run and route each one",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 8,
+      "name": "trigger-8",
+      "should_trigger": true,
+      "prompt": "Our hybrid @1 dropped after the docs change. Investigate and improve search quality.",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 9,
+      "name": "trigger-9",
+      "should_trigger": true,
+      "prompt": "How do I improve search results on our docs tree, step by step?",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 10,
+      "name": "trigger-10",
+      "should_trigger": true,
+      "prompt": "Set up a blind question set and measure whether search found the right docs",
+      "expected_output": "Loads the optimize-search skill and starts the measure step."
+    },
+    {
+      "id": 11,
+      "name": "no-trigger-1",
+      "should_trigger": false,
+      "prompt": "Where do we document the deploy rollback procedure?",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 12,
+      "name": "no-trigger-2",
+      "should_trigger": false,
+      "prompt": "How does authentication work in this repo?",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 13,
+      "name": "no-trigger-3",
+      "should_trigger": false,
+      "prompt": "Fix the typo in the README installation section",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 14,
+      "name": "no-trigger-4",
+      "should_trigger": false,
+      "prompt": "Run /reconcile on the docs folder",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 15,
+      "name": "no-trigger-5",
+      "should_trigger": false,
+      "prompt": "Where is the function parseConfig defined?",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 16,
+      "name": "no-trigger-6",
+      "should_trigger": false,
+      "prompt": "Add a new section about caching to .documentation/architecture/overview.md",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 17,
+      "name": "no-trigger-7",
+      "should_trigger": false,
+      "prompt": "What's the best vector database for a small project? Compare a few.",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 18,
+      "name": "no-trigger-8",
+      "should_trigger": false,
+      "prompt": "Bump the version and publish the package to npm",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 19,
+      "name": "no-trigger-9",
+      "should_trigger": false,
+      "prompt": "Why is my test failing with ERR_MODULE_NOT_FOUND?",
+      "expected_output": "Does not load optimize-search."
+    },
+    {
+      "id": 20,
+      "name": "no-trigger-10",
+      "should_trigger": false,
+      "prompt": "Summarize what the semantic-memory MCP tools do",
+      "expected_output": "Does not load optimize-search."
+    }
+  ]
+}

@@ -48,3 +48,11 @@
 - `src/core/retrieval-eval/report.ts` (Targets judging, diagnosis, section text), `facetIssue` in metrics.ts shared with `findStale`, `grounding` on `ArmResponse`, `eval --no-oracle` / `--gaps-out`, `writeGenerated` blind:false. All 19 tests in operating-targets.test.ts are plain `it` now; new `test/unit/eval-report.test.ts` covers verified window, diagnosis labels (coverage, ranking with grep, grounding), target judging and the sections.
 - No ranking numbers moved: today's report lines are unchanged and the sections are appended. Full validation numbers are below if the run completed.
 - Full validation: lint and build green; `npm test` 1328 passed, 8 expected fail, 1 flake (stdin-eof SIGTERM, passed alone); `npm run eval` 245 passed, 6 expected fail (the remaining Phase 5-6 it.fails).
+
+## Eval results: Phase 5 (no ranking change)
+
+- Trigger eval for `skills/optimize-search` (10 should-trigger, 10 near-miss prompts, split 12 train / 8 held-out by hash): 40 claude runs, no tuning needed (description unchanged from the first draft).
+  - train: positives 100%, false triggers 0% (n=12); held-out: positives 100%, false triggers 0% (n=8). Precision 100%, recall 100%.
+- Link check: a temp install ran `scripts/link-skills.js`; 5 skills linked, including `optimize-search`.
+- `test/unit/optimize-search.test.ts` skill cases (5) are plain `it` now; 3 guide cases remain `it.fails` for Phase 6.
+- Full validation: lint, build green; npm test 1334 passed, 3 expected fail (Phase 6 guide cases), 1 skipped; npm run eval 245 passed, 6 expected fail.
