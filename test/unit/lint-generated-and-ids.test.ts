@@ -43,6 +43,20 @@ describe("#35 generated files skip schema validation", () => {
   });
 });
 
+describe("#35 edge cases", () => {
+  it("a generated file with hand-added frontmatter is linted normally", async () => {
+    await seed("research/INDEX.md", `---\ntitle: X\n---\n` + INDEX_HEADER);
+    const r = await lintVault(dir);
+    expect(r.byRule.schema_violations.length).toBeGreaterThan(0);
+  });
+
+  it("CRLF line endings in the generated header are still recognised", async () => {
+    await seed("research/INDEX.md", INDEX_HEADER.replace(/\n/g, "\r\n"));
+    const r = await lintVault(dir);
+    expect(r.byRule.schema_violations).toEqual([]);
+  });
+});
+
 describe("#27 wikilinks resolve folder-form incidents", () => {
   const links = (slug: string) => seed("notes/a.md", note().replace("body", `see [[${slug}]]`));
   const broken = async (slug: string) => {
@@ -71,5 +85,31 @@ describe("#27 wikilinks resolve folder-form incidents", () => {
   it("guard: a truly missing target is still reported", async () => {
     await links("2026-07-09-slug");
     expect(await broken("2026-07-09-slug")).toBe(true);
+  });
+
+  it("resolves [[slug#heading]] and [[slug|alias]]", async () => {
+    await seed("incidents/2026-07-09-slug/narrative.md", note());
+    await seed("notes/a.md", note().replace("body", "see [[2026-07-09-slug#Impact]] and [[2026-07-09-slug|the incident]]"));
+    expect(await broken("2026-07-09-slug")).toBe(false);
+  });
+
+  it("a folder with narrative.md and facts.md resolves", async () => {
+    await seed("incidents/s1/narrative.md", note());
+    await seed("incidents/s1/facts.md", note());
+    await links("s1");
+    expect(await broken("s1")).toBe(false);
+  });
+
+  it("a non-string id is ignored, not thrown", async () => {
+    await seed("incidents/x/narrative.md", note("id: 42\nincident_id: [a, b]\n"));
+    await links("42");
+    expect(await broken("42")).toBe(true);
+  });
+
+  it("an unreadable note does not abort the lint; an empty vault is clean", async () => {
+    expect((await lintVault(dir)).byRule.broken_links).toEqual([]);
+    await mkdir(join(dir, "dir.md"), { recursive: true }); // glob match that readFile rejects
+    await seed("notes/a.md", note());
+    await expect(lintVault(dir)).resolves.toBeDefined();
   });
 });

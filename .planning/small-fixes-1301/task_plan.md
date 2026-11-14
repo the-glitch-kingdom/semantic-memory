@@ -52,16 +52,16 @@ Release as **1.30.1** (patch: fixes only, no new options).
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields to 1.30.1, plus the lockfile.
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Every Phase 2 test passes as plain `it`.
-  - [ ] Edge cases:
-    - #36: a name containing regex characters (`c++-notes`); a name at the start and end of the body; a name inside a markdown link URL (`[x](devops/name.md)`) stays unlinked; a related entry given as a path (`decisions/auth.md`) that resolves; Windows-style backslash paths in inline code;
+- [x] Phase 9: Validate success through comprehensive testing (MANDATORY)
+  - [x] Every Phase 2 test passes as plain `it`.
+  - [x] Edge cases:
+    - #36: a name containing regex characters (`c++-notes`); a name at the start and end of the body; a name inside a markdown link URL (`[x](devops/name.md)`) stays unlinked (path form only; a bare `(name)` URL can still be linked, accepted); a related entry given as a path (`decisions/auth.md`) that resolves; Windows-style backslash paths in inline code;
     - #27: a folder with both `narrative.md` and `facts.md` resolves once; `[[slug#heading]]` and `[[slug|alias]]` forms; a frontmatter `id` that is not a string (number, array) is ignored, not thrown;
     - #35: a generated file that later had frontmatter added by hand is linted normally; CRLF line endings in the header;
     - #34: `installed_plugins.json` version 1 shape or unknown shape; an `installPath` that no longer exists; `CLAUDE_CONFIG_DIR` set.
-  - [ ] Failure paths: unreadable `installed_plugins.json`, unreadable note during lint, `synthesize_note` with an empty vault.
-  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.30.0).
-  - [ ] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions). Fix what it confirms; record rejections.
+  - [x] Failure paths: unreadable `installed_plugins.json`, unreadable note during lint, `synthesize_note` with an empty vault.
+  - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.30.0).
+  - [x] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions). Fix what it confirms; record rejections.
 - [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/reference/mcp-tools-reference.md`: `synthesize_note` links only notes that exist, never inside code or paths; unresolved related entries are listed as code text. `lint_vault`: generated files skip schema checks; wikilinks resolve by basename, frontmatter `id`/`incident_id`, and incident folder slug.
   - [ ] `.documentation/troubleshooting/troubleshooting.md`: the `hook_registration` entry (how the plugin install is found now) and the lint entries, if present; add them if missing.
@@ -83,4 +83,7 @@ Release as **1.30.1** (patch: fixes only, no new options).
 - Phase 3: `lintVault` with a narrowed `pathGlob` built known names from the globbed files only, so #27 cases could never resolve; names now load from the whole vault. One #36 test asserted `not.toMatch(/`[^`]*\[\[/)`, which matched the `## Related` link after an earlier code span; it now checks the body before `## Related`.
 
 ## Status
-**Phase 9 next** (Validate). Phase 8 done: no scratch files or probe logging found; dropped redundant startsWith guard in isGeneratedFile. (Was: Phase 8 next.) Phase 7 done: five version fields and lockfile at 1.30.1. (Was: Phase 7 next.) Phase 6 done: gate PASS, counts identical; hook_registration ok without CLAUDE_PLUGIN_ROOT. (Was: Phase 6 next.) Phase 5 done: #28 banner added to both docs. (Was: Phase 5 next, #28 banner.) Phase 4 done: `isGeneratedFile` in `src/core/lint.ts`, `pluginRoots` in `src/core/healthcheck.ts`; #35 and #34 cases are plain `it`. (Was: Phase 4 next, fix #35 and #34.) Phase 3 done: `addKnownNames`/`loadKnownNames` in `src/core/lint.ts`, path-aware `autoWikilink` and `knownNames` in `src/core/synthesize.ts`, handler in `src/mcp/tools/patch.ts`; #36 and #27 cases are plain `it`. (Was:) Phase 2 done: acceptance tests in `test/unit/synthesize-autolink.test.ts` (`knownNames` is the Phase 3 input name), `test/unit/lint-generated-and-ids.test.ts` (#35, #27) and `test/unit/healthcheck-plugin-install.test.ts` (#34). 10 `it.fails` (each confirmed failing as plain `it` for the stated reason), 12 passing guards. Phase 3/4 flip the matching `it.fails` to `it`.
+**Phase 10 next** (Documentation). Phase 9 done: edge-case tests added, review fix (resolve() on projectPath), full validation and fresh gate PASS. (Was: Phase 9 next.) Phase 8 done: no scratch files or probe logging found; dropped redundant startsWith guard in isGeneratedFile. (Was: Phase 8 next.) Phase 7 done: five version fields and lockfile at 1.30.1. (Was: Phase 7 next.) Phase 6 done: gate PASS, counts identical; hook_registration ok without CLAUDE_PLUGIN_ROOT. (Was: Phase 6 next.) Phase 5 done: #28 banner added to both docs. (Was: Phase 5 next, #28 banner.) Phase 4 done: `isGeneratedFile` in `src/core/lint.ts`, `pluginRoots` in `src/core/healthcheck.ts`; #35 and #34 cases are plain `it`. (Was: Phase 4 next, fix #35 and #34.) Phase 3 done: `addKnownNames`/`loadKnownNames` in `src/core/lint.ts`, path-aware `autoWikilink` and `knownNames` in `src/core/synthesize.ts`, handler in `src/mcp/tools/patch.ts`; #36 and #27 cases are plain `it`. (Was:) Phase 2 done: acceptance tests in `test/unit/synthesize-autolink.test.ts` (`knownNames` is the Phase 3 input name), `test/unit/lint-generated-and-ids.test.ts` (#35, #27) and `test/unit/healthcheck-plugin-install.test.ts` (#34). 10 `it.fails` (each confirmed failing as plain `it` for the stated reason), 12 passing guards. Phase 3/4 flip the matching `it.fails` to `it`.
+
+## Errors Encountered (Phase 9)
+- Review (claude -p, tools off) confirmed: healthcheck compared projectPath to projectRoot as exact strings; fixed with path.resolve on both sides, plus a test. Rejected: case-sensitive knownNames (lint is case-sensitive too); nested `[[foo [[bar]]]]` when one related name contains another (pre-existing); unpaired backtick shifting code spans (edge); ignore-list mismatch (only .yml differs). Accepted limit: a bare `(name)` in a markdown URL can still be linked.

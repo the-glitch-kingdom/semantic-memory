@@ -42,3 +42,9 @@ Version bump only (package.json, both marketplace.json fields, plugin.json, AGEN
 
 ## Eval results: Phase 8
 Cleanup only. Scanned the branch diff for console/debugger/TODO/commented-out code and untracked files: none. Removed the redundant `head.startsWith("# ")` in `isGeneratedFile` (the regex already anchors on `# `).
+
+## Eval results: Phase 9
+- Fresh `BAND=1 npm run gate:release` vs 1.30.0 (no cache): PASS. local plain hyb@1 91/139, multi@1/3/8 20/28/31, neg 43/47, false flags 7, dominance 31; export hyb@1 94, multi@8 32, dominance 23; mcp vs cli 0/186 differ. Identical to 1.30.0.
+- Full validation (lint, build, npm test, npm run eval) green: eval 25 files, 226 passed, 6 expected fail.
+- Edge-case tests added to the three Phase 2 files (regex chars, start/end, link URL, path entry, backslash, empty vault, heading/alias, narrative+facts, non-string id, CRLF, hand-added frontmatter, v1 shape, bad JSON, missing installPath, trailing-slash projectPath).
+- Independent review: 1 confirmed (fixed), 4 rejected or accepted (see plan, Errors Encountered).

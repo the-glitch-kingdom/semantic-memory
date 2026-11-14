@@ -61,4 +61,38 @@ describe("synthesize autoWikilink (#36)", () => {
       expect(out).toContain("The [[Auth Migration]] was big.");
     });
   });
+
+  describe("edge cases", () => {
+    it("links a name with regex characters", () => {
+      const out = body("See c++-notes for more.", ["c++-notes"]);
+      expect(out.split("\n## Related")[0]).toContain("[[c++-notes]]");
+    });
+
+    it("links a name at the start and at the end of the body", () => {
+      expect(body("auth.", ["auth"]).split("\n## Related")[0]).toContain("[[auth]].");
+      expect(body("see auth", ["auth"]).split("\n## Related")[0]).toContain("see [[auth]]");
+    });
+
+    it("leaves a name inside a markdown link URL unlinked", () => {
+      const out = body("See [x](devops/auth.md) now.", ["auth"]).split("\n## Related")[0];
+      expect(out).toContain("[x](devops/auth.md)");
+      expect(out).not.toContain("[[auth]]");
+    });
+
+    it("resolves a related entry given as a path", () => {
+      const out = body("Uses auth here.", ["decisions/auth.md"], new Set(["auth"]));
+      expect(out).toContain("- [[auth]]");
+    });
+
+    it("leaves a Windows-style path in inline code unlinked", () => {
+      const out = body("Edit `devops\\auth.md` first.", ["auth"]).split("\n## Related")[0];
+      expect(out).not.toContain("[[");
+    });
+
+    it("an empty vault lists every related entry as code text", () => {
+      const out = body("Uses auth here.", ["auth"], new Set());
+      expect(out).toContain("- `auth`");
+      expect(out).not.toContain("[[");
+    });
+  });
 });

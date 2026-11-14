@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { join, basename } from "node:path";
+import { join, basename, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { lintVault } from "./lint.js";
@@ -264,7 +264,7 @@ function pluginRoots(projectRoot: string): string[] {
     for (const [key, entries] of Object.entries<any>(plugins)) {
       if (!key.startsWith("semantic-memory@") || !Array.isArray(entries)) continue;
       for (const e of entries) {
-        const applies = e?.scope === "user" || ((e?.scope === "project" || e?.scope === "local") && e.projectPath === projectRoot);
+        const applies = e?.scope === "user" || ((e?.scope === "project" || e?.scope === "local") && typeof e.projectPath === "string" && resolve(e.projectPath) === resolve(projectRoot));
         if (applies && typeof e.installPath === "string") roots.push(e.installPath);
       }
     }

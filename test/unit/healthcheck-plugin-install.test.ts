@@ -63,4 +63,26 @@ describe("hook_registration with a plugin install and no CLAUDE_PLUGIN_ROOT (#34
     await installPlugin({ scope: "project", projectPath: "/somewhere/else" });
     expect((await hookFinding())?.severity).toBe("warn");
   });
+
+  it("a version 1 shape (no plugins map) keeps the warning", async () => {
+    await mkdir(join(home, ".claude", "plugins"), { recursive: true });
+    await writeFile(join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({ version: 1, "semantic-memory": {} }), "utf-8");
+    expect((await hookFinding())?.severity).toBe("warn");
+  });
+
+  it("an unreadable installed_plugins.json keeps the warning", async () => {
+    await mkdir(join(home, ".claude", "plugins"), { recursive: true });
+    await writeFile(join(home, ".claude", "plugins", "installed_plugins.json"), "{not json", "utf-8");
+    expect((await hookFinding())?.severity).toBe("warn");
+  });
+
+  it("an installPath that no longer exists keeps the warning", async () => {
+    await installPlugin({ scope: "user", installPath: join(home, "gone") });
+    expect((await hookFinding())?.severity).toBe("warn");
+  });
+
+  it("a project-scope projectPath with a trailing slash still matches", async () => {
+    await installPlugin({ scope: "project", projectPath: project + "/" });
+    expect(await hookFinding()).toBeUndefined();
+  });
 });
