@@ -2,6 +2,22 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.31.0] - 2026-11-14 — operating targets
+
+Issue #96. Details: `.documentation/changelog/v1-31-0-operating-targets.md`.
+
+### Added
+
+- `semantic-memory eval init` writes `targets.json`, `BLIND-SETS.md` and a question template; `eval` reports a Targets table (`all` and `blind` columns, `met` judged on blind cases, `not validated` without a blind set, a `1/n` noise line) and a per-miss Diagnosis (`coverage`, `ranking`, `grounding`).
+- `eval --no-oracle` and `eval --gaps-out <file>` (coverage misses as `gaps.v1` for `hewtd reconcile --gaps`). `--json` gains `targets` and `diagnosis`.
+- The `optimize-search` skill and the guide `docs/measure-and-tune.md`; help topics `eval` and `optimize-search`.
+
+### Changed
+
+- For sets marked `blind`, a case whose facet matches no doc is a coverage miss and counts in baseline floors. `eval generate` writes `blind: false`.
+
+No ranking change: `gate:release` against 1.30.1 gives identical counts.
+
 ## [1.30.1] - 2026-11-14 — small fixes
 
 Issues #36, #35, #34, #27, #28. Details: `.documentation/changelog/v1-30-1-small-fixes.md`.

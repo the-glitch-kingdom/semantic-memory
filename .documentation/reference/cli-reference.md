@@ -44,7 +44,7 @@ Binary: `node node_modules/@theglitchking/semantic-memory/bin/semantic-memory` (
 | `skill-eval <action>` (v1.7+) | Measurement | Trigger, task and description-tuning evals for one skill |
 | `gaps` (v1.15+) | Measurement | Report searches that ended in no doc; `--json` is hewtd's `gaps.v1` |
 | `usage-set` (v1.15+) | Measurement | Write `eval/usage.jsonl` from searches that ended in a used doc |
-| `eval`, `eval generate` (v1.13+) | Measurement | Measure retrieval on your vault; generate blind questions |
+| `eval`, `eval generate` (v1.13+) | Measurement | Measure retrieval on your vault; generate blind questions. v1.31+: `eval init`, `--no-oracle`, `--gaps-out`, Targets table and diagnosis |
 | `update` / `policy` | Plugin runtime | Inherited from `@theglitchking/claude-plugin-runtime` |
 
 All subcommands accept `--help`.

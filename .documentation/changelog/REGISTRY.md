@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 46 |
+| Documents | 47 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -37,16 +37,16 @@ purpose: Quick reference for changelog documentation
 ## Recently Updated
 
 - [v1.30.1 - small fixes](v1-30-1-small-fixes.md) - 2026-11-14
+- [v1.31.0 - operating targets](v1-31-0-operating-targets.md) - 2026-11-14
 - [v1.29.0 - long-term memory](v1-29-0-long-term-memory.md) - 2026-11-11
 - [v1.30.0 - stale code graph](v1-30-0-stale-code-graph.md) - 2026-11-11
 - [v1.27.1 - decay day clock](v1-27-1-decay-day-clock.md) - 2026-11-10
-- [v1.28.0 - whole-answer ranking](v1-28-0-whole-answer-ranking.md) - 2026-11-10
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 46 |
+| active | 47 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

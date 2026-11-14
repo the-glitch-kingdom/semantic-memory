@@ -200,8 +200,8 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
   - [x] `npm pack --dry-run` lists `skills/optimize-search/` and `docs/measure-and-tune.md`.
   - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1).
   - [x] Independent review of `git diff main...HEAD` (`claude -p`, given the code, not our conclusions). Fix what it confirms; record rejections.
-- [ ] Phase 11: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/operational/retrieval-eval-guide.md`:
+- [x] Phase 11: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/operational/retrieval-eval-guide.md`:
     - targets (file, defaults, reasons, editing);
     - blind sets and the leakage check;
     - the diagnosis labels and what to do for each;
@@ -209,17 +209,17 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
     - "not validated";
     - the noise threshold;
     - the worked example's lesson from #96, numbers only.
-  - [ ] `.documentation/operational/retrieval-tuning-guide.md`: start from the diagnosis; tune only for `ranking` misses.
-  - [ ] A doc for the `optimize-search` skill (or a section in the eval guide) and its link to hit-em-with-the-docs `/reconcile` and `audit` targets.
-  - [ ] Plugin help (`src/core/help/topics.ts`):
+  - [x] `.documentation/operational/retrieval-tuning-guide.md`: start from the diagnosis; tune only for `ranking` misses.
+  - [x] A doc for the `optimize-search` skill (or a section in the eval guide) and its link to hit-em-with-the-docs `/reconcile` and `audit` targets.
+  - [x] Plugin help (`src/core/help/topics.ts`):
     - the `eval` topic gains targets, blind sets, the diagnosis and `eval init`;
     - add an `optimize-search` topic (or alias) that points at the skill.
     `test/unit/help-coverage.test.ts` and `test/unit/cli-help.test.ts` pass. The `eval` and `eval init` `--help` text is accurate.
-  - [ ] KB gotcha fact: a question set stops being blind once you fix the docs its misses land on. `## Instead`: write a fresh held-out blind set before any docs fix driven by an eval.
-  - [ ] `docs/measure-and-tune.md` is re-read against the final CLI output; its examples match what 1.31.0 prints.
-  - [ ] `CHANGELOG.md` 1.31.0 (names the guide and the skill) and `.documentation/changelog/v1-31-0-operating-targets.md`.
-  - [ ] AGENTS.md (`regenerate_contract`) if the skill list or tool surface it shows changed.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+  - [x] KB gotcha fact: a question set stops being blind once you fix the docs its misses land on. `## Instead`: write a fresh held-out blind set before any docs fix driven by an eval.
+  - [x] `docs/measure-and-tune.md` is re-read against the final CLI output; its examples match what 1.31.0 prints.
+  - [x] `CHANGELOG.md` 1.31.0 (names the guide and the skill) and `.documentation/changelog/v1-31-0-operating-targets.md`.
+  - [x] AGENTS.md (`regenerate_contract`) if the skill list or tool surface it shows changed.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Where is "init"? There's no top-level `init` (setup runs through postinstall), so it's `eval init`, and `eval` writes the defaults when missing (user chose "init + first eval").
@@ -242,8 +242,9 @@ Release as **1.31.0** (minor: new subcommand, new eval output, new skill, new gu
 - Phase 4: a metric the blind subset has no case for (e.g. negatives) has `valueBlind` null and `met` null, shown as `-`, not judged; the Phase 2 test was changed to expect that. `--no-oracle` drops the diagnosis section and key (the gaps file still works with it). Diagnosis cases also carry `q`.
 - Phase 6: the `optimize-search` help topic did not exist, so it was added (topics.ts) with `doc: docs/measure-and-tune.md`. The `eval` topic keeps its reference doc in `doc:` (one path per topic) and gains a step naming the guide. The worked example gives #96's numbers only. The guide's section 6 says where to file (the semantic-memory GitHub repository) without naming an org.
 ## Errors Encountered
+- Phase 11: AGENTS.md not regenerated: the tool inventory and mode list are unchanged (version fields were bumped in Phase 8). `hewtd maintain --quick` reports 11 errors / 136 warnings, none in the files this plan added (checked in its report). The guide was re-read against report.ts and the CLI help: column names (`all`, `blind`), noise line and diagnosis wording match.
 - Phase 10 review (claude -p, no tools, given the diff): confirmed and fixed: noise line used all-case n while met is judged on blind (now 1/blind answerable n); a run with no question sets wrote targets.json before failing (loadSets now first); SKILL.md pointed at a repo-internal doc (now `help tune-ranking`); "under 1/n" wording contradicted "one question is not a signal" (now "1/n or less"). Rejected: blind coverage misses entering baseline counts (intended, only sets marked blind), per-facet coverage (by design), grep `!== 0` (outcomes are 0 on miss), docs not in pack (npm pack lists both), targets.test.ts imports (globals on, passes), range check on targets (speculative), gaps --root (defaults to cwd), --no-oracle still computes (cost unmeasurable, Phase 7). `mean-payload=NaNB` on an empty run predates #96.
 (none yet)
 
 ## Status
-**Phase 11 next** (docs). Phase 10 done (validate). Phase 9 done (cleanup). Phase 8 done (versions at 1.31.0). Phases 1-7 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
+**COMPLETE** (all 11 phases). Phase 11 done (docs). Phase 10 done (validate). Phase 9 done (cleanup). Phase 8 done (versions at 1.31.0). Phases 1-7 done: see notes.md. Phase 2's `it.fails` cases are in `test/retrieval-eval/operating-targets.test.ts` and `test/unit/optimize-search.test.ts`; each turns into a plain `it` in the phase that implements it.
