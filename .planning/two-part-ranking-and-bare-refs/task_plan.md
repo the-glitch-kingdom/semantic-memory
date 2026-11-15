@@ -60,10 +60,10 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
     - Ask the reporter, in the release comment, to measure it on their full tree and blind set. They offered.
     - Record the gate numbers either way.
   - [x] (gate FAILED: shipped OFF, version 1.31.1; reporter ask goes in the release comment) The #91 Phase 2 test is plain `it` only when the candidate is on by default. Otherwise the test runs with the setting on, and a default-off test records the shipped state.
-- [ ] Phase 6: Measure
-  - [ ] Gate numbers (from Phase 5) in notes.md, and the fixture's hybrid/semantic @1/@3/@8 before and after.
-  - [ ] #98 by hand: in a temp copy of this repo with hewtd 3.4.1's export (read-only, its built dist), delete a file a doc cites by bare name, commit, and check `dead_refs` and `get_stats`.
-  - [ ] Code-load cost with the basename map on a ~1,000-file repo, 100 commits behind: before and after, in ms.
+- [x] Phase 6: Measure
+  - [x] Gate numbers (from Phase 5) in notes.md, and the fixture's hybrid/semantic @1/@3/@8 before and after.
+  - [x] #98 by hand: in a temp copy of this repo with hewtd 3.4.1's export (read-only, its built dist), delete a file a doc cites by bare name, commit, and check `dead_refs` and `get_stats`.
+  - [x] Code-load cost with the basename map on a ~1,000-file repo, 100 commits behind: before and after, in ms.
 - [ ] Phase 7: Release prep
   - [ ] Bump all five version fields (1.32.0 or 1.31.1 per Phase 5) plus the lockfile.
 - [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
@@ -114,4 +114,4 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 - Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 6 next** (measure; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**Phase 7 next** (release prep, 1.31.1; Phase 6 measured, see notes.md; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.

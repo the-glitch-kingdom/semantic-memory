@@ -100,3 +100,28 @@ Held-out, 8 sets (n=139 hybrid; multi n=41). Local (candidate on) vs 1.31.0:
 cli and mcp identical (0 of 186 differ in top 3, both modes); titled #1 139/139; slow git fine. Gate verdict: **FAIL** (exit 1): no-export hybrid @1 drops 2 (band 1) on cli and mcp; export dominance rises 2 (28 vs 26, band 1) on cli and mcp. Gains (multi @8 +1, +2 hyb@3 on export) do not offset. Decision: ship OFF as opt-in `ranking.lexical_agreement` (default 0); version 1.31.1. Exponent was not re-tuned after seeing held-out (eval discipline). Log: /tmp/claude-1000/gate-p5.log.
 
 Validation (Phase 5): lint, build, npm test (164 files) green. First `npm run eval`: 1 of 28 files failed (name lost to a tail); re-run in two batches (4 ranking-sensitive files, then the other 24) all pass: a load flake, not reproduced.
+
+## Eval results: Phase 6 (measure)
+
+Gate numbers (Phase 5) are in the section above. Fixture `test/fixtures/two-part` (2 questions), from the Phase 4 runs (`/tmp/claude-1000/p4/tp-*.json`), @1/@3/@8 of 2:
+
+| arm | 1.31.0 ranking (setting off) | `lexical_agreement: 0.4` |
+|---|---|---|
+| hybrid | 0/1/1 | 1/1/1 |
+| semantic | 1/1/2 | 1/1/2 (unchanged, fusion only) |
+
+The default ships off, so the shipped hybrid numbers are the left column; the right column is what the opt-in gives (R91-A #2 to #1).
+
+#98 by hand (scratch, /tmp/claude-1000/p6): a temp git repo with 2 docs, hewtd 3.4.1's built `dist/cli/index.js graph` (read-only; its repo untouched) wrote `.hewtd/graph.json` (v1; the bare ref `export_audit_log.py` is `resolved: true`, no `file`). Then `git rm backend/scripts/export_audit_log.py` and commit; branch build, MCP server:
+- at the export commit (file present): no grounding on the doc;
+- after the delete: `search_hybrid` result has `grounding {"source":"export+live","stale":true,"code_drift":[],"dead_refs":["export_audit_log.py"]}`; `get_stats` has `codeGraph {source: "export", behind_head: 1, files_changed_since: 1}`.
+I did not re-run 1.31.0 here (Phase 1 reproduced the miss by reading `patchStale`; the Phase 3 test failed on it before the fix).
+
+Code-load cost (`loadCodeData`, 1,000 tracked files in 50 dirs, 60 docs each citing 2 bare + 1 path ref, export 100 commits behind, 200 files changed since; median of 5 warm in-process calls after a discarded first, 2 runs, esbuild bundles of `main` and this branch, git file cache warm):
+
+| build | run 1 | run 2 |
+|---|---|---|
+| main (1.31.0) | 20 ms | 27 ms |
+| branch | 24 ms | 25 ms |
+
+No measurable cost (within run-to-run noise, <= 4 ms). The branch re-checks more refs: 27 docs patched vs 10 on main (bare refs main skipped), 0 dead in both because nothing was deleted. The basename map is built once from the already-loaded `exp.files`; no extra git spawn.
