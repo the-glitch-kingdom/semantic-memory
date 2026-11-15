@@ -32,20 +32,20 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
-  - [ ] `eval --gaps-out` on a fixture with a blind set holding:
+- [x] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
+  - [x] `eval --gaps-out` on a fixture with a blind set holding:
     - a "one missing detail" miss: some doc holds 2 of 3 facets;
     - a "topic absent" miss: no doc holds any facet.
     Each entry carries `id`, `tier`, `blind`, `facets`, `missing_facets` and `nearest_doc {path, facet_coverage, rank}`, plus `expected` when the row has it. For the topic-absent case, `nearest_doc` is `null` or omitted; pick one and match hit-em-with-the-docs' parser.
-  - [ ] **Compatibility:**
+  - [x] **Compatibility:**
     - `semantic-memory gaps --json` (usage-log gaps) is byte-identical to main;
     - an entry without facets keeps only the five classic fields;
     - the output is accepted by hit-em-with-the-docs' parser. Run `parse_gaps` from its built `main` in a temp copy, read-only. If that build isn't available, assert against a copied schema from its source, and record the commit.
     - Also confirm that the released hit-em-with-the-docs 3.4.1 `reconcile --gaps --json` still accepts the richer file (unknown fields ignored, not errors).
-  - [ ] **Diagnosis:** each coverage line ends with `nearest: <path> k/n`, or `nearest: none` when no doc holds a facet. `--json` `diagnosis.cases[]` gains `missing_facets` and `nearest_doc` on coverage cases.
-  - [ ] **Code-line facet warning:** a facet like `_TTL_SECONDS = 24 * 60 * 60` or `class Foo:` that matches no doc prints one warning per facet (id plus facet) on stderr. A prose facet doesn't. A code-line facet that does match a doc doesn't.
-  - [ ] **Guide text:** `BLIND-SETS.md` (from `eval init`) and `docs/measure-and-tune.md` contain the facet-shape rule. The guide deny-list test still passes.
-  - [ ] Guards (plain `it`): today's Targets rows and the report head are byte-identical; ranking and grounding cases are unchanged.
+  - [x] **Diagnosis:** each coverage line ends with `nearest: <path> k/n`, or `nearest: none` when no doc holds a facet. `--json` `diagnosis.cases[]` gains `missing_facets` and `nearest_doc` on coverage cases.
+  - [x] **Code-line facet warning:** a facet like `_TTL_SECONDS = 24 * 60 * 60` or `class Foo:` that matches no doc prints one warning per facet (id plus facet) on stderr. A prose facet doesn't. A code-line facet that does match a doc doesn't.
+  - [x] **Guide text:** `BLIND-SETS.md` (from `eval init`) and `docs/measure-and-tune.md` contain the facet-shape rule. The guide deny-list test still passes.
+  - [x] Guards (plain `it`): today's Targets rows and the report head are byte-identical; ranking and grounding cases are unchanged.
 - [ ] Phase 3: Export and diagnosis
   - [ ] Per coverage case, compute from the live docs (reuse `facetIssue` / `findStale`'s facet matching, not a second one):
     - `missing_facets`;
@@ -100,9 +100,12 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 ## Decisions Made
 - Version 1.32.0. Branch `feat/gaps-facets`, cut from main before 1.31.1 merged. Merge main into it after 1.31.1 ships (don't rebase), and archive `two-part-ranking-and-bare-refs` there.
 - Field names and shapes follow hit-em-with-the-docs `main` 4a49bc9 `parse_gaps`.
+- Key Question 1 answered: a topic-absent entry OMITS `nearest_doc` (`parse_gaps` rejects `null` with `"nearest_doc" must be {path, facet_coverage, rank}`; only `rank` may be null).
+- Phase 2 tests are in `test/retrieval-eval/gaps-facets.test.ts` (10 `it.fails`, 5 plain guards). Parser check: a copied per-key validator (4a49bc9) always runs; the real `parse_gaps` runs from the sibling checkout's built dist (`HEWTD_BUILD` overrides the path), skipped when absent. 3.4.1 acceptance runs `reconcile --gaps --json` from a temp project copy.
+- The non-coverage-only compat items (entry without facets keeps five fields) are guarded on `toGapsV1` and the usage-log `gaps --json` CLI (byte-pinned); the eval only exports coverage cases, which always have facets.
 
 ## Errors Encountered
-(none yet)
+(none)
 
 ## Status
-**Phase 2 next** (after 1.31.1 ships and main is merged in). Phase 1 done: see notes.md.
+**Phase 3 next** (export and diagnosis). Phase 2 done: acceptance tests written, see notes.md.

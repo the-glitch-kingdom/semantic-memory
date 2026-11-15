@@ -20,3 +20,10 @@
 ## #101 numbers (reporter, real tree, numbers only)
 - 8 of 16 blind coverage misses had one doc holding 2–3 of 3–4 facets; 2 had none anywhere.
 - A second blind set with code-line facets: 25/25 coverage, grep oracle 0/25. The same questions with prose facets: 11 coverage, 6 ranking, 3 grounding, 5 answered @1, grep 1/25 @3.
+
+## Eval results: Phase 2
+- Tests only, no src change: `test/retrieval-eval/gaps-facets.test.ts`, 15 cases: 10 `it.fails`, 5 plain guards (usage-log `gaps --json` byte-pinned, `toGapsV1` five fields, ranking/grounding cases carry no new fields, code-miss stays coverage, hewtd 3.4.1 accepts a hand-written richer file).
+- Each `it.fails` was run as plain `it` and fails for the stated reason: entries lack `id`/`facets`/`missing_facets`/`nearest_doc`; coverage lines lack `nearest:`; no stderr warning; BLIND-SETS.md and measure-and-tune.md lack the "code-line facet" rule.
+- hit-em-with-the-docs checkout is on feat/gaps-coverage-misses-113 (c9c43ad, descendant of 4a49bc9); its built dist `parse_gaps` is used read-only. Installed 3.4.1 (`node_modules/@theglitchking/hit-em-with-the-docs`) accepts the richer file.
+- Fixture: docs-vault copy plus one doc (`reference/ttl-cache.md`) holding a code line, made in the test; `operational/log-rotation.md` holds 2 of the 3 near-miss facets.
+- Full validation: lint, build, `npm test` (164 files, 1353 passed) green; `npm run eval` 28/29 files green, real-corpus-eval.test.ts hit a 600s beforeAll timeout under load (a stray index-build ENOENT in a /tmp/lt-* dir at the same time) and passed alone (16 passed, 1 expected fail). Not a Phase 2 regression: no src change.
