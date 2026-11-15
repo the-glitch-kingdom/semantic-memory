@@ -36,6 +36,17 @@ describe("Bm25Index", () => {
   });
 });
 
+describe("fuseScores lexical agreement (#91)", () => {
+  const r = (path: string, score: number) => ({ path, title: path, score, snippet: "" });
+  it("a lexical-only winner with weak cosine loses its lexical share; 0 keeps the old order", () => {
+    const vec = [r("whole", 0.6), r("part", 0.45)];
+    const lex = [r("part", 10), r("whole", 6)];
+    expect(fuseScores(vec, lex)[0].path).toBe("part");
+    expect(fuseScores(vec, lex, 0.4)[0].path).toBe("whole");
+    expect(fuseScores(vec, [], 0.4)).toBe(vec);
+  });
+});
+
 describe("fuseScores", () => {
   it("is pure vector order when BM25 returns nothing", () => {
     const v = [r("x", 0.8), r("y", 0.6)];

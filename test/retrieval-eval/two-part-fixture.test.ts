@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { startEval } from "./harness.js";
 import { openSearch, type Searcher } from "../../src/cli/search.js";
@@ -8,7 +9,7 @@ import { cleanupTempDir } from "../setup.js";
 /**
  * #91 part 2, the reporter's repro (test/fixtures/two-part, 18 anonymised docs). R91-A: seo-surface-implementation.md holds all three facets in
  * one chunk; hybrid puts a merge-gate fact that matches only part 2's wording above it (fuseScores hands the BM25 #1 the full lexical share).
- * Semantic alone ranks it #1. The hybrid case is `it.fails` until the ranking fix ships on by default (Phase 5); then plain `it`.
+ * Semantic alone ranks it #1. The hybrid case passes with `ranking.lexical_agreement: 0.4` (opt-in: that default lost the held-out gate against 1.31.0); the shipped default 0 is pinned in rank.test.ts.
  * R91-B is measured, not a target: the doc that answers in prose legitimately outranks the two runbooks that hold the commands.
  */
 const questions = readFileSync(join(import.meta.dirname, "..", "fixtures", "two-part", "questions.jsonl"), "utf-8").trim().split("\n").map((l) => JSON.parse(l) as { id: string; q: string });
@@ -23,7 +24,7 @@ describe("two-part question ranking (#91 part 2)", () => {
   const arms: Record<string, (q: string, k: number) => Promise<{ path: string }[]>> = {};
 
   beforeAll(async () => {
-    env = await startEval(join(import.meta.dirname, "..", "fixtures", "two-part"), "sp-two-part-", undefined, "docs");
+    env = await startEval(join(import.meta.dirname, "..", "fixtures", "two-part"), "sp-two-part-", (dir) => writeFile(join(dir, "docs", "vault.schema.yml"), "ranking:\n  lexical_agreement: 0.4\n"), "docs");
     cli = await openSearch(join(env.dir, "docs"));
     arms.search_hybrid = async (query, k) => (await env.call("search_hybrid", { query, limit: k })).parsed;
     arms.search_semantic = async (query, k) => (await env.call("search_semantic", { query, limit: k })).parsed;
@@ -38,7 +39,7 @@ describe("two-part question ranking (#91 part 2)", () => {
   const rank = async (arm: string, query: string, doc: string) => (await arms[arm](query, 30)).findIndex((h) => h.path === doc) + 1 || 31;
 
   for (const arm of ["search_hybrid", "cli"]) {
-    it.fails(`R91-A ${arm}: the doc holding all three facets is #1`, async () => {
+    it(`R91-A ${arm}: the doc holding all three facets is #1 with lexical_agreement 0.4`, async () => {
       expect(await rank(arm, q("R91-A"), WHOLE)).toBe(1);
     });
   }

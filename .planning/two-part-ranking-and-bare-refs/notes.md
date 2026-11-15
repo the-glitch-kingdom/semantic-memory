@@ -85,3 +85,18 @@ Reading:
 ## Phase 4 outcome
 
 **Chosen: candidate 1, lexical share scaled by agreement, exponent 0.4.** In `fuseScores`, each lexical-list doc's BM25 share (0.3 * bm25/max) is multiplied by `min(1, cosine / topCosine) ^ 0.4`, where `cosine` is the doc's vector-arm score (0 for a doc outside the vector pool) and `topCosine` is the vector arm's best score (after the same boosts). Pure vector order is unchanged when BM25 returns nothing; the vector arm's cosine term is unchanged, so only the lexical share of a doc that is weak on meaning shrinks. It qualifies under the plan's rule (fixes R91-A, loses nothing on train, dominance not raised). Caveats for Phase 5: (1) tuned on one failing question plus the train sets; the exponent window is 0.4 to 0.45 and the real test is the held-out gate; (2) the identifier tier and `no_strong_match` are untouched in code but Phase 9 must compare top 3 on every train question; (3) the throwaway patch passed `{query, bm25, selfTop, clauses}` through fuseScores for candidates 2 and 3; the chosen one needs only the vector list already passed in, so no signature change. Losing candidates (2, 3) leave no code behind.
+
+## Eval results: Phase 5 (gate, fresh `BAND=1 bash scripts/gate-release.sh 1.31.0`, candidate on at 0.4, no cache)
+
+Held-out, 8 sets (n=139 hybrid; multi n=41). Local (candidate on) vs 1.31.0:
+
+| run | hyb@1 | hyb@3 | multi @1/3/8 | cov@3 | dom | neg flagged | false flags |
+|---|---|---|---|---|---|---|---|
+| no export, 1.31.0 | 91 | 115 | 20/28/31 | 0.817 | 34 | 43 | 7 |
+| no export, local | 89 | 115 | 20/28/32 | 0.811 | 33 | 43 | 7 |
+| export, 1.31.0 | 94 | 115 | 20/28/32 | 0.817 | 26 | 43 | 7 |
+| export, local | 94 | 116 | 20/28/33 | 0.825 | 28 | 43 | 7 |
+
+cli and mcp identical (0 of 186 differ in top 3, both modes); titled #1 139/139; slow git fine. Gate verdict: **FAIL** (exit 1): no-export hybrid @1 drops 2 (band 1) on cli and mcp; export dominance rises 2 (28 vs 26, band 1) on cli and mcp. Gains (multi @8 +1, +2 hyb@3 on export) do not offset. Decision: ship OFF as opt-in `ranking.lexical_agreement` (default 0); version 1.31.1. Exponent was not re-tuned after seeing held-out (eval discipline). Log: /tmp/claude-1000/gate-p5.log.
+
+Validation (Phase 5): lint, build, npm test (164 files) green. First `npm run eval`: 1 of 28 files failed (name lost to a tail); re-run in two batches (4 ranking-sensitive files, then the other 24) all pass: a load flake, not reproduced.

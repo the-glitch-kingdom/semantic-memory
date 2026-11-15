@@ -54,12 +54,12 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
     4. **Existing knobs** (`coverage_weight`, `clause_weight`, `COSINE_WEIGHT`) as baselines, so a new mechanism has to beat them.
     For each candidate record: R91-A rank, R91-B ranks, train hyb@1/@3, multi @1/@3/@8, dominance, and the identifier-tier and whole-answer train sets.
   - [x] Pick at most one (candidate 1, exponent 0.4; see notes.md). It must fix R91-A, lose nothing on train beyond 1/n, and not raise dominance. If none qualifies, record why and go to Phase 5 with "no default change".
-- [ ] Phase 5: Gate and decide
-  - [ ] Implement the chosen candidate behind a `ranking` setting in `vault.schema.yml` (like `clause_weight`).
-  - [ ] Fresh `BAND=1 bash scripts/gate-release.sh 1.31.0` with it **on** as the default. If the gate passes (no held-out loss beyond the band, MCP vs CLI parity), ship it on, and the version is 1.32.0. If it fails, ship it **off** (opt-in), and the version is 1.31.1.
+- [x] Phase 5: Gate and decide
+  - [x] Implement the chosen candidate behind a `ranking` setting in `vault.schema.yml` (like `clause_weight`). (`ranking.lexical_agreement`, `fuseScores` third argument.)
+  - [x] Fresh `BAND=1 bash scripts/gate-release.sh 1.31.0` with it **on** as the default. If the gate passes (no held-out loss beyond the band, MCP vs CLI parity), ship it on, and the version is 1.32.0. If it fails, ship it **off** (opt-in), and the version is 1.31.1.
     - Ask the reporter, in the release comment, to measure it on their full tree and blind set. They offered.
     - Record the gate numbers either way.
-  - [ ] The #91 Phase 2 test is plain `it` only when the candidate is on by default. Otherwise the test runs with the setting on, and a default-off test records the shipped state.
+  - [x] (gate FAILED: shipped OFF, version 1.31.1; reporter ask goes in the release comment) The #91 Phase 2 test is plain `it` only when the candidate is on by default. Otherwise the test runs with the setting on, and a default-off test records the shipped state.
 - [ ] Phase 6: Measure
   - [ ] Gate numbers (from Phase 5) in notes.md, and the fixture's hybrid/semantic @1/@3/@8 before and after.
   - [ ] #98 by hand: in a temp copy of this repo with hewtd 3.4.1's export (read-only, its built dist), delete a file a doc cites by bare name, commit, and check `dead_refs` and `get_stats`.
@@ -108,8 +108,10 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 - Version 1.32.0 or 1.31.1, set in Phase 5.
 - Phase 4: candidate 1 (lexical share x (cos/cosTop)^0.4) chosen on train + fixture; candidates 2 and 3 and the existing knobs rejected (numbers in notes.md). Candidate 1's window is narrow (0.4 to 0.45); the held-out gate decides.
 
+- Phase 5: gate FAILED with the candidate on (numbers in notes.md). Ship OFF as opt-in `ranking.lexical_agreement` (default 0), version **1.31.1**. The R91-A tests run with the setting on (`lexical_agreement: 0.4` written into the fixture vault); rank.test.ts pins the default 0.
+
 ## Errors Encountered
 - Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 5 next** (gate and decide; implement candidate 1, agreement exponent 0.4, behind a `ranking` setting). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**Phase 6 next** (measure; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
