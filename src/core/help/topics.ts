@@ -139,9 +139,9 @@ export const TOPICS: HelpTopic[] = [
     doc: ".documentation/operational/retrieval-tuning-guide.md",
   },
   {
-    id: "tune-ranking", title: "Tune ranking", group: "Measure and improve", aliases: ["ranking", "rerank", "reranker", "path_class", "usage_boost", "coverage_weight", "link_prior", "clause_weight", "identifier-tier"],
+    id: "tune-ranking", title: "Tune ranking", group: "Measure and improve", aliases: ["ranking", "rerank", "reranker", "path_class", "usage_boost", "coverage_weight", "link_prior", "clause_weight", "lexical_agreement", "identifier-tier"],
     summary: "The ranking: block, the opt-in reranker, path classes, the usage boost and the identifier tier, with their measured defaults. Measure before and after.",
-    steps: ["Leave the ranking: block at its defaults: coverage_weight 0, link_prior 1 and clause_weight 0 (off; clause matching lost on the held-out gate).", "The reranker (rerank.enabled) is off: about 0.7 s a search for +1 case in 35, and a 90 MB model download.", "path_class sets multipliers by glob: archive/ counts 0.3 and is excluded from the index unless path_class.exclude is emptied. usage_boost nudges docs that were read after a search.", "Docs that hold the query's identifier literally (gate-release.sh, check_widgets) rank first, whatever the query label; an identifier no doc holds changes nothing.", "Change one knob, restart with --reindex if the guide says so, and run the eval before and after (see eval)."],
+    steps: ["Leave the ranking: block at its defaults: coverage_weight 0, link_prior 1 and clause_weight 0 (off; clause matching lost on the held-out gate). lexical_agreement (0 = off) scales a note's BM25 share by how close its cosine is to the best one, for two-part questions; 0.4 lost the held-out gate, so measure it on your train split first.", "The reranker (rerank.enabled) is off: about 0.7 s a search for +1 case in 35, and a 90 MB model download.", "path_class sets multipliers by glob: archive/ counts 0.3 and is excluded from the index unless path_class.exclude is emptied. usage_boost nudges docs that were read after a search.", "Docs that hold the query's identifier literally (gate-release.sh, check_widgets) rank first, whatever the query label; an identifier no doc holds changes nothing.", "Change one knob, restart with --reindex if the guide says so, and run the eval before and after (see eval)."],
     commands: ["semantic-memory decay-config", `semantic-memory eval ${N}`, `semantic-memory eval ${N} --check`],
     verify: "eval --check exits 0 after the change, and the counts you cared about did not drop.",
     doc: ".documentation/operational/retrieval-tuning-guide.md",
@@ -173,7 +173,7 @@ export const TOPICS: HelpTopic[] = [
   {
     id: "code-graph", title: "Code graph and grounding", group: "Measure and improve", aliases: ["grounding", "code", "drift", "entity-card"],
     summary: "Docs are linked to the code symbols they name, so results can show code refs, drift and dead refs; only dead refs lower the rank.",
-    steps: ["Index a vault that sits in a git repo.", "Search for a symbol name; read the code refs on each result.", "If a result says stale: true, the hewtd export is older than the tree; refresh it with npx hewtd index (the healthcheck code-graph-stale finding says the same)."],
+    steps: ["Index a vault that sits in a git repo.", "Search for a symbol name; read the code refs on each result.", "If a result says stale: true, the hewtd export is older than the tree; refresh it with npx hewtd index (the healthcheck code-graph-stale finding says the same). A bare filename ref (no /) is matched by basename: live while any file with that name exists."],
     commands: [`semantic-memory search "<symbol name>" ${N}`],
     verify: "results for a symbol name carry code refs.",
     doc: ".documentation/architecture/code-graph.md",

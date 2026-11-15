@@ -140,3 +140,8 @@ Bumped package.json, both marketplace.json fields, plugin.json, AGENTS.md frontm
 - Independent review (`claude -p --setting-sources "" --tools ""` on `git diff main...HEAD -- src`): 4 points. Confirmed and fixed: a negative cosine gave NaN in `agree` (clamped at 0, unit test). Rejected: paths outside the repo reaching `gitLastChanged` (it only builds a lookup set from git log output, never passes paths to git); dates not numbers (they are epoch ms numbers); untracked new files missing from byBase (a semantic note, `changed` includes them and the Phase 3 test covers it).
 - Validation: lint, build, npm test (164 files, 1353 passed), npm run eval (28 files, 264 passed, 6 expected fail), all green; neither earlier flake recurred.
 - `BAND=1 npm run gate:release -- 1.31.0` (fresh, no cache): PASS. No export and export, cli and mcp: hybrid @1 91 vs 91 (94 vs 94 export), multi @1 20 vs 20, multi @3/@8 28/31 vs 28/31 (28/32 export), cov@3 0.817 vs 0.817, dominance 34 vs 34 (26 vs 26), negatives 43 vs 43, false flags 7 vs 7, mcp vs cli 0 of 186 differ, titled #1 139/139.
+
+## Phase 10 (docs)
+
+Docs describe `ranking.lexical_agreement` as opt-in (default 0, failed the held-out gate at 0.4) and bare-name basename semantics. `hewtd maintain --quick` ran (11 errors / 140 warnings repo-wide, none in the new or edited pages). AGENTS.md regenerated from branch code (timestamp only).
+Final eval: real-corpus-eval index-build timeout flake again (600000ms, ENOENT tmp); passes alone (16 passed, 1 expected fail).

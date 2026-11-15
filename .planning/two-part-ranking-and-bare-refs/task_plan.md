@@ -85,18 +85,18 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
       - a negative question's abstention flag (`no_strong_match`) is unchanged.
   - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.31.0).
   - [x] Independent review of `git diff main...HEAD` (`claude -p --setting-sources "" --tools ""`, given the code, not our conclusions). Fix what it confirms; record rejections.
-- [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/architecture/code-graph.md`: bare-filename refs in the stale re-check (basename semantics, as hewtd resolves them).
-  - [ ] `.documentation/operational/retrieval-tuning-guide.md`: the fusion change or the new opt-in setting, what it does to two-part questions, and the measured trade.
-  - [ ] `.documentation/reference/configuration-reference.md`: the new `ranking` key, if one was added.
-  - [ ] Plugin help (`src/core/help/topics.ts`):
+- [x] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/architecture/code-graph.md`: bare-filename refs in the stale re-check (basename semantics, as hewtd resolves them).
+  - [x] `.documentation/operational/retrieval-tuning-guide.md`: the fusion change or the new opt-in setting, what it does to two-part questions, and the measured trade.
+  - [x] `.documentation/reference/configuration-reference.md`: the new `ranking` key, if one was added.
+  - [x] Plugin help (`src/core/help/topics.ts`):
     - `tune-ranking` names the new setting, if there is one;
     - `code-graph` mentions bare names, if its text describes the re-check.
     `test/unit/help-coverage.test.ts` and `test/unit/cli-help.test.ts` pass, and any `--help` text this touches stays accurate.
-  - [ ] `docs/measure-and-tune.md`: the ranking route mentions the new setting, if one was added. The deny-list test still passes.
-  - [ ] KB gotcha fact: a score fused as `w·cosine + (1−w)·bm25/max(bm25)` hands the full lexical share to whichever doc is lexically best on *this* query, even when that doc matches only one clause. `## Instead`: whatever Phase 5 shipped.
-  - [ ] `CHANGELOG.md` and `.documentation/changelog/v<version>-two-part-and-bare-refs.md`.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+  - [x] `docs/measure-and-tune.md`: the ranking route mentions the new setting, if one was added. The deny-list test still passes.
+  - [x] KB gotcha fact: a score fused as `w·cosine + (1−w)·bm25/max(bm25)` hands the full lexical share to whichever doc is lexically best on *this* query, even when that doc matches only one clause. `## Instead`: whatever Phase 5 shipped.
+  - [x] `CHANGELOG.md` and `.documentation/changelog/v<version>-two-part-and-bare-refs.md`.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Should R91-B count as a target? No: the summary doc answers in prose. Measure it, report it, don't tune for it.
@@ -114,4 +114,4 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 - Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 10 next** (Phase 9 done; Phase 8 done: nothing to remove in the repo, Phase 4 candidates were never committed; Phase 7 done: all five fields and lockfile at 1.31.1). (release prep, 1.31.1; Phase 6 measured, see notes.md; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**COMPLETE.** All phases done. Release 1.31.1: #98 fixed, `ranking.lexical_agreement` ships off (opt-in). Docs updated in Phase 10 (code-graph, tuning guide, configuration reference, help tune-ranking and code-graph, measure-and-tune, KB fact, CHANGELOG and v1.31.1 changelog page, AGENTS.md regenerated).

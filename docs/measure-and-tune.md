@@ -67,7 +67,7 @@ Two rules follow:
 4. Route each label:
    - coverage: `semantic-memory eval --notes .documentation --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (it proposes docs and phrases; nothing is applied without your acceptance), or write the doc. Real-usage gaps come from `semantic-memory gaps --root . --json`.
    - grounding: `/reconcile --changed`, or `/reconcile --next 10`.
-   - ranking: the settings in `semantic-memory help tune-ranking`, chosen on your train split only; or report it (section 6).
+   - ranking: the settings in `semantic-memory help tune-ranking` (`coverage_weight`, `clause_weight`, `lexical_agreement` for two-part questions, all off by default), chosen on your train split only; or report it (section 6).
    - docs-wide health: `npx hewtd audit`.
    Never hand-edit `INDEX.md` or `REGISTRY.md`; `npx hewtd maintain --quick` regenerates them.
 5. Re-measure on a fresh blind set, with a cold build, and compare with the recorded run. Ignore changes of `1/n` or less.

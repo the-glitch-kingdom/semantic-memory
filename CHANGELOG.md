@@ -2,6 +2,21 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.31.1] - 2026-11-14 — two-part questions and bare refs
+
+Issues #91 (part 2) and #98. Details: `.documentation/changelog/v1-31-1-two-part-and-bare-refs.md`.
+
+### Added
+
+- `ranking.lexical_agreement` (default 0, off): scales a note's BM25 share in fusion by `min(1, cosine / best cosine) ^ lexical_agreement`. At 0.4 it fixes the #91 repro but failed the held-out gate, so it is opt-in.
+
+### Fixed
+
+- #98: a bare filename ref (`export_audit_log.py`, no `/`) in the stale-export re-check is resolved by basename, as hewtd does. It was compared as a root path, so it read as dead after the export went stale (or never showed drift).
+- `fuseScores` clamps a negative cosine ratio at 0 (it gave NaN with the setting on).
+
+Default ranking is unchanged: `gate:release` against 1.31.0 passes.
+
 ## [1.31.0] - 2026-11-14 — operating targets
 
 Issue #96. Details: `.documentation/changelog/v1-31-0-operating-targets.md`.
