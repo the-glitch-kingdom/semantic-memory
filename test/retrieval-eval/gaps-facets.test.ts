@@ -235,3 +235,38 @@ describe("usage-log gaps stay as they are", () => {
     expect(Object.keys(toGapsV1([g], "x").gaps[0])).toEqual(["query", "used_doc", "suggested", "count", "last_seen"]);
   });
 });
+
+// Phase 8 edge cases
+describe("--gaps-out edge cases", () => {
+  const ok = { id: "ok", tier: "exact", q: "How does log rotation work?", facets: ["roll over at 50 ?MB"], blind: true };
+  const crlf = (rows: unknown[]) => rows.map((r) => JSON.stringify(r)).join("\r\n") + "\r\n";
+  const out = async (name: string, rows: unknown[], ...a: string[]) => {
+    const f = join(dir, `${name}.jsonl`), g = join(dir, `${name}-out.json`);
+    await writeFile(f, name.startsWith("crlf") ? crlf(rows) : jsonl(rows));
+    const r = run(join(dir, `ev-${name}`), f, "--json", "--gaps-out", g, ...a);
+    expect(r.status, r.stderr).toBe(0);
+    return { doc: JSON.parse(readFileSync(g, "utf-8")), stdout: JSON.parse(r.stdout) };
+  };
+
+  it("a 0-coverage run writes an empty gaps.v1", async () => {
+    const { doc } = await out("zero", [ok]);
+    expect(doc.gaps).toEqual([]);
+  });
+  it("non-blind coverage cases are stale (skipped), never exported; a bad regex and expected-without-facets never throw or export", async () => {
+    const rows = [{ ...NEAR, blind: false, id: "nb" }, { id: "bad", tier: "exact", q: "bad regex", facets: ["(unclosed"], blind: true }, { id: "exp", tier: "exact", q: "log rotation", expected: ["operational/log-rotation.md"], blind: true }];
+    const { doc, stdout } = await out("edge", rows);
+    expect(doc.gaps).toEqual([]);
+    expect(stdout.stale.map((s: any) => s.id)).toContain("nb");
+  });
+  it("--no-oracle still writes the same gaps file (diagnosis is computed, only the report section is dropped)", async () => {
+    const a = await out("oracle", [NEAR]);
+    const b = await out("nooracle", [NEAR], "--no-oracle");
+    expect(b.stdout.diagnosis).toBeUndefined();
+    expect(b.doc.gaps.map((g: any) => g.id)).toEqual(a.doc.gaps.map((g: any) => g.id));
+    expect(b.doc.gaps[0].missing_facets).toEqual(NEAR.facets.slice(2));
+  });
+  it("a CRLF set exports the same entries", async () => {
+    const { doc } = await out("crlf", [NEAR]);
+    expect(doc.gaps[0]).toMatchObject({ id: "near-miss", missing_facets: ["zzqqxx-gzip-after-rotation"] });
+  });
+});

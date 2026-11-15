@@ -70,9 +70,9 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 - [x] Phase 6: Release prep
   - [x] Bump all five version fields to 1.32.0, plus the lockfile. (all five fields + lockfile at 1.32.0)
 - [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-- [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Every Phase 2 test passes as plain `it`.
-  - [ ] Edge cases:
+- [x] Phase 8: Validate success through comprehensive testing (MANDATORY)
+  - [x] Every Phase 2 test passes as plain `it`.
+  - [x] Edge cases:
     - a case with `expected` but no facets (no `nearest_doc`; `expected` exported);
     - a facet that is an invalid regex (reported as today, never thrown);
     - a tie for nearest doc;
@@ -82,8 +82,8 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
     - `--no-oracle` (no diagnosis, so `--gaps-out` behaves as it does in 1.31.x with `--no-oracle`; decide and record);
     - CRLF sets;
     - a 0-coverage run writes an empty `gaps.v1`.
-  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.31.1).
-  - [ ] Independent review of `git diff main...HEAD` (`claude -p --setting-sources "" --tools ""`, given the code, not our conclusions). Fix what it confirms; record rejections.
+  - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.31.1).
+  - [x] Independent review of `git diff main...HEAD` (`claude -p --setting-sources "" --tools ""`, given the code, not our conclusions). Fix what it confirms; record rejections.
 - [ ] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/operational/retrieval-eval-guide.md`: the new gaps fields, the nearest-doc line, the code-line warning and the facet-shape rule.
   - [ ] `docs/measure-and-tune.md`: the coverage route mentions `nearest_doc` (extend vs new doc); facet shape is in §3. The deny-list test passes.
@@ -110,4 +110,4 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 (none)
 
 ## Status
-**Phase 8 next** (Phase 7 cleanup done: no scratch files, probe logging or dead code found; Phase 6 release prep done, all versions 1.32.0). Earlier: **Phase 6** (release prep). Phase 5 done (gate PASS, by-hand check in notes.md). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.
+**Phase 9 next** (Phase 8 validated: all green, gate PASS, review done; was Phase 8) (Phase 7 cleanup done: no scratch files, probe logging or dead code found; Phase 6 release prep done, all versions 1.32.0). Earlier: **Phase 6** (release prep). Phase 5 done (gate PASS, by-hand check in notes.md). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.
