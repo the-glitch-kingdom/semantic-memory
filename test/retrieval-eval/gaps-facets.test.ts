@@ -67,7 +67,7 @@ beforeAll(async () => {
 afterAll(async () => dir && (await rm(dir, { recursive: true, force: true })));
 
 describe("--gaps-out carries facets, missing_facets and nearest_doc", () => {
-  it.fails("a one-missing-detail miss: id, tier, blind, facets, missing_facets, nearest_doc {path, facet_coverage, rank}, expected", () => {
+  it("a one-missing-detail miss: id, tier, blind, facets, missing_facets, nearest_doc {path, facet_coverage, rank}, expected", () => {
     json(join(dir, "ev-a"), setFile, "--gaps-out", gapsFile);
     const g = gapsOf().find((x) => x.id === "near-miss");
     expect(g).toBeTruthy();
@@ -76,7 +76,7 @@ describe("--gaps-out carries facets, missing_facets and nearest_doc", () => {
     expect(g.nearest_doc.rank === null || Number.isInteger(g.nearest_doc.rank)).toBe(true);
   });
 
-  it.fails("a topic-absent miss lists every facet as missing and omits nearest_doc (parse_gaps rejects null)", () => {
+  it("a topic-absent miss lists every facet as missing and omits nearest_doc (parse_gaps rejects null)", () => {
     json(join(dir, "ev-b"), setFile, "--gaps-out", gapsFile);
     const g = gapsOf().find((x) => x.id === "absent");
     expect(g).toBeTruthy();
@@ -85,7 +85,7 @@ describe("--gaps-out carries facets, missing_facets and nearest_doc", () => {
     expect(g).not.toHaveProperty("expected"); // only when the row has it
   });
 
-  it.fails("hit-em-with-the-docs' parse_gaps shape accepts every entry (checks copied from 4a49bc9)", () => {
+  it("hit-em-with-the-docs' parse_gaps shape accepts every entry (checks copied from 4a49bc9)", () => {
     json(join(dir, "ev-c"), setFile, "--gaps-out", gapsFile);
     const gaps = gapsOf();
     expect(gaps.map((g) => g.id).sort()).toEqual(["absent", "near-miss"]);
@@ -93,7 +93,7 @@ describe("--gaps-out carries facets, missing_facets and nearest_doc", () => {
   });
 
   // parse_gaps itself, from a local build of hit-em-with-the-docs main (read-only); skipped when no build is present
-  (existsSync(HEWTD_BUILD) ? it.fails : it.skip)("the built parse_gaps reads the file with no errors and keeps facets, missing_facets, nearest_doc and expected", async () => {
+  (existsSync(HEWTD_BUILD) ? it : it.skip)("the built parse_gaps reads the file with no errors and keeps facets, missing_facets, nearest_doc and expected", async () => {
     json(join(dir, "ev-d"), setFile, "--gaps-out", gapsFile);
     const { parse_gaps } = await import(HEWTD_BUILD);
     const read = parse_gaps(readFileSync(gapsFile, "utf-8"), { docs_root: dir });
@@ -125,7 +125,7 @@ describe("--gaps-out carries facets, missing_facets and nearest_doc", () => {
     expect(r.stderr).not.toMatch(/invalid|unsupported/i);
   });
 
-  it.fails("hewtd 3.4.1 `reconcile --gaps --json` accepts the file `eval --gaps-out` writes", async () => {
+  it("hewtd 3.4.1 `reconcile --gaps --json` accepts the file `eval --gaps-out` writes", async () => {
     json(join(dir, "ev-e"), setFile, "--gaps-out", gapsFile);
     expect(gapsOf().length).toBe(2);
     expect(gapsOf().every((g) => Array.isArray(g.facets))).toBe(true); // the richer file, not today's five fields
@@ -135,13 +135,13 @@ describe("--gaps-out carries facets, missing_facets and nearest_doc", () => {
 });
 
 describe("Diagnosis: nearest doc", () => {
-  it.fails("each coverage line ends with `nearest: <path> k/n`, or `nearest: none`", () => {
+  it("each coverage line ends with `nearest: <path> k/n`, or `nearest: none`", () => {
     const text = run(join(dir, "ev-f"), setFile).stdout;
     expect(text).toMatch(/^ {2}near-miss: coverage, .*nearest: operational\/log-rotation\.md 2\/3$/m);
     expect(text).toMatch(/^ {2}absent: coverage, .*nearest: none$/m);
   });
 
-  it.fails("--json diagnosis.cases[] gains missing_facets and nearest_doc on coverage cases", () => {
+  it("--json diagnosis.cases[] gains missing_facets and nearest_doc on coverage cases", () => {
     const cases = json(join(dir, "ev-g"), setFile).diagnosis.cases;
     const near = cases.find((c: any) => c.id === "near-miss");
     expect(near.missing_facets).toEqual(["zzqqxx-gzip-after-rotation"]);

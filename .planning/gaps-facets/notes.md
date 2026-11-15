@@ -27,3 +27,6 @@
 - hit-em-with-the-docs checkout is on feat/gaps-coverage-misses-113 (c9c43ad, descendant of 4a49bc9); its built dist `parse_gaps` is used read-only. Installed 3.4.1 (`node_modules/@theglitchking/hit-em-with-the-docs`) accepts the richer file.
 - Fixture: docs-vault copy plus one doc (`reference/ttl-cache.md`) holding a code line, made in the test; `operational/log-rotation.md` holds 2 of the 3 near-miss facets.
 - Full validation: lint, build, `npm test` (164 files, 1353 passed) green; `npm run eval` 28/29 files green, real-corpus-eval.test.ts hit a 600s beforeAll timeout under load (a stray index-build ENOENT in a /tmp/lt-* dir at the same time) and passed alone (16 passed, 1 expected fail). Not a Phase 2 regression: no src change.
+
+## Eval results: Phase 3
+- No ranking change (diagnosis and export only). Phase 2 export/diagnosis/parse_gaps/3.4.1 tests now pass as plain `it`; new unit tests in test/unit/eval-report.test.ts (tie, archive, rank null, bad regex, none).

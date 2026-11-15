@@ -57,3 +57,18 @@ describe("judgeTargets", () => {
   });
   const d0 = { cases: [], counts: { coverage: 0, ranking: 0, grounding: 0 }, grep: { at1: 0, at3: 0, n: 0 } };
 });
+
+describe("diagnose: nearest doc of a coverage case", () => {
+  const d2 = new Map([["x.md", "one two"], ["y.md", "one two"], ["archive/z.md", "one two three"], ["w.md", "one"]]);
+  const cov = { id: "k", tier: "exact", q: "k", facets: ["one", "two", "three", "nine"], blind: true } as FacetCase;
+  const run = (top8: string[]) => diagnose([cov], d2, arm({ k: 0 }), arm({ k: 0 }, 0, 0, 1), {}, {}, { k: top8 }).cases[0];
+  it("ties go to the higher hybrid rank, then path; archive never counts; rank is null outside the top 8; a facet only in archive is missing", () => {
+    expect(run(["y.md", "x.md"])).toMatchObject({ missing_facets: ["three", "nine"], nearest_doc: { path: "y.md", facet_coverage: "2/4", rank: 1 } });
+    expect(run([]).nearest_doc).toEqual({ path: "x.md", facet_coverage: "2/4", rank: null });
+  });
+  it("omits nearest_doc and prints none when no doc holds a facet", () => {
+    const k = diagnose([{ ...cov, facets: ["qqq"] }], d2, arm({ k: 0 }), arm({ k: 0 }, 0, 0, 1), {}, {}).cases[0];
+    expect(k).not.toHaveProperty("nearest_doc");
+    expect(formatSections({ diagnosis: { cases: [k], counts: { coverage: 1, ranking: 0, grounding: 0 }, grep: { at1: 0, at3: 0, n: 1 } } }).join("\n")).toContain("nearest: none");
+  });
+});

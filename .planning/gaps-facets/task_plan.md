@@ -46,15 +46,15 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
   - [x] **Code-line facet warning:** a facet like `_TTL_SECONDS = 24 * 60 * 60` or `class Foo:` that matches no doc prints one warning per facet (id plus facet) on stderr. A prose facet doesn't. A code-line facet that does match a doc doesn't.
   - [x] **Guide text:** `BLIND-SETS.md` (from `eval init`) and `docs/measure-and-tune.md` contain the facet-shape rule. The guide deny-list test still passes.
   - [x] Guards (plain `it`): today's Targets rows and the report head are byte-identical; ranking and grounding cases are unchanged.
-- [ ] Phase 3: Export and diagnosis
-  - [ ] Per coverage case, compute from the live docs (reuse `facetIssue` / `findStale`'s facet matching, not a second one):
+- [x] Phase 3: Export and diagnosis
+  - [x] Per coverage case, compute from the live docs (reuse `facetIssue` / `findStale`'s facet matching, not a second one):
     - `missing_facets`;
     - per-doc facet counts, giving `nearest_doc` = the doc with the most facets (ties: the hybrid-higher one, then path order);
     - `facet_coverage` = `k/n`;
     - `rank` = its position in hybrid's top 8 for that question, else `null`.
     That needs hybrid's top-8 paths per question: extend the probe in `runSuite`, which keeps only the top 3 today, without changing the arms.
-  - [ ] `--gaps-out` writes the extra fields for case-derived entries only. Keep `toGapsV1` for the usage log as is (its comment says "no extra fields"); add a separate builder for eval gaps, or an optional extras pass-through. Record which.
-  - [ ] Diagnosis line and `--json` fields as in Phase 2.
+  - [x] `--gaps-out` writes the extra fields for case-derived entries only. Keep `toGapsV1` for the usage log as is (its comment says "no extra fields"); add a separate builder for eval gaps, or an optional extras pass-through. Recorded: a separate builder inline in the CLI (base `toGapsV1` entries merged with case detail); `toGapsV1` untouched.
+  - [x] Diagnosis line and `--json` fields as in Phase 2.
 - [ ] Phase 4: Facet-shape rule and warning
   - [ ] The code-line test matches hit-em-with-the-docs' `is_code_line_facet` regex exactly. Copy it, with a comment naming the source and commit, and a test pinning the same examples, so both tools agree.
   - [ ] The warning goes on stderr, one line per facet, after the run. It never changes labels.
@@ -104,8 +104,10 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 - Phase 2 tests are in `test/retrieval-eval/gaps-facets.test.ts` (10 `it.fails`, 5 plain guards). Parser check: a copied per-key validator (4a49bc9) always runs; the real `parse_gaps` runs from the sibling checkout's built dist (`HEWTD_BUILD` overrides the path), skipped when absent. 3.4.1 acceptance runs `reconcile --gaps --json` from a temp project copy.
 - The non-coverage-only compat items (entry without facets keeps five fields) are guarded on `toGapsV1` and the usage-log `gaps --json` CLI (byte-pinned); the eval only exports coverage cases, which always have facets.
 
+- Phase 3: hybrid top 8 is kept in a separate `top8` map in `runSuite` (not on `Probe`, which the release gate compares), passed as an optional last arg to `diagnose`. `nearest_doc`/`missing_facets` count non-archive docs only; invalid-regex facets count as missing. The eval gaps builder is inline in `src/cli/retrieval-eval.ts`. The 5 Phase 2 `it.fails` for export/diagnosis/parse_gaps/3.4.1 are now plain `it`; the code-line warning and guide-text ones stay `it.fails` for Phase 4.
+
 ## Errors Encountered
 (none)
 
 ## Status
-**Phase 3 next** (export and diagnosis). Phase 2 done: acceptance tests written, see notes.md.
+**Phase 4 next** (facet-shape rule and warning). Phase 3 done: export and diagnosis, see notes.md.

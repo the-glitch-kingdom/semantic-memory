@@ -47,9 +47,13 @@ export function registerEvalCommand(program: Command): void {
         const version = (createRequire(import.meta.url)("../../package.json") as { version: string }).version;
         if (opts.gapsOut) {
           const today = new Date().toISOString().slice(0, 10);
-          const gaps = (report.diagnosis?.cases ?? []).filter((c) => c.label === "coverage").map((c) => ({ query: c.q, used_doc: null, suggested: "new doc", count: 1, last_seen: today, signals: [] }));
+          const byId = new Map(cases.map((c) => [c.id, c]));
+          const diag = (report.diagnosis?.cases ?? []).filter((c) => c.label === "coverage");
+          const base = toGapsV1(diag.map((c) => ({ query: c.q, used_doc: null, suggested: "new doc", count: 1, last_seen: today, signals: [] })), version);
+          // toGapsV1 stays the usage log's five fields; the case detail hewtd plans from rides on top for these entries only.
+          const gaps = diag.map((d, i) => { const c = byId.get(d.id)!; return { ...base.gaps[i], id: c.id, tier: c.tier, blind: !!c.blind, facets: c.facets ?? [], missing_facets: d.missing_facets ?? [], ...(d.nearest_doc && { nearest_doc: d.nearest_doc }), ...(c.expected && { expected: c.expected }) }; });
           mkdirSync(dirname(opts.gapsOut), { recursive: true });
-          writeFileSync(opts.gapsOut, JSON.stringify(toGapsV1(gaps, version), null, 2) + "\n");
+          writeFileSync(opts.gapsOut, JSON.stringify({ ...base, gaps }, null, 2) + "\n");
           console.error(`coverage gaps written: ${opts.gapsOut} (${gaps.length})`);
         }
         if (!opts.oracle) delete report.diagnosis;

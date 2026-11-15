@@ -2,7 +2,7 @@
 import { normalizeVerifiedDate } from "../decay.js";
 import matter from "../matter.js";
 import type { ArmReport, EvalReport } from "./suite.js";
-import { facetIssue, type ArmMetrics, type FacetCase } from "./metrics.js";
+import { ARCHIVE_RE, facetIssue, type ArmMetrics, type FacetCase } from "./metrics.js";
 import type { Targets } from "./targets.js";
 
 /** hit-em-with-the-docs 3.4 `vault.audit_window_days` default: a doc is verified when its `last_verified` is this recent (or its grounding verdict is `verified`). */
@@ -13,7 +13,9 @@ export type Ground = Record<string, { verdict?: string; dead: number }>;
 export interface TargetRow { metric: string; value: number | null; valueBlind: number | null; target: number | null; met: boolean | null | "not validated" }
 export interface TargetsReport { rows: TargetRow[]; validated: boolean; blindCases: number; noise: number | null }
 export type Label = "coverage" | "ranking" | "grounding";
-export interface DiagCase { id: string; q: string; label: Label; why: string; grepAt8?: boolean }
+/** The doc holding the most of a coverage case's facets; `rank` is its place in hybrid's top 8 for the question. */
+export interface NearestDoc { path: string; facet_coverage: string; rank: number | null }
+export interface DiagCase { id: string; q: string; label: Label; why: string; grepAt8?: boolean; missing_facets?: string[]; nearest_doc?: NearestDoc }
 export interface Diagnosis { cases: DiagCase[]; counts: Record<Label, number>; grep: { at1: number; at3: number; n: number } }
 
 /** Whether a doc counts as verified: a `verified` verdict, or `last_verified` inside the window (a date in the future is not). */
@@ -63,8 +65,20 @@ export function judgeTargets(targets: Targets, all: ArmMetrics, allShares: Retur
   return { rows, validated: !!blind, blindCases: blind?.n ?? 0, noise: (blind ? blind.m : all).tiers.all ? 1 / (blind ? blind.m : all).tiers.all.n : null };
 }
 
+/** Facets no live doc matches, and the live doc matching most of them (ties: higher hybrid rank, then path order); absent when no doc matches any. */
+function nearest(c: FacetCase, docs: Map<string, string>, top8: string[]): { missing_facets: string[]; nearest_doc?: NearestDoc } {
+  const facets = c.facets ?? [];
+  const live = [...docs].filter(([p]) => !ARCHIVE_RE.test(p));
+  const hits = facets.map((f) => { try { const re = new RegExp(f, "i"); return live.filter(([, t]) => re.test(t)).map(([p]) => p); } catch { return []; } });
+  const count = new Map<string, number>();
+  for (const h of hits.flat()) count.set(h, (count.get(h) ?? 0) + 1);
+  const at = (p: string) => (top8.includes(p) ? top8.indexOf(p) + 1 : Infinity);
+  const [best] = [...count].sort((a, b) => b[1] - a[1] || at(a[0]) - at(b[0]) || (a[0] < b[0] ? -1 : 1));
+  return { missing_facets: facets.filter((_, i) => !hits[i].length), ...(best && { nearest_doc: { path: best[0], facet_coverage: `${best[1]}/${facets.length}`, rank: top8.includes(best[0]) ? at(best[0]) : null } }) };
+}
+
 /** Labels each answerable hybrid miss: coverage (a facet no doc has), ranking (the docs have it, search did not put it first), grounding (answered, but on an unverified or dead-ref doc). */
-export function diagnose(live: FacetCase[], docs: Map<string, string>, hybrid: ArmReport, grep: ArmReport, top3: Record<string, string[]>, ground: Record<string, Ground>): Diagnosis {
+export function diagnose(live: FacetCase[], docs: Map<string, string>, hybrid: ArmReport, grep: ArmReport, top3: Record<string, string[]>, ground: Record<string, Ground>, top8: Record<string, string[]> = {}): Diagnosis {
   const cases: DiagCase[] = [];
   for (const c of live) {
     if (c.tier === "negative") continue;
@@ -72,7 +86,7 @@ export function diagnose(live: FacetCase[], docs: Map<string, string>, hybrid: A
     const base = { id: c.id, q: c.q };
     const gap = facetIssue(c, docs);
     if (out !== 1) {
-      if (gap?.unmatched) cases.push({ ...base, label: "coverage", why: gap.why });
+      if (gap?.unmatched) cases.push({ ...base, label: "coverage", why: gap.why, ...nearest(c, docs, top8[c.q] ?? []) });
       else cases.push({ ...base, label: "ranking", why: out ? `answered at ${out}, not at 1` : "not in the top 8", grepAt8: grep.outcomes[c.id] !== 0 });
       continue;
     }
@@ -105,7 +119,7 @@ export function formatSections(r: Pick<EvalReport, "targets" | "diagnosis">): st
   const d = r.diagnosis;
   if (d) {
     lines.push("", "Diagnosis", `  coverage ${d.counts.coverage}, ranking ${d.counts.ranking}, grounding ${d.counts.grounding}`);
-    for (const c of d.cases) lines.push(`  ${c.id}: ${c.label}, ${c.why}${c.grepAt8 === undefined ? "" : c.grepAt8 ? " (grep finds it at 8)" : " (grep misses it too)"}`);
+    for (const c of d.cases) lines.push(`  ${c.id}: ${c.label}, ${c.why}${c.grepAt8 === undefined ? "" : c.grepAt8 ? " (grep finds it at 8)" : " (grep misses it too)"}${c.label !== "coverage" ? "" : `, nearest: ${c.nearest_doc ? `${c.nearest_doc.path} ${c.nearest_doc.facet_coverage}` : "none"}`}`);
     lines.push(`  grep oracle: @1 ${d.grep.at1}/${d.grep.n}, @3 ${d.grep.at3}/${d.grep.n}`);
   }
   return lines;
