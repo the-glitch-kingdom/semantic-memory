@@ -50,6 +50,8 @@ Writing a blind set:
 3. Run the leakage check. An agent that writes "blind" questions has already read `CLAUDE.md`, `AGENTS.md` and `.claude/rules/`. Grep each question's distinctive terms in those files and rewrite any that came from them. On one real first draft, 16 of 35 questions did.
 4. Mark the file `"blind": true` on each case.
 
+Write each facet as prose the answering doc would contain, never a code-line facet (a regex copied from a line of code: `class Foo:`, `x = 1`, `a => b`, a line ending in `;` or `{`). It will not match prose docs, so the case reads as coverage. In #101 the same questions gave 25/25 coverage with code-line facets, against 11 coverage, 6 ranking, 3 grounding and 5 answered with prose facets. The eval warns on stderr for each such facet; labels do not change.
+
 Two rules follow:
 
 - **Fixing a set's misses makes it non-blind.** Once you edit the docs those misses land on, the set has been used to tune the docs. Write a fresh held-out set before each docs pass, and flip the old one to `"blind": false`.

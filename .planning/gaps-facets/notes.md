@@ -30,3 +30,7 @@
 
 ## Eval results: Phase 3
 - No ranking change (diagnosis and export only). Phase 2 export/diagnosis/parse_gaps/3.4.1 tests now pass as plain `it`; new unit tests in test/unit/eval-report.test.ts (tie, archive, rank null, bad regex, none).
+
+## Eval results: Phase 4
+No ranking change (warning on stderr only; labels untouched). All 15 gaps-facets tests plain `it` now; the pin test in test/unit/eval-report.test.ts uses hewtd's own examples. Guide text carries #101's numbers.
+- Phase 4 validation: stdin-eof (load flake) and real-corpus-eval beforeAll 600s timeout under full eval both passed alone.

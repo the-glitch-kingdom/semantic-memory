@@ -55,10 +55,10 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
     That needs hybrid's top-8 paths per question: extend the probe in `runSuite`, which keeps only the top 3 today, without changing the arms.
   - [x] `--gaps-out` writes the extra fields for case-derived entries only. Keep `toGapsV1` for the usage log as is (its comment says "no extra fields"); add a separate builder for eval gaps, or an optional extras pass-through. Recorded: a separate builder inline in the CLI (base `toGapsV1` entries merged with case detail); `toGapsV1` untouched.
   - [x] Diagnosis line and `--json` fields as in Phase 2.
-- [ ] Phase 4: Facet-shape rule and warning
-  - [ ] The code-line test matches hit-em-with-the-docs' `is_code_line_facet` regex exactly. Copy it, with a comment naming the source and commit, and a test pinning the same examples, so both tools agree.
-  - [ ] The warning goes on stderr, one line per facet, after the run. It never changes labels.
-  - [ ] The guide text goes in `BLIND-SETS.md` (`src/core/retrieval-eval/targets.ts`) and `docs/measure-and-tune.md` §3, with #101's numbers, numbers only: 25/25 coverage with code-line facets vs 11 coverage, 6 ranking, 3 grounding and 5 answered with prose facets.
+- [x] Phase 4: Facet-shape rule and warning
+  - [x] The code-line test matches hit-em-with-the-docs' `is_code_line_facet` regex exactly. Copy it, with a comment naming the source and commit, and a test pinning the same examples, so both tools agree.
+  - [x] The warning goes on stderr, one line per facet, after the run. It never changes labels.
+  - [x] The guide text goes in `BLIND-SETS.md` (`src/core/retrieval-eval/targets.ts`) and `docs/measure-and-tune.md` §3, with #101's numbers, numbers only: 25/25 coverage with code-line facets vs 11 coverage, 6 ranking, 3 grounding and 5 answered with prose facets.
 - [ ] Phase 5: Measure
   - [ ] Fresh `BAND=1 bash scripts/gate-release.sh 1.31.1`: every count identical (no ranking change).
   - [ ] By hand on this repo's `.documentation`, with a small scratch blind set (one near-miss, one absent topic, one code-line facet):
@@ -110,4 +110,4 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 (none)
 
 ## Status
-**Phase 4 next** (facet-shape rule and warning). Phase 3 done: export and diagnosis, see notes.md.
+**Phase 5 next** (measure). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.

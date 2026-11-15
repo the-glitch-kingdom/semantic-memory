@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { generateCases, writeGenerated } from "../core/retrieval-eval/generate.js";
+import { isCodeLineFacet } from "../core/retrieval-eval/metrics.js";
 import { toGapsV1 } from "../core/usage-log.js";
 import { loadTargets, writeDefaults, TARGETS_FILE } from "../core/retrieval-eval/targets.js";
 import { evalDir, loadSets, runSuite, formatSuite, baselinePath, writeBaseline, checkBaseline, type Baseline } from "../core/retrieval-eval/suite.js";
@@ -45,6 +46,11 @@ export function registerEvalCommand(program: Command): void {
         const via = opts.via && { cli: opts.server ?? process.argv[1], cwd: opts.cwd ?? process.cwd(), waitForReady: !!opts.waitForReady, settle: !!opts.settle };
         const report = await runSuite(opts.notes, cases, via, targets);
         const version = (createRequire(import.meta.url)("../../package.json") as { version: string }).version;
+        // Warning only: labels stay as measured. One line per code-line facet that no doc matches.
+        for (const d of report.diagnosis?.cases ?? []) {
+          if (d.label !== "coverage") continue;
+          for (const f of (d.missing_facets ?? []).filter(isCodeLineFacet)) console.error(`warning: ${d.id}: facet looks copied from a code line and matches no doc (write the facet from the answer in prose): ${f}`);
+        }
         if (opts.gapsOut) {
           const today = new Date().toISOString().slice(0, 10);
           const byId = new Map(cases.map((c) => [c.id, c]));

@@ -184,6 +184,10 @@ export interface ArmMetrics {
   dominance: { path: string; slots: number } | null;
 }
 
+/** Facet copied from a code line (#101): it will not match prose, so a coverage miss built on it may be facet shape. Regex copied exactly from hit-em-with-the-docs `is_code_line_facet` (src/core/coverage/facets.ts, commit 4a49bc9, #113); keep the two in step. */
+export const isCodeLineFacet = (source: string): boolean =>
+  /\s=\s|(?:^|\s)(?:def|class|function|const|let|var|interface)\s|=>|:\s*(?:str|string|int|number|bool|boolean|float)\b|[;{]\s*$/.test(source);
+
 /** The first thing wrong with a case's facets against the docs: a bad regex, or a facet no doc matches (`unmatched`). Negatives have no facets to check. */
 export function facetIssue(c: FacetCase, docs: Map<string, string>): { why: string; unmatched: boolean } | undefined {
   for (const f of c.tier === "negative" ? [] : c.facets ?? []) {

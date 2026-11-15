@@ -165,7 +165,7 @@ describe("Diagnosis: nearest doc", () => {
 describe("code-line facet warning", () => {
   const warnings = (stderr: string, needle: string) => stderr.split("\n").filter((l) => l.includes(needle));
 
-  it.fails("a code-line facet that matches no doc warns once on stderr with the id and the facet; a prose facet and a matching code-line facet do not", () => {
+  it("a code-line facet that matches no doc warns once on stderr with the id and the facet; a prose facet and a matching code-line facet do not", () => {
     const r = run(join(dir, "ev-i"), codeSet, "--json");
     expect(r.status, r.stderr).toBe(0);
     const miss = warnings(r.stderr, "class ZzqqxxHandler:");
@@ -194,13 +194,13 @@ describe("facet-shape rule in the guides", () => {
     expect(t).toContain("25/25"); // #101's numbers: 25/25 coverage with code-line facets
   };
 
-  it.fails("BLIND-SETS.md (from `eval init`) states the rule", () => {
+  it("BLIND-SETS.md (from `eval init`) states the rule", () => {
     const d = join(dir, "guide-init");
     writeDefaults(d);
     rule(readFileSync(join(d, "BLIND-SETS.md"), "utf-8"));
   });
 
-  it.fails("docs/measure-and-tune.md states the rule", () => {
+  it("docs/measure-and-tune.md states the rule", () => {
     rule(readFileSync(join(ROOT, "docs", "measure-and-tune.md"), "utf-8"));
   });
 });

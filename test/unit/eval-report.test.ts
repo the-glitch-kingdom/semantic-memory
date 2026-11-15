@@ -72,3 +72,11 @@ describe("diagnose: nearest doc of a coverage case", () => {
     expect(formatSections({ diagnosis: { cases: [k], counts: { coverage: 1, ranking: 0, grounding: 0 }, grep: { at1: 0, at3: 0, n: 1 } } }).join("\n")).toContain("nearest: none");
   });
 });
+
+describe("isCodeLineFacet (same examples as hit-em-with-the-docs facet-inputs-113.test.ts)", () => {
+  it("flags code-line-shaped facets, not prose-tolerant ones", async () => {
+    const { isCodeLineFacet } = await import("../../src/core/retrieval-eval/metrics.js");
+    for (const f of ["_TTL_SECONDS = 24 * 60 * 60", "def refresh_token(", "class CacheLayer", "ttl: int", '"socket_timeout": 5;']) expect(isCodeLineFacet(f), f).toBe(true);
+    for (const f of ["cache_ttl", "24 ?(h|hours?)|86400", "refresh token"]) expect(isCodeLineFacet(f), f).toBe(false);
+  });
+});

@@ -63,6 +63,13 @@ Agents that write "blind" questions have already read \`CLAUDE.md\`, \`AGENTS.md
 Grep each question's distinctive terms in those files and rewrite any that came from them.
 On one real first draft, 16 of 35 questions did.
 
+## Write facets as prose, not code lines
+
+A code-line facet is a regex copied from a line of code (\`class Foo:\`, \`x = 1\`, \`a => b\`, a line ending in \`;\` or \`{\`).
+It will not match prose docs, so the case reads as a coverage miss when the docs may answer it. In #101,
+25/25 cases were coverage with code-line facets, against 11 coverage, 6 ranking, 3 grounding and 5 answered
+with prose facets. The eval warns on stderr for each such facet; labels do not change.
+
 ## A docs fix makes the set non-blind
 
 Once you fix the docs a set's misses land on, that set has been used to tune the docs. Write a fresh
