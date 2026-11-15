@@ -125,3 +125,6 @@ Code-load cost (`loadCodeData`, 1,000 tracked files in 50 dirs, 60 docs each cit
 | branch | 24 ms | 25 ms |
 
 No measurable cost (within run-to-run noise, <= 4 ms). The branch re-checks more refs: 27 docs patched vs 10 on main (bare refs main skipped), 0 dead in both because nothing was deleted. The basename map is built once from the already-loaded `exp.files`; no extra git spawn.
+
+## Phase 7: Release prep
+Bumped package.json, both marketplace.json fields, plugin.json, AGENTS.md frontmatter and package-lock.json to 1.31.1. Full validation: the first eval run had real-corpus-eval fail with "Hook timed out in 600000ms" (index build, load flake); it passed alone (16 passed, 1 expected fail).
