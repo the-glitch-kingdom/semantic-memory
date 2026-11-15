@@ -59,9 +59,9 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
   - [x] The code-line test matches hit-em-with-the-docs' `is_code_line_facet` regex exactly. Copy it, with a comment naming the source and commit, and a test pinning the same examples, so both tools agree.
   - [x] The warning goes on stderr, one line per facet, after the run. It never changes labels.
   - [x] The guide text goes in `BLIND-SETS.md` (`src/core/retrieval-eval/targets.ts`) and `docs/measure-and-tune.md` §3, with #101's numbers, numbers only: 25/25 coverage with code-line facets vs 11 coverage, 6 ranking, 3 grounding and 5 answered with prose facets.
-- [ ] Phase 5: Measure
-  - [ ] Fresh `BAND=1 bash scripts/gate-release.sh 1.31.1`: every count identical (no ranking change).
-  - [ ] By hand on this repo's `.documentation`, with a small scratch blind set (one near-miss, one absent topic, one code-line facet):
+- [x] Phase 5: Measure
+  - [x] Fresh `BAND=1 bash scripts/gate-release.sh 1.31.1`: every count identical (no ranking change).
+  - [x] By hand on this repo's `.documentation`, with a small scratch blind set (one near-miss, one absent topic, one code-line facet):
     - the Diagnosis lines;
     - the `--gaps-out` file;
     - the warning;
@@ -110,4 +110,4 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 (none)
 
 ## Status
-**Phase 5 next** (measure). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.
+**Phase 6 next** (release prep). Phase 5 done (gate PASS, by-hand check in notes.md). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.

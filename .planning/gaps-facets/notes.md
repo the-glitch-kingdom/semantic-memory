@@ -34,3 +34,14 @@
 ## Eval results: Phase 4
 No ranking change (warning on stderr only; labels untouched). All 15 gaps-facets tests plain `it` now; the pin test in test/unit/eval-report.test.ts uses hewtd's own examples. Guide text carries #101's numbers.
 - Phase 4 validation: stdin-eof (load flake) and real-corpus-eval beforeAll 600s timeout under full eval both passed alone.
+
+## Eval results: Phase 5
+Fresh `BAND=1 bash scripts/gate-release.sh 1.31.1` (no --cache): PASS, every count identical local vs 1.31.1, cli and mcp, plain and export.
+- plain: hybrid @1 91/139 (@3 115), sem@1 77, multi @1/3/8 20/28/31 of 41, cov@1/3/8 0.62/0.82/0.87, dominance 34, negatives flagged 43/47, false flags 7. export: hybrid @1 94, multi @8 32, dominance 26, same otherwise. 0 of 186 mcp-vs-cli differences. First local mcp answer 1249 ms, titled #1 139/139 (slow-git 988 ms).
+- p95 local 17/15/12 ms (cli/mcp/mcp-slow) vs 1.31.1 19/14/15 ms.
+
+By hand on `.documentation` with a scratch blind set (/tmp/claude-1000/p5/set.jsonl: near-miss s-near, absent topic s-absent, code-line s-code):
+- Diagnosis: `s-near: coverage, no doc matches facet: zebra quokka protocol, nearest: changelog/v1-31-0-operating-targets.md 2/3`; `s-absent: ... nearest: none`; `s-code: ... nearest: none`.
+- `--gaps-out`: 3 entries; s-near has id, tier, blind, facets, missing_facets, nearest_doc {path, facet_coverage "2/3", rank 1}; s-absent and s-code omit nearest_doc; the five classic fields unchanged.
+- Warning (stderr): `warning: s-code: facet looks copied from a code line and matches no doc (write the facet from the answer in prose): const gaps = diag.map(d => d.id);`. A first draft facet `writeFileSync(opts.gapsOut, ...)` did NOT warn: it matches none of hewtd's code-line shapes (no assignment, keyword, arrow, type or trailing ;/{). Correct per the copied rule.
+- `npx @theglitchking/hit-em-with-the-docs@3.4.1 reconcile --gaps <file> --json`: exit 0, 3 questions read, no errors, no dropped. (The repo's installed hewtd is 2.21.0, so npx 3.4.1 was used; it wrote only to the ignored .hewtd/; .claude/skills not relinked.)
