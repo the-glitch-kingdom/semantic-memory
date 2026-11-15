@@ -66,8 +66,8 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
   - [x] Code-load cost with the basename map on a ~1,000-file repo, 100 commits behind: before and after, in ms.
 - [x] Phase 7: Release prep
   - [x] Bump all five version fields (1.32.0 or 1.31.1 per Phase 5) plus the lockfile. (1.31.1)
-- [ ] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
-  - [ ] Remove the losing candidates from Phase 4; keep only the shipped one and its setting.
+- [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+  - [x] Remove the losing candidates from Phase 4; keep only the shipped one and its setting.
 - [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as designed (plain `it`, or with the setting on).
   - [ ] Edge cases:
@@ -114,4 +114,4 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 - Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 8 next** (Phase 7 done: all five fields and lockfile at 1.31.1). (release prep, 1.31.1; Phase 6 measured, see notes.md; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**Phase 9 next** (Phase 8 done: nothing to remove in the repo, Phase 4 candidates were never committed; Phase 7 done: all five fields and lockfile at 1.31.1). (release prep, 1.31.1; Phase 6 measured, see notes.md; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.

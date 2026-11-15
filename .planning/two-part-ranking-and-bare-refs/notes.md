@@ -128,3 +128,7 @@ No measurable cost (within run-to-run noise, <= 4 ms). The branch re-checks more
 
 ## Phase 7: Release prep
 Bumped package.json, both marketplace.json fields, plugin.json, AGENTS.md frontmatter and package-lock.json to 1.31.1. Full validation: the first eval run had real-corpus-eval fail with "Hook timed out in 600000ms" (index build, load flake); it passed alone (16 passed, 1 expected fail).
+
+## Phase 8 (Cleanup)
+- Phase 4's env-var switch and losing candidates were reverted before that phase's commit; `git diff main..HEAD -- src` shows only `lexical_agreement` (bm25.ts, rank.ts, schema-default.ts, search callers) and the #98 patchStale change. No probe logging, TODOs or commented-out code.
+- Removed scratch under /tmp/claude-1000/p2..p9 and their logs. Nothing was left in the repo.
