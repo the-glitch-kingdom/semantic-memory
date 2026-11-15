@@ -28,3 +28,10 @@ History: 1.28.0's `clause_weight: 1` (vector per-clause chunk cover) fixed our m
 - `dirty = (r) => !!f && (!changed || changed.has(f) || r.resolved === false)`.
 
 `changed` is the set of repo paths from `git diff --name-only <source_commit>`. A bare-filename ref (`target: "test_x.py"`, `resolved: true`, no `file`) never matches. hewtd resolves bare names by basename (#98 body), so the right check is basename semantics. `exp.files` (tracked files, `gitFiles(root)`) is already loaded before `patchStale`.
+
+## Eval results: Phase 2 (acceptance tests, 1.31.0 code, no src change)
+
+Fixture `test/fixtures/two-part` (18 docs, cold build, `startEval` with vault `docs`):
+- R91-A hybrid (search_hybrid and CLI): whole-answer doc `marketing/seo-surface-implementation.md` is #2 (it.fails, fails with `expected 2 to be 1`); semantic #1 (guard).
+- R91-B hybrid: `troubleshooting/email-deliverability.md` #7, `devops/droplet-deployment.md` #12 (asserted not worse).
+- #98: 4 it.fails (bare dead after delete; bare drift after edit; unknown/null source_commit: bare name existing elsewhere falsely dead), each confirmed failing as plain `it` for the stated reason; 6 plain guards pass.

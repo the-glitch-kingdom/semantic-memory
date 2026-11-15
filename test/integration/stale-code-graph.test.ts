@@ -24,6 +24,14 @@ const QUERY = "audit export signed archive checksum secure share";
 const QUERY_E = "certificate renewal";
 const QUERY_GONE = "audit export old script";
 const ZERO = "0".repeat(40);
+// #98: docs citing a file by bare name (hewtd resolves bare names by basename, so the export has `resolved: true` and no `file`)
+const BARE = "operational/audit-export-bare.md"; // cites export_audit_log.py, which only backend/scripts holds
+const BARE_P = "operational/backup-pruning-bare.md"; // cites prune_backups.py, which backend/scripts and backend/jobs both hold
+const BARE_DOCS: Record<string, { text: string; target: string }> = {
+  [BARE]: { text: "The quarterly audit trail export writes a signed archive with its checksum for the secure share. The step is `export_audit_log.py`.", target: "export_audit_log.py" },
+  [BARE_P]: { text: "Nightly backup pruning removes expired backup archives. The step is `prune_backups.py`.", target: "prune_backups.py" },
+};
+const QUERY_BARE_P = "nightly backup pruning expired archives";
 
 let dirs: string[] = [];
 let clients: Client[] = [];
@@ -42,10 +50,11 @@ const git = (dir: string, ...args: string[]) =>
 const commit = (dir: string, msg: string) => { git(dir, "add", "-A", "--", ".", ":!.hewtd"); git(dir, "commit", "-q", "--allow-empty", "-m", msg); };
 
 /** A temp git repo from code-graph-vault whose export (hewtd v1) is keyed to the commit it was written at; D cites X and Y. */
-async function repo(opts: { graph?: boolean; commit?: string | null } = {}): Promise<{ dir: string; vault: string; head: string }> {
+async function repo(opts: { graph?: boolean; commit?: string | null; bare?: boolean } = {}): Promise<{ dir: string; vault: string; head: string }> {
   const dir = await mkdtemp(join(tmpdir(), "sp-stale-"));
   dirs.push(dir);
   await cp(join(import.meta.dirname, "..", "fixtures", "code-graph-vault"), dir, { recursive: true });
+  if (opts.bare) for (const [p, d] of Object.entries(BARE_DOCS)) await writeFile(join(dir, ".documentation", p), `---\ntitle: ${p}\ntype: guide\ntags: [operational]\ndomain: operational\nlast_verified: {{ago:30}}\n---\n\n# Bare ref\n\n${d.text}\n`);
   await stampDates(dir);
   await gitHistory(dir);
   const head = git(dir, "rev-parse", "HEAD");
@@ -58,6 +67,7 @@ async function repo(opts: { graph?: boolean; commit?: string | null } = {}): Pro
       { code_changed: "2026-02-15", kind: "file", resolved: true, target: X },
       { code_changed: "2026-02-15", kind: "file", resolved: true, target: Y },
     ];
+    if (opts.bare) for (const [p, d] of Object.entries(BARE_DOCS)) g.docs[p] = { body_changed: "2026-01-10", duplicates: [], last_verified: "2026-10-08", owner_of: [], points_to: [], verdict: "check", refs: [{ code_changed: "2026-02-15", kind: "file", resolved: true, target: d.target }] };
     for (const k of [D, E]) g.docs[k].verdict = "check"; // a shown verdict, so a doc without drift or dead refs still carries a grounding block
     await writeFile(file, JSON.stringify(g, null, 2));
   }
@@ -220,5 +230,74 @@ describe("a stale code-graph export (#95)", () => {
     expect(cold.length).toBeGreaterThan(0);
     expect(stderr).not.toMatch(/fewer than half of its \d+ doc keys/);
     expect(cold.some((h) => h.grounding)).toBe(false);
+  }, 300_000);
+});
+
+// #98: the re-check must treat a bare-filename ref by basename, like hewtd does. `it.fails` until patchStale does (Phase 3).
+describe("a bare-filename ref in a stale code-graph export (#98)", () => {
+  const both = (o: Awaited<ReturnType<typeof observe>>, f: (g: any) => void) => { f(o.mcp); f(o.cli); };
+  const bareObs = (r: { vault: string }, path = BARE, q = QUERY) => observe(r.vault, path, q);
+
+  it("the path ref and the bare ref are both dead after the committed deletion (path ref is the guard)", async () => {
+    const r = await repo({ bare: true });
+    await rm(join(r.dir, X));
+    commit(r.dir, "delete x");
+    const o = await observe(r.vault, D, QUERY);
+    both(o, (g) => expect(g).toMatchObject({ dead_refs: [X], stale: true, source: "export+live" }));
+  }, 300_000);
+
+  it.fails("the bare ref is dead too: dead_refs, stale and export+live", async () => {
+    const r = await repo({ bare: true });
+    await rm(join(r.dir, X));
+    commit(r.dir, "delete x");
+    const o = await bareObs(r);
+    both(o, (g) => expect(g).toMatchObject({ dead_refs: [BARE_DOCS[BARE].target], stale: true, source: "export+live" }));
+  }, 300_000);
+
+  it.fails("an edit instead of a delete: the bare ref shows code_drift", async () => {
+    const r = await repo({ bare: true });
+    await appendFile(join(r.dir, X), "\n# changed after the export\n");
+    commit(r.dir, "edit x");
+    const o = await bareObs(r);
+    both(o, (g) => expect(g?.code_drift).toEqual([BARE_DOCS[BARE].target]));
+  }, 300_000);
+
+  it("an edit: the path ref shows code_drift (guard)", async () => {
+    const r = await repo({ bare: true });
+    await appendFile(join(r.dir, X), "\n# changed after the export\n");
+    commit(r.dir, "edit x");
+    const o = await observe(r.vault, D, QUERY);
+    both(o, (g) => expect(g?.code_drift).toEqual([X]));
+  }, 300_000);
+
+  const unknown = [["a commit git does not know", ZERO], ["null (an export made outside git)", null]] as const;
+  it.each(unknown)("source_commit is %s: a deleted bare-named file is dead (guard)", async (_n, commitId) => {
+    const r = await repo({ bare: true, commit: commitId });
+    await rm(join(r.dir, X));
+    commit(r.dir, "delete x");
+    both(await bareObs(r), (g) => expect(g?.dead_refs).toEqual([BARE_DOCS[BARE].target]));
+  }, 300_000);
+  // every ref is re-checked live there, and the root-relative existsSync of a bare name always fails, so a name that exists elsewhere is wrongly dead
+  it.fails.each(unknown)("source_commit is %s: a bare name whose basename exists elsewhere stays resolved", async (_n, commitId) => {
+    const r = await repo({ bare: true, commit: commitId });
+    await rm(join(r.dir, "backend/scripts/prune_backups.py"));
+    commit(r.dir, "delete one of two prune_backups.py");
+    both(await bareObs(r, BARE_P, QUERY_BARE_P), (g) => expect(g?.dead_refs ?? []).toEqual([]));
+  }, 300_000);
+
+  it("a bare name whose basename still exists elsewhere in the tree stays resolved (guard)", async () => {
+    const r = await repo({ bare: true });
+    await rm(join(r.dir, "backend/scripts/prune_backups.py")); // backend/jobs/prune_backups.py remains
+    commit(r.dir, "delete one of two prune_backups.py");
+    const o = await bareObs(r, BARE_P, QUERY_BARE_P);
+    both(o, (g) => expect(g?.dead_refs ?? []).toEqual([]));
+  }, 300_000);
+
+  it("a bare name matching no changed path keeps the export's data, byte-identical (guard)", async () => {
+    const r = await repo({ bare: true });
+    await rm(join(r.dir, X));
+    commit(r.dir, "delete x");
+    const o = await bareObs(r, BARE_P, QUERY_BARE_P);
+    both(o, (g) => expect(g).toEqual({ source: "export", verdict: "check", code_drift: [], dead_refs: [] }));
   }, 300_000);
 });

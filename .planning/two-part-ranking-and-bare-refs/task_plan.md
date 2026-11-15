@@ -23,15 +23,16 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 
 ## Phases
 - [x] Phase 1: Verify and plan (notes.md)
-- [ ] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
-  - [ ] **#91 fixture.**
+- [x] Phase 2: Acceptance as failing tests first (`it.fails` until fixed)
+  - [x] **#91 fixture.**
     - Copy the reporter's repro (`~/workspace/the-glitch-kingdom/plugin-benchmarks/semantic-retrieval/repros/sm-91-two-part/`: 18 anonymised docs, `questions.jsonl`, `README.md`) into `test/fixtures/two-part/`, as `test/fixtures/multi-hub` was done for #76.
     - Before committing, re-check it is anonymised: grep for real org, product, person and domain names, emails and IPs. Keep the README, minus any absolute paths.
-  - [ ] **#91 test** (`test/retrieval-eval/`, cold build of the fixture):
+    - Done: docs in `test/fixtures/two-part/docs/` (the `.documentation` folder renamed so hewtd tooling does not treat it as a live tree), `questions.jsonl`, README. Grep for emails, IPs, URLs, UUIDs, absolute paths found only placeholders (`acme.example`, `example.com`, `user@example.com`, `10.0.0.x`, fake UUIDs) and third-party vendor names.
+  - [x] **#91 test** (`test/retrieval-eval/`, cold build of the fixture):
     - `it.fails`: hybrid ranks `marketing/seo-surface-implementation.md` #1 for R91-A;
     - guard (plain `it`): semantic ranks it #1 today;
     - R91-B: record hybrid's rank of each 3-of-4-facet doc, with no assertion beyond "not worse than today".
-  - [ ] **#98 test** (`test/integration/stale-code-graph.test.ts`, the #95 fixture style: a temp git repo, a hewtd v1 export at HEAD):
+  - [x] **#98 test** (`test/integration/stale-code-graph.test.ts`, the #95 fixture style: a temp git repo, a hewtd v1 export at HEAD):
     - two docs cite the same file, one by path, one by bare name (`resolved: true`, no `file`);
     - commit a deletion: both docs get `dead_refs`, `stale: true` and `source: "export+live"` (`it.fails` for the bare one);
     - an edit instead of a delete: both get `code_drift`;
@@ -107,7 +108,7 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 - Version 1.32.0 or 1.31.1, set in Phase 5.
 
 ## Errors Encountered
-(none yet)
+- Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 2 next.** Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**Phase 3 next** (fix #98). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
