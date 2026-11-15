@@ -69,7 +69,7 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
     Record it all.
 - [x] Phase 6: Release prep
   - [x] Bump all five version fields to 1.32.0, plus the lockfile. (all five fields + lockfile at 1.32.0)
-- [ ] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
+- [x] Phase 7: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
 - [ ] Phase 8: Validate success through comprehensive testing (MANDATORY)
   - [ ] Every Phase 2 test passes as plain `it`.
   - [ ] Edge cases:
@@ -110,4 +110,4 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 (none)
 
 ## Status
-**Phase 7 next** (Phase 6 release prep done, all versions 1.32.0). Earlier: **Phase 6** (release prep). Phase 5 done (gate PASS, by-hand check in notes.md). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.
+**Phase 8 next** (Phase 7 cleanup done: no scratch files, probe logging or dead code found; Phase 6 release prep done, all versions 1.32.0). Earlier: **Phase 6** (release prep). Phase 5 done (gate PASS, by-hand check in notes.md). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.
