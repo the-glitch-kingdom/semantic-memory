@@ -47,7 +47,7 @@ describe("applyCoverage", () => {
   const q = "collecting alerts storage";
 
   it("is a no-op with the shipped defaults", () => {
-    expect(DEFAULT_RANKING).toMatchObject({ coverage_weight: 0, link_prior: 1, clause_weight: 0 });
+    expect(DEFAULT_RANKING).toMatchObject({ coverage_weight: 0, link_prior: 1, clause_weight: 0, lexical_agreement: 0 });
     expect(applyCoverage(fused, q, bm, g, DEFAULT_RANKING)).toBe(fused);
   });
   it("ranks the doc that covers the whole broad query above a narrower doc", () => {
@@ -73,7 +73,10 @@ describe("loadRanking", () => {
     try {
       expect(loadRanking(dir)).toEqual(DEFAULT_RANKING);
       await writeFile(join(dir, "vault.schema.yml"), "ranking:\n  coverage_weight: 0.3\n  link_prior: -2\n  link_prior_min_links: 8\n");
-      expect(loadRanking(dir)).toEqual({ coverage_weight: 0.3, link_prior: DEFAULT_RANKING.link_prior, link_prior_min_links: 8, clause_weight: DEFAULT_RANKING.clause_weight });
+      await writeFile(join(dir, "vault.schema.yml"), "ranking:\n  lexical_agreement: 0\n");
+      expect(loadRanking(dir).lexical_agreement).toBe(0);
+      await writeFile(join(dir, "vault.schema.yml"), "ranking:\n  coverage_weight: 0.3\n  link_prior: -2\n  link_prior_min_links: 8\n");
+      expect(loadRanking(dir)).toEqual({ coverage_weight: 0.3, link_prior: DEFAULT_RANKING.link_prior, link_prior_min_links: 8, clause_weight: DEFAULT_RANKING.clause_weight, lexical_agreement: DEFAULT_RANKING.lexical_agreement });
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

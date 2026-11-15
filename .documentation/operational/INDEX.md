@@ -3,7 +3,7 @@ title: Operational Documentation Index
 tier: reference
 domains: [operational]
 status: active
-last_updated: '2026-11-14'
+last_updated: '2026-11-15'
 version: '1.0.0'
 generated: true
 purpose: Complete listing of operational documentation
@@ -62,4 +62,4 @@ This domain covers: operational, guide, operate, sessions, dossier
 
 ---
 
-*Last updated: 2026-11-14*
+*Last updated: 2026-11-15*

@@ -213,16 +213,28 @@ export const candidatePool = (limit: number): number => Math.max(CANDIDATE_POOL,
 export const COSINE_WEIGHT = 0.7;
 
 /**
+ * Default `ranking.lexical_agreement` (#91 part 2): 0, off. Set above 0, a doc's BM25 share is scaled by
+ * `min(1, cosine / topCosine) ^ it`, so a doc that is lexically best on one clause but weak on meaning cannot take the full
+ * lexical share. 0.4 fixes the reporter's repro and was neutral on the train splits (window 0.4 to 0.45), but failed the
+ * held-out gate against 1.31.0 (hybrid @1 89 vs 91, band 1; export dominance 28 vs 26), so it ships opt-in.
+ */
+export const LEXICAL_AGREEMENT = 0;
+
+/**
  * Doc-level score fusion of the vector and lexical lists (one result per doc each, scores already boosted):
  * `COSINE_WEIGHT * vector + (1 - COSINE_WEIGHT) * bm25 / max(bm25)`. Rank-only RRF let a weak second arm displace a
  * correct vector #1; here a doc needs real lexical evidence to move. Pure vector order when BM25 returns nothing.
  * A doc keeps the vector arm's chunk (the lexical one only when the vector arm missed the doc).
+ * `agreement` > 0 scales each lexical share by `min(1, cosine / topCosine) ^ agreement` (cosine 0 for a doc outside the vector pool).
  */
-export function fuseScores(vector: SearchResult[], lexical: SearchResult[]): SearchResult[] {
+export function fuseScores(vector: SearchResult[], lexical: SearchResult[], agreement = 0): SearchResult[] {
   const top = Math.max(0, ...lexical.map((r) => r.score));
   if (top === 0) return vector;
+  const cos = new Map(vector.map((r) => [r.path, r.score]));
+  const topCos = Math.max(0, ...cos.values());
+  const agree = (path: string) => (agreement > 0 && topCos > 0 ? Math.max(0, Math.min(1, (cos.get(path) ?? 0) / topCos)) ** agreement : 1);
   const fused = new Map<string, SearchResult>();
-  for (const r of lexical) fused.set(r.path, { ...r, score: ((1 - COSINE_WEIGHT) * r.score) / top, lexical: true });
+  for (const r of lexical) fused.set(r.path, { ...r, score: ((1 - COSINE_WEIGHT) * r.score * agree(r.path)) / top, lexical: true });
   for (const r of vector) {
     const hit = fused.get(r.path);
     fused.set(r.path, { ...r, score: COSINE_WEIGHT * r.score + (hit?.score ?? 0), lexical: hit ? true : undefined, bm25: hit?.bm25 });
