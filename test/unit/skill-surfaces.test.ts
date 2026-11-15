@@ -26,8 +26,8 @@ const bareTools = (text: string) => [...new Set(backticked(text.replace(/mcp__[a
 
 // Phase 2 of the #81 plan: these cases failed on 1.25.0 and are plain `it` since Phases 3-4.
 describe("skills name the tools and fields the release has (#81)", () => {
-  it("scans the four skills and the evals", () => {
-    expect(files.map((f) => f.name)).toEqual(expect.arrayContaining(["skills/semantic-first/SKILL.md", "skills/vault-first/SKILL.md", "skills/research-mode/SKILL.md", "skills/outage-silence/SKILL.md", "skills/semantic-first/evals/evals.json"]));
+  it("scans the five skills and the evals", () => {
+    expect(files.map((f) => f.name)).toEqual(expect.arrayContaining(["skills/semantic-first/SKILL.md", "skills/vault-first/SKILL.md", "skills/research-mode/SKILL.md", "skills/outage-silence/SKILL.md", "skills/optimize-search/SKILL.md", "skills/semantic-first/evals/evals.json"]));
   });
 
   it("no skill hard-codes a server's tool prefix (names come from .mcp.json)", () => {

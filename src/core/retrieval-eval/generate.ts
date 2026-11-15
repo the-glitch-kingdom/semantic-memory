@@ -143,5 +143,5 @@ export async function generateCases(notes: string, opts: GenerateOptions = {}): 
 
 export function writeGenerated(path: string, cases: GeneratedCase[]): void {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, cases.map((c) => JSON.stringify(c)).join("\n") + "\n");
+  writeFileSync(path, cases.map((c) => JSON.stringify({ ...c, blind: false })).join("\n") + "\n");
 }

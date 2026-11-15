@@ -4,10 +4,18 @@ import { dirname, join, resolve } from "node:path";
 import { listMarkdown } from "../indexer.js";
 import { loadDecayConfig } from "../decay.js";
 import { deriveSessionDir } from "../session.js";
+import { repoRoot } from "../skill-evidence.js";
 import { openEval, type EvalVia } from "./runner.js";
-import { formatArm, grepPattern, parseGolden, runFacetEval, type ArmFn, type ArmMetrics, type FacetCase } from "./metrics.js";
+import { facetIssue, formatArm, grepPattern, parseGolden, runFacetEval, type ArmFn, type ArmMetrics, type FacetCase } from "./metrics.js";
+import { diagnose, formatSections, judgeTargets, top3Shares, type Diagnosis, type Ground, type TargetsReport } from "./report.js";
+import type { Targets } from "./targets.js";
 
-export const evalDir = (notes: string, dir?: string) => (dir ? resolve(dir) : join(deriveSessionDir(notes), "eval"));
+/** `--dir`; else the eval dir the notes folder already has (the pre-1.31 default, kept so baselines stay put); else `<repo root>/.claude/.semantic-memory/eval`. */
+export const evalDir = (notes: string, dir?: string) => {
+  if (dir) return resolve(dir);
+  const legacy = join(deriveSessionDir(notes), "eval");
+  return existsSync(legacy) ? legacy : join(repoRoot(resolve(notes)), ".claude", ".semantic-memory", "eval");
+};
 
 /** `--set` files, or every `*.jsonl` in the eval dir. */
 export function loadSets(notes: string, sets: string[] | undefined, dir?: string): FacetCase[] {
@@ -23,16 +31,13 @@ export function normalizeCase({ negative, ...c }: FacetCase & { negative?: boole
   return c;
 }
 
-/** Cases that cannot be answered by the live docs: a facet no doc matches, a bad regex, or a missing expected doc. */
+/** Cases that cannot be answered by the live docs: a facet no doc matches, a bad regex, or a missing expected doc. A blind case whose facet no doc matches is kept: it is a coverage miss (#96), not a stale question. */
 export function findStale(cases: FacetCase[], docs: Map<string, string>): { stale: { id: string; why: string }[]; live: FacetCase[] } {
   const stale: { id: string; why: string }[] = [];
   const live = cases.filter((c) => {
     for (const p of c.expected ?? []) if (!docs.has(p)) return stale.push({ id: c.id, why: `expected doc gone: ${p}` }), false;
-    for (const f of c.tier === "negative" ? [] : c.facets ?? []) {
-      let re: RegExp;
-      try { re = new RegExp(f, "i"); } catch { return stale.push({ id: c.id, why: `bad facet regex: ${f}` }), false; }
-      if (![...docs.values()].some((t) => re.test(t))) return stale.push({ id: c.id, why: `no doc matches facet: ${f}` }), false;
-    }
+    const issue = facetIssue(c, docs);
+    if (issue && !(c.blind && issue.unmatched)) return stale.push({ id: c.id, why: issue.why }), false;
     return true;
   });
   return { stale, live };
@@ -80,6 +85,10 @@ export interface EvalReport {
   /** What the run searched with: the ranking settings that move results (the tools ran at their default granularity). */
   settings: { granularity: "section"; decay: boolean; decayCode: boolean };
   arms: Record<string, ArmReport>;
+  /** Metric / value / target / met (runSuite with targets). */
+  targets?: TargetsReport;
+  /** Per-miss labels and the grep oracle's line. */
+  diagnosis?: Diagnosis;
 }
 
 /** Each question hits an arm once; the "clean" and per-kind passes replay the cached response (latency comes from the first pass). */
@@ -88,7 +97,7 @@ const memo = (arm: ArmFn): ArmFn => {
   return (q, limit) => seen.get(`${limit}\0${q}`) ?? (seen.set(`${limit}\0${q}`, arm(q, limit)), seen.get(`${limit}\0${q}`)!);
 };
 
-export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia): Promise<EvalReport> {
+export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia, targets?: Targets): Promise<EvalReport> {
   const root = resolve(notes);
   const docs = new Map<string, string>();
   const stamp = createHash("sha256");
@@ -109,8 +118,10 @@ export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia)
     const seen = { n: 0, related: 0, fields: Object.fromEntries(Object.keys(TOP1_FIELDS).map((k) => [k, 0])) };
     const hybrid = ev.tool("search_hybrid");
     const probes: Record<string, Probe> = {};
+    const ground: Record<string, Ground> = {};
     const counted: ArmFn = async (q, limit) => {
       const r = await hybrid(q, limit);
+      ground[q] ??= r.grounding ?? {};
       probes[q] ??= { top3: r.results.slice(0, 3).map((x) => x.path), related: r.related ?? [], entity: !!r.top?.entity };
       if (!negatives.has(q) && r.top) {
         seen.n++; seen.related += r.related?.length ?? 0;
@@ -120,10 +131,13 @@ export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia)
     };
     const armFns: Record<string, ArmFn> = { search_hybrid: counted, search_semantic: ev.tool("search_semantic"), search_text: ev.tool("search_text"), grep };
     const arms: Record<string, ArmReport> = {};
+    const blindCases = live.filter((c) => c.blind);
+    let blindM: ArmMetrics | undefined;
     for (const [name, raw] of Object.entries(armFns)) {
       const arm = memo(raw);
       const all = await runFacetEval(live, arm, textOf);
       const clean = await runFacetEval(live.filter((c) => c.split !== "tune"), arm, textOf);
+      if (name === "search_hybrid" && blindCases.length) blindM = await runFacetEval(blindCases, arm, textOf);
       const negatives: ArmReport["negatives"] = {};
       for (const kind of new Set(live.filter((c) => c.tier === "negative").map((c) => c.negative_kind ?? "unspecified"))) {
         const m = await runFacetEval(live.filter((c) => c.tier === "negative" && (c.negative_kind ?? "unspecified") === kind), arm, textOf);
@@ -144,7 +158,9 @@ export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia)
       for (const id of IDENTIFIERS) entityCard[id] = !!(await ev.call("search_hybrid", { query: id, limit: 8 })).parsed[0]?.entity;
       mcp = { waitForReady: !!via.waitForReady, firstAnswerMs: ev.timing.firstAnswerMs ?? null, questions: seen.n, relatedPerTop: seen.n ? +(seen.related / seen.n).toFixed(2) : 0, top1With: seen.fields, entityCard };
     }
-    return { ...(mcp && { mcp }), probes, cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms };
+    const top3 = Object.fromEntries(Object.entries(probes).map(([q, p]) => [q, p.top3]));
+    const judged = targets && judgeTargets(targets, arms.search_hybrid.all, top3Shares(live, top3, ground, textOf), blindM && { m: blindM, shares: top3Shares(blindCases, top3, ground, textOf), n: blindCases.length });
+    return { ...(mcp && { mcp }), probes, cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms, ...(judged && { targets: judged }), diagnosis: diagnose(live, docs, arms.search_hybrid, arms.grep, top3, ground) };
   } finally {
     await ev.close();
   }
@@ -161,7 +177,7 @@ export function formatSuite(r: EvalReport): string {
     lines.push(`  latency p50=${a.all.latencyMs.p50.toFixed(0)}ms p95=${a.all.latencyMs.p95.toFixed(0)}ms`);
     for (const [kind, n] of Object.entries(a.negatives)) lines.push(`  negatives ${kind}: flagged ${n.flagged}/${n.n}`);
   }
-  return lines.join("\n");
+  return [...lines, ...formatSections(r)].join("\n");
 }
 
 /** The counts a floor holds: answered @1/@3/@8 over the answerable questions, and negatives flagged. */

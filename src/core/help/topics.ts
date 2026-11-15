@@ -117,10 +117,18 @@ export const TOPICS: HelpTopic[] = [
   {
     id: "eval", title: "Measure search on my docs", group: "Measure and improve", aliases: ["measure", "floors", "baseline", "retrieval-eval"],
     summary: "Score retrieval on a question set, hold a baseline, and fail on regressions.",
-    steps: ["Build the index (eval refuses to run without one).", "Generate questions from your docs (this calls the host agent, claude, and costs a few cents).", "Run the eval.", "Save a baseline, then use --check to gate changes; it exits 1 without a baseline.", "To measure what an agent gets from the stdio server at once, add --via mcp (--settle scores the settled state).", "On multi-doc questions read cov@1/3/8 (the mean share of a question's facets found in the top k) and dominance (top-3 slots one doc takes on questions it does not answer; compare with the previous release, not with 3)."],
+    steps: ["Build the index (eval refuses to run without one).", "Generate questions from your docs (this calls the host agent, claude, and costs a few cents).", "Run the eval.", "Save a baseline, then use --check to gate changes; it exits 1 without a baseline.", "To measure what an agent gets from the stdio server at once, add --via mcp (--settle scores the settled state).", "To validate targets, write a blind set and follow docs/measure-and-tune.md (the Targets table and the per-miss diagnosis are in the report).", "On multi-doc questions read cov@1/3/8 (the mean share of a question's facets found in the top k) and dominance (top-3 slots one doc takes on questions it does not answer; compare with the previous release, not with 3)."],
     commands: [`semantic-memory serve --reindex ${N}`, `semantic-memory eval generate ${N}`, `semantic-memory eval ${N}`, `semantic-memory eval ${N} --baseline`, `semantic-memory eval ${N} --check`],
     verify: "eval prints answered @1/@3/@8, cov@1/3/8 and dominance per arm and --check exits 0.",
     doc: ".documentation/operational/retrieval-eval-guide.md",
+  },
+  {
+    id: "optimize-search", title: "Improve search quality on my docs", group: "Measure and improve", aliases: ["optimize", "targets", "blind-set", "diagnosis", "operating-targets"],
+    summary: "Measure against operating targets on a blind set, read the per-miss diagnosis, and route each miss to the tool that fixes it.",
+    steps: ["Write the targets and a blind-set guide with eval init.", "Run the eval on a cold index and read the Targets table; `not validated` means no blind set yet.", "Read the diagnosis: coverage, grounding or ranking for each miss.", "Coverage: --gaps-out then /reconcile --gaps. Grounding: /reconcile --changed. Ranking: help tune-ranking, on train only.", "Re-measure on a fresh blind set, ignoring changes of 1/n or less, then hold the gain with --baseline."],
+    commands: [`semantic-memory eval init ${N}`, `semantic-memory eval ${N}`, `semantic-memory eval ${N} --gaps-out gaps.json`, "/reconcile --gaps gaps.json", "npx hewtd audit"],
+    verify: "eval prints a Targets table and a Diagnosis section, and the blind column is filled once a set is marked blind.",
+    doc: "docs/measure-and-tune.md",
   },
   {
     id: "stable-results", title: "Why results are stable (or differ)", group: "Search more", aliases: ["reproducible", "limit", "same-order", "determinism"],

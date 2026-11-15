@@ -31,6 +31,8 @@ backlinks: []
 
 One caveat: if the notes changed since the last index, opening the server reconciles them and updates the index for the changed files only.
 
+To validate operating targets on a blind set and fix what the eval misses, follow [the measure-and-tune guide](../../docs/measure-and-tune.md).
+
 ## Run it
 
 ```bash
@@ -56,7 +58,7 @@ Arms: `search_hybrid`, `search_semantic`, `search_text` and a `grep` baseline. `
 
 ## Question sets
 
-The eval dir is `<project>/.claude/.semantic-memory/eval/` (override with `--dir`). It is gitignored, so floors there are personal; point `--dir` at a committed folder to share them.
+The eval dir is `<repo root>/.claude/.semantic-memory/eval/` (override with `--dir`). Before 1.31.0 it was derived from `--notes`, so `--notes .documentation` used `.documentation/.claude/.semantic-memory/eval/`; an eval dir already there is still used, so existing floors stay put. It is gitignored, so floors there are personal; point `--dir` at a committed folder to share them.
 
 One JSON object per line: `{id, tier, q, facets}`. `facets` are regexes the answer must match; `negative: true` marks a question the vault does not answer (scored as a negative; a row with neither tier nor facets is refused naming its id); optional `expected` (doc paths, enables found@k and MRR), `split` and `negative_kind`. Tiers: exact, paraphrase, symptom, nofield, multi.
 
@@ -97,10 +99,28 @@ semantic-memory eval --notes <dir> --check [--band 1]
 
 `all` counts every question. `clean` leaves out the `tune` split, so it is the number to report; the two differ only when a set carries `split` values. Tune only on `tune`; read held-out as measured.
 
+## Operating targets and blind sets (v1.31.0)
+
+Floors say "do not get worse". Targets say "good enough". The loop that ties them to doc fixes is [the measure-and-tune guide](../../docs/measure-and-tune.md); the `optimize-search` skill (`skills/optimize-search/SKILL.md`) walks Claude through it and drives hit-em-with-the-docs `/reconcile` and `audit` without changing them.
+
+```bash
+semantic-memory eval init --notes <dir>   # targets.json, BLIND-SETS.md, a question template
+semantic-memory eval --notes <dir> --dir <eval dir> --gaps-out gaps.json     # coverage misses as gaps.v1
+semantic-memory eval --notes <dir> --dir <eval dir> --no-oracle              # skip the diagnosis and the grep oracle
+```
+
+- **targets.json** is a flat `{metric: {value, why}}` file in the eval dir (`hybrid_at1` 0.75, `hybrid_at3` 0.95, `exact_at1` 0.90, `paraphrase_at1` 0.75, `related_at1` 0.85, `verified_top3` 0.80, `no_missing_refs_top3` 0.90, `negatives_flagged` 0.85, `false_flags` 0.03, `p95_ms` 100). `eval init` writes it and leaves existing files alone; `eval` writes the defaults, with one stderr line, when it is missing. Edit the values and the reasons. `null` is "shown, not judged". A malformed file stops the run and names it; unknown keys warn.
+- **Blind sets.** A case marked `"blind": true` was not written from the docs. The report's Targets table shows an `all` and a `blind` column, and `met` is judged on the blind cases only. With no blind case it prints `not validated` and judges nothing. A blind case whose facet matches no doc stays live and counts as a coverage miss; non-blind cases keep the stale handling. Run the leakage check (grep each question's terms in `CLAUDE.md`, `AGENTS.md` and `.claude/rules/`) before marking a set blind. `eval generate` writes `blind: false`.
+- **Noise.** The report prints `noise: 1/n` over the blind answerable cases. A change of one question is not a signal.
+- **Diagnosis.** Each miss gets one label: `coverage` (no doc answers it: `--gaps-out`, then `/reconcile --gaps`), `grounding` (answered at #1 but the top docs are unverified or cite missing refs: `/reconcile --changed`) or `ranking` (a doc answers it but is not first: tune, on the train split only). Each line carries the grep oracle's result. `--json` gains `targets` and `diagnosis` keys; `content[0]` of MCP responses is unchanged.
+- **Lesson from #96, numbers only.** After a docs pass, the non-blind set rose from 0.64 to 0.91 @1 while the blind set moved from 0.27 to 0.30 (one question).
+- **Floors.** `--baseline` and `--check` count blind coverage misses as misses, only for sets marked blind.
+
 ## Gotchas
 
 - Generation needs `claude` on the PATH, or write a set by hand. CI uses the fake `test/bin/claude`.
 - Generator thresholds (facet share 20 percent, rare term = df <= max(2, 10 percent of docs)) are untuned.
+- A set stops being blind once you fix the docs its misses land on: [KB fact](../knowledge-base/facts/a-blind-set-stops-being-blind-once-its-misses-are-fixed.md).
 - `commander` options: `eval` has `enablePositionalOptions()`, so a root-level option must precede the subcommand name.
 
 See also: [Retrieval tuning guide](./retrieval-tuning-guide.md), [CLI reference](../reference/cli-reference.md), [v1.13.0 changelog](../changelog/v1-13-0-builtin-eval.md).

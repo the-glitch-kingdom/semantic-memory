@@ -193,6 +193,10 @@ Grounding ranks by dead refs only (`drift_penalty` 1); `drift_penalty: 0.97` or 
 
 `semantic-memory eval --notes <dir>` runs the same engine on your own question sets, with `--baseline` / `--check` floors and a noise band of one question. See the [retrieval eval guide](./retrieval-eval-guide.md).
 
+## Start from the diagnosis (v1.31.0)
+
+Before changing any setting, run `semantic-memory eval` on a blind set and read the Diagnosis section ([eval guide](./retrieval-eval-guide.md#operating-targets-and-blind-sets-v1310), [measure and tune](../../docs/measure-and-tune.md)). Tune only for `ranking` misses, on the train split. `coverage` misses are missing docs (`--gaps-out`, `/reconcile --gaps`), and `grounding` misses are unverified or stale docs (`/reconcile --changed`); no ranking setting fixes either.
+
 ## See also
 
 - [Retrieval eval guide](./retrieval-eval-guide.md)
