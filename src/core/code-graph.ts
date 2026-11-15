@@ -286,10 +286,20 @@ async function patchStale(root: string, exp: CodeData): Promise<void> {
   } else info.behind = null;
 
   const fileOf = (r: CodeRef) => (r.kind === "file" ? clean(r.file ?? r.target) : undefined);
-  const dirty = (r: CodeRef) => { const f = fileOf(r); return !!f && (!changed || changed.has(f) || r.resolved === false); };
+  // #98: hewtd resolves a bare name (no `/`) by basename, so its candidates are every tracked or changed file with that name
+  const byBase = new Map<string, Set<string>>();
+  for (const f of [...(exp.files ?? []), ...(changed ?? [])]) {
+    const b = posix.basename(f);
+    (byBase.get(b) ?? byBase.set(b, new Set()).get(b)!).add(f);
+  }
+  const candidates = (r: CodeRef): string[] => {
+    const f = fileOf(r)!;
+    return r.file || f.includes("/") ? [f] : [...new Set([f, ...(byBase.get(f) ?? [])])];
+  };
+  const dirty = (r: CodeRef) => !!fileOf(r) && (!changed || r.resolved === false || candidates(r).some((c) => changed.has(c)));
   const todo = [...exp.docs.values()].flatMap((d) => d.refs.filter(dirty));
   if (!todo.length) return;
-  const dates = await gitLastChanged(root, [...new Set(todo.map(fileOf).filter((f): f is string => !!f && (!changed || changed.has(f))))]);
+  const dates = await gitLastChanged(root, [...new Set(todo.flatMap(candidates))]);
   for (const d of exp.docs.values()) {
     const patched: string[] = [];
     for (const r of d.refs) {
@@ -297,9 +307,12 @@ async function patchStale(root: string, exp: CodeData): Promise<void> {
       const f = fileOf(r)!;
       if (f === ".." || f.startsWith("../") || isAbsolute(f)) continue; // never check outside the repo
       const was = r.resolved;
-      r.resolved = existsSync(join(root, f));
-      if (!changed || changed.has(f)) {
-        r.changed = r.resolved ? dates.get(f) ?? r.changed : undefined;
+      const cands = candidates(r);
+      const live = cands.filter((c) => existsSync(join(root, c)));
+      r.resolved = live.length > 0;
+      if (!changed || cands.some((c) => changed.has(c))) {
+        const newest = Math.max(...live.map((c) => dates.get(c) ?? 0));
+        r.changed = r.resolved ? newest || r.changed : undefined;
         patched.push(f);
       } else if (was !== r.resolved) patched.push(f);
     }

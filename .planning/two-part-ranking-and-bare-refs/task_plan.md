@@ -37,14 +37,14 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
     - commit a deletion: both docs get `dead_refs`, `stale: true` and `source: "export+live"` (`it.fails` for the bare one);
     - an edit instead of a delete: both get `code_drift`;
     - guards: a bare name whose basename still exists elsewhere in the tree stays resolved (hewtd's basename semantics); a bare name matching no changed path keeps the export's data, byte-identical.
-- [ ] Phase 3: Fix #98
-  - [ ] In `patchStale`, a bare file ref (target with no `/`) also counts as dirty when any changed path has that basename. One basename map built from the changed set, so no extra git spawn.
-  - [ ] When re-checked:
+- [x] Phase 3: Fix #98
+  - [x] In `patchStale`, a bare file ref (target with no `/`) also counts as dirty when any changed path has that basename. One basename map built from the changed set, so no extra git spawn.
+  - [x] When re-checked:
     - `resolved` = some file with that basename exists in the working tree (candidates: the export's `files` plus the changed paths with that basename, each checked with `existsSync` under the git root);
     - `changed` = the newest `gitLastChanged` date among the existing candidates (same single call).
     - Keep the `..` and absolute-path guards.
-  - [ ] An unknown or null `source_commit` (every ref re-checked live) applies the same basename semantics to bare refs.
-  - [ ] Phase 2 #98 cases become plain `it`.
+  - [x] An unknown or null `source_commit` (every ref re-checked live) applies the same basename semantics to bare refs.
+  - [x] Phase 2 #98 cases become plain `it`.
 - [ ] Phase 4: #91 candidates (train only)
   - [ ] Measure 1.31.0 on the fixture and every train split; record hybrid and semantic per question in notes.md.
   - [ ] Try, one at a time, each as a small change to fusion. Never touch the held-out sets while choosing.
@@ -111,4 +111,4 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 - Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 3 next** (fix #98). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**Phase 4 next** (#91 candidates, train only). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.

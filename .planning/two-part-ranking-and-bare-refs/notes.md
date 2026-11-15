@@ -35,3 +35,7 @@ Fixture `test/fixtures/two-part` (18 docs, cold build, `startEval` with vault `d
 - R91-A hybrid (search_hybrid and CLI): whole-answer doc `marketing/seo-surface-implementation.md` is #2 (it.fails, fails with `expected 2 to be 1`); semantic #1 (guard).
 - R91-B hybrid: `troubleshooting/email-deliverability.md` #7, `devops/droplet-deployment.md` #12 (asserted not worse).
 - #98: 4 it.fails (bare dead after delete; bare drift after edit; unknown/null source_commit: bare name existing elsewhere falsely dead), each confirmed failing as plain `it` for the stated reason; 6 plain guards pass.
+
+## Eval results: Phase 3 (#98 fix, src/core/code-graph.ts patchStale)
+
+No ranking change. One basename map over `exp.files` + the changed set; a bare ref's candidates are its name plus every file with that basename; `resolved` = any candidate exists, `changed` = newest date among existing candidates. Path refs behave as before (candidates = [path]); the `..`/absolute guard is kept. `test/integration/stale-code-graph.test.ts`: all 4 #98 it.fails are plain `it` and pass (23/23).

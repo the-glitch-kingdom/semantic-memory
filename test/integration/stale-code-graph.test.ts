@@ -233,7 +233,7 @@ describe("a stale code-graph export (#95)", () => {
   }, 300_000);
 });
 
-// #98: the re-check must treat a bare-filename ref by basename, like hewtd does. `it.fails` until patchStale does (Phase 3).
+// #98: the re-check treats a bare-filename ref by basename, like hewtd does.
 describe("a bare-filename ref in a stale code-graph export (#98)", () => {
   const both = (o: Awaited<ReturnType<typeof observe>>, f: (g: any) => void) => { f(o.mcp); f(o.cli); };
   const bareObs = (r: { vault: string }, path = BARE, q = QUERY) => observe(r.vault, path, q);
@@ -246,7 +246,7 @@ describe("a bare-filename ref in a stale code-graph export (#98)", () => {
     both(o, (g) => expect(g).toMatchObject({ dead_refs: [X], stale: true, source: "export+live" }));
   }, 300_000);
 
-  it.fails("the bare ref is dead too: dead_refs, stale and export+live", async () => {
+  it("the bare ref is dead too: dead_refs, stale and export+live", async () => {
     const r = await repo({ bare: true });
     await rm(join(r.dir, X));
     commit(r.dir, "delete x");
@@ -254,7 +254,7 @@ describe("a bare-filename ref in a stale code-graph export (#98)", () => {
     both(o, (g) => expect(g).toMatchObject({ dead_refs: [BARE_DOCS[BARE].target], stale: true, source: "export+live" }));
   }, 300_000);
 
-  it.fails("an edit instead of a delete: the bare ref shows code_drift", async () => {
+  it("an edit instead of a delete: the bare ref shows code_drift", async () => {
     const r = await repo({ bare: true });
     await appendFile(join(r.dir, X), "\n# changed after the export\n");
     commit(r.dir, "edit x");
@@ -278,7 +278,7 @@ describe("a bare-filename ref in a stale code-graph export (#98)", () => {
     both(await bareObs(r), (g) => expect(g?.dead_refs).toEqual([BARE_DOCS[BARE].target]));
   }, 300_000);
   // every ref is re-checked live there, and the root-relative existsSync of a bare name always fails, so a name that exists elsewhere is wrongly dead
-  it.fails.each(unknown)("source_commit is %s: a bare name whose basename exists elsewhere stays resolved", async (_n, commitId) => {
+  it.each(unknown)("source_commit is %s: a bare name whose basename exists elsewhere stays resolved", async (_n, commitId) => {
     const r = await repo({ bare: true, commit: commitId });
     await rm(join(r.dir, "backend/scripts/prune_backups.py"));
     commit(r.dir, "delete one of two prune_backups.py");
