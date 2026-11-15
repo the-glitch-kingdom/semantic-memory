@@ -45,15 +45,15 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
     - Keep the `..` and absolute-path guards.
   - [x] An unknown or null `source_commit` (every ref re-checked live) applies the same basename semantics to bare refs.
   - [x] Phase 2 #98 cases become plain `it`.
-- [ ] Phase 4: #91 candidates (train only)
-  - [ ] Measure 1.31.0 on the fixture and every train split; record hybrid and semantic per question in notes.md.
-  - [ ] Try, one at a time, each as a small change to fusion. Never touch the held-out sets while choosing.
+- [x] Phase 4: #91 candidates (train only)
+  - [x] Measure 1.31.0 on the fixture and every train split; record hybrid and semantic per question in notes.md. (Aggregates per set and R91 ranks recorded; the harness JSON has no per-question rows.)
+  - [x] Try, one at a time, each as a small change to fusion. Never touch the held-out sets while choosing.
     1. **Lexical share needs agreement:** scale a doc's BM25 share by how close its cosine is to the vector #1. A lexical-only winner with a weak cosine can't take the full 0.3.
     2. **BM25 normalised against the corpus reference** (`bm25SelfTop`, already computed), instead of `max(bm25)` of this query. A query whose best BM25 hit is weak in absolute terms then moves less.
     3. **Clause-aware lexical cover:** split the question with `splitClauses`. A doc's BM25 share is weighted by the share of clauses whose content terms it matches, so a doc matching one clause's wording gets less than one matching both.
     4. **Existing knobs** (`coverage_weight`, `clause_weight`, `COSINE_WEIGHT`) as baselines, so a new mechanism has to beat them.
     For each candidate record: R91-A rank, R91-B ranks, train hyb@1/@3, multi @1/@3/@8, dominance, and the identifier-tier and whole-answer train sets.
-  - [ ] Pick at most one. It must fix R91-A, lose nothing on train beyond 1/n, and not raise dominance. If none qualifies, record why and go to Phase 5 with "no default change".
+  - [x] Pick at most one (candidate 1, exponent 0.4; see notes.md). It must fix R91-A, lose nothing on train beyond 1/n, and not raise dominance. If none qualifies, record why and go to Phase 5 with "no default change".
 - [ ] Phase 5: Gate and decide
   - [ ] Implement the chosen candidate behind a `ranking` setting in `vault.schema.yml` (like `clause_weight`).
   - [ ] Fresh `BAND=1 bash scripts/gate-release.sh 1.31.0` with it **on** as the default. If the gate passes (no held-out loss beyond the band, MCP vs CLI parity), ship it on, and the version is 1.32.0. If it fails, ship it **off** (opt-in), and the version is 1.31.1.
@@ -106,9 +106,10 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 ## Decisions Made
 - One plan, one PR for #91 part 2 and #98 (user, 2026-11-14).
 - Version 1.32.0 or 1.31.1, set in Phase 5.
+- Phase 4: candidate 1 (lexical share x (cos/cosTop)^0.4) chosen on train + fixture; candidates 2 and 3 and the existing knobs rejected (numbers in notes.md). Candidate 1's window is narrow (0.4 to 0.45); the held-out gate decides.
 
 ## Errors Encountered
 - Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 4 next** (#91 candidates, train only). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**Phase 5 next** (gate and decide; implement candidate 1, agreement exponent 0.4, behind a `ranking` setting). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
