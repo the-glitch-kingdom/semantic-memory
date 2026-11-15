@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { tokenize, type Bm25Index } from "./bm25.js";
+import { LEXICAL_AGREEMENT, tokenize, type Bm25Index } from "./bm25.js";
 import type { VectorIndex } from "./vector.js";
 import type { GraphBuilder } from "./graph.js";
 
@@ -13,6 +13,8 @@ export interface RankingConfig {
   link_prior_min_links: number;
   /** score *= 1 + clause_weight * clauseCover(doc): the doc answers several clauses of the question with different chunks (#91) */
   clause_weight: number;
+  /** a doc's BM25 share in fusion *= min(1, cosine / topCosine) ^ lexical_agreement (#91 part 2); 0 is off */
+  lexical_agreement: number;
 }
 
 /**
@@ -22,7 +24,7 @@ export interface RankingConfig {
  * clause_weight is off too: 1 flips the multi-clause fixture and gains train answers, but failed the held-out gate against
  * 1.27.1 (hybrid @1 -1, export -2, BAND 1; whole-answer-ranking Phase 5), so #91 part 2 ships off. Opt in per vault.
  */
-export const DEFAULT_RANKING: RankingConfig = { coverage_weight: 0, link_prior: 1, link_prior_min_links: 5, clause_weight: 0 };
+export const DEFAULT_RANKING: RankingConfig = { coverage_weight: 0, link_prior: 1, link_prior_min_links: 5, clause_weight: 0, lexical_agreement: LEXICAL_AGREEMENT };
 
 /** `ranking` from vault.schema.yml; a missing file, block or bad value gives the default. */
 export function loadRanking(vaultPath: string): RankingConfig {
@@ -34,6 +36,7 @@ export function loadRanking(vaultPath: string): RankingConfig {
       link_prior: num(r?.link_prior, DEFAULT_RANKING.link_prior, 0),
       link_prior_min_links: num(r?.link_prior_min_links, DEFAULT_RANKING.link_prior_min_links, 1),
       clause_weight: num(r?.clause_weight, DEFAULT_RANKING.clause_weight, 0),
+      lexical_agreement: num(r?.lexical_agreement, DEFAULT_RANKING.lexical_agreement, 0),
     };
   } catch {
     return DEFAULT_RANKING;

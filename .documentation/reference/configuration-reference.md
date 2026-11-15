@@ -485,9 +485,10 @@ ranking:
   coverage_weight: 0       # score *= 1 + coverage_weight * (idf-weighted share of query terms found in the note)
   link_prior: 1            # score *= link_prior for notes with >= link_prior_min_links outgoing links
   link_prior_min_links: 5
+  lexical_agreement: 0     # 🆕 v1.31.1: a note's BM25 share *= min(1, cosine / best cosine) ^ lexical_agreement
 ```
 
-Applied to fused `search_hybrid` candidates, in MCP and CLI alike. Off by default: neither gained an answer on our train splits (see the [tuning guide](../operational/retrieval-tuning-guide.md)). Try 0.3 / 1.1 and measure before enabling; 0.6 over-weights checklists.
+Applied to fused `search_hybrid` candidates, in MCP and CLI alike. Off by default: neither gained an answer on our train splits (see the [tuning guide](../operational/retrieval-tuning-guide.md)). Try 0.3 / 1.1 and measure before enabling; 0.6 over-weights checklists. `lexical_agreement` (non-negative) keeps a note that matches one clause of a two-part question by wording from outranking the one that holds the whole answer; 0.4 fixed the repro but lost the held-out gate (hybrid @1 -2 without an export), so it is off.
 
 ### `rerank` (vault.schema.yml) — 🆕 v1.9+
 

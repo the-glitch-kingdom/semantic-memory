@@ -180,7 +180,7 @@ async function hybridRanked(ctx: ServerContext, vectorIndex: NonNullable<ReturnT
       .map((r) => ctx.applyUsageBoost(ctx.applyPathClass(ctx.applyDecay({ ...r, score: ctx.applyPriorityBoost(r.score, r.path) }))))
       .sort((a, b) => b.score - a.score);
   const semanticResults = adjust(vectorIndex.search(queryEmbed, candidatePool(limit)));
-  let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, candidatePool(limit)))), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
+  let hybrid = applyCoverage(fuseScores(semanticResults, adjust(ctx.bm25.search(query, candidatePool(limit))), ctx.ranking.lexical_agreement), query, ctx.bm25, ctx.graph, ctx.ranking, ctx.isExcluded);
   hybrid = await applyClauses(hybrid, query, vectorIndex, (t) => ctx.embedder.embedQuery(t), ctx.ranking);
   hybrid = ctx.filterPathClass(hybrid);
 

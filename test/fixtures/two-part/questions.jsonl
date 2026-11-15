@@ -1,0 +1,2 @@
+{"id": "R91-A", "tier": "multi", "q": "How do we keep an outside marketing contributor's pull requests limited to content, and what makes that check actually block a merge?", "facets": ["marketing-content", "MARKETING_AUTHORS", "REQUIRED status check"]}
+{"id": "R91-B", "tier": "multi", "q": "Background emails still run the old code after I deployed the backend. What else is a deploy target, how do I update it, and what must I never do on that box?", "facets": ["fetch origin main", "SKIP_PULL", "--no-deps", "tailscale container"]}
