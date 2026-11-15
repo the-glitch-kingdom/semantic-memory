@@ -32,7 +32,7 @@ purpose: Navigation hub for all documentation
 | [Testing](#testing) | 1 | Test strategies, fixtures, patterns, integration/e2e |
 | [Troubleshooting](#troubleshooting) | 1 | Debug guides, common issues, solutions |
 | [Workflows](#workflows) | 0 | Process documentation, multi-step operations |
-| [Changelog](#changelog) | 48 | Release notes per version and phase |
+| [Changelog](#changelog) | 49 | Release notes per version and phase |
 | [Operational](#operational) | 20 | Day-to-day operating guides for the plugin |
 | [Reference](#reference) | 7 | Tool, CLI, configuration and frontmatter reference |
 | [Legacy](#legacy) | 5 | Pre-rebrand substrate docs, kept for history |
@@ -252,6 +252,7 @@ purpose: Navigation hub for all documentation
 | [v1.30.1 - small fixes](changelog/v1-30-1-small-fixes.md) | reference | active | 2026-11-14 | What v1.30.1 fixed (synthesize auto-links, lint on generated files and incident ids, healthcheck plugin lookup) and the measurements behind it. |
 | [v1.31.0 - operating targets](changelog/v1-31-0-operating-targets.md) | reference | active | 2026-11-14 | What v1.31.0 added (targets file, eval init, blind sets, diagnosis, --gaps-out, the optimize-search skill and the measure-and-tune guide) and the measurements behind it. |
 | [v1.31.1 - two-part questions and bare refs](changelog/v1-31-1-two-part-and-bare-refs.md) | reference | active | 2026-11-14 | What v1.31.1 changed (opt-in ranking.lexical_agreement for |
+| [v1.32.0 - gaps facets](changelog/v1-32-0-gaps-facets.md) | reference | active | 2026-11-14 | What v1.32.0 changed (richer eval --gaps-out, nearest-doc diagnosis lines, code-line facet warning) for issue |
 | [v1.4.0 — resident-expert bridge (lexicon, symptom capture, query expansion)](changelog/v1-4-0-resident-bridge.md) | reference | active | 2026-07-10 | What v1.4.0 added — a golden eval harness, archive path-class down-weighting, injection hygiene for the vault-context block, a learned human-to-artifact lexicon with propose-and-confirm capture, verbatim symptom capture, two-tier query expansion, and a token-frugal tool surface. Tool count 41→42 (manage_lexicon). |
 | [v1.5.0 — the expert-character layer (dossiers, usage-feedback ranking, session paging, speaker profile)](changelog/v1-5-0-expert-character.md) | reference | active | 2026-07-11 | What v1.5.0 added — entity dossiers with two-hop retrieval and lexicon-alias fold-in, usage-feedback ranking that consumes the v1.3.1 selection log plus a decoys lint, Stop/SessionStart session paging (digest-as-proposal), and a speaker profile learned via correction cues. Tool count 42→44 (manage_dossier, manage_profile). |
 | [v1.5.2 — docs index freshness (issue](changelog/v1-5-2-docs-index-freshness.md) | reference | active | 2026-10-24 | What v1.5.2 fixed: stale cached index rebuilt at startup, watcher working under chokidar 5, one bad doc no longer failing the whole index, hooks searching every semantic-* notes path, capture-pending kept per session, and the dependency audit. |

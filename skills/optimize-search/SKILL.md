@@ -21,7 +21,7 @@ One loop: measure, diagnose, route each miss to the tool that fixes it, re-measu
 2. **Measure.** `semantic-memory eval --notes <docs>`. Read the Targets table and the noise line.
 3. **Diagnose.** Read the per-miss labels: coverage (no doc answers it), grounding (answered, but the top docs are unverified or cite missing refs), ranking (a doc answers it but is not first).
 4. **Route each label.**
-   - coverage: `semantic-memory eval --notes <docs> --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (proposes docs and phrases, applied only on acceptance), or write the doc. Real-usage gaps come from `semantic-memory gaps --json`.
+   - coverage: `semantic-memory eval --notes <docs> --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (proposes docs and phrases, applied only on acceptance), or write the doc. Each coverage line ends with `nearest: <path> k/n` (the non-archive doc holding the most facets, k of n) or `nearest: none`: a high k/n means extend that doc, none means write a new doc. Real-usage gaps come from `semantic-memory gaps --json`.
    - grounding: `/reconcile --changed`, or `/reconcile --next 10`.
    - ranking: the settings in `semantic-memory help tune-ranking`, measured on the train split only; or file an issue with an anonymised repro (`{id, tier, q, facets}` JSONL).
    - docs-wide health: the Targets in `npx hewtd audit`.

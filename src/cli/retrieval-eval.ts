@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { generateCases, writeGenerated } from "../core/retrieval-eval/generate.js";
+import { isCodeLineFacet } from "../core/retrieval-eval/metrics.js";
 import { toGapsV1 } from "../core/usage-log.js";
 import { loadTargets, writeDefaults, TARGETS_FILE } from "../core/retrieval-eval/targets.js";
 import { evalDir, loadSets, runSuite, formatSuite, baselinePath, writeBaseline, checkBaseline, type Baseline } from "../core/retrieval-eval/suite.js";
@@ -26,7 +27,7 @@ export function registerEvalCommand(program: Command): void {
     .option("--settle", "With --via mcp: retry answers marked stale, so the run scores the settled state (default: score the first answers as an agent gets them)")
     .option("--wait-for-ready", "With --via mcp: start the server with --wait-for-ready (the plugin does not)")
     .option("--no-oracle", "Skip the per-miss diagnosis section (coverage / ranking / grounding, and the grep oracle's line)")
-    .option("--gaps-out <file>", "Write the coverage misses as gaps.v1, for `hewtd reconcile --gaps <file>`")
+    .option("--gaps-out <file>", "Write the coverage misses as gaps.v1 plus id, tier, facets, missing_facets and nearest_doc, for `hewtd reconcile --gaps <file>`")
     .option("--json", "Print the report as JSON")
     .action(async (opts) => {
       try {
@@ -45,11 +46,20 @@ export function registerEvalCommand(program: Command): void {
         const via = opts.via && { cli: opts.server ?? process.argv[1], cwd: opts.cwd ?? process.cwd(), waitForReady: !!opts.waitForReady, settle: !!opts.settle };
         const report = await runSuite(opts.notes, cases, via, targets);
         const version = (createRequire(import.meta.url)("../../package.json") as { version: string }).version;
+        // Warning only: labels stay as measured. One line per code-line facet that no doc matches.
+        for (const d of report.diagnosis?.cases ?? []) {
+          if (d.label !== "coverage") continue;
+          for (const f of (d.missing_facets ?? []).filter(isCodeLineFacet)) console.error(`warning: ${d.id}: facet looks copied from a code line and matches no doc (write the facet from the answer in prose): ${f}`);
+        }
         if (opts.gapsOut) {
           const today = new Date().toISOString().slice(0, 10);
-          const gaps = (report.diagnosis?.cases ?? []).filter((c) => c.label === "coverage").map((c) => ({ query: c.q, used_doc: null, suggested: "new doc", count: 1, last_seen: today, signals: [] }));
+          const byId = new Map(cases.map((c) => [c.id, c]));
+          const diag = (report.diagnosis?.cases ?? []).filter((c) => c.label === "coverage");
+          const base = toGapsV1(diag.map((c) => ({ query: c.q, used_doc: null, suggested: "new doc", count: 1, last_seen: today, signals: [] })), version);
+          // toGapsV1 stays the usage log's five fields; the case detail hewtd plans from rides on top for these entries only.
+          const gaps = diag.map((d, i) => { const c = byId.get(d.id)!; return { ...base.gaps[i], id: c.id, tier: c.tier, blind: !!c.blind, facets: c.facets ?? [], missing_facets: d.missing_facets ?? [], ...(d.nearest_doc && { nearest_doc: d.nearest_doc }), ...(c.expected && { expected: c.expected }) }; });
           mkdirSync(dirname(opts.gapsOut), { recursive: true });
-          writeFileSync(opts.gapsOut, JSON.stringify(toGapsV1(gaps, version), null, 2) + "\n");
+          writeFileSync(opts.gapsOut, JSON.stringify({ ...base, gaps }, null, 2) + "\n");
           console.error(`coverage gaps written: ${opts.gapsOut} (${gaps.length})`);
         }
         if (!opts.oracle) delete report.diagnosis;

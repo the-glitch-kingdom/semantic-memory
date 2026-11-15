@@ -119,9 +119,11 @@ export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia,
     const hybrid = ev.tool("search_hybrid");
     const probes: Record<string, Probe> = {};
     const ground: Record<string, Ground> = {};
+    const top8: Record<string, string[]> = {};
     const counted: ArmFn = async (q, limit) => {
       const r = await hybrid(q, limit);
       ground[q] ??= r.grounding ?? {};
+      top8[q] ??= r.results.slice(0, 8).map((x) => x.path);
       probes[q] ??= { top3: r.results.slice(0, 3).map((x) => x.path), related: r.related ?? [], entity: !!r.top?.entity };
       if (!negatives.has(q) && r.top) {
         seen.n++; seen.related += r.related?.length ?? 0;
@@ -160,7 +162,7 @@ export async function runSuite(notes: string, cases: FacetCase[], via?: EvalVia,
     }
     const top3 = Object.fromEntries(Object.entries(probes).map(([q, p]) => [q, p.top3]));
     const judged = targets && judgeTargets(targets, arms.search_hybrid.all, top3Shares(live, top3, ground, textOf), blindM && { m: blindM, shares: top3Shares(blindCases, top3, ground, textOf), n: blindCases.length });
-    return { ...(mcp && { mcp }), probes, cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms, ...(judged && { targets: judged }), diagnosis: diagnose(live, docs, arms.search_hybrid, arms.grep, top3, ground) };
+    return { ...(mcp && { mcp }), probes, cases: live.length, setHash, corpus: { docs: docs.size, hash: stamp.digest("hex") }, stale, settings: { granularity: "section", decay: decay.enabled, decayCode: decay.code.enabled }, arms, ...(judged && { targets: judged }), diagnosis: diagnose(live, docs, arms.search_hybrid, arms.grep, top3, ground, top8) };
   } finally {
     await ev.close();
   }

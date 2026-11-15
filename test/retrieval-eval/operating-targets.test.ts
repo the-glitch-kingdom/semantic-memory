@@ -198,7 +198,7 @@ describe("eval report: diagnosis", () => {
     expect(doc.gaps.length).toBe(out.diagnosis.counts.coverage);
     const gap = doc.gaps.find((g: any) => g.query === COV_BLIND.q);
     expect(gap).toBeTruthy();
-    expect(Object.keys(gap).sort()).toEqual(Object.keys(ref.gaps[0]).sort());
+    expect(Object.keys(gap)).toEqual(expect.arrayContaining(Object.keys(ref.gaps[0]))); // the five classic fields, plus the case detail (#101)
     expect(gap.used_doc ?? null).toBeNull();
   });
 });

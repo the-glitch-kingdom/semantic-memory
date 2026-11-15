@@ -17,7 +17,7 @@ purpose: Quick reference for changelog documentation
 
 | Metric | Value |
 |--------|-------|
-| Documents | 48 |
+| Documents | 49 |
 | Category | development |
 | Load Priority | 5/10 |
 
@@ -39,14 +39,14 @@ purpose: Quick reference for changelog documentation
 - [v1.30.1 - small fixes](v1-30-1-small-fixes.md) - 2026-11-14
 - [v1.31.0 - operating targets](v1-31-0-operating-targets.md) - 2026-11-14
 - [v1.31.1 - two-part questions and bare refs](v1-31-1-two-part-and-bare-refs.md) - 2026-11-14
+- [v1.32.0 - gaps facets](v1-32-0-gaps-facets.md) - 2026-11-14
 - [v1.29.0 - long-term memory](v1-29-0-long-term-memory.md) - 2026-11-11
-- [v1.30.0 - stale code graph](v1-30-0-stale-code-graph.md) - 2026-11-11
 
 ## By Status
 
 | Status | Count |
 |--------|-------|
-| active | 48 |
+| active | 49 |
 | draft | 0 |
 | deprecated | 0 |
 | archived | 0 |

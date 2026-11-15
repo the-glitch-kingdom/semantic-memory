@@ -50,6 +50,8 @@ Writing a blind set:
 3. Run the leakage check. An agent that writes "blind" questions has already read `CLAUDE.md`, `AGENTS.md` and `.claude/rules/`. Grep each question's distinctive terms in those files and rewrite any that came from them. On one real first draft, 16 of 35 questions did.
 4. Mark the file `"blind": true` on each case.
 
+Write each facet as prose the answering doc would contain, never a code-line facet (a regex copied from a line of code: `class Foo:`, `x = 1`, `a => b`, a line ending in `;` or `{`). It will not match prose docs, so the case reads as coverage. In #101 the same questions gave 25/25 coverage with code-line facets, against 11 coverage, 6 ranking, 3 grounding and 5 answered with prose facets. The eval warns on stderr for each such facet; labels do not change.
+
 Two rules follow:
 
 - **Fixing a set's misses makes it non-blind.** Once you edit the docs those misses land on, the set has been used to tune the docs. Write a fresh held-out set before each docs pass, and flip the old one to `"blind": false`.
@@ -65,7 +67,7 @@ Two rules follow:
    - **ranking**: a doc answers it but is not first.
    `--no-oracle` skips the grep oracle and the diagnosis when you only want the table.
 4. Route each label:
-   - coverage: `semantic-memory eval --notes .documentation --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (it proposes docs and phrases; nothing is applied without your acceptance), or write the doc. Real-usage gaps come from `semantic-memory gaps --root . --json`.
+   - coverage: `semantic-memory eval --notes .documentation --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (it proposes docs and phrases; nothing is applied without your acceptance), or write the doc. Each coverage line ends with `nearest: <path> k/n` (the non-archive doc holding the most facets, k of n) or `nearest: none`: a high k/n means extend that doc, none means write a new doc. `--gaps-out` also carries `id`, `tier`, `blind`, `facets`, `missing_facets`, `nearest_doc` and `expected` per entry. Real-usage gaps come from `semantic-memory gaps --root . --json`.
    - grounding: `/reconcile --changed`, or `/reconcile --next 10`.
    - ranking: the settings in `semantic-memory help tune-ranking` (`coverage_weight`, `clause_weight`, `lexical_agreement` for two-part questions, all off by default), chosen on your train split only; or report it (section 6).
    - docs-wide health: `npx hewtd audit`.
