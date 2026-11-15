@@ -132,3 +132,11 @@ Bumped package.json, both marketplace.json fields, plugin.json, AGENTS.md frontm
 ## Phase 8 (Cleanup)
 - Phase 4's env-var switch and losing candidates were reverted before that phase's commit; `git diff main..HEAD -- src` shows only `lexical_agreement` (bm25.ts, rank.ts, schema-default.ts, search callers) and the #98 patchStale change. No probe logging, TODOs or commented-out code.
 - Removed scratch under /tmp/claude-1000/p2..p9 and their logs. Nothing was left in the repo.
+
+## Eval results: Phase 9
+
+- Added a #98 test: every file sharing the basename deleted, so the bare ref is dead (24 tests in stale-code-graph pass). Already covered: one of two sharing a basename deleted stays resolved, :line suffixes are stripped at parse (LOC), edit gives drift. Not tested at integration level: a directory-name ref (not a file ref in the export), a case-only rename (on Linux the old name is gone, so the ref is dead, same as hewtd), `README.md` (dot, no slash, same path as `.py` names).
+- #91 edge cases: the setting ships off, so every question is unchanged by construction (the full gate below is identical to 1.31.0). With it on: no BM25 hit returns the vector list unchanged (unit test, `toBe(vec)`); identifier tier and `no_strong_match` are untouched in code (fuseScores runs before them).
+- Independent review (`claude -p --setting-sources "" --tools ""` on `git diff main...HEAD -- src`): 4 points. Confirmed and fixed: a negative cosine gave NaN in `agree` (clamped at 0, unit test). Rejected: paths outside the repo reaching `gitLastChanged` (it only builds a lookup set from git log output, never passes paths to git); dates not numbers (they are epoch ms numbers); untracked new files missing from byBase (a semantic note, `changed` includes them and the Phase 3 test covers it).
+- Validation: lint, build, npm test (164 files, 1353 passed), npm run eval (28 files, 264 passed, 6 expected fail), all green; neither earlier flake recurred.
+- `BAND=1 npm run gate:release -- 1.31.0` (fresh, no cache): PASS. No export and export, cli and mcp: hybrid @1 91 vs 91 (94 vs 94 export), multi @1 20 vs 20, multi @3/@8 28/31 vs 28/31 (28/32 export), cov@3 0.817 vs 0.817, dominance 34 vs 34 (26 vs 26), negatives 43 vs 43, false flags 7 vs 7, mcp vs cli 0 of 186 differ, titled #1 139/139.

@@ -38,6 +38,10 @@ describe("Bm25Index", () => {
 
 describe("fuseScores lexical agreement (#91)", () => {
   const r = (path: string, score: number) => ({ path, title: path, score, snippet: "" });
+  it("a negative cosine counts as no agreement, not NaN", () => {
+    const out = fuseScores([r("a", 0.5), r("b", -0.1)], [r("b", 3)], 0.4);
+    expect(out.every((x) => Number.isFinite(x.score))).toBe(true);
+  });
   it("a lexical-only winner with weak cosine loses its lexical share; 0 keeps the old order", () => {
     const vec = [r("whole", 0.6), r("part", 0.45)];
     const lex = [r("part", 10), r("whole", 6)];

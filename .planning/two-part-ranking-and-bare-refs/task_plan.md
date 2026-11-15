@@ -68,9 +68,9 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
   - [x] Bump all five version fields (1.32.0 or 1.31.1 per Phase 5) plus the lockfile. (1.31.1)
 - [x] Phase 8: Cleanup -- remove junk and unused code this work created: scratch/test scripts, debug files, probe logging, one-off test functions, commented-out code, dead code from abandoned approaches (MANDATORY)
   - [x] Remove the losing candidates from Phase 4; keep only the shipped one and its setting.
-- [ ] Phase 9: Validate success through comprehensive testing (MANDATORY)
-  - [ ] Every Phase 2 test passes as designed (plain `it`, or with the setting on).
-  - [ ] Edge cases:
+- [x] Phase 9: Validate success through comprehensive testing (MANDATORY)
+  - [x] Every Phase 2 test passes as designed (plain `it`, or with the setting on).
+  - [x] Edge cases:
     - #98:
       - two tracked files sharing a basename, one deleted (stays resolved);
       - both deleted (dead);
@@ -83,8 +83,8 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
       - an identifier question keeps the identifier tier's order;
       - a query with no BM25 hit (pure vector order unchanged);
       - a negative question's abstention flag (`no_strong_match`) is unchanged.
-  - [ ] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.31.0).
-  - [ ] Independent review of `git diff main...HEAD` (`claude -p --setting-sources "" --tools ""`, given the code, not our conclusions). Fix what it confirms; record rejections.
+  - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.31.0).
+  - [x] Independent review of `git diff main...HEAD` (`claude -p --setting-sources "" --tools ""`, given the code, not our conclusions). Fix what it confirms; record rejections.
 - [ ] Phase 10: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
   - [ ] `.documentation/architecture/code-graph.md`: bare-filename refs in the stale re-check (basename semantics, as hewtd resolves them).
   - [ ] `.documentation/operational/retrieval-tuning-guide.md`: the fusion change or the new opt-in setting, what it does to two-part questions, and the measured trade.
@@ -114,4 +114,4 @@ Release as **1.32.0** if #91's ranking default changes (minor), or **1.31.1** if
 - Phase 2: the planned `it.fails` for "source_commit unknown: bare ref dead after deletion" passed today (root-relative `existsSync` of a bare name is always false, so it is wrongly "dead" by accident). Replaced by a plain guard for the deletion plus an `it.fails` where the basename exists elsewhere (falsely dead today).
 
 ## Status
-**Phase 9 next** (Phase 8 done: nothing to remove in the repo, Phase 4 candidates were never committed; Phase 7 done: all five fields and lockfile at 1.31.1). (release prep, 1.31.1; Phase 6 measured, see notes.md; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.
+**Phase 10 next** (Phase 9 done; Phase 8 done: nothing to remove in the repo, Phase 4 candidates were never committed; Phase 7 done: all five fields and lockfile at 1.31.1). (release prep, 1.31.1; Phase 6 measured, see notes.md; version is 1.31.1, candidate ships off). Phase 5 done (gate failed, opt-in). Phase 4 done (notes.md). Phase 3 done (#98 fixed in patchStale). Phase 2 done (tests `test/retrieval-eval/two-part-fixture.test.ts`, `test/integration/stale-code-graph.test.ts`). Phase 1 done: #91 reproduced on 1.31.0 with the reporter's folder; #98 confirmed by reading `patchStale`. See notes.md.

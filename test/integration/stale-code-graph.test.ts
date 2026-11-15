@@ -293,6 +293,14 @@ describe("a bare-filename ref in a stale code-graph export (#98)", () => {
     both(o, (g) => expect(g?.dead_refs ?? []).toEqual([]));
   }, 300_000);
 
+  it("every file sharing the basename deleted: the bare ref is dead", async () => {
+    const r = await repo({ bare: true });
+    await rm(join(r.dir, "backend/scripts/prune_backups.py"));
+    await rm(join(r.dir, "backend/jobs/prune_backups.py"));
+    commit(r.dir, "delete both prune_backups.py");
+    both(await bareObs(r, BARE_P, QUERY_BARE_P), (g) => expect(g?.dead_refs).toEqual(["prune_backups.py"]));
+  }, 300_000);
+
   it("a bare name matching no changed path keeps the export's data, byte-identical (guard)", async () => {
     const r = await repo({ bare: true });
     await rm(join(r.dir, X));

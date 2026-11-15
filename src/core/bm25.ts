@@ -232,7 +232,7 @@ export function fuseScores(vector: SearchResult[], lexical: SearchResult[], agre
   if (top === 0) return vector;
   const cos = new Map(vector.map((r) => [r.path, r.score]));
   const topCos = Math.max(0, ...cos.values());
-  const agree = (path: string) => (agreement > 0 && topCos > 0 ? Math.min(1, (cos.get(path) ?? 0) / topCos) ** agreement : 1);
+  const agree = (path: string) => (agreement > 0 && topCos > 0 ? Math.max(0, Math.min(1, (cos.get(path) ?? 0) / topCos)) ** agreement : 1);
   const fused = new Map<string, SearchResult>();
   for (const r of lexical) fused.set(r.path, { ...r, score: ((1 - COSINE_WEIGHT) * r.score * agree(r.path)) / top, lexical: true });
   for (const r of vector) {
