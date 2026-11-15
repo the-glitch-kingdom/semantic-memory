@@ -84,14 +84,14 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
     - a 0-coverage run writes an empty `gaps.v1`.
   - [x] Lint, build, `npm test`, `npm run eval`, `npm run gate:release` (fresh, BAND=1 vs 1.31.1).
   - [x] Independent review of `git diff main...HEAD` (`claude -p --setting-sources "" --tools ""`, given the code, not our conclusions). Fix what it confirms; record rejections.
-- [ ] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
-  - [ ] `.documentation/operational/retrieval-eval-guide.md`: the new gaps fields, the nearest-doc line, the code-line warning and the facet-shape rule.
-  - [ ] `docs/measure-and-tune.md`: the coverage route mentions `nearest_doc` (extend vs new doc); facet shape is in §3. The deny-list test passes.
-  - [ ] The `optimize-search` skill: the coverage step reads `nearest` (k/n high → extend that doc; none → new doc).
-  - [ ] Plugin help (`src/core/help/topics.ts`): the `eval` topic mentions the richer `--gaps-out`. `test/unit/help-coverage.test.ts` and `test/unit/cli-help.test.ts` pass, and the `eval --gaps-out` `--help` text is accurate.
-  - [ ] KB gotcha fact: facets copied verbatim from code lines score every blind question as a coverage miss, because prose never quotes the line. `## Instead`: one fact per facet, prose-tolerant.
-  - [ ] `CHANGELOG.md` 1.32.0 and `.documentation/changelog/v1-32-0-gaps-facets.md`.
-  - [ ] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
+- [x] Phase 9: Documentation pass with hit-em-with-the-docs; no secrets (MANDATORY)
+  - [x] `.documentation/operational/retrieval-eval-guide.md`: the new gaps fields, the nearest-doc line, the code-line warning and the facet-shape rule.
+  - [x] `docs/measure-and-tune.md`: the coverage route mentions `nearest_doc` (extend vs new doc); facet shape is in §3. The deny-list test passes.
+  - [x] The `optimize-search` skill: the coverage step reads `nearest` (k/n high → extend that doc; none → new doc).
+  - [x] Plugin help (`src/core/help/topics.ts`): the `eval` topic mentions the richer `--gaps-out`. `test/unit/help-coverage.test.ts` and `test/unit/cli-help.test.ts` pass, and the `eval --gaps-out` `--help` text is accurate.
+  - [x] KB gotcha fact: facets copied verbatim from code lines score every blind question as a coverage miss, because prose never quotes the line. `## Instead`: one fact per facet, prose-tolerant.
+  - [x] `CHANGELOG.md` 1.32.0 and `.documentation/changelog/v1-32-0-gaps-facets.md`.
+  - [x] `npx hewtd maintain --quick`; never hand-edit INDEX.md or REGISTRY.md. Re-run `npm run eval` after the docs.
 
 ## Key Questions
 1. Should `nearest_doc` be `null` or omitted when no doc holds a facet? Whichever hit-em-with-the-docs' `parse_gaps` treats as "none"; read it and match it.
@@ -110,4 +110,4 @@ Release as **1.32.0** (minor: new export fields, new report detail, new warning)
 (none)
 
 ## Status
-**Phase 9 next** (Phase 8 validated: all green, gate PASS, review done; was Phase 8) (Phase 7 cleanup done: no scratch files, probe logging or dead code found; Phase 6 release prep done, all versions 1.32.0). Earlier: **Phase 6** (release prep). Phase 5 done (gate PASS, by-hand check in notes.md). Phase 4 done: `isCodeLineFacet` (metrics.ts, copied from hewtd 4a49bc9), stderr warning in src/cli/retrieval-eval.ts, guide text in targets.ts and docs/measure-and-tune.md.
+**COMPLETE** (Phase 9 docs done: eval guide, measure-and-tune, optimize-search, eval help and --gaps-out help, KB fact, CHANGELOG and changelog page; hewtd maintain --quick run; AGENTS.md regenerated, only the timestamp differed so left as is). Earlier: Phase 8 validated, gate PASS.

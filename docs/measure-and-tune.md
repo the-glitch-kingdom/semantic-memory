@@ -67,7 +67,7 @@ Two rules follow:
    - **ranking**: a doc answers it but is not first.
    `--no-oracle` skips the grep oracle and the diagnosis when you only want the table.
 4. Route each label:
-   - coverage: `semantic-memory eval --notes .documentation --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (it proposes docs and phrases; nothing is applied without your acceptance), or write the doc. Real-usage gaps come from `semantic-memory gaps --root . --json`.
+   - coverage: `semantic-memory eval --notes .documentation --gaps-out gaps.json`, then `/reconcile --gaps gaps.json` (it proposes docs and phrases; nothing is applied without your acceptance), or write the doc. Each coverage line ends with `nearest: <path> k/n` (the non-archive doc holding the most facets, k of n) or `nearest: none`: a high k/n means extend that doc, none means write a new doc. `--gaps-out` also carries `id`, `tier`, `blind`, `facets`, `missing_facets`, `nearest_doc` and `expected` per entry. Real-usage gaps come from `semantic-memory gaps --root . --json`.
    - grounding: `/reconcile --changed`, or `/reconcile --next 10`.
    - ranking: the settings in `semantic-memory help tune-ranking` (`coverage_weight`, `clause_weight`, `lexical_agreement` for two-part questions, all off by default), chosen on your train split only; or report it (section 6).
    - docs-wide health: `npx hewtd audit`.

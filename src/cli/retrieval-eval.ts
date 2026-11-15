@@ -27,7 +27,7 @@ export function registerEvalCommand(program: Command): void {
     .option("--settle", "With --via mcp: retry answers marked stale, so the run scores the settled state (default: score the first answers as an agent gets them)")
     .option("--wait-for-ready", "With --via mcp: start the server with --wait-for-ready (the plugin does not)")
     .option("--no-oracle", "Skip the per-miss diagnosis section (coverage / ranking / grounding, and the grep oracle's line)")
-    .option("--gaps-out <file>", "Write the coverage misses as gaps.v1, for `hewtd reconcile --gaps <file>`")
+    .option("--gaps-out <file>", "Write the coverage misses as gaps.v1 plus id, tier, facets, missing_facets and nearest_doc, for `hewtd reconcile --gaps <file>`")
     .option("--json", "Print the report as JSON")
     .action(async (opts) => {
       try {

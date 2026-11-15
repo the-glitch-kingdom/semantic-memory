@@ -2,6 +2,18 @@
 
 All notable changes to semantic-memory (formerly semantic-sidekick) will be documented here.
 
+## [1.32.0] - 2026-11-14 — gaps facets
+
+Issue #101. Details: `.documentation/changelog/v1-32-0-gaps-facets.md`.
+
+### Added
+
+- `eval --gaps-out` entries carry `id`, `tier`, `blind`, `facets`, `missing_facets`, `nearest_doc` and `expected` beside the five gaps.v1 fields (hewtd 3.4.1 `reconcile --gaps` reads them).
+- Coverage diagnosis lines end with `nearest: <path> k/n` or `nearest: none`.
+- A stderr warning for each facet that looks copied from a code line, and the facet-shape rule in `BLIND-SETS.md` and `docs/measure-and-tune.md`.
+
+Ranking is unchanged: `gate:release` against 1.31.1 passes.
+
 ## [1.31.1] - 2026-11-14 — two-part questions and bare refs
 
 Issues #91 (part 2) and #98. Details: `.documentation/changelog/v1-31-1-two-part-and-bare-refs.md`.
